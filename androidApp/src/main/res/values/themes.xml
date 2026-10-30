@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.IChing" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper_cream</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <color name="paper_cream">#FAF9F6</color>
+    <color name="cinnabar">#9C4221</color>
+    <color name="ink">#2D3748</color>
+</resources>

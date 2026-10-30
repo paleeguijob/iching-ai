@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Cinnabar seal -->
+    <path
+        android:fillColor="#9C4221"
+        android:pathData="M36,30h36a6,6 0,0 1,6 6v36a6,6 0,0 1,-6 6h-36a6,6 0,0 1,-6 -6v-36a6,6 0,0 1,6 -6z" />
+    <!-- Hexagram 61 中孚, drawn top to bottom -->
+    <path android:fillColor="#FAF9F6" android:pathData="M40,36.5h28v3.6h-28z" />
+    <path android:fillColor="#FAF9F6" android:pathData="M40,43.5h28v3.6h-28z" />
+    <path android:fillColor="#FAF9F6" android:pathData="M40,50.5h11.5v3.6h-11.5zM56.5,50.5h11.5v3.6h-11.5z" />
+    <path android:fillColor="#FAF9F6" android:pathData="M40,57.5h11.5v3.6h-11.5zM56.5,57.5h11.5v3.6h-11.5z" />
+    <path android:fillColor="#FAF9F6" android:pathData="M40,64.5h28v3.6h-28z" />
+    <path android:fillColor="#FAF9F6" android:pathData="M40,71.5h28v3.6h-28z" />
+</vector>

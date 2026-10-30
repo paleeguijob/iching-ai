@@ -1,0 +1,514 @@
+[
+ {
+  "id": 1,
+  "nameCn": "乾",
+  "pinyin": "Qián",
+  "upper": "qian",
+  "lower": "qian",
+  "pattern": "111111"
+ },
+ {
+  "id": 2,
+  "nameCn": "坤",
+  "pinyin": "Kūn",
+  "upper": "kun",
+  "lower": "kun",
+  "pattern": "000000"
+ },
+ {
+  "id": 3,
+  "nameCn": "屯",
+  "pinyin": "Zhūn",
+  "upper": "kan",
+  "lower": "zhen",
+  "pattern": "100010"
+ },
+ {
+  "id": 4,
+  "nameCn": "蒙",
+  "pinyin": "Méng",
+  "upper": "gen",
+  "lower": "kan",
+  "pattern": "010001"
+ },
+ {
+  "id": 5,
+  "nameCn": "需",
+  "pinyin": "Xū",
+  "upper": "kan",
+  "lower": "qian",
+  "pattern": "111010"
+ },
+ {
+  "id": 6,
+  "nameCn": "訟",
+  "pinyin": "Sòng",
+  "upper": "qian",
+  "lower": "kan",
+  "pattern": "010111"
+ },
+ {
+  "id": 7,
+  "nameCn": "師",
+  "pinyin": "Shī",
+  "upper": "kun",
+  "lower": "kan",
+  "pattern": "010000"
+ },
+ {
+  "id": 8,
+  "nameCn": "比",
+  "pinyin": "Bǐ",
+  "upper": "kan",
+  "lower": "kun",
+  "pattern": "000010"
+ },
+ {
+  "id": 9,
+  "nameCn": "小畜",
+  "pinyin": "Xiǎo Chù",
+  "upper": "xun",
+  "lower": "qian",
+  "pattern": "111011"
+ },
+ {
+  "id": 10,
+  "nameCn": "履",
+  "pinyin": "Lǚ",
+  "upper": "qian",
+  "lower": "dui",
+  "pattern": "110111"
+ },
+ {
+  "id": 11,
+  "nameCn": "泰",
+  "pinyin": "Tài",
+  "upper": "kun",
+  "lower": "qian",
+  "pattern": "111000"
+ },
+ {
+  "id": 12,
+  "nameCn": "否",
+  "pinyin": "Pǐ",
+  "upper": "qian",
+  "lower": "kun",
+  "pattern": "000111"
+ },
+ {
+  "id": 13,
+  "nameCn": "同人",
+  "pinyin": "Tóng Rén",
+  "upper": "qian",
+  "lower": "li",
+  "pattern": "101111"
+ },
+ {
+  "id": 14,
+  "nameCn": "大有",
+  "pinyin": "Dà Yǒu",
+  "upper": "li",
+  "lower": "qian",
+  "pattern": "111101"
+ },
+ {
+  "id": 15,
+  "nameCn": "謙",
+  "pinyin": "Qiān",
+  "upper": "kun",
+  "lower": "gen",
+  "pattern": "001000"
+ },
+ {
+  "id": 16,
+  "nameCn": "豫",
+  "pinyin": "Yù",
+  "upper": "zhen",
+  "lower": "kun",
+  "pattern": "000100"
+ },
+ {
+  "id": 17,
+  "nameCn": "隨",
+  "pinyin": "Suí",
+  "upper": "dui",
+  "lower": "zhen",
+  "pattern": "100110"
+ },
+ {
+  "id": 18,
+  "nameCn": "蠱",
+  "pinyin": "Gǔ",
+  "upper": "gen",
+  "lower": "xun",
+  "pattern": "011001"
+ },
+ {
+  "id": 19,
+  "nameCn": "臨",
+  "pinyin": "Lín",
+  "upper": "kun",
+  "lower": "dui",
+  "pattern": "110000"
+ },
+ {
+  "id": 20,
+  "nameCn": "觀",
+  "pinyin": "Guān",
+  "upper": "xun",
+  "lower": "kun",
+  "pattern": "000011"
+ },
+ {
+  "id": 21,
+  "nameCn": "噬嗑",
+  "pinyin": "Shì Kè",
+  "upper": "li",
+  "lower": "zhen",
+  "pattern": "100101"
+ },
+ {
+  "id": 22,
+  "nameCn": "賁",
+  "pinyin": "Bì",
+  "upper": "gen",
+  "lower": "li",
+  "pattern": "101001"
+ },
+ {
+  "id": 23,
+  "nameCn": "剝",
+  "pinyin": "Bō",
+  "upper": "gen",
+  "lower": "kun",
+  "pattern": "000001"
+ },
+ {
+  "id": 24,
+  "nameCn": "復",
+  "pinyin": "Fù",
+  "upper": "kun",
+  "lower": "zhen",
+  "pattern": "100000"
+ },
+ {
+  "id": 25,
+  "nameCn": "無妄",
+  "pinyin": "Wú Wàng",
+  "upper": "qian",
+  "lower": "zhen",
+  "pattern": "100111"
+ },
+ {
+  "id": 26,
+  "nameCn": "大畜",
+  "pinyin": "Dà Chù",
+  "upper": "gen",
+  "lower": "qian",
+  "pattern": "111001"
+ },
+ {
+  "id": 27,
+  "nameCn": "頤",
+  "pinyin": "Yí",
+  "upper": "gen",
+  "lower": "zhen",
+  "pattern": "100001"
+ },
+ {
+  "id": 28,
+  "nameCn": "大過",
+  "pinyin": "Dà Guò",
+  "upper": "dui",
+  "lower": "xun",
+  "pattern": "011110"
+ },
+ {
+  "id": 29,
+  "nameCn": "坎",
+  "pinyin": "Kǎn",
+  "upper": "kan",
+  "lower": "kan",
+  "pattern": "010010"
+ },
+ {
+  "id": 30,
+  "nameCn": "離",
+  "pinyin": "Lí",
+  "upper": "li",
+  "lower": "li",
+  "pattern": "101101"
+ },
+ {
+  "id": 31,
+  "nameCn": "咸",
+  "pinyin": "Xián",
+  "upper": "dui",
+  "lower": "gen",
+  "pattern": "001110"
+ },
+ {
+  "id": 32,
+  "nameCn": "恆",
+  "pinyin": "Héng",
+  "upper": "zhen",
+  "lower": "xun",
+  "pattern": "011100"
+ },
+ {
+  "id": 33,
+  "nameCn": "遯",
+  "pinyin": "Dùn",
+  "upper": "qian",
+  "lower": "gen",
+  "pattern": "001111"
+ },
+ {
+  "id": 34,
+  "nameCn": "大壯",
+  "pinyin": "Dà Zhuàng",
+  "upper": "zhen",
+  "lower": "qian",
+  "pattern": "111100"
+ },
+ {
+  "id": 35,
+  "nameCn": "晉",
+  "pinyin": "Jìn",
+  "upper": "li",
+  "lower": "kun",
+  "pattern": "000101"
+ },
+ {
+  "id": 36,
+  "nameCn": "明夷",
+  "pinyin": "Míng Yí",
+  "upper": "kun",
+  "lower": "li",
+  "pattern": "101000"
+ },
+ {
+  "id": 37,
+  "nameCn": "家人",
+  "pinyin": "Jiā Rén",
+  "upper": "xun",
+  "lower": "li",
+  "pattern": "101011"
+ },
+ {
+  "id": 38,
+  "nameCn": "睽",
+  "pinyin": "Kuí",
+  "upper": "li",
+  "lower": "dui",
+  "pattern": "110101"
+ },
+ {
+  "id": 39,
+  "nameCn": "蹇",
+  "pinyin": "Jiǎn",
+  "upper": "kan",
+  "lower": "gen",
+  "pattern": "001010"
+ },
+ {
+  "id": 40,
+  "nameCn": "解",
+  "pinyin": "Xiè",
+  "upper": "zhen",
+  "lower": "kan",
+  "pattern": "010100"
+ },
+ {
+  "id": 41,
+  "nameCn": "損",
+  "pinyin": "Sǔn",
+  "upper": "gen",
+  "lower": "dui",
+  "pattern": "110001"
+ },
+ {
+  "id": 42,
+  "nameCn": "益",
+  "pinyin": "Yì",
+  "upper": "xun",
+  "lower": "zhen",
+  "pattern": "100011"
+ },
+ {
+  "id": 43,
+  "nameCn": "夬",
+  "pinyin": "Guài",
+  "upper": "dui",
+  "lower": "qian",
+  "pattern": "111110"
+ },
+ {
+  "id": 44,
+  "nameCn": "姤",
+  "pinyin": "Gòu",
+  "upper": "qian",
+  "lower": "xun",
+  "pattern": "011111"
+ },
+ {
+  "id": 45,
+  "nameCn": "萃",
+  "pinyin": "Cuì",
+  "upper": "dui",
+  "lower": "kun",
+  "pattern": "000110"
+ },
+ {
+  "id": 46,
+  "nameCn": "升",
+  "pinyin": "Shēng",
+  "upper": "kun",
+  "lower": "xun",
+  "pattern": "011000"
+ },
+ {
+  "id": 47,
+  "nameCn": "困",
+  "pinyin": "Kùn",
+  "upper": "dui",
+  "lower": "kan",
+  "pattern": "010110"
+ },
+ {
+  "id": 48,
+  "nameCn": "井",
+  "pinyin": "Jǐng",
+  "upper": "kan",
+  "lower": "xun",
+  "pattern": "011010"
+ },
+ {
+  "id": 49,
+  "nameCn": "革",
+  "pinyin": "Gé",
+  "upper": "dui",
+  "lower": "li",
+  "pattern": "101110"
+ },
+ {
+  "id": 50,
+  "nameCn": "鼎",
+  "pinyin": "Dǐng",
+  "upper": "li",
+  "lower": "xun",
+  "pattern": "011101"
+ },
+ {
+  "id": 51,
+  "nameCn": "震",
+  "pinyin": "Zhèn",
+  "upper": "zhen",
+  "lower": "zhen",
+  "pattern": "100100"
+ },
+ {
+  "id": 52,
+  "nameCn": "艮",
+  "pinyin": "Gèn",
+  "upper": "gen",
+  "lower": "gen",
+  "pattern": "001001"
+ },
+ {
+  "id": 53,
+  "nameCn": "漸",
+  "pinyin": "Jiàn",
+  "upper": "xun",
+  "lower": "gen",
+  "pattern": "001011"
+ },
+ {
+  "id": 54,
+  "nameCn": "歸妹",
+  "pinyin": "Guī Mèi",
+  "upper": "zhen",
+  "lower": "dui",
+  "pattern": "110100"
+ },
+ {
+  "id": 55,
+  "nameCn": "豐",
+  "pinyin": "Fēng",
+  "upper": "zhen",
+  "lower": "li",
+  "pattern": "101100"
+ },
+ {
+  "id": 56,
+  "nameCn": "旅",
+  "pinyin": "Lǚ",
+  "upper": "li",
+  "lower": "gen",
+  "pattern": "001101"
+ },
+ {
+  "id": 57,
+  "nameCn": "巽",
+  "pinyin": "Xùn",
+  "upper": "xun",
+  "lower": "xun",
+  "pattern": "011011"
+ },
+ {
+  "id": 58,
+  "nameCn": "兌",
+  "pinyin": "Duì",
+  "upper": "dui",
+  "lower": "dui",
+  "pattern": "110110"
+ },
+ {
+  "id": 59,
+  "nameCn": "渙",
+  "pinyin": "Huàn",
+  "upper": "xun",
+  "lower": "kan",
+  "pattern": "010011"
+ },
+ {
+  "id": 60,
+  "nameCn": "節",
+  "pinyin": "Jié",
+  "upper": "kan",
+  "lower": "dui",
+  "pattern": "110010"
+ },
+ {
+  "id": 61,
+  "nameCn": "中孚",
+  "pinyin": "Zhōng Fú",
+  "upper": "xun",
+  "lower": "dui",
+  "pattern": "110011"
+ },
+ {
+  "id": 62,
+  "nameCn": "小過",
+  "pinyin": "Xiǎo Guò",
+  "upper": "zhen",
+  "lower": "gen",
+  "pattern": "001100"
+ },
+ {
+  "id": 63,
+  "nameCn": "既濟",
+  "pinyin": "Jì Jì",
+  "upper": "kan",
+  "lower": "li",
+  "pattern": "101010"
+ },
+ {
+  "id": 64,
+  "nameCn": "未濟",
+  "pinyin": "Wèi Jì",
+  "upper": "li",
+  "lower": "kan",
+  "pattern": "010101"
+ }
+]
