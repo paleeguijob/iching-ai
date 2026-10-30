@@ -15,7 +15,7 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.readUTF8Line
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.io.IOException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -67,7 +67,9 @@ class GeminiOracleRepository(
 
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    override fun interpret(prompt: OraclePrompt, apiKey: String, model: String): Flow<String> = flow {
+    // channelFlow, not flow: Ktor may run the execute block on another dispatcher (Darwin does),
+    // and emitting from there violates flow's context invariant.
+    override fun interpret(prompt: OraclePrompt, apiKey: String, model: String): Flow<String> = channelFlow {
         val request = GeminiRequest(
             systemInstruction = GeminiContent(listOf(GeminiPart(prompt.systemInstruction))),
             contents = listOf(GeminiContent(listOf(GeminiPart(prompt.userMessage)), role = "user")),
@@ -98,7 +100,7 @@ class GeminiOracleRepository(
                         .filter { it.thought != true }
                         .mapNotNull { it.text }
                         .joinToString("")
-                    if (text.isNotEmpty()) emit(text)
+                    if (text.isNotEmpty()) send(text)
                     if (candidate.finishReason in BLOCKING_FINISH_REASONS) throw OracleException.Blocked()
                 }
             }
