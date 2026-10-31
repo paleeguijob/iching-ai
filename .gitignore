@@ -24,3 +24,8 @@ keystore.properties
 *.keystore
 frontend/iosApp/Configuration/Secrets.xcconfig
 backend/functions/.secret.local
+
+# Firebase: per-developer config and CLI cache
+frontend/androidApp/google-services.json
+frontend/iosApp/iosApp/GoogleService-Info.plist
+backend/.firebase/
