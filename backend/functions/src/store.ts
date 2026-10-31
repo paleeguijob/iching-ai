@@ -1,5 +1,6 @@
 import { DocumentData, FieldValue, Firestore } from "firebase-admin/firestore";
 import { QuotaTxResult, Store, StoredReading } from "./core/api";
+import type { Coin } from "./core/cast";
 import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "./core/quota";
 
 /**
@@ -22,7 +23,7 @@ export function firestoreStore(db: Firestore): Store {
     question: d.question ?? "",
     category: d.category ?? null,
     lines: d.lines ?? [],
-    coins: Array.isArray(d.coins) ? d.coins.map((t: { c: number[] } | number[]) => (Array.isArray(t) ? t : t.c)) : [],
+    coins: Array.isArray(d.coins) ? d.coins.map((t: { c: number[] } | number[]) => (Array.isArray(t) ? t : t.c) as Coin[]) : [],
     primaryId: d.primaryId,
     relatingId: d.relatingId ?? null,
     aiText: d.aiText ?? null,
