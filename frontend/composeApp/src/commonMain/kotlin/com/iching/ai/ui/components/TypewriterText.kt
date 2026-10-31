@@ -5,9 +5,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -38,7 +38,8 @@ fun TypewriterText(
     charDelayMillis: Long = 32,
     onRevealed: () -> Unit = {},
 ) {
-    var shown by remember { mutableIntStateOf(if (animate) 0 else text.length) }
+    // Saveable: coming back from another screen must not type the reading out again.
+    var shown by rememberSaveable { mutableStateOf(if (animate) 0 else text.length) }
     val latest by rememberUpdatedState(text)
     val latestOnRevealed by rememberUpdatedState(onRevealed)
     LaunchedEffect(animate) {

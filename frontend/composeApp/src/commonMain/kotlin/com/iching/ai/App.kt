@@ -36,6 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -102,6 +105,14 @@ fun App() {
     }
 }
 
+/**
+ * Pops [entry] only while it is the settled top screen. A second tap on a back button lands during
+ * the exit transition, and popping again would remove the screen below, even Home, leaving it blank.
+ */
+private fun NavController.popFrom(entry: NavBackStackEntry) {
+    if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) popBackStack()
+}
+
 @Composable
 private fun MainNavigation() {
     run {
@@ -132,10 +143,10 @@ private fun MainNavigation() {
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
                         viewModel = koinViewModel { parametersOf(route.question, QuestionCategory.fromWire(route.category)) },
-                        onBack = { nav.popBackStack() },
+                        onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
-                        onDone = { nav.popBackStack() },
+                        onDone = { nav.popFrom(entry) },
                     )
                 }
                 composable<LibraryRoute> {
@@ -145,7 +156,7 @@ private fun MainNavigation() {
                     val route = entry.toRoute<HexagramRoute>()
                     HexagramDetailScreen(
                         viewModel = koinViewModel(key = "hexagram-${route.id}") { parametersOf(route.id) },
-                        onBack = { nav.popBackStack() },
+                        onBack = { nav.popFrom(entry) },
                     )
                 }
                 composable<JournalRoute> {
@@ -160,19 +171,19 @@ private fun MainNavigation() {
                     val route = entry.toRoute<JournalEntryRoute>()
                     JournalEntryScreen(
                         viewModel = koinViewModel { parametersOf(route.id) },
-                        onBack = { nav.popBackStack() },
+                        onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                     )
                 }
-                composable<SettingsRoute> {
+                composable<SettingsRoute> { entry ->
                     SettingsScreen(
                         viewModel = koinViewModel(),
-                        onBack = { nav.popBackStack() },
+                        onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
-                composable<PaywallRoute> {
-                    PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popBackStack() })
+                composable<PaywallRoute> { entry ->
+                    PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popFrom(entry) })
                 }
             }
 

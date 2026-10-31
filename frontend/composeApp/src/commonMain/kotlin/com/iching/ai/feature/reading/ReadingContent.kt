@@ -147,6 +147,8 @@ fun OracleScroll(
     modifier: Modifier = Modifier,
 ) {
     var revealed by rememberSaveable { mutableStateOf(!animate) }
+    // Asking the hermit again clears the text: the seal waits for the new words too.
+    if (text.isEmpty() && animate) revealed = false
     Column(modifier.fillMaxWidth()) {
         ScrollRoller()
         Box(

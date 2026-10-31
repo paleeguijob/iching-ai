@@ -116,7 +116,7 @@ fun ReadingNoticeCard(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                ZenSecondaryButton("Premium · ไม่มีโฆษณา · วันละ ๑๐ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
+                ZenSecondaryButton("Premium · วันละ ๑๐ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
             }
             canRetry && retryable -> TextButton(onClick = onRetry) { Text("ถามนักพรตอีกครั้ง", color = ZenColors.CinnabarRed) }
         }
