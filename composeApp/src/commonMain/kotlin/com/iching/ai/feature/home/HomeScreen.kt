@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.ui.toThaiNumerals
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.PaperBackground
@@ -57,25 +59,18 @@ import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
 
-private val SUGGESTIONS = listOf(
-    "การงาน" to "การงานของข้าพเจ้าช่วงนี้ควรดำเนินไปอย่างไร",
-    "ความรัก" to "ความสัมพันธ์ของข้าพเจ้าจะเป็นไปในทิศทางใด",
-    "การเงิน" to "ข้าพเจ้าควรจัดการเรื่องเงินทองอย่างไรในยามนี้",
-    "การตัดสินใจ" to "ข้าพเจ้าควรตัดสินใจเรื่องที่ค้างคาใจอย่างไร",
-    "จิตใจ" to "ข้าพเจ้าจะหาความสงบในใจได้อย่างไร",
-)
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onCast: (String) -> Unit,
+    onCast: (String, QuestionCategory?) -> Unit,
     onOpenHexagram: (Int) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
-    val hasKey by viewModel.hasApiKey.collectAsStateWithLifecycle()
+    val status by viewModel.status.collectAsStateWithLifecycle()
     var question by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf<String?>(null) }
 
     PaperBackground {
         Column(
@@ -128,15 +123,24 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SUGGESTIONS.forEach { (label, text) ->
+                QuestionCategory.entries.forEach { c ->
+                    val selected = category == c.wire
                     Text(
-                        label,
+                        c.labelTh,
                         style = MaterialTheme.typography.labelMedium,
-                        color = ZenColors.BambooDeep,
+                        color = if (selected) ZenColors.PaperCream else ZenColors.BambooDeep,
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
+                            .background(if (selected) ZenColors.BambooDeep else ZenColors.PaperCream.copy(alpha = 0f))
                             .border(1.dp, ZenColors.BambooGreen.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
-                            .clickable { question = text }
+                            .clickable {
+                                if (selected) {
+                                    category = null
+                                } else {
+                                    category = c.wire
+                                    if (question.isBlank() || QuestionCategory.entries.any { it.sampleTh == question }) question = c.sampleTh
+                                }
+                            }
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                     )
                 }
@@ -145,18 +149,21 @@ fun HomeScreen(
             Spacer(Modifier.height(28.dp))
             ZenPrimaryButton(
                 text = "เริ่มเสี่ยงทาย",
-                onClick = { onCast(question.trim()) },
+                onClick = { onCast(question.trim(), QuestionCategory.fromWire(category)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (!hasKey) {
-                Text(
-                    "ยังไม่ได้ตั้งค่ากุญแจ Gemini — จะได้รับตัวบทจากคัมภีร์แทนคำชี้แนะของนักพรต",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ZenColors.CinnabarRed,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp).clickable(onClick = onOpenSettings),
-                )
-            }
+            Text(
+                when {
+                    !status.aiEnabled -> "นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้"
+                    status.premium -> "Premium · วันนี้เหลือคำชี้แนะจากนักพรต ${status.includedLeft.toThaiNumerals()} ครั้ง"
+                    status.readingsLeft > 0 -> "วันนี้เหลือคำชี้แนะจากนักพรต ${status.readingsLeft.toThaiNumerals()} ครั้ง"
+                    else -> "คำชี้แนะของวันนี้ครบแล้ว — ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = ZenColors.InkFaint,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            )
 
             Spacer(Modifier.height(36.dp))
             daily?.let { DailyHexagramCard(it, onClick = { onOpenHexagram(it.id) }) }

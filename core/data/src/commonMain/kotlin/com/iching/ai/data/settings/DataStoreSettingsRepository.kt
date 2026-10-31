@@ -10,40 +10,41 @@ import com.iching.ai.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/**
- * Settings persisted on device. When the user has never saved a key, [defaultApiKey]
- * (from the build) is used; an explicitly cleared key is stored as "" and respected.
- */
+/** Settings persisted on device. */
 class DataStoreSettingsRepository(
     private val dataStore: DataStore<Preferences>,
-    private val defaultApiKey: String,
 ) : SettingsRepository {
 
-    override val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
-        AppSettings(
-            apiKey = prefs[API_KEY] ?: defaultApiKey,
-            model = prefs[MODEL]?.takeIf { it.isNotBlank() } ?: AppSettings.DEFAULT_MODEL,
-            soundEnabled = prefs[SOUND] ?: true,
-        )
-    }
+    override val settings: Flow<AppSettings> = dataStore.data.map { it.toSettings() }
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { prefs ->
-            val current = AppSettings(
-                apiKey = prefs[API_KEY] ?: defaultApiKey,
-                model = prefs[MODEL]?.takeIf { it.isNotBlank() } ?: AppSettings.DEFAULT_MODEL,
-                soundEnabled = prefs[SOUND] ?: true,
-            )
-            val next = transform(current)
-            prefs[API_KEY] = next.apiKey.trim()
-            prefs[MODEL] = next.model.trim()
+            val next = transform(prefs.toSettings())
             prefs[SOUND] = next.soundEnabled
+            prefs[ONBOARDING] = next.onboardingAccepted
+            prefs.remove(LEGACY_API_KEY)
         }
     }
 
+    /** Used after deleting the account. The disclaimer stays accepted on this device. */
+    override suspend fun clear() {
+        dataStore.edit { prefs ->
+            val accepted = prefs[ONBOARDING] ?: false
+            prefs.clear()
+            prefs[ONBOARDING] = accepted
+        }
+    }
+
+    private fun Preferences.toSettings() = AppSettings(
+        soundEnabled = this[SOUND] ?: true,
+        onboardingAccepted = this[ONBOARDING] ?: false,
+    )
+
     private companion object {
-        val API_KEY = stringPreferencesKey("gemini_api_key")
-        val MODEL = stringPreferencesKey("gemini_model")
         val SOUND = booleanPreferencesKey("sound_enabled")
+        val ONBOARDING = booleanPreferencesKey("onboarding_accepted_v1")
+
+        // Left over from builds that called Gemini directly; dropped on the next settings write.
+        val LEGACY_API_KEY = stringPreferencesKey("gemini_api_key")
     }
 }

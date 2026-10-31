@@ -1,5 +1,11 @@
 package com.iching.ai.feature.journal
 
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.iching.ai.domain.model.Outcome
+import com.iching.ai.feature.reading.AiContentLabel
+import com.iching.ai.ui.components.SectionLabel
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,22 +66,33 @@ import com.iching.ai.ui.formatThaiTime
 import com.iching.ai.ui.theme.ZenColors
 
 @Composable
-fun JournalScreen(viewModel: JournalViewModel, onOpenEntry: (Long) -> Unit, onStartCasting: () -> Unit) {
+fun JournalScreen(
+    viewModel: JournalViewModel,
+    onOpenEntry: (Long) -> Unit,
+    onStartCasting: () -> Unit,
+    onOpenPaywall: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     PaperBackground(showMountains = false) {
         when (val s = state) {
             JournalUiState.Loading -> Unit
-            is JournalUiState.Loaded -> if (s.entries.isEmpty()) {
+            is JournalUiState.Loaded -> if (s.entries.isEmpty() && s.hiddenCount == 0) {
                 EmptyJournal(onStartCasting)
             } else {
-                Timeline(s.entries, onOpenEntry)
+                Timeline(s.entries, s.hiddenCount, s.journalDays, onOpenEntry, onOpenPaywall)
             }
         }
     }
 }
 
 @Composable
-private fun Timeline(entries: List<JournalEntry>, onOpenEntry: (Long) -> Unit) {
+private fun Timeline(
+    entries: List<JournalEntry>,
+    hiddenCount: Int,
+    journalDays: Int?,
+    onOpenEntry: (Long) -> Unit,
+    onOpenPaywall: () -> Unit,
+) {
     val grouped = remember(entries) { entries.groupBy { formatThaiMonth(it.reading.createdAtMillis) } }
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
@@ -84,11 +101,36 @@ private fun Timeline(entries: List<JournalEntry>, onOpenEntry: (Long) -> Unit) {
         item {
             Text("บันทึกชะตา", style = MaterialTheme.typography.headlineLarge, color = ZenColors.InkBlack)
             Text(
-                "ย้อนมองเส้นทางที่ผ่านมา ${entries.size} ครั้งแห่งการถามไถ่",
+                if (journalDays == null) "ย้อนมองเส้นทางที่ผ่านมา ${entries.size} ครั้งแห่งการถามไถ่"
+                else "${journalDays} วันล่าสุด · ${entries.size} ครั้งแห่งการถามไถ่",
                 style = MaterialTheme.typography.bodyMedium,
                 color = ZenColors.InkSoft,
             )
             Spacer(Modifier.height(16.dp))
+        }
+        if (hiddenCount > 0) {
+            item(key = "locked") {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(ZenColors.CinnabarRed.copy(alpha = 0.06f))
+                        .clickable(onClick = onOpenPaywall)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("บันทึกเก่าอีก $hiddenCount รายการ", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "ยังเก็บไว้ในเครื่องของท่าน · เปิดดูทั้งหมดและกู้คืนข้ามเครื่องได้ด้วย Premium",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ZenColors.InkSoft,
+                        )
+                    }
+                    Text("ดูแพ็กเกจ", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+                }
+            }
         }
         grouped.forEach { (month, monthEntries) ->
             item(key = "month-$month") {
@@ -161,6 +203,9 @@ private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Un
                 )
                 if (reading.source == InterpretationSource.SCRIPTURE) {
                     Text("ตัวบทจากคัมภีร์", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                }
+                reading.outcome?.let {
+                    Text("✓ ${outcomeLabel(it)}", style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
                 }
             }
             Spacer(Modifier.width(12.dp))
@@ -235,6 +280,20 @@ fun JournalEntryScreen(viewModel: JournalEntryViewModel, onBack: () -> Unit, onO
                     animate = false,
                     source = e.reading.source,
                 )
+                AiContentLabel(source = e.reading.source, onReport = null)
+                if (e.reading.followUps.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
+                    Spacer(Modifier.height(10.dp))
+                    e.reading.followUps.forEach { turn ->
+                        Text("“${turn.question}”", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                        Spacer(Modifier.height(6.dp))
+                        Text(turn.answer, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkBlack)
+                        Spacer(Modifier.height(14.dp))
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+                OutcomeSection(e.reading.outcome, e.reading.outcomeNote, viewModel::setOutcome)
                 Spacer(Modifier.height(24.dp))
                 ScriptureSection(e.primary, e.relating, e.reading.changingPositions)
                 Spacer(Modifier.height(40.dp))
@@ -255,5 +314,53 @@ fun JournalEntryScreen(viewModel: JournalEntryViewModel, onBack: () -> Unit, onO
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก") } },
             containerColor = ZenColors.PaperCream,
         )
+    }
+}
+
+private fun outcomeLabel(outcome: Outcome) = when (outcome) {
+    Outcome.YES -> "เกิดขึ้นจริง"
+    Outcome.PARTLY -> "เกิดขึ้นบางส่วน"
+    Outcome.NO -> "ไม่เกิดขึ้น"
+}
+
+/** "Did it come true?" with a private note — the heart of the Destiny Journal. */
+@Composable
+private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?, String?) -> Unit) {
+    var draft by rememberSaveable(note) { mutableStateOf(note.orEmpty()) }
+    Column(Modifier.fillMaxWidth()) {
+        SectionLabel("เกิดขึ้นจริงไหม")
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Outcome.entries.forEach { o ->
+                val selected = o == outcome
+                Text(
+                    outcomeLabel(o),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) ZenColors.PaperCream else ZenColors.BambooDeep,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (selected) ZenColors.BambooDeep else ZenColors.PaperCream)
+                        .border(1.dp, ZenColors.BambooGreen.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .clickable { onChange(if (selected) null else o, draft) }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = draft,
+            onValueChange = { if (it.length <= 2000) draft = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("จดบันทึกส่วนตัว: สิ่งที่เกิดขึ้น สิ่งที่ได้เรียนรู้...", color = ZenColors.InkFaint) },
+            textStyle = MaterialTheme.typography.bodyMedium,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = ZenColors.BambooGreen,
+                unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.12f),
+            ),
+        )
+        if (draft != note.orEmpty()) {
+            TextButton(onClick = { onChange(outcome, draft) }) { Text("บันทึก", color = ZenColors.CinnabarRed) }
+        }
     }
 }

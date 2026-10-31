@@ -13,6 +13,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        // Consent form (EEA/UK only) before any ad is requested.
+        (application as IChingApplication).ads.gatherConsent(this)
         setContent {
             App()
         }

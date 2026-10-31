@@ -1,3 +1,12 @@
 TEAM_ID=
 BUNDLE_ID=com.iching.ai
 APP_NAME=IChingAI
+
+// RevenueCat public iOS SDK key (appl_...). Empty = purchases disabled.
+REVENUECAT_IOS_KEY=
+// AdMob ids. Defaults are Google's public TEST ids — replace before release.
+ADMOB_APP_ID_IOS=ca-app-pub-3940256099942544~1458002511
+ADMOB_REWARDED_IOS=ca-app-pub-3940256099942544/1712485313
+
+// Optional, not committed: put real values in Secrets.xcconfig next to this file.
+#include? "Secrets.xcconfig"

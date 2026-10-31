@@ -44,6 +44,11 @@ data class CastResult(
 
 enum class InterpretationSource { AI, SCRIPTURE }
 
+/** The seeker's answer to "did it come true?" in the Destiny Journal. */
+enum class Outcome { YES, PARTLY, NO }
+
+data class FollowUpTurn(val question: String, val answer: String)
+
 data class Reading(
     val id: Long = 0,
     val question: String,
@@ -53,19 +58,32 @@ data class Reading(
     val relatingId: Int?,
     val interpretation: String,
     val source: InterpretationSource,
+    /** Id of the reading on the server; null for offline casts that never reached it. */
+    val serverId: String? = null,
+    val category: QuestionCategory? = null,
+    val outcome: Outcome? = null,
+    val outcomeNote: String? = null,
+    val followUps: List<FollowUpTurn> = emptyList(),
 ) {
     val changingPositions: List<Int>
         get() = lines.mapIndexedNotNull { index, line -> if (line.isChanging) index + 1 else null }
 }
 
-data class AppSettings(
-    val apiKey: String = "",
-    val model: String = DEFAULT_MODEL,
-    val soundEnabled: Boolean = true,
-) {
-    val hasApiKey: Boolean get() = apiKey.isNotBlank()
+/** Question categories (also sent to the server to steer the prompt). [wire] is the API value. */
+enum class QuestionCategory(val wire: String, val labelTh: String, val sampleTh: String) {
+    WORK("work", "การงาน", "การงานของข้าพเจ้าช่วงนี้ควรดำเนินไปอย่างไร"),
+    LOVE("love", "ความรัก", "ความสัมพันธ์ของข้าพเจ้าจะเป็นไปในทิศทางใด"),
+    MONEY("money", "การเงิน", "ข้าพเจ้าควรจัดการเรื่องเงินทองอย่างไรในยามนี้"),
+    DECISION("decision", "การตัดสินใจ", "ข้าพเจ้าควรตัดสินใจเรื่องที่ค้างคาใจอย่างไร"),
+    MIND("mind", "สุขภาพใจ", "ข้าพเจ้าจะหาความสงบในใจได้อย่างไร");
 
     companion object {
-        const val DEFAULT_MODEL = "gemini-flash-latest"
+        fun fromWire(value: String?): QuestionCategory? = entries.firstOrNull { it.wire == value }
     }
 }
+
+data class AppSettings(
+    val soundEnabled: Boolean = true,
+    /** The seeker has read and accepted the disclaimer on first launch. */
+    val onboardingAccepted: Boolean = false,
+)

@@ -45,7 +45,6 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.oracle.linePositionTh
-import com.iching.ai.domain.usecase.FallbackReason
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.InkDivider
@@ -163,7 +162,7 @@ fun OracleScroll(
         ) {
             Column {
                 Text(
-                    if (source == InterpretationSource.SCRIPTURE) "ตัวบทจากคัมภีร์" else "คำชี้แนะจากนักพรต",
+                    if (source == InterpretationSource.SCRIPTURE) "ตัวบทจากคัมภีร์" else "คำชี้แนะจากนักพรต · สร้างโดย AI",
                     style = MaterialTheme.typography.labelMedium,
                     color = ZenColors.CinnabarRed,
                 )
@@ -210,37 +209,29 @@ private fun ScrollRoller() {
     )
 }
 
-/** Explains why the reading came straight from the scripture, with a retry when it can help. */
+/** Required by App Store / Google Play rules for generative AI: label the content and offer a report button. */
 @Composable
-fun FallbackNotice(reason: FallbackReason, onRetry: (() -> Unit)?, onOpenSettings: (() -> Unit)?) {
-    val message = when (reason) {
-        FallbackReason.NO_API_KEY -> "ยังไม่ได้ตั้งค่ากุญแจ Gemini จึงแสดงตัวบทจากคัมภีร์แทนคำชี้แนะของนักพรต"
-        FallbackReason.INVALID_API_KEY -> "กุญแจ Gemini ไม่ถูกต้อง โปรดตรวจสอบในหน้าตั้งค่า"
-        FallbackReason.RATE_LIMITED -> "ขณะนี้มีผู้แสวงหามากเกินไป (โควตาเต็ม) โปรดลองใหม่อีกครู่"
-        FallbackReason.NETWORK -> "ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้ จึงแสดงตัวบทจากคัมภีร์แทน"
-        FallbackReason.BLOCKED -> "คำถามนี้ไม่อาจตีความได้ จึงแสดงตัวบทจากคัมภีร์แทน"
-        FallbackReason.UNKNOWN -> "การติดต่อนักพรตขัดข้องชั่วคราว จึงแสดงตัวบทจากคัมภีร์แทน"
-    }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(ZenColors.CinnabarRed.copy(alpha = 0.07f))
-            .padding(14.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(Icons.Outlined.Info, null, tint = ZenColors.CinnabarRed, modifier = Modifier.size(20.dp).padding(top = 2.dp))
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            Text(message, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkBlack)
-            Row {
-                val canSettings = reason == FallbackReason.NO_API_KEY || reason == FallbackReason.INVALID_API_KEY
-                if (canSettings && onOpenSettings != null) {
-                    TextButton(onClick = onOpenSettings) { Text("ไปที่ตั้งค่า", color = ZenColors.CinnabarRed) }
-                }
-                if (!canSettings && onRetry != null) {
-                    TextButton(onClick = onRetry) { Text("ถามนักพรตอีกครั้ง", color = ZenColors.CinnabarRed) }
-                }
+fun AiContentLabel(source: InterpretationSource?, onReport: (() -> Unit)?, reported: Boolean = false) {
+    Column(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            if (source == InterpretationSource.AI) {
+                "เนื้อหาคำทำนายสร้างโดย AI อ้างอิงคัมภีร์อี้จิง · เพื่อความบันเทิงและการสะท้อนคิด ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"
+            } else {
+                "ตัวบทจากคัมภีร์อี้จิง · เพื่อความบันเทิงและการสะท้อนคิด ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = ZenColors.InkFaint,
+            textAlign = TextAlign.Center,
+        )
+        if (onReport != null) {
+            TextButton(onClick = onReport, enabled = !reported) {
+                Icon(Icons.Outlined.Info, null, tint = ZenColors.InkFaint, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    if (reported) "รายงานแล้ว" else "รายงานคำตอบไม่เหมาะสม",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ZenColors.InkFaint,
+                )
             }
         }
     }

@@ -17,3 +17,10 @@ node_modules/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Release secrets
+keystore.properties
+*.jks
+*.keystore
+iosApp/Configuration/Secrets.xcconfig
+functions/.secret.local

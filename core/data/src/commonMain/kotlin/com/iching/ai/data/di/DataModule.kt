@@ -5,15 +5,16 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.iching.ai.data.BuildSecrets
+import com.iching.ai.data.BuildConfig
+import com.iching.ai.data.api.HttpOracleApi
 import com.iching.ai.data.journal.JournalDatabase
+import com.iching.ai.data.journal.MIGRATION_1_2
 import com.iching.ai.data.journal.RoomJournalRepository
-import com.iching.ai.data.oracle.GeminiOracleRepository
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
 import com.iching.ai.data.settings.DataStoreSettingsRepository
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
-import com.iching.ai.domain.repository.OracleRepository
+import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.repository.SettingsRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
@@ -42,14 +43,16 @@ internal fun HttpClient.configured(): HttpClient = config {
 
 internal fun buildDatabase(builder: RoomDatabase.Builder<JournalDatabase>): JournalDatabase =
     builder
+        .addMigrations(MIGRATION_1_2)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
 
+/** Requires an [com.iching.ai.data.api.ApiSession] binding, provided by the app module. */
 val dataModule: Module = module {
     includes(platformDataModule())
     single<HexagramRepository> { ScriptureHexagramRepository() }
-    single<OracleRepository> { GeminiOracleRepository(get()) }
+    single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }
-    single<SettingsRepository> { DataStoreSettingsRepository(get(), BuildSecrets.DEFAULT_GEMINI_API_KEY) }
+    single<SettingsRepository> { DataStoreSettingsRepository(get()) }
 }

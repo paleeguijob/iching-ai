@@ -11,28 +11,43 @@ plugins {
     alias(libs.plugins.room)
 }
 
-// Dev builds may ship a default Gemini key from local.properties (never committed).
-val geminiApiKey: String = run {
+// Base URL of the `api` Cloud Function, from local.properties or -PICHING_API_BASE_URL=...
+// e.g. https://asia-southeast1-<project-id>.cloudfunctions.net/api
+val apiBaseUrl: String = run {
     val file = rootProject.file("local.properties")
     val props = Properties()
     if (file.exists()) file.inputStream().use(props::load)
-    props.getProperty("GEMINI_API_KEY", "")
+    (findProperty("ICHING_API_BASE_URL") as String?)
+        ?: props.getProperty("ICHING_API_BASE_URL")
+        ?: "https://asia-southeast1-YOUR_FIREBASE_PROJECT_ID.cloudfunctions.net/api"
 }
-val generatedSecretsDir = layout.buildDirectory.dir("generated/secrets/commonMain/kotlin")
-val generateBuildSecrets by tasks.registering {
-    val key = geminiApiKey
-    val outDir = generatedSecretsDir
-    inputs.property("key", key)
+// Firebase Hosting site with the privacy policy / terms / delete-account pages.
+val webBaseUrl: String = run {
+    val file = rootProject.file("local.properties")
+    val props = Properties()
+    if (file.exists()) file.inputStream().use(props::load)
+    (findProperty("ICHING_WEB_BASE_URL") as String?)
+        ?: props.getProperty("ICHING_WEB_BASE_URL")
+        ?: "https://YOUR_FIREBASE_PROJECT_ID.web.app"
+}
+val generatedConfigDir = layout.buildDirectory.dir("generated/buildconfig/commonMain/kotlin")
+val generateBuildConfig by tasks.registering {
+    val url = apiBaseUrl.trimEnd('/')
+    val web = webBaseUrl.trimEnd('/')
+    val outDir = generatedConfigDir
+    inputs.property("url", url)
+    inputs.property("web", web)
     outputs.dir(outDir)
     doLast {
-        val file = outDir.get().file("com/iching/ai/data/BuildSecrets.kt").asFile
+        val file = outDir.get().file("com/iching/ai/data/BuildConfig.kt").asFile
         file.parentFile.mkdirs()
         file.writeText(
             """
             |package com.iching.ai.data
             |
-            |internal object BuildSecrets {
-            |    const val DEFAULT_GEMINI_API_KEY: String = "${key.replace("\"", "")}"
+            |object BuildConfig {
+            |    const val API_BASE_URL: String = "${url.replace("\"", "")}"
+            |    const val WEB_BASE_URL: String = "${web.replace("\"", "")}"
             |}
             |""".trimMargin()
         )
@@ -58,7 +73,7 @@ kotlin {
 
     sourceSets {
         commonMain {
-            kotlin.srcDir(generateBuildSecrets)
+            kotlin.srcDir(generateBuildConfig)
             dependencies {
                 api(projects.core.domain)
                 implementation(libs.compose.runtime)

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +16,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -31,16 +34,21 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.feature.reading.CastSummary
-import com.iching.ai.feature.reading.FallbackNotice
+import com.iching.ai.feature.reading.AiContentLabel
 import com.iching.ai.feature.reading.OracleScroll
 import com.iching.ai.feature.reading.ScriptureSection
 import com.iching.ai.platform.ZenSound
@@ -59,11 +67,22 @@ fun DivinationScreen(
     viewModel: DivinationViewModel,
     onBack: () -> Unit,
     onOpenHexagram: (Int) -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenPaywall: () -> Unit,
     onDone: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sound = rememberSoundPlayer()
+    val haptics = LocalHapticFeedback.current
+
+    LaunchedEffect(state.tossKey) {
+        if (state.tossKey > 0) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+    LaunchedEffect(state.message) {
+        if (state.message != null) {
+            delay(3500)
+            viewModel.onMessageShown()
+        }
+    }
 
     LaunchedEffect(state.tossKey) {
         if (state.tossKey > 0 && state.soundEnabled) {
@@ -92,6 +111,7 @@ fun DivinationScreen(
                     when (state.phase) {
                         DivinationPhase.CASTING -> "เสี่ยงทาย"
                         DivinationPhase.REVEAL -> "ฉักกะปรากฏ"
+                        DivinationPhase.SAFETY -> "หยุดพักก่อน"
                         else -> "คำทำนาย"
                     },
                     style = MaterialTheme.typography.headlineSmall,
@@ -99,17 +119,33 @@ fun DivinationScreen(
                 )
             }
             AnimatedContent(
-                targetState = state.phase == DivinationPhase.CASTING,
+                targetState = state.phase,
+                contentKey = { phase -> if (phase == DivinationPhase.CASTING) 0 else if (phase == DivinationPhase.SAFETY) 1 else 2 },
                 transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(500)) },
                 label = "phase",
                 modifier = Modifier.weight(1f),
-            ) { casting ->
-                if (casting) {
-                    CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
-                } else {
-                    ReadingStage(state, onOpenHexagram, viewModel::onRetryInterpretation, onOpenSettings, onDone)
+            ) { phase ->
+                when (phase) {
+                    DivinationPhase.CASTING -> CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                    DivinationPhase.SAFETY -> SafetyStage(state.safetyMessage.orEmpty(), onDone)
+                    else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone)
                 }
             }
+        }
+        state.message?.let { msg ->
+            Text(
+                msg,
+                style = MaterialTheme.typography.bodySmall,
+                color = ZenColors.PaperCream,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(20.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(ZenColors.InkBlack.copy(alpha = 0.9f))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            )
         }
     }
 }
@@ -163,7 +199,9 @@ private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRem
         Spacer(Modifier.height(18.dp))
         Box(Modifier.height(28.dp), contentAlignment = Alignment.Center) {
             val last = state.tosses.lastOrNull()
-            if (!state.isTossing && last != null) {
+            if (state.awaitingCast) {
+                Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
+            } else if (!state.isTossing && last != null) {
                 Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
             }
         }
@@ -191,9 +229,9 @@ private fun lineLabel(line: LineType): String = when (line) {
 @Composable
 private fun ReadingStage(
     state: DivinationUiState,
+    viewModel: DivinationViewModel,
     onOpenHexagram: (Int) -> Unit,
-    onRetry: () -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenPaywall: () -> Unit,
     onDone: () -> Unit,
 ) {
     val cast = state.cast ?: run {
@@ -202,11 +240,13 @@ private fun ReadingStage(
         }
         return
     }
+    var showReport by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(scroll)
+            .imePadding()
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -221,9 +261,19 @@ private fun ReadingStage(
         )
         Spacer(Modifier.height(24.dp))
         if (state.phase != DivinationPhase.REVEAL) {
-            state.fallbackReason?.let {
-                FallbackNotice(it, onRetry = onRetry, onOpenSettings = onOpenSettings)
-                Spacer(Modifier.height(16.dp))
+            if (state.phase == DivinationPhase.COMPLETE) {
+                state.notice?.let {
+                    ReadingNoticeCard(
+                        notice = it,
+                        status = state.status,
+                        canRetry = state.serverReadingId != null,
+                        isWatchingAd = state.isWatchingAd,
+                        onRetry = viewModel::onInterpretAgain,
+                        onWatchAd = viewModel::onWatchAd,
+                        onOpenPaywall = onOpenPaywall,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
             }
             OracleScroll(
                 text = state.interpretation,
@@ -231,8 +281,17 @@ private fun ReadingStage(
                 animate = true,
                 source = state.source,
             )
-            Spacer(Modifier.height(24.dp))
             if (state.phase == DivinationPhase.COMPLETE) {
+                AiContentLabel(
+                    source = state.source,
+                    onReport = if (state.isAiReading) ({ showReport = true }) else null,
+                    reported = state.reported,
+                )
+                Spacer(Modifier.height(20.dp))
+                if (state.isAiReading) {
+                    FollowUpSection(state, viewModel::onSendFollowUp, onOpenPaywall)
+                    Spacer(Modifier.height(24.dp))
+                }
                 ScriptureSection(cast.primary, cast.relating, cast.changingPositions)
                 Spacer(Modifier.height(20.dp))
                 Text(
@@ -243,6 +302,8 @@ private fun ReadingStage(
                 Spacer(Modifier.height(12.dp))
                 ZenSecondaryButton("กลับสู่ความสงบ", onClick = onDone)
                 Spacer(Modifier.height(28.dp))
+            } else {
+                Spacer(Modifier.height(24.dp))
             }
         } else {
             Text(
@@ -251,6 +312,15 @@ private fun ReadingStage(
                 color = ZenColors.InkSoft,
             )
         }
+    }
+    if (showReport) {
+        ReportDialog(
+            onDismiss = { showReport = false },
+            onSubmit = {
+                showReport = false
+                viewModel.onReport(it)
+            },
+        )
     }
     // Keep the newest words in view while the scroll unrolls.
     LaunchedEffect(state.interpretation.length / 120) {

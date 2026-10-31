@@ -1,8 +1,24 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.googleServices)
+    alias(libs.plugins.firebaseCrashlytics)
+}
+
+// Keys live in local.properties (not committed). Defaults are Google's public AdMob *test* ids.
+val localProps = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+fun prop(name: String, default: String) = (findProperty(name) as String?) ?: localProps.getProperty(name) ?: default
+
+// Release signing: create keystore.properties at the root (storeFile, storePassword, keyAlias, keyPassword).
+val keystoreProps = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use(::load)
 }
 
 dependencies {
@@ -10,6 +26,20 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.foundation)
     implementation(libs.koin.android)
+
+    implementation(project.dependencies.platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.revenuecat.purchases)
+    implementation(libs.play.services.ads)
+    implementation(libs.ump)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.playServices)
+    implementation(libs.googleid)
+    implementation(libs.kotlinx.coroutines.core)
 }
 
 android {
@@ -20,8 +50,25 @@ android {
         applicationId = "com.iching.ai"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
+
+        buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${prop("REVENUECAT_ANDROID_KEY", "")}\"")
+        buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"${prop("ADMOB_REWARDED_ANDROID", "ca-app-pub-3940256099942544/5224354917")}\"")
+        manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID_ANDROID", "ca-app-pub-3940256099942544~3347511713")
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
     packaging {
         resources {
@@ -31,6 +78,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            if (keystoreProps.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

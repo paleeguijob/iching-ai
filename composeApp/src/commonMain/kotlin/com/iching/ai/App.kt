@@ -25,7 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +56,16 @@ import com.iching.ai.navigation.HomeRoute
 import com.iching.ai.navigation.JournalEntryRoute
 import com.iching.ai.navigation.JournalRoute
 import com.iching.ai.navigation.LibraryRoute
+import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.feature.onboarding.OnboardingScreen
+import com.iching.ai.feature.paywall.PaywallScreen
+import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.usecase.ObserveSettingsUseCase
+import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.session.AppSession
+import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenTheme
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,6 +83,28 @@ private val TABS = listOf(
 @Composable
 fun App() {
     ZenTheme {
+        val observeSettings = koinInject<ObserveSettingsUseCase>()
+        val updateSettings = koinInject<UpdateSettingsUseCase>()
+        val session = koinInject<AppSession>()
+        val settings by remember { observeSettings() }.collectAsState(initial = null)
+        val scope = rememberCoroutineScope()
+        val current = settings
+        when {
+            current == null -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
+            !current.onboardingAccepted -> OnboardingScreen(onAccept = {
+                scope.launch { updateSettings { it.copy(onboardingAccepted = true) } }
+            })
+            else -> {
+                LaunchedEffect(Unit) { session.start() }
+                MainNavigation()
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainNavigation() {
+    run {
         val nav = rememberNavController()
         val backStack by nav.currentBackStackEntryAsState()
         val destination = backStack?.destination
@@ -88,7 +123,7 @@ fun App() {
                 composable<HomeRoute> {
                     HomeScreen(
                         viewModel = koinViewModel(),
-                        onCast = { nav.navigate(DivinationRoute(it)) },
+                        onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                     )
@@ -96,10 +131,10 @@ fun App() {
                 composable<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
-                        viewModel = koinViewModel { parametersOf(route.question) },
+                        viewModel = koinViewModel { parametersOf(route.question, QuestionCategory.fromWire(route.category)) },
                         onBack = { nav.popBackStack() },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
-                        onOpenSettings = { nav.navigate(SettingsRoute) },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
                         onDone = { nav.popBackStack() },
                     )
                 }
@@ -118,6 +153,7 @@ fun App() {
                         viewModel = koinViewModel(),
                         onOpenEntry = { nav.navigate(JournalEntryRoute(it)) },
                         onStartCasting = { openTab(TABS.first()) },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
                 composable<JournalEntryRoute> { entry ->
@@ -129,7 +165,14 @@ fun App() {
                     )
                 }
                 composable<SettingsRoute> {
-                    SettingsScreen(viewModel = koinViewModel(), onBack = { nav.popBackStack() })
+                    SettingsScreen(
+                        viewModel = koinViewModel(),
+                        onBack = { nav.popBackStack() },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
+                    )
+                }
+                composable<PaywallRoute> {
+                    PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popBackStack() })
                 }
             }
 

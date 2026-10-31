@@ -10,12 +10,21 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
+import com.iching.ai.domain.model.FollowUpTurn
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
+import com.iching.ai.domain.model.Outcome
+import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.repository.JournalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 @Entity(tableName = "readings")
 data class ReadingEntity(
@@ -28,6 +37,13 @@ data class ReadingEntity(
     val relatingId: Int?,
     val interpretation: String,
     val source: String,
+    // ---- added in version 2 ----
+    val serverId: String? = null,
+    val category: String? = null,
+    val outcome: String? = null,
+    val outcomeNote: String? = null,
+    /** JSON array of {q, a}. */
+    val followUpsJson: String? = null,
 )
 
 @Dao
@@ -38,17 +54,34 @@ interface ReadingDao {
     @Query("SELECT * FROM readings WHERE id = :id")
     suspend fun get(id: Long): ReadingEntity?
 
+    @Query("SELECT serverId FROM readings WHERE serverId IS NOT NULL")
+    suspend fun serverIds(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: ReadingEntity): Long
 
     @Query("DELETE FROM readings WHERE id = :id")
     suspend fun delete(id: Long)
+
+    @Query("DELETE FROM readings")
+    suspend fun clear()
 }
 
-@Database(entities = [ReadingEntity::class], version = 1)
+@Database(entities = [ReadingEntity::class], version = 2)
 @ConstructedBy(JournalDatabaseConstructor::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun readingDao(): ReadingDao
+}
+
+/** v1 → v2: server id, category, "did it come true?" outcome and follow-up turns. */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE readings ADD COLUMN serverId TEXT")
+        connection.execSQL("ALTER TABLE readings ADD COLUMN category TEXT")
+        connection.execSQL("ALTER TABLE readings ADD COLUMN outcome TEXT")
+        connection.execSQL("ALTER TABLE readings ADD COLUMN outcomeNote TEXT")
+        connection.execSQL("ALTER TABLE readings ADD COLUMN followUpsJson TEXT")
+    }
 }
 
 // Room generates the actual implementations for each platform.
@@ -56,6 +89,12 @@ abstract class JournalDatabase : RoomDatabase() {
 expect object JournalDatabaseConstructor : RoomDatabaseConstructor<JournalDatabase> {
     override fun initialize(): JournalDatabase
 }
+
+@Serializable
+private data class TurnJson(val q: String, val a: String)
+
+private val json = Json { ignoreUnknownKeys = true }
+private val turnsSerializer = ListSerializer(TurnJson.serializer())
 
 internal fun ReadingEntity.toDomain() = Reading(
     id = id,
@@ -66,6 +105,14 @@ internal fun ReadingEntity.toDomain() = Reading(
     relatingId = relatingId,
     interpretation = interpretation,
     source = InterpretationSource.valueOf(source),
+    serverId = serverId,
+    category = QuestionCategory.fromWire(category),
+    outcome = outcome?.let { runCatching { Outcome.valueOf(it) }.getOrNull() },
+    outcomeNote = outcomeNote,
+    followUps = followUpsJson
+        ?.let { runCatching { json.decodeFromString(turnsSerializer, it) }.getOrNull() }
+        .orEmpty()
+        .map { FollowUpTurn(it.q, it.a) },
 )
 
 internal fun Reading.toEntity() = ReadingEntity(
@@ -77,6 +124,11 @@ internal fun Reading.toEntity() = ReadingEntity(
     relatingId = relatingId,
     interpretation = interpretation,
     source = source.name,
+    serverId = serverId,
+    category = category?.wire,
+    outcome = outcome?.name,
+    outcomeNote = outcomeNote,
+    followUpsJson = if (followUps.isEmpty()) null else json.encodeToString(turnsSerializer, followUps.map { TurnJson(it.question, it.answer) }),
 )
 
 class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {
@@ -84,4 +136,12 @@ class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {
     override suspend fun get(id: Long): Reading? = dao.get(id)?.toDomain()
     override suspend fun save(reading: Reading): Long = dao.upsert(reading.toEntity())
     override suspend fun delete(id: Long) = dao.delete(id)
+    override suspend fun clear() = dao.clear()
+
+    override suspend fun mergeFromServer(readings: List<Reading>): Int {
+        val known = dao.serverIds().toSet()
+        val fresh = readings.filter { it.serverId != null && it.serverId !in known }
+        fresh.forEach { dao.upsert(it.copy(id = 0).toEntity()) }
+        return fresh.size
+    }
 }

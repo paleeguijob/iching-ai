@@ -48,6 +48,16 @@ class DeleteReadingUseCase(private val journal: JournalRepository) {
     suspend operator fun invoke(id: Long) = journal.delete(id)
 }
 
+/** Free seekers see the last [days] days of their journal; null = everything (Premium). */
+class FilterJournalUseCase {
+    operator fun invoke(readings: List<Reading>, days: Int?, nowMillis: Long): Pair<List<Reading>, Int> {
+        if (days == null) return readings to 0
+        val cutoff = nowMillis - days * 24L * 60 * 60 * 1000
+        val (visible, hidden) = readings.partition { it.createdAtMillis >= cutoff }
+        return visible to hidden.size
+    }
+}
+
 class ObserveSettingsUseCase(private val settings: SettingsRepository) {
     operator fun invoke(): Flow<AppSettings> = settings.settings
 }
