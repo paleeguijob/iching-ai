@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { castHexagram, changingPositions, Coin, resolveLines } from "../src/core/cast";
-import { estimateCostThb, GeminiError, streamGemini } from "../src/core/gemini";
+import { estimateCostThb, GeminiError, PRICES_USD_PER_M, streamGemini } from "../src/core/gemini";
 import { loadScripture } from "../src/core/hexagrams";
 import { buildFollowUpPrompt, buildReadingPrompt, PERSONA, sanitizeQuestion } from "../src/core/prompt";
 import {
@@ -195,8 +195,8 @@ describe("quota", () => {
 
   it("kill switch and forced model", () => {
     assert.deepEqual(chargeReading(fresh(), dev(), { ...cfg, aiEnabled: false }, now), { ok: false, reason: "ai_disabled" });
-    const r = chargeReading({ ...fresh(), premiumUntil: now + 1000 }, null, { ...cfg, forceModel: "gemini-flash-lite-latest" }, now);
-    assert.ok(r.ok && r.model === "gemini-flash-lite-latest");
+    const r = chargeReading({ ...fresh(), premiumUntil: now + 1000 }, null, { ...cfg, forceModel: "gemini-2.5-flash-lite" }, now);
+    assert.ok(r.ok && r.model === "gemini-2.5-flash-lite");
   });
 
   it("usage resets on a new day", () => {
@@ -249,7 +249,17 @@ describe("gemini stream", () => {
   });
 
   it("estimates cost in baht", () => {
-    const thb = estimateCostThb("gemini-flash-lite-latest", { tokensIn: 2000, tokensOut: 800 });
-    assert.ok(thb > 0.01 && thb < 0.03);
+    const usage = { tokensIn: 2000, tokensOut: 800 };
+    const lite = estimateCostThb("gemini-2.5-flash-lite", usage);
+    assert.ok(lite > 0.01 && lite < 0.03);
+    const flash = estimateCostThb("gemini-2.5-flash", usage);
+    assert.ok(flash > 0.08 && flash < 0.1);
+  });
+
+  it("default models are pinned versions with a known price", () => {
+    for (const model of [DEFAULT_CONFIG.freeModel, DEFAULT_CONFIG.premiumModel]) {
+      assert.ok(!model.endsWith("-latest"), `${model} is an alias whose price can change`);
+      assert.ok(PRICES_USD_PER_M[model], `${model} has no price`);
+    }
   });
 });

@@ -15,6 +15,13 @@ val localProps = Properties().apply {
 }
 fun prop(name: String, default: String) = (findProperty(name) as String?) ?: localProps.getProperty(name) ?: default
 
+// RevenueCat crashes a release build on purpose if it finds a Test Store key, so that key is debug-only.
+val revenueCatKey = prop("REVENUECAT_ANDROID_KEY", "")
+val revenueCatTestKey = prop("REVENUECAT_ANDROID_TEST_KEY", "")
+require(!revenueCatKey.startsWith("test_")) {
+    "REVENUECAT_ANDROID_KEY must be the goog_ key; put the test_ key in REVENUECAT_ANDROID_TEST_KEY"
+}
+
 // Release signing: create keystore.properties at the root (storeFile, storePassword, keyAlias, keyPassword).
 val keystoreProps = Properties().apply {
     val file = rootProject.file("keystore.properties")
@@ -53,7 +60,6 @@ android {
         versionCode = 2
         versionName = "1.0.0"
 
-        buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${prop("REVENUECAT_ANDROID_KEY", "")}\"")
         buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"${prop("ADMOB_REWARDED_ANDROID", "ca-app-pub-3940256099942544/5224354917")}\"")
         manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID_ANDROID", "ca-app-pub-3940256099942544~3347511713")
     }
@@ -76,7 +82,11 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${revenueCatTestKey.ifBlank { revenueCatKey }}\"")
+        }
         getByName("release") {
+            buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"$revenueCatKey\"")
             isMinifyEnabled = false
             if (keystoreProps.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
         }

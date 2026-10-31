@@ -140,12 +140,12 @@ export async function* streamGemini(prompt: Prompt, opts: StreamOptions): AsyncG
 
 /** Approximate cost in Thai baht, for the cost log (prices per 1M tokens, USD; update with Google's price page). */
 export const PRICES_USD_PER_M: Record<string, { in: number; out: number }> = {
-  "gemini-flash-lite-latest": { in: 0.1, out: 0.4 },
-  "gemini-flash-latest": { in: 0.3, out: 2.5 },
-  "gemini-pro-latest": { in: 1.25, out: 10 },
+  "gemini-2.5-flash-lite": { in: 0.1, out: 0.4 },
+  "gemini-2.5-flash": { in: 0.3, out: 2.5 },
+  "gemini-2.5-pro": { in: 1.25, out: 10 },
 };
 
 export function estimateCostThb(model: string, usage: Usage, usdToThb = 35): number {
-  const p = PRICES_USD_PER_M[model] ?? PRICES_USD_PER_M["gemini-flash-latest"];
+  const p = PRICES_USD_PER_M[model] ?? PRICES_USD_PER_M["gemini-2.5-flash"];
   return ((usage.tokensIn * p.in + usage.tokensOut * p.out) / 1_000_000) * usdToThb;
 }

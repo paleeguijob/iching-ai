@@ -1,10 +1,11 @@
 [versions]
 # Native SDKs used by androidApp (check for newer versions before release; Google Play requires
-# Play Billing Library 8+ for new apps from Aug 2026, which RevenueCat 9.x provides).
+# Play Billing Library 8+ for new apps from Aug 2026, which RevenueCat 9.x provides;
+# RevenueCat Test Store needs 9.9.0+).
 firebase-bom = "34.0.0"
 google-services = "4.4.3"
 firebase-crashlytics-plugin = "3.0.4"
-revenuecat = "9.0.0"
+revenuecat = "9.29.1"
 play-services-ads = "24.4.0"
 ump = "3.2.0"
 androidx-credentials = "1.5.0"

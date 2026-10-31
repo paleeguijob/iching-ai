@@ -28,8 +28,9 @@ export interface RuntimeConfig {
 export const DEFAULT_CONFIG: RuntimeConfig = {
   aiEnabled: true,
   forceModel: null,
-  freeModel: "gemini-flash-lite-latest",
-  premiumModel: "gemini-flash-latest",
+  // Pinned: "-latest" aliases can move to a pricier model without a code change.
+  freeModel: "gemini-2.5-flash-lite",
+  premiumModel: "gemini-2.5-flash",
   freeDailyReadings: 1,
   premiumDailyReadings: 10,
   adRewardsPerDay: 2,
