@@ -22,5 +22,5 @@ node_modules/
 keystore.properties
 *.jks
 *.keystore
-iosApp/Configuration/Secrets.xcconfig
-functions/.secret.local
+frontend/iosApp/Configuration/Secrets.xcconfig
+backend/functions/.secret.local

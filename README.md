@@ -15,28 +15,38 @@
 ## สถาปัตยกรรม
 
 ```
-androidApp (Firebase/RevenueCat/AdMob SDK) ─┐                       ┌─► core:data (Ktor → Cloud Function, Room, DataStore)
-iosApp     (Swift bridges, SPM packages) ───┴─► composeApp (UI, VM) ─┤
-                                                                    └─► core:domain
-functions/  Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account
-hosting/    privacy / terms / delete-account
+iching-ai/
+├── frontend/   แอปมือถือ (Kotlin Compose Multiplatform) — เปิดโฟลเดอร์นี้ใน Android Studio
+│   ├── androidApp/   Firebase/RevenueCat/AdMob SDK (Kotlin)
+│   ├── iosApp/       Swift bridges + SPM packages (เปิด iosApp.xcodeproj ใน Xcode)
+│   ├── composeApp/   UI, ViewModel, AppSession, NativeBridges
+│   └── core/         domain (Kotlin ล้วน) + data (Ktor → backend, Room, DataStore, คัมภีร์ hexagrams.json)
+├── backend/    Firebase — รัน firebase CLI จากโฟลเดอร์นี้
+│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account
+│   ├── hosting/      privacy / terms / delete-account
+│   └── firebase.json, .firebaserc, firestore.rules
+└── docs/       spec + คู่มือขึ้น store
+
+frontend ↔ backend คุยกันผ่าน HTTPS เท่านั้น (สัญญา API: backend/functions/src/core/api.ts ↔ frontend/core/data/.../HttpOracleApi.kt)
+ข้อมูลที่ใช้ร่วมกันมีชิ้นเดียวคือคัมภีร์: ต้นฉบับอยู่ที่ frontend/core/data/src/commonMain/composeResources/files/hexagrams.json
+และ backend คัดลอกไปใช้อัตโนมัติตอน build/test
 ```
 
 | Module | หน้าที่ |
 |---|---|
-| `core/domain` | Model, repository interfaces, use cases — Kotlin ล้วน |
-| `core/data` | คัมภีร์ (`hexagrams.json`), `HttpOracleApi` (SSE), Room v2 (journal), DataStore |
-| `composeApp` | Compose UI, ViewModel, Koin, `AppSession`, `NativeBridges` (สัญญากับโค้ด native) |
-| `androidApp` / `iosApp` | จุดเริ่ม + implementation ของ NativeBridges ด้วย SDK ทางการ |
-| `functions` | ตรรกะ server ทั้งหมดอยู่ใน `src/core` (ทดสอบได้โดยไม่ต้องมี Firebase) |
+| `frontend/core/domain` | Model, repository interfaces, use cases — Kotlin ล้วน |
+| `frontend/core/data` | คัมภีร์ (`hexagrams.json`), `HttpOracleApi` (SSE), Room v2 (journal), DataStore |
+| `frontend/composeApp` | Compose UI, ViewModel, Koin, `AppSession`, `NativeBridges` (สัญญากับโค้ด native) |
+| `frontend/androidApp` / `frontend/iosApp` | จุดเริ่ม + implementation ของ NativeBridges ด้วย SDK ทางการ |
+| `backend/functions` | ตรรกะ server ทั้งหมดอยู่ใน `src/core` (ทดสอบได้โดยไม่ต้องมี Firebase) |
 
 ## เริ่มใช้งาน / ขึ้น store
 ดู **[docs/RELEASE.md](docs/RELEASE.md)** — ขั้นตอนตั้งค่า Firebase, RevenueCat, AdMob, build และส่ง review ทีละข้อ
 
 ## ทดสอบ
 ```bash
-cd functions && npm install && npm test          # backend 35 tests
-./gradlew :core:domain:jvmTest :core:data:testAndroid
+cd backend/functions && npm install && npm test   # backend 35 tests
+cd frontend && ./gradlew :core:domain:jvmTest :core:data:testAndroid
 ```
 
 ## ฟอนต์

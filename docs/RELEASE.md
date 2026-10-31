@@ -1,7 +1,9 @@
 # คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP)
 
 โค้ดทั้ง backend และแอปพร้อมแล้ว เหลือขั้นตอนที่ต้องใช้บัญชีของคุณเอง ทำตามลำดับด้านล่าง
-(☐ = ต้องทำเอง · ค่าที่ต้องกรอกอยู่ใน `local.properties`, `iosApp/Configuration/Secrets.xcconfig` และ Firebase secrets)
+(☐ = ต้องทำเอง · ค่าที่ต้องกรอกอยู่ใน `frontend/local.properties`, `frontend/iosApp/Configuration/Secrets.xcconfig` และ Firebase secrets)
+
+โครงสร้าง: **`frontend/`** = แอป (เปิดใน Android Studio / Xcode) · **`backend/`** = Firebase (รันคำสั่ง `firebase` จากโฟลเดอร์นี้)
 
 ---
 
@@ -20,43 +22,43 @@
 | Store compliance | ไม่มี | Onboarding disclaimer, ป้าย "สร้างโดย AI", ปุ่มรายงานคำตอบ, Restore/Manage subscription, เงื่อนไขต่ออายุบน paywall, privacy/terms/delete-account บน Firebase Hosting, ATT + UMP consent |
 | Persona | "ห้ามบอกว่าเป็น AI" | ไม่พูดถึงเทคโนโลยีในคำทำนาย แต่ถ้าถามตรง ๆ ต้องยอมรับ |
 
-ไฟล์สำคัญ: `functions/src/core/*` (logic ทั้งหมดของ server + เทสต์ 35 ตัว) · `composeApp/.../session/AppSession.kt` ·
-`composeApp/.../feature/divination/DivinationViewModel.kt` · `composeApp/.../platform/NativeBridges.kt` (สัญญากับโค้ด native) ·
-`androidApp/.../platform/*` · `iosApp/iosApp/Bridges/*`
+ไฟล์สำคัญ: `backend/functions/src/core/*` (logic ทั้งหมดของ server + เทสต์ 35 ตัว) · `frontend/composeApp/.../session/AppSession.kt` ·
+`frontend/composeApp/.../feature/divination/DivinationViewModel.kt` · `frontend/composeApp/.../platform/NativeBridges.kt` (สัญญากับโค้ด native) ·
+`frontend/androidApp/.../platform/*` · `frontend/iosApp/iosApp/Bridges/*`
 
 ---
 
 ## 1. Firebase (มีโปรเจกต์แล้ว)
 
 1. ☐ อัปเกรดเป็นแผน **Blaze** (Cloud Functions + Secret Manager ต้องใช้) แล้วตั้ง **Budget alert** ที่ 50/90/100% ใน Google Cloud Billing
-2. ☐ แก้ `.firebaserc` → ใส่ project id จริงแทน `YOUR_FIREBASE_PROJECT_ID`
+2. ☐ แก้ `backend/.firebaserc` → ใส่ project id จริงแทน `YOUR_FIREBASE_PROJECT_ID`
 3. ☐ Authentication → Sign-in method: เปิด **Anonymous**, **Apple**, **Google**
-4. ☐ ลงทะเบียนแอป Android (`com.iching.ai`) ใส่ SHA-1 และ SHA-256 ของทั้ง debug key และ **App signing key ของ Play** → ดาวน์โหลด `google-services.json` วางที่ `androidApp/`
-5. ☐ ลงทะเบียนแอป iOS (bundle id เดียวกับใน Xcode) → ดาวน์โหลด `GoogleService-Info.plist` วางที่ `iosApp/iosApp/` (โปรเจกต์ Xcode อ้างไฟล์นี้ไว้แล้ว)
+4. ☐ ลงทะเบียนแอป Android (`com.iching.ai`) ใส่ SHA-1 และ SHA-256 ของทั้ง debug key และ **App signing key ของ Play** → ดาวน์โหลด `google-services.json` วางที่ `frontend/androidApp/`
+5. ☐ ลงทะเบียนแอป iOS (bundle id เดียวกับใน Xcode) → ดาวน์โหลด `GoogleService-Info.plist` วางที่ `frontend/iosApp/iosApp/` (โปรเจกต์ Xcode อ้างไฟล์นี้ไว้แล้ว)
 6. ☐ App Check: Android = **Play Integrity**, iOS = **App Attest** · เพิ่ม debug token จาก Logcat/Xcode console ของ debug build ใน "Manage debug tokens"
 7. ☐ Firestore: สร้างฐานข้อมูล (region `asia-southeast1`)
 8. ☐ ตั้ง secrets แล้ว deploy:
    ```bash
    npm i -g firebase-tools && firebase login
-   cd functions && npm install && npm test        # ต้องผ่าน 35 เทสต์
+   cd backend/functions && npm install && npm test   # ต้องผ่าน 35 เทสต์
    firebase functions:secrets:set GEMINI_API_KEY          # key จาก aistudio.google.com (แผนจ่ายเงิน = ข้อมูลไม่ถูกใช้ฝึกโมเดล)
    firebase functions:secrets:set REVENUECAT_API_KEY      # sk_... (ยังไม่มีใส่ unset ไปก่อน)
    firebase functions:secrets:set REVENUECAT_WEBHOOK_AUTH # สุ่มยาว ๆ เช่น openssl rand -hex 32
-   cd .. && firebase deploy --only functions,firestore:rules,hosting
+   cd .. && firebase deploy --only functions,firestore:rules,hosting   # รันใน backend/
    ```
-9. ☐ ใส่ URL ใน `local.properties` (ทั้ง Android และ iOS build ใช้ไฟล์นี้):
+9. ☐ ใส่ URL ใน `frontend/local.properties` (ทั้ง Android และ iOS build ใช้ไฟล์นี้):
    ```properties
    ICHING_API_BASE_URL=https://asia-southeast1-<project-id>.cloudfunctions.net/api
    ICHING_WEB_BASE_URL=https://<project-id>.web.app
    ```
-10. ☐ แก้ `hosting/public/*.html`: แทน `SUPPORT_EMAIL`, `DEVELOPER_NAME`, `EFFECTIVE_DATE` แล้ว deploy hosting อีกรอบ
+10. ☐ แก้ `backend/hosting/public/*.html`: แทน `SUPPORT_EMAIL`, `DEVELOPER_NAME`, `EFFECTIVE_DATE` แล้ว deploy hosting อีกรอบ
 
 **Kill-switch / ปรับโควตาโดยไม่ต้อง deploy:** สร้างเอกสาร Firestore `config/runtime` ใส่ฟิลด์ที่ต้องการ override เช่น
 `aiEnabled: false` (ปิด AI ทุกคน → ได้ตัวบทแทน), `forceModel: "gemini-flash-lite-latest"` (สลับทุกคนไปรุ่นถูก),
-`freeDailyReadings`, `premiumDailyReadings`, `adRewardsPerDay`, `enforceAppCheck` — มีผลภายใน 60 วินาที (ดูค่าทั้งหมดใน `functions/src/core/quota.ts`)
+`freeDailyReadings`, `premiumDailyReadings`, `adRewardsPerDay`, `enforceAppCheck` — มีผลภายใน 60 วินาที (ดูค่าทั้งหมดใน `backend/functions/src/core/quota.ts`)
 
 **ดูต้นทุนจริง:** Cloud Logging กรอง `jsonPayload.message="reading_cost"` (มี tokensIn/tokensOut/costThb ต่อคำขอ) → สร้าง Log sink ไป BigQuery ถ้าต้องการรายงาน
-ราคาในโค้ด (`PRICES_USD_PER_M` ใน `functions/src/core/gemini.ts`) เป็นค่าประมาณจาก spec — เช็กหน้า pricing ของ Google แล้วแก้ให้ตรง
+ราคาในโค้ด (`PRICES_USD_PER_M` ใน `backend/functions/src/core/gemini.ts`) เป็นค่าประมาณจาก spec — เช็กหน้า pricing ของ Google แล้วแก้ให้ตรง
 
 ---
 
@@ -71,8 +73,8 @@
 4. ☐ Offering ที่เป็น **Current**: package Monthly, Annual และ custom package สำหรับ `iching_coins_10`
 5. ☐ Integrations → Webhooks: URL `https://asia-southeast1-<project-id>.cloudfunctions.net/revenuecatWebhook`, Authorization header = `Bearer <REVENUECAT_WEBHOOK_AUTH>`
 6. ☐ ใส่ public SDK keys:
-   - Android: `local.properties` → `REVENUECAT_ANDROID_KEY=goog_...`
-   - iOS: สร้าง `iosApp/Configuration/Secrets.xcconfig` → `REVENUECAT_IOS_KEY = appl_...`
+   - Android: `frontend/local.properties` → `REVENUECAT_ANDROID_KEY=goog_...`
+   - iOS: สร้าง `frontend/iosApp/Configuration/Secrets.xcconfig` → `REVENUECAT_IOS_KEY = appl_...`
 7. ☐ ใส่ secret key (v1 `sk_...`) ลง `REVENUECAT_API_KEY` แล้ว `firebase deploy --only functions`
 
 ---
@@ -81,10 +83,10 @@
 
 1. ☐ สร้างแอป Android + iOS และ ad unit แบบ **Rewarded** อย่างละ 1
 2. ☐ ใส่ค่า (ตอนนี้ใช้ test id ของ Google อยู่ — **ห้ามปล่อย production ด้วย test id**):
-   - Android `local.properties`: `ADMOB_APP_ID_ANDROID=ca-app-pub-...~...`, `ADMOB_REWARDED_ANDROID=ca-app-pub-.../...`
-   - iOS `Secrets.xcconfig`: `ADMOB_APP_ID_IOS = ...`, `ADMOB_REWARDED_IOS = ...`
+   - Android `frontend/local.properties`: `ADMOB_APP_ID_ANDROID=ca-app-pub-...~...`, `ADMOB_REWARDED_ANDROID=ca-app-pub-.../...`
+   - iOS `frontend/iosApp/Configuration/Secrets.xcconfig`: `ADMOB_APP_ID_IOS = ...`, `ADMOB_REWARDED_IOS = ...`
 3. ☐ Privacy & messaging: สร้างข้อความ GDPR (UMP) — แอปเรียกฟอร์มให้อัตโนมัติเฉพาะผู้ใช้ในยุโรป
-4. ☐ เพิ่ม `app-ads.txt` บนเว็บไซต์ผู้พัฒนา (ใส่ใน `hosting/public/app-ads.txt` ได้)
+4. ☐ เพิ่ม `app-ads.txt` บนเว็บไซต์ผู้พัฒนา (ใส่ใน `backend/hosting/public/app-ads.txt` ได้)
 5. ☐ iOS: อัปเดตรายการ `SKAdNetworkItems` ใน `Info.plist` ให้ครบตามเอกสาร AdMob ล่าสุด (ตอนนี้ใส่ของ Google ไว้ 1 รายการ)
 
 ---
@@ -92,9 +94,9 @@
 ## 4. Build แอป
 
 **Android**
-1. ☐ เปิดโปรเจกต์ใน Android Studio → Sync (ถ้า plugin/SDK เวอร์ชันใน `gradle/libs.versions.toml` ไม่ตรงกับที่มี ให้กด update ตามที่ IDE แนะนำ)
+1. ☐ เปิดโฟลเดอร์ **`frontend/`** ใน Android Studio → Sync (ถ้า plugin/SDK เวอร์ชันใน `gradle/libs.versions.toml` ไม่ตรงกับที่มี ให้กด update ตามที่ IDE แนะนำ)
 2. ☐ `./gradlew :core:domain:jvmTest :core:data:testAndroid` แล้วรันบนเครื่องจริง
-3. ☐ สร้าง upload keystore แล้วเขียน `keystore.properties` ที่ root:
+3. ☐ สร้าง upload keystore แล้วเขียน `frontend/keystore.properties`:
    ```properties
    storeFile=release.jks
    storePassword=...
@@ -104,9 +106,9 @@
 4. ☐ `./gradlew :androidApp:bundleRelease` → ได้ `.aab`
 
 **iOS**
-1. ☐ เปิด `iosApp/iosApp.xcodeproj` → Xcode จะดึง Swift packages (Firebase 12, RevenueCat 5, Google Mobile Ads 12, UMP 3) ให้เอง
-   — ถ้าดึงแล้วเป็นเวอร์ชันหลักที่ใหม่กว่า และชื่อ API ใน `iosApp/iosApp/Bridges/IosAdsAndAnalytics.swift` ไม่ตรง ให้ส่ง error มา
-2. ☐ ใส่ `TEAM_ID` ใน `Config.xcconfig` (bundle id จะเป็น `com.iching.ai<TEAM_ID>` ตามเทมเพลตเดิม — ถ้าต้องการ `com.iching.ai` ตรง ๆ ให้แก้ `PRODUCT_BUNDLE_IDENTIFIER`)
+1. ☐ เปิด `frontend/iosApp/iosApp.xcodeproj` → Xcode จะดึง Swift packages (Firebase 12, RevenueCat 5, Google Mobile Ads 12, UMP 3) ให้เอง
+   — ถ้าดึงแล้วเป็นเวอร์ชันหลักที่ใหม่กว่า และชื่อ API ใน `frontend/iosApp/iosApp/Bridges/IosAdsAndAnalytics.swift` ไม่ตรง ให้ส่ง error มา
+2. ☐ ใส่ `TEAM_ID` ใน `frontend/iosApp/Configuration/Config.xcconfig` (bundle id จะเป็น `com.iching.ai<TEAM_ID>` ตามเทมเพลตเดิม — ถ้าต้องการ `com.iching.ai` ตรง ๆ ให้แก้ `PRODUCT_BUNDLE_IDENTIFIER`)
 3. ☐ Signing & Capabilities: ยืนยันว่ามี **Sign in with Apple** และ **App Attest** (มาจาก `iosApp.entitlements`)
 4. ☐ Product → Archive → อัปโหลด TestFlight
 
