@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -148,7 +149,7 @@ fun ZenPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(54.dp),
+        modifier = modifier.heightIn(min = 54.dp),
         shape = RoundedCornerShape(28.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = color,
@@ -156,9 +157,9 @@ fun ZenPrimaryButton(
             disabledContainerColor = color.copy(alpha = 0.25f),
             disabledContentColor = ZenColors.PaperCream,
         ),
-        contentPadding = PaddingValues(horizontal = 32.dp),
+        contentPadding = PaddingValues(horizontal = 32.dp, vertical = 10.dp),
     ) {
-        Text(text, style = MaterialTheme.typography.titleMedium)
+        Text(text, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
     }
 }
 
@@ -166,12 +167,13 @@ fun ZenPrimaryButton(
 fun ZenSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.heightIn(min = 48.dp),
         shape = RoundedCornerShape(24.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, ZenColors.InkBlack.copy(alpha = 0.35f)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = ZenColors.InkBlack),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp),
     ) {
-        Text(text, style = MaterialTheme.typography.labelLarge)
+        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
