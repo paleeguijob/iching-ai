@@ -38,6 +38,17 @@ class HttpOracleApiTest {
     private val sse = headersOf(HttpHeaders.ContentType, "text/event-stream")
 
     @Test
+    fun deleteReadingCallsTheReadingRoute() = runTest {
+        var request = ""
+        val engine = MockEngine { r ->
+            request = "${r.method.value} ${r.url.encodedPath}"
+            respond("""{"ok":true}""", HttpStatusCode.OK)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").deleteReading("r1")
+        assertEquals("DELETE /api/readings/r1", request)
+    }
+
+    @Test
     fun relaysCastDeltaAndDone() = runTest {
         var sentBody = ""
         var auth = ""

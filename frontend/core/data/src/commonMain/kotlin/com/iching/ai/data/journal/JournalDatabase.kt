@@ -46,6 +46,10 @@ data class ReadingEntity(
     val followUpsJson: String? = null,
 )
 
+/** A server reading the seeker deleted here that the server has not confirmed deleting yet. */
+@Entity(tableName = "deleted_readings")
+data class DeletedReadingEntity(@PrimaryKey val serverId: String)
+
 @Dao
 interface ReadingDao {
     @Query("SELECT * FROM readings ORDER BY createdAtMillis DESC")
@@ -65,9 +69,21 @@ interface ReadingDao {
 
     @Query("DELETE FROM readings")
     suspend fun clear()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun markDeleted(entity: DeletedReadingEntity)
+
+    @Query("SELECT serverId FROM deleted_readings")
+    suspend fun deletedServerIds(): List<String>
+
+    @Query("DELETE FROM deleted_readings WHERE serverId = :serverId")
+    suspend fun deletionSynced(serverId: String)
+
+    @Query("DELETE FROM deleted_readings")
+    suspend fun clearDeleted()
 }
 
-@Database(entities = [ReadingEntity::class], version = 2)
+@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class], version = 3)
 @ConstructedBy(JournalDatabaseConstructor::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun readingDao(): ReadingDao
@@ -81,6 +97,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         connection.execSQL("ALTER TABLE readings ADD COLUMN outcome TEXT")
         connection.execSQL("ALTER TABLE readings ADD COLUMN outcomeNote TEXT")
         connection.execSQL("ALTER TABLE readings ADD COLUMN followUpsJson TEXT")
+    }
+}
+
+/** v2 → v3: server readings deleted on this device, so a journal sync does not bring them back. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `deleted_readings` (`serverId` TEXT NOT NULL, PRIMARY KEY(`serverId`))")
     }
 }
 
@@ -136,10 +159,17 @@ class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {
     override suspend fun get(id: Long): Reading? = dao.get(id)?.toDomain()
     override suspend fun save(reading: Reading): Long = dao.upsert(reading.toEntity())
     override suspend fun delete(id: Long) = dao.delete(id)
-    override suspend fun clear() = dao.clear()
+    override suspend fun markDeleted(serverId: String) = dao.markDeleted(DeletedReadingEntity(serverId))
+    override suspend fun pendingDeletions(): List<String> = dao.deletedServerIds()
+    override suspend fun deletionSynced(serverId: String) = dao.deletionSynced(serverId)
+
+    override suspend fun clear() {
+        dao.clear()
+        dao.clearDeleted()
+    }
 
     override suspend fun mergeFromServer(readings: List<Reading>): Int {
-        val known = dao.serverIds().toSet()
+        val known = dao.serverIds().toSet() + dao.deletedServerIds()
         val fresh = readings.filter { it.serverId != null && it.serverId !in known }
         fresh.forEach { dao.upsert(it.copy(id = 0).toEntity()) }
         return fresh.size

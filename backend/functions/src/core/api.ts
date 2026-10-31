@@ -26,8 +26,10 @@ import {
   chargeReading,
   DeviceDoc,
   grantAdReward,
+  MAX_FREE_RESUMES,
   QuotaStatus,
   refundReading,
+  resumeReading,
   RuntimeConfig,
   status,
   UserDoc,
@@ -78,6 +80,8 @@ export interface StoredReading {
   tokensIn: number;
   tokensOut: number;
   charge: Charge | null;
+  /** The connection dropped mid-reading: [charge] was kept, and [resumes] free retries have been used. */
+  interrupted: { charge: Charge; resumes: number } | null;
   followUps: (FollowUpTurn & { at: number })[];
   followUpCount: number;
   outcome: "yes" | "no" | "partly" | null;
@@ -97,6 +101,7 @@ export interface Store {
   createReading(uid: string, reading: Omit<StoredReading, "id">): Promise<string>;
   getReading(uid: string, id: string): Promise<StoredReading | null>;
   updateReading(uid: string, id: string, patch: Partial<Omit<StoredReading, "id">>): Promise<void>;
+  deleteReading(uid: string, id: string): Promise<void>;
   /** Atomically bumps followUpCount when below [limit]; returns false when the limit is reached. */
   reserveFollowUp(uid: string, id: string, limit: number): Promise<boolean>;
   releaseFollowUp(uid: string, id: string): Promise<void>;
@@ -205,8 +210,9 @@ export function createApi(deps: Deps) {
 
   /** Streams an AI reading for an existing cast, charging quota first and refunding on failure. */
   async function interpret(sse: Sse, uid: string, deviceHash: string | null, cfg: RuntimeConfig, reading: StoredReading, cast: Cast) {
+    const resuming = reading.interrupted && reading.interrupted.resumes < MAX_FREE_RESUMES ? reading.interrupted : null;
     const decision = await deps.store.quotaTx<ChargeDecision>(uid, deviceHash, (user, device) => {
-      const d = chargeReading(user, device, cfg, deps.now());
+      const d = resuming ? resumeReading(user, resuming.charge, cfg, deps.now()) : chargeReading(user, device, cfg, deps.now());
       return d.ok ? { user: d.user, device: d.device, result: d } : { result: d };
     });
     if (!decision.ok) {
@@ -238,6 +244,7 @@ export function createApi(deps: Deps) {
         tokensIn: usage.tokensIn,
         tokensOut: usage.tokensOut,
         charge: decision.charge,
+        interrupted: null,
       });
       deps.log.info("reading_cost", {
         uid,
@@ -249,15 +256,19 @@ export function createApi(deps: Deps) {
       });
       sse.send("done", { model: decision.model, status: await readStatus(uid, deviceHash, cfg) });
     } catch (e) {
-      // The seeker left mid-stream after receiving words: keep what they saw and the charge.
+      // The connection dropped after some words: keep the charge, since they saw part of it, but
+      // not the fragment, which the app discards. A retry regenerates the whole reading for free.
       if (sse.isClosed && text.trim().length > 0) {
-        await deps.store.updateReading(uid, reading.id, { aiText: text.trim(), source: "ai", model: decision.model, charge: decision.charge });
+        await deps.store.updateReading(uid, reading.id, {
+          interrupted: { charge: decision.charge, resumes: resuming ? resuming.resumes + 1 : 0 },
+        });
         return;
       }
       await deps.store.quotaTx(uid, deviceHash, (user, device) => {
         const back = refundReading(user, device, decision.charge);
         return { user: back.user, device: back.device, result: null };
       });
+      if (resuming) await deps.store.updateReading(uid, reading.id, { interrupted: null });
       const code = e instanceof GeminiError ? e.code : "internal";
       deps.log.warn("reading_failed", { uid, code, message: (e as Error).message });
       sse.send("error", { code, refunded: true });
@@ -301,6 +312,7 @@ export function createApi(deps: Deps) {
         tokensIn: 0,
         tokensOut: 0,
         charge: null,
+        interrupted: null,
         followUps: [],
         followUpCount: 0,
         outcome: null,
@@ -457,6 +469,12 @@ export function createApi(deps: Deps) {
         res.status(200).json({ ok: true });
         return;
       }
+      const removed = route.match(/^DELETE \/readings\/([A-Za-z0-9_-]{1,64})$/);
+      if (removed) {
+        await deps.store.deleteReading(uid, removed[1]);
+        res.status(200).json({ ok: true });
+        return;
+      }
       if (route === "POST /purchases/sync") {
         await syncPurchases(uid);
         res.status(200).json(await readStatus(uid, deviceHash, cfg));
@@ -500,6 +518,7 @@ export function uidsFromEvent(event: RevenueCatEvent): string[] {
   const add = (id?: string) => id && !id.startsWith("$RCAnonymousID") && ids.add(id);
   add(event.app_user_id);
   add(event.original_app_user_id);
+  (event.aliases ?? []).forEach(add);
   (event.transferred_from ?? []).forEach(add);
   (event.transferred_to ?? []).forEach(add);
   return [...ids];

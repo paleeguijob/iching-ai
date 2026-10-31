@@ -59,6 +59,9 @@ class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
 sealed interface PurchaseResult {
     data class Success(val status: AccountStatus) : PurchaseResult
     data object Cancelled : PurchaseResult
+
+    /** The store took the payment but the server has not confirmed it yet; restoring picks it up. */
+    data object Pending : PurchaseResult
     data class Error(val message: String) : PurchaseResult
 }
 
@@ -105,6 +108,9 @@ class AppSession(
     private val json = Json { ignoreUnknownKeys = true }
     private var started = false
 
+    /** The uid RevenueCat knows this customer by; purchases made before logIn would land elsewhere. */
+    private var purchaserUid: String? = null
+
     val supportsApple: Boolean get() = bridges.auth.supportsApple()
     val supportsGoogle: Boolean get() = bridges.auth.supportsGoogle()
     val manageSubscriptionsUrl: String get() = bridges.purchases.manageSubscriptionsUrl()
@@ -128,9 +134,36 @@ class AppSession(
     private suspend fun onSignedIn(uid: String) {
         _account.value = currentAccount()
         bridges.analytics.setUserId(uid)
-        runCatching { awaitNative { bridges.purchases.logIn(uid, it) } }
+        try {
+            identifyPurchaser(uid)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // purchase() and restorePurchases() try again before touching the store.
+            bridges.analytics.recordError("purchases_login: ${e.message}")
+        }
         refreshStatus()
-        if (_status.value.premium) syncJournal()
+        if (_status.value.premium) syncJournal() else syncDeletions()
+    }
+
+    private suspend fun identifyPurchaser(uid: String) {
+        if (purchaserUid == uid) return
+        awaitNative { bridges.purchases.logIn(uid, it) }
+        purchaserUid = uid
+    }
+
+    /** Deletes on the server what was deleted here while offline. */
+    private suspend fun syncDeletions() {
+        for (serverId in journal.pendingDeletions()) {
+            try {
+                api.deleteReading(serverId)
+                journal.deletionSynced(serverId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return
+            }
+        }
     }
 
     private fun currentAccount(): Account? {
@@ -160,6 +193,7 @@ class AppSession(
 
     /** Premium: copies server readings that are missing on this device (e.g. after reinstalling). */
     suspend fun syncJournal(): Int = try {
+        syncDeletions()
         journal.mergeFromServer(api.readings())
     } catch (e: CancellationException) {
         throw e
@@ -199,16 +233,9 @@ class AppSession(
     }
 
     suspend fun purchase(product: StoreProduct): PurchaseResult = try {
-        apiSession.ensureSignedIn()
+        identifyPurchaser(apiSession.ensureSignedIn())
         when (awaitNative { bridges.purchases.purchase(product.packageId, it) }) {
-            "purchased" -> {
-                // The webhook updates the server too; syncing now makes the change instant.
-                val status = api.syncPurchases()
-                updateStatus(status)
-                log("purchase_completed", mapOf("product" to product.productId))
-                if (status.premium) syncJournal()
-                PurchaseResult.Success(status)
-            }
+            "purchased" -> confirmPurchase(product)
             else -> PurchaseResult.Cancelled
         }
     } catch (e: CancellationException) {
@@ -217,7 +244,31 @@ class AppSession(
         PurchaseResult.Error(e.message ?: "")
     }
 
+    /** The store has the money by now, so a failure here must not read as a failed payment. */
+    private suspend fun confirmPurchase(product: StoreProduct): PurchaseResult {
+        val coinsBefore = _status.value.coins
+        val status = try {
+            // The webhook updates the server too; syncing now makes the change instant.
+            api.syncPurchases()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("purchase_sync: ${e.message}")
+            return PurchaseResult.Pending
+        }
+        updateStatus(status)
+        val applied = if (product.kind == ProductKind.COINS) status.coins > coinsBefore else status.premium
+        if (!applied) {
+            bridges.analytics.recordError("purchase_not_applied: ${product.productId}")
+            return PurchaseResult.Pending
+        }
+        log("purchase_completed", mapOf("product" to product.productId))
+        if (status.premium) syncJournal()
+        return PurchaseResult.Success(status)
+    }
+
     suspend fun restorePurchases(): PurchaseResult = try {
+        identifyPurchaser(apiSession.ensureSignedIn())
         awaitNative { bridges.purchases.restore(it) }
         val status = api.syncPurchases()
         updateStatus(status)
@@ -249,6 +300,7 @@ class AppSession(
     suspend fun deleteAccount(): Result<Unit> = try {
         api.deleteAccount()
         bridges.purchases.logOut()
+        purchaserUid = null
         bridges.auth.signOut()
         journal.clear()
         settings.clear()

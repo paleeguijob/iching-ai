@@ -29,6 +29,7 @@ kotlin {
         androidResources {
             enable = true
         }
+        withHostTestBuilder {}
     }
 
     sourceSets {
@@ -53,6 +54,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.koin.android)
             implementation(libs.androidx.activity.compose)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

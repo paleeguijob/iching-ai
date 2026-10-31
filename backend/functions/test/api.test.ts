@@ -59,6 +59,9 @@ class MemoryStore implements Store {
   async appendFollowUp(uid: string, id: string, turn: { q: string; a: string; at: number }) {
     this.readings.get(`${uid}/${id}`)!.followUps.push(turn);
   }
+  async deleteReading(uid: string, id: string) {
+    this.readings.delete(`${uid}/${id}`);
+  }
   async listReadings(uid: string) {
     return [...this.readings.entries()].filter(([k]) => k.startsWith(`${uid}/`)).map(([, v]) => v);
   }
@@ -112,7 +115,14 @@ class FakeRes implements HttpRes {
   end() {
     this.writableEnded = true;
   }
-  on() {}
+  private closers: (() => void)[] = [];
+  on(_event: "close", cb: () => void) {
+    this.closers.push(cb);
+  }
+  /** The client's connection drops. */
+  disconnect() {
+    this.closers.forEach((cb) => cb());
+  }
   get events(): { event: string; data: Record<string, unknown> }[] {
     return this.chunks.join("").split("\n\n").filter(Boolean).map((block) => {
       const [e, d] = block.split("\n");
@@ -130,7 +140,9 @@ describe("api", () => {
   let now: number;
   let store: MemoryStore;
   let modelCalls: string[];
-  let modelMode: "ok" | "fail";
+  let modelMode: "ok" | "fail" | "drop";
+  /** The response whose connection drops mid-stream when modelMode is "drop". */
+  let droppingRes: FakeRes | null;
   let cfg: RuntimeConfig;
   let entitlements: Entitlements;
   let deps: Deps;
@@ -141,6 +153,7 @@ describe("api", () => {
     store = new MemoryStore(() => now);
     modelCalls = [];
     modelMode = "ok";
+    droppingRes = null;
     cfg = { ...DEFAULT_CONFIG };
     entitlements = { premiumUntil: null, coinPurchases: [] };
     deps = {
@@ -154,10 +167,14 @@ describe("api", () => {
       store,
       scripture,
       config: async () => cfg,
-      streamModel: async function* (_p, model): AsyncGenerator<string, Usage> {
+      streamModel: async function* (_p, model, signal): AsyncGenerator<string, Usage> {
         modelCalls.push(model);
         if (modelMode === "fail") throw new GeminiError("rate_limited", "busy");
         yield "ภูเขา";
+        if (modelMode === "drop") {
+          droppingRes!.disconnect();
+          await new Promise((_, reject) => signal.addEventListener("abort", () => reject(new GeminiError("network", "aborted"))));
+        }
         yield "ตั้งมั่น";
         return { tokensIn: 1500, tokensOut: 600 };
       },
@@ -241,6 +258,101 @@ describe("api", () => {
     await handle(req("POST", "/divine", { readingId: first.events[0].data.readingId }), replay);
     assert.equal(replay.events[1].data.text, "ภูเขาตั้งมั่น");
     assert.equal(modelCalls.length, 1);
+  });
+
+  describe("connection dropped after some words", () => {
+    const dropOnce = async (body: Record<string, unknown>) => {
+      modelMode = "drop";
+      droppingRes = new FakeRes();
+      await handle(req("POST", "/divine", body), droppingRes);
+      modelMode = "ok";
+      now += 60_000;
+      return droppingRes;
+    };
+    const freeUsed = () => store.users.get("u1")!.usage.free;
+    /** Every other way of paying is ruled out, so a second charge would come back "limited". */
+    const retry = async (id: unknown) => {
+      const res = new FakeRes();
+      await handle(req("POST", "/divine", { readingId: id }), res);
+      return res;
+    };
+
+    it("does not keep half a reading as the finished one", async () => {
+      const first = await dropOnce({ question: "a" });
+      const saved = await store.getReading("u1", first.events[0].data.readingId as string);
+      assert.equal(saved?.aiText, null);
+    });
+
+    it("regenerates the full reading on retry without charging again", async () => {
+      const first = await dropOnce({ question: "a" });
+      const again = await retry(first.events[0].data.readingId);
+      assert.deepEqual(again.events.map((e) => e.event), ["cast", "delta", "delta", "done"]);
+      assert.equal(freeUsed(), 1);
+      const saved = await store.getReading("u1", first.events[0].data.readingId as string);
+      assert.equal(saved?.aiText, "ภูเขาตั้งมั่น");
+    });
+
+    it("respects the rate limit on the free retry", async () => {
+      const first = await dropOnce({ question: "a" });
+      const id = first.events[0].data.readingId;
+      now -= 58_000; // two seconds after the charge, inside minSecondsBetweenReadings
+      const tooSoon = await retry(id);
+      assert.equal(tooSoon.events.at(-1)!.data.reason, "rate_limited");
+      assert.equal(modelCalls.length, 1);
+      now += 60_000;
+      assert.equal((await retry(id)).events.at(-1)!.event, "done");
+      assert.equal(freeUsed(), 1);
+    });
+
+    it("charges again once the free retries for a reading run out", async () => {
+      const first = await dropOnce({ question: "a" });
+      const id = first.events[0].data.readingId;
+      await dropOnce({ readingId: id });
+      await dropOnce({ readingId: id });
+      assert.equal(freeUsed(), 1);
+      const limited = await retry(id);
+      assert.deepEqual(limited.events.map((e) => e.event), ["cast", "limited"]);
+      assert.equal(limited.events[1].data.reason, "quota");
+    });
+
+    it("refunds a free retry that fails, so the next attempt pays once", async () => {
+      const first = await dropOnce({ question: "a" });
+      const id = first.events[0].data.readingId;
+      modelMode = "fail";
+      await retry(id);
+      assert.equal(freeUsed(), 0);
+      modelMode = "ok";
+      now += 60_000;
+      const again = await retry(id);
+      assert.equal(again.events.at(-1)!.event, "done");
+      assert.equal(freeUsed(), 1);
+    });
+  });
+
+  it("deletes one reading, and only the caller's", async () => {
+    const mine = new FakeRes();
+    await handle(req("POST", "/divine", { question: "a" }), mine);
+    const id = mine.events[0].data.readingId as string;
+    const other = new FakeRes();
+    await handle(req("DELETE", `/readings/${id}`, {}, { authorization: "Bearer token-u2" }), other);
+    assert.equal(other.code, 200);
+    assert.notEqual(await store.getReading("u1", id), null);
+    const res = new FakeRes();
+    await handle(req("DELETE", `/readings/${id}`), res);
+    assert.equal(res.code, 200);
+    assert.equal(await store.getReading("u1", id), null);
+  });
+
+  it("revenuecat webhook finds the Firebase uid among the aliases", async () => {
+    entitlements = { premiumUntil: now + 86_400_000, coinPurchases: [] };
+    const hook = createRevenueCatWebhook(deps, () => "s3cret");
+    const anonymous = "$RCAnonymousID:abc";
+    await hook(
+      req("POST", "/", { event: { type: "RENEWAL", app_user_id: anonymous, original_app_user_id: anonymous, aliases: [anonymous, "u1"] } }, { authorization: "Bearer s3cret" }),
+      new FakeRes(),
+    );
+    assert.equal(store.users.get("u1")?.premiumUntil, now + 86_400_000);
+    assert.equal(store.users.has(anonymous), false);
   });
 
   it("follow-ups are premium-only and capped per reading", async () => {

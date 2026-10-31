@@ -149,12 +149,8 @@ export function chargeReading(
   now: number,
 ): ChargeDecision {
   if (!cfg.aiEnabled) return { ok: false, reason: "ai_disabled" };
-  if (user.lastReadingAt !== null) {
-    const elapsed = (now - user.lastReadingAt) / 1000;
-    if (elapsed < cfg.minSecondsBetweenReadings) {
-      return { ok: false, reason: "rate_limited", retryAfterSeconds: Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
-    }
-  }
+  const limited = rateLimit(user, cfg, now);
+  if (limited) return limited;
   const premium = isPremium(user, now);
   const u = { ...user.usage };
   const d = device ? { usage: { ...device.usage } } : null;
@@ -177,9 +173,28 @@ export function chargeReading(
   } else {
     return { ok: false, reason: "quota" };
   }
-  const paid = charge === "premium" || charge === "coin";
-  const model = cfg.forceModel ?? (paid ? cfg.premiumModel : cfg.freeModel);
-  return { ok: true, charge, model, user: { ...user, coins, usage: u, lastReadingAt: now }, device: d };
+  return { ok: true, charge, model: modelFor(charge, cfg), user: { ...user, coins, usage: u, lastReadingAt: now }, device: d };
+}
+
+const modelFor = (charge: Charge, cfg: RuntimeConfig) =>
+  cfg.forceModel ?? (charge === "premium" || charge === "coin" ? cfg.premiumModel : cfg.freeModel);
+
+/** Free retries per charge after the connection dropped mid-reading; further drops pay again. */
+export const MAX_FREE_RESUMES = 2;
+
+const rateLimit = (user: UserDoc, cfg: RuntimeConfig, now: number): ChargeDecision | null => {
+  if (user.lastReadingAt === null) return null;
+  const elapsed = (now - user.lastReadingAt) / 1000;
+  if (elapsed >= cfg.minSecondsBetweenReadings) return null;
+  return { ok: false, reason: "rate_limited", retryAfterSeconds: Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
+};
+
+/** Regenerates a reading whose [charge] was already taken: same limits and model, nothing charged. */
+export function resumeReading(user: UserDoc, charge: Charge, cfg: RuntimeConfig, now: number): ChargeDecision {
+  if (!cfg.aiEnabled) return { ok: false, reason: "ai_disabled" };
+  const limited = rateLimit(user, cfg, now);
+  if (limited) return limited;
+  return { ok: true, charge, model: modelFor(charge, cfg), user: { ...user, lastReadingAt: now }, device: null };
 }
 
 /** Gives back what [chargeReading] took when the model failed. */

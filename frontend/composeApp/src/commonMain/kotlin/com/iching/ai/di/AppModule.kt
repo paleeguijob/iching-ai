@@ -3,6 +3,7 @@ package com.iching.ai.di
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
@@ -46,7 +47,7 @@ val domainModule = module {
     factoryOf(::ObserveJournalUseCase)
     factoryOf(::GetReadingUseCase)
     factoryOf(::SaveReadingUseCase)
-    factoryOf(::DeleteReadingUseCase)
+    factory { DeleteReadingUseCase(get(), get<OracleApi>()::deleteReading) }
     factory { FilterJournalUseCase() }
     factoryOf(::ObserveSettingsUseCase)
     factoryOf(::UpdateSettingsUseCase)

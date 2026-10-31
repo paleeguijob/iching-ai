@@ -6,6 +6,7 @@ import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
 import com.iching.ai.domain.repository.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 class GetHexagramsUseCase(private val hexagrams: HexagramRepository) {
@@ -44,8 +45,25 @@ class SaveReadingUseCase(private val journal: JournalRepository) {
     suspend operator fun invoke(reading: Reading): Long = journal.save(reading)
 }
 
-class DeleteReadingUseCase(private val journal: JournalRepository) {
-    suspend operator fun invoke(id: Long) = journal.delete(id)
+/** Deletes on the device and the server; offline, the server copy stays marked for the next sign-in. */
+class DeleteReadingUseCase(
+    private val journal: JournalRepository,
+    private val deleteOnServer: suspend (String) -> Unit,
+) {
+    suspend operator fun invoke(id: Long) {
+        val serverId = journal.get(id)?.serverId
+        if (serverId != null) journal.markDeleted(serverId)
+        journal.delete(id)
+        if (serverId == null) return
+        try {
+            deleteOnServer(serverId)
+            journal.deletionSynced(serverId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Still marked: AppSession retries, and merging from the server skips it meanwhile.
+        }
+    }
 }
 
 /** Free seekers see the last [days] days of their journal; null = everything (Premium). */

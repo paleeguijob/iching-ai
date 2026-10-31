@@ -57,6 +57,7 @@ interface OracleApi {
     suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?)
     /** Premium only: the server copy of the journal, newest first. */
     suspend fun readings(): List<Reading>
+    suspend fun deleteReading(readingId: String)
     suspend fun syncPurchases(): AccountStatus
     suspend fun deleteAccount()
 }
@@ -66,7 +67,11 @@ interface JournalRepository {
     suspend fun get(id: Long): Reading?
     suspend fun save(reading: Reading): Long
     suspend fun delete(id: Long)
-    /** Inserts server readings that are not on this device yet (matched by serverId). */
+    /** Remembers a server reading the seeker deleted, until the server has deleted it too. */
+    suspend fun markDeleted(serverId: String)
+    suspend fun pendingDeletions(): List<String>
+    suspend fun deletionSynced(serverId: String)
+    /** Inserts server readings that are not on this device yet (matched by serverId), skipping deleted ones. */
     suspend fun mergeFromServer(readings: List<Reading>): Int
     suspend fun clear()
 }

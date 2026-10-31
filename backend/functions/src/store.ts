@@ -32,6 +32,7 @@ export function firestoreStore(db: Firestore): Store {
     tokensIn: d.tokensIn ?? 0,
     tokensOut: d.tokensOut ?? 0,
     charge: d.charge ?? null,
+    interrupted: d.interrupted ?? null,
     followUps: d.followUps ?? [],
     followUpCount: d.followUpCount ?? 0,
     outcome: d.outcome ?? null,
@@ -88,6 +89,10 @@ export function firestoreStore(db: Firestore): Store {
 
     async updateReading(uid, id, patch) {
       await readings(uid).doc(id).set(encode(patch), { merge: true });
+    },
+
+    async deleteReading(uid, id) {
+      await readings(uid).doc(id).delete();
     },
 
     async reserveFollowUp(uid, id, limit) {

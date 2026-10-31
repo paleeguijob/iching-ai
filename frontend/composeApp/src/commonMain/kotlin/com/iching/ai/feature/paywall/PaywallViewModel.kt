@@ -26,6 +26,8 @@ data class PaywallUiState(
     val coins: StoreProduct? get() = products.firstOrNull { it.kind == ProductKind.COINS }
 }
 
+private const val PENDING_MESSAGE = "ชำระเงินแล้ว แต่ระบบยังไม่อัปเดตสิทธิ์ โปรดอย่าซื้อซ้ำ กดกู้คืนการซื้ออีกครั้งในอีกสักครู่"
+
 class PaywallViewModel(private val session: AppSession) : ViewModel() {
     private val _state = MutableStateFlow(PaywallUiState())
     val state: StateFlow<PaywallUiState> = _state.asStateFlow()
@@ -69,6 +71,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                         message = if (product.kind == ProductKind.COINS) "ได้รับเหรียญแล้ว ขอบคุณที่สนับสนุน" else "ยินดีต้อนรับสู่ Premium",
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
+                    PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
                     is PurchaseResult.Error -> it.copy(busy = false, message = "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
                 }
             }
@@ -88,6 +91,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                         message = if (result.status.premium) "กู้คืนสมาชิก Premium แล้ว" else "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่",
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
+                    PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
                     is PurchaseResult.Error -> it.copy(busy = false, message = "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
                 }
             }

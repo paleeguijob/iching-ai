@@ -13,10 +13,16 @@ import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
 import com.iching.ai.domain.model.Trigram
+import com.iching.ai.domain.repository.ApiException
+import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.HexagramRepository
+import com.iching.ai.domain.repository.JournalRepository
+import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
 import kotlin.test.Test
@@ -39,6 +45,59 @@ private object FakeHexagrams : HexagramRepository {
     override suspend fun all() = all
     override suspend fun byId(id: Int) = all.first { it.id == id }
     override suspend fun byPattern(pattern: String) = all.first { it.pattern == pattern }
+}
+
+private fun fakeReading(id: Long, serverId: String?) = Reading(
+    id = id, question = "q", createdAtMillis = 0, lines = List(6) { YOUNG_YANG }, primaryId = 1, relatingId = null,
+    interpretation = "text", source = InterpretationSource.AI, serverId = serverId,
+)
+
+private class FakeJournal(vararg initial: Reading) : JournalRepository {
+    val readings = initial.toMutableList()
+    val pending = mutableListOf<String>()
+    override fun observeAll(): Flow<List<Reading>> = flowOf(readings)
+    override suspend fun get(id: Long) = readings.firstOrNull { it.id == id }
+    override suspend fun save(reading: Reading) = reading.id
+    override suspend fun delete(id: Long) {
+        readings.removeAll { it.id == id }
+    }
+    override suspend fun markDeleted(serverId: String) {
+        pending += serverId
+    }
+    override suspend fun pendingDeletions() = pending.toList()
+    override suspend fun deletionSynced(serverId: String) {
+        pending -= serverId
+    }
+    override suspend fun mergeFromServer(readings: List<Reading>) = 0
+    override suspend fun clear() = readings.clear()
+}
+
+class DeleteReadingTest {
+    @Test
+    fun deletesOnTheServerToo() = runTest {
+        val journal = FakeJournal(fakeReading(1, "s1"))
+        val deleted = mutableListOf<String>()
+        DeleteReadingUseCase(journal) { deleted += it }(1)
+        assertEquals(emptyList(), journal.readings)
+        assertEquals(listOf("s1"), deleted)
+        assertEquals(emptyList(), journal.pending)
+    }
+
+    @Test
+    fun offlineDeleteStaysPendingForLater() = runTest {
+        val journal = FakeJournal(fakeReading(1, "s1"))
+        DeleteReadingUseCase(journal) { throw ApiException(FailureReason.NETWORK, "offline") }(1)
+        assertEquals(emptyList(), journal.readings)
+        assertEquals(listOf("s1"), journal.pending)
+    }
+
+    @Test
+    fun readingCastOnThisDeviceNeverCallsTheServer() = runTest {
+        val journal = FakeJournal(fakeReading(1, null))
+        DeleteReadingUseCase(journal) { error("no server copy exists") }(1)
+        assertEquals(emptyList(), journal.readings)
+        assertEquals(emptyList(), journal.pending)
+    }
 }
 
 class DomainTest {

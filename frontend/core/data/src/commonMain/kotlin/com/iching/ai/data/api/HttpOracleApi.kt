@@ -204,6 +204,10 @@ class HttpOracleApi(
             )
         }
 
+    override suspend fun deleteReading(readingId: String) {
+        call(HttpMethod.Delete, "/readings/$readingId")
+    }
+
     override suspend fun syncPurchases(): AccountStatus =
         json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain()
 
