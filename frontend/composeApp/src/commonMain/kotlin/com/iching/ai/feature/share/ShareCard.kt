@@ -34,6 +34,8 @@ import com.iching.ai.ui.theme.InkPaperPalette
 fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
     val palette = InkPaperPalette
     val hexagram = content.hexagram
+    // The judgment and summary together need more room than a single message.
+    val compact = content.judgment != null
     Box(
         modifier
             .fillMaxSize()
@@ -47,9 +49,17 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
         ) {
             Text("กวาที่ ${hexagram.id}", style = MaterialTheme.typography.labelMedium, color = palette.bambooDeep)
             Spacer(Modifier.height(16.dp))
-            HexagramFigure(hexagram.pattern, lineWidth = 88.dp, lineHeight = 10.dp, gap = 7.dp, color = palette.inkBlack)
-            Spacer(Modifier.height(14.dp))
-            Text(hexagram.nameCn, style = MaterialTheme.typography.displayLarge, color = palette.inkBlack)
+            if (compact) {
+                HexagramFigure(hexagram.pattern, lineWidth = 64.dp, lineHeight = 7.dp, gap = 5.dp, color = palette.inkBlack)
+            } else {
+                HexagramFigure(hexagram.pattern, lineWidth = 88.dp, lineHeight = 10.dp, gap = 7.dp, color = palette.inkBlack)
+            }
+            Spacer(Modifier.height(if (compact) 8.dp else 14.dp))
+            Text(
+                hexagram.nameCn,
+                style = if (compact) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displayLarge,
+                color = palette.inkBlack,
+            )
             Text(hexagram.shortNameTh, style = MaterialTheme.typography.titleMedium, color = palette.inkSoft)
             Text(
                 hexagram.meaningTh,
@@ -59,14 +69,14 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(if (compact) 8.dp else 16.dp))
             content.judgment?.let {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
                     color = palette.inkSoft,
                     textAlign = TextAlign.Center,
-                    maxLines = 3,
+                    maxLines = 5,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(10.dp))
@@ -78,7 +88,7 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                     color = palette.inkBlack,
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = if (content.judgment == null) 8 else 6,
+                    maxLines = if (compact) 4 else 8,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

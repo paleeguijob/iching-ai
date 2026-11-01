@@ -59,6 +59,7 @@ data class DivinationUiState(
     val phase: DivinationPhase = DivinationPhase.CASTING,
     val cast: CastResult? = null,
     val interpretation: String = "",
+    val shareSummary: String? = null,
     val source: InterpretationSource? = null,
     val notice: ReadingNotice? = null,
     val serverReadingId: String? = null,
@@ -225,6 +226,7 @@ class DivinationViewModel(
                 }
                 is DivinationEvent.Done -> {
                     session.updateStatus(event.status)
+                    _state.update { it.copy(shareSummary = event.shareSummary) }
                     outcome = StreamOutcome.Done
                     settleIfReady()
                 }

@@ -141,6 +141,7 @@ describe("api", () => {
   let store: MemoryStore;
   let modelCalls: string[];
   let modelMode: "ok" | "fail" | "drop";
+  let modelChunks: string[] | null;
   /** The response whose connection drops mid-stream when modelMode is "drop". */
   let droppingRes: FakeRes | null;
   let cfg: RuntimeConfig;
@@ -153,6 +154,7 @@ describe("api", () => {
     store = new MemoryStore(() => now);
     modelCalls = [];
     modelMode = "ok";
+    modelChunks = null;
     droppingRes = null;
     cfg = { ...DEFAULT_CONFIG };
     entitlements = { premiumUntil: null, coinPurchases: [] };
@@ -170,6 +172,10 @@ describe("api", () => {
       streamModel: async function* (_p, model, signal): AsyncGenerator<string, Usage> {
         modelCalls.push(model);
         if (modelMode === "fail") throw new GeminiError("rate_limited", "busy");
+        if (modelChunks) {
+          yield* modelChunks;
+          return { tokensIn: 1500, tokensOut: 650 };
+        }
         yield "ภูเขา";
         if (modelMode === "drop") {
           droppingRes!.disconnect();
@@ -211,6 +217,31 @@ describe("api", () => {
     const saved = await store.getReading("u1", ev[0].data.readingId as string);
     assert.equal(saved?.aiText, "ภูเขาตั้งมั่น");
     assert.equal(saved?.category, "work");
+  });
+
+  it("keeps the share summary out of the stream and hands it over at the end", async () => {
+    modelChunks = ["ภูเขา", "ตั้งมั่น\n[สร", "ุป] ใจนิ่งย่อมเห็นทาง"];
+    const res = new FakeRes();
+    await handle(req("POST", "/divine", { question: "งานใหม่ดีไหม" }), res);
+    const ev = res.events;
+    const streamed = ev.filter((e) => e.event === "delta").map((e) => e.data.text).join("");
+    assert.equal(streamed.trim(), "ภูเขาตั้งมั่น");
+    assert.equal(ev.at(-1)!.data.shareSummary, "ใจนิ่งย่อมเห็นทาง");
+    const saved = await store.getReading("u1", ev[0].data.readingId as string);
+    assert.equal(saved?.aiText, "ภูเขาตั้งมั่น");
+    assert.equal(saved?.shareSummary, "ใจนิ่งย่อมเห็นทาง");
+
+    const replay = new FakeRes();
+    await handle(req("POST", "/divine", { readingId: ev[0].data.readingId }), replay);
+    assert.equal(replay.events.at(-1)!.data.shareSummary, "ใจนิ่งย่อมเห็นทาง");
+  });
+
+  it("finishes a reading normally when the model writes no summary", async () => {
+    const res = new FakeRes();
+    await handle(req("POST", "/divine", { question: "งานใหม่ดีไหม" }), res);
+    const ev = res.events;
+    assert.equal(ev.at(-1)!.data.shareSummary, null);
+    assert.equal((await store.getReading("u1", ev[0].data.readingId as string))?.aiText, "ภูเขาตั้งมั่น");
   });
 
   it("when quota is used up it still casts but returns limited instead of calling the model", async () => {

@@ -6,7 +6,6 @@ import com.iching.ai.domain.model.currentOn
 import com.iching.ai.domain.model.recordView
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.oracle.dailyHexagramId
-import com.iching.ai.domain.oracle.excerpt
 import com.iching.ai.domain.oracle.splitForSpeech
 import com.iching.ai.domain.oracle.stripMarkup
 import kotlin.test.Test
@@ -93,15 +92,6 @@ class RetentionRulesTest {
     @Test
     fun stripMarkupRemovesSymbolsAndCollapsesSpaces() {
         assertEquals("ฟ้า ดิน", stripMarkup("**ฟ้า**   # ดิน"))
-    }
-
-    @Test
-    fun excerptCutsAtSpacesAndStaysWithinLimit() {
-        assertEquals("สั้น", excerpt("สั้น", 200))
-        assertEquals("ฟ้า ดิน…", excerpt("ฟ้า ดิน น้ำลึกมาก", 9))
-        val hard = excerpt("ก".repeat(500), 200)
-        assertEquals(200, hard.length)
-        assertTrue(hard.endsWith("…"))
     }
 
     @Test

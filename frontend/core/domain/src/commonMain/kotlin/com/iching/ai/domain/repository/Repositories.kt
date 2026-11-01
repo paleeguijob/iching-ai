@@ -32,7 +32,8 @@ sealed interface DivinationEvent {
     ) : DivinationEvent
 
     data class Delta(val text: String) : DivinationEvent
-    data class Done(val status: AccountStatus?) : DivinationEvent
+    /** [shareSummary] is the one line for the share card; null when the model didn't write a usable one. */
+    data class Done(val status: AccountStatus?, val shareSummary: String? = null) : DivinationEvent
     data class Limited(val reason: LimitReason, val retryAfterSeconds: Int?, val status: AccountStatus?) : DivinationEvent
 
     /** A crisis question: show this caring message (with hotlines) instead of a reading. */

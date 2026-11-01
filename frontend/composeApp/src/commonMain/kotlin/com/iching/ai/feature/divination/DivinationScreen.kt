@@ -304,7 +304,7 @@ private fun ReadingStage(
                 ZenSecondaryButton("แชร์การ์ดคำทำนาย", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 if (sharing) {
                     ShareCardSheet(
-                        content = readingShareContent(cast.primary, state.interpretation.takeIf { state.isAiReading }),
+                        content = readingShareContent(cast.primary, state.shareSummary.takeIf { state.isAiReading }),
                         log = viewModel::logEvent,
                         onDismiss = { sharing = false },
                     )

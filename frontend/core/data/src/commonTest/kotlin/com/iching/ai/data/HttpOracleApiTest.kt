@@ -64,7 +64,7 @@ class HttpOracleApiTest {
                 data: {"text":"สายน้ำ"}
 
                 event: done
-                data: {"model":"m","status":{"premium":false,"coins":0,"includedLeft":0,"adCreditsLeft":0,"adsWatchableLeft":2,"readingsLeft":0,"followUpsPerReading":0,"journalDays":7,"aiEnabled":true}}
+                data: {"model":"m","shareSummary":"ใจนิ่งย่อมเห็นทาง","status":{"premium":false,"coins":0,"includedLeft":0,"adCreditsLeft":0,"adsWatchableLeft":2,"readingsLeft":0,"followUpsPerReading":0,"journalDays":7,"aiEnabled":true}}
 
                 """.trimIndent(),
                 HttpStatusCode.OK,
@@ -83,6 +83,7 @@ class HttpOracleApiTest {
         assertEquals(DivinationEvent.Delta("สายน้ำ"), events[1])
         val done = assertIs<DivinationEvent.Done>(events[2])
         assertEquals(2, done.status?.adsWatchableLeft)
+        assertEquals("ใจนิ่งย่อมเห็นทาง", done.shareSummary)
     }
 
     @Test

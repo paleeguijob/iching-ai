@@ -35,6 +35,7 @@ import {
   UserDoc,
 } from "./quota";
 import { checkSafety } from "./safety";
+import { SummarySplitter } from "./summary";
 
 // ---------- transport ----------
 
@@ -75,6 +76,8 @@ export interface StoredReading {
   primaryId: number;
   relatingId: number | null;
   aiText: string | null;
+  /** One line for the share card; missing on readings made before it existed. */
+  shareSummary?: string | null;
   source: "ai" | "scripture";
   model: string | null;
   tokensIn: number;
@@ -228,17 +231,25 @@ export function createApi(deps: Deps) {
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
+    const show = (visible: string) => {
+      if (!visible) return;
+      text += visible;
+      sse.send("delta", { text: visible });
+    };
     try {
       const stream = deps.streamModel(prompt, decision.model, abort.signal);
+      const splitter = new SummarySplitter();
       let step = await stream.next();
       while (!step.done) {
-        text += step.value;
-        sse.send("delta", { text: step.value });
+        show(splitter.push(step.value));
         step = await stream.next();
       }
       const usage = step.value;
+      const end = splitter.finish();
+      show(end.text);
       await deps.store.updateReading(uid, reading.id, {
         aiText: text.trim(),
+        shareSummary: end.summary,
         source: "ai",
         model: decision.model,
         tokensIn: usage.tokensIn,
@@ -254,7 +265,7 @@ export function createApi(deps: Deps) {
         tokensOut: usage.tokensOut,
         costThb: Number(estimateCostThb(decision.model, usage).toFixed(4)),
       });
-      sse.send("done", { model: decision.model, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg) });
     } catch (e) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
@@ -327,7 +338,7 @@ export function createApi(deps: Deps) {
     if (reading.aiText) {
       // Already interpreted (e.g. the app retried after a dropped connection): replay, never re-charge.
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
     } else {
       await interpret(sse, uid, deviceHash, cfg, reading, cast);
     }

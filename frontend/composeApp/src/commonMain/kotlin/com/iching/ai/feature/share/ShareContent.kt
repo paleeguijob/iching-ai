@@ -1,10 +1,7 @@
 package com.iching.ai.feature.share
 
 import com.iching.ai.domain.model.Hexagram
-import com.iching.ai.domain.oracle.excerpt
 import com.iching.ai.domain.oracle.stripMarkup
-
-private const val AI_EXCERPT_CHARS = 200
 
 const val SHARE_TEXT = "เสี่ยงทายกับคัมภีร์อี้จิงได้ที่ https://play.google.com/store/apps/details?id=com.iching.ai"
 
@@ -26,15 +23,18 @@ fun dailyShareContent(hexagram: Hexagram) = ShareCardContent(
     source = "daily",
 )
 
-/** [aiText] is the hermit's reading; null or blank when the seeker only got the scripture. */
-fun readingShareContent(hexagram: Hexagram, aiText: String?): ShareCardContent {
-    val cleaned = aiText?.let(::stripMarkup).orEmpty()
+/**
+ * [summary] is the model's one-line summary. Without one the card carries the scripture alone, and no
+ * AI label: a reading is never cut down to fit, because the cut-off text says nothing to a friend.
+ */
+fun readingShareContent(hexagram: Hexagram, summary: String?): ShareCardContent {
+    val cleaned = summary?.let(::stripMarkup).orEmpty()
     return if (cleaned.isEmpty()) {
         ShareCardContent(hexagram, hexagram.judgment, judgment = null, aiLabel = false, source = "reading")
     } else {
         ShareCardContent(
             hexagram = hexagram,
-            body = excerpt(cleaned, AI_EXCERPT_CHARS),
+            body = cleaned,
             judgment = hexagram.judgment,
             aiLabel = true,
             source = "reading",

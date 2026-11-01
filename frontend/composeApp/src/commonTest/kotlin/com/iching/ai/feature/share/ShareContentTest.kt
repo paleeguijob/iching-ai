@@ -24,11 +24,11 @@ class ShareContentTest {
     }
 
     @Test
-    fun aiCardIsLabelledAndBounded() {
-        val card = readingShareContent(hexagram, "**คำทำนาย** " + "ก".repeat(1000))
+    fun aiCardShowsTheWholeSummaryWithItsLabel() {
+        val card = readingShareContent(hexagram, "**ใจนิ่ง** ย่อมเห็นทาง")
         assertEquals(hexagram.judgment, card.judgment)
-        assertTrue(card.body.length <= 200, "body is ${card.body.length} chars")
-        assertFalse("*" in card.body)
+        assertEquals("ใจนิ่ง ย่อมเห็นทาง", card.body)
+        assertFalse("…" in card.body)
         assertTrue(card.aiLabel)
         assertEquals("reading", card.source)
     }

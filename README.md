@@ -51,7 +51,7 @@ frontend ↔ backend คุยกันผ่าน HTTPS เท่านั้�
 
 ## ทดสอบ
 ```bash
-cd backend/functions && npm install && npm test   # backend 54 tests
+cd backend/functions && npm install && npm test   # backend 63 tests
 cd frontend && ./gradlew :core:domain:jvmTest :core:data:testAndroid :composeApp:testAndroid
 ```
 

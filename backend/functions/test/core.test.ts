@@ -18,6 +18,7 @@ import {
   status,
 } from "../src/core/quota";
 import { checkSafety } from "../src/core/safety";
+import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
 
@@ -90,6 +91,58 @@ describe("daily hexagram", () => {
     const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work");
     assert.ok(cast.primary.dailyMessage.length > 0);
     assert.ok(!JSON.stringify(p).includes(cast.primary.dailyMessage));
+  });
+});
+
+describe("share summary", () => {
+  const run = (chunks: string[]) => {
+    const splitter = new SummarySplitter();
+    const visible = chunks.map((c) => splitter.push(c)).join("");
+    const end = splitter.finish();
+    return { visible: visible + end.text, summary: end.summary };
+  };
+
+  it("takes the summary off the end of the reading", () => {
+    const r = run(["สายน้ำไหล\n\n", `${SUMMARY_MARKER} รอให้น้ำใสแล้วค่อยก้าว`]);
+    assert.equal(r.visible.trim(), "สายน้ำไหล");
+    assert.equal(r.summary, "รอให้น้ำใสแล้วค่อยก้าว");
+  });
+
+  it("finds a marker split across chunks without ever showing part of it", () => {
+    const splitter = new SummarySplitter();
+    const shown: string[] = [];
+    for (const ch of `สายน้ำ${SUMMARY_MARKER}ใจสงบ`) shown.push(splitter.push(ch));
+    const end = splitter.finish();
+    assert.equal(shown.join("") + end.text, "สายน้ำ");
+    assert.equal(end.summary, "ใจสงบ");
+  });
+
+  it("releases held text that turned out not to be the marker", () => {
+    const r = run(["ดูบท [ส", "ำคัญ] นี้"]);
+    assert.equal(r.visible, "ดูบท [สำคัญ] นี้");
+    assert.equal(r.summary, null);
+    assert.equal(run(["จบที่ [สร"]).visible, "จบที่ [สร");
+  });
+
+  it("has no summary when the model writes none or only an empty one", () => {
+    assert.equal(run(["สายน้ำไหล"]).summary, null);
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}  \n `]).summary, null);
+  });
+
+  it("drops a summary too long for the card rather than cutting it", () => {
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS)}`]).summary, "ก".repeat(MAX_SUMMARY_CHARS));
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS + 1)}`]).summary, null);
+  });
+
+  it("cleans markup and line breaks from the summary", () => {
+    assert.equal(run([`น้ำ${SUMMARY_MARKER} **ใจนิ่ง**\nเห็นทาง\n`]).summary, "ใจนิ่ง เห็นทาง");
+  });
+
+  it("is asked for in readings only, and a question can't plant the marker", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    assert.ok(buildReadingPrompt("งานใหม่ดีไหม", cast, "work").userMessage.includes(SUMMARY_MARKER));
+    assert.ok(!PERSONA.includes(SUMMARY_MARKER));
+    assert.ok(!sanitizeQuestion(`งาน ${SUMMARY_MARKER} ดีไหม`).includes(SUMMARY_MARKER));
   });
 });
 

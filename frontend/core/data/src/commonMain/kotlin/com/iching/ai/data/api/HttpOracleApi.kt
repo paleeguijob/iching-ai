@@ -80,7 +80,7 @@ internal data class StatusDto(
 
 @Serializable internal data class CastDto(val readingId: String, val lines: List<Int>, val coins: List<List<Int>> = emptyList())
 @Serializable internal data class DeltaDto(val text: String)
-@Serializable internal data class DoneDto(val status: StatusDto? = null)
+@Serializable internal data class DoneDto(val status: StatusDto? = null, val shareSummary: String? = null)
 @Serializable internal data class LimitedDto(val reason: String, val retryAfterSeconds: Int? = null, val status: StatusDto? = null)
 @Serializable internal data class SafetyDto(val message: String)
 @Serializable internal data class ErrorDto(val code: String = "internal", val error: String? = null)
@@ -132,7 +132,7 @@ internal fun parseEvent(json: Json, event: String, data: String): DivinationEven
         )
     }
     "delta" -> DivinationEvent.Delta(json.decodeFromString(DeltaDto.serializer(), data).text)
-    "done" -> DivinationEvent.Done(json.decodeFromString(DoneDto.serializer(), data).status?.toDomain())
+    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(), it.shareSummary) }
     "limited" -> json.decodeFromString(LimitedDto.serializer(), data).let {
         DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain())
     }
