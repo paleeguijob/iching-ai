@@ -2,6 +2,10 @@ TEAM_ID=
 BUNDLE_ID=com.iching.ai
 APP_NAME=IChingAI
 
+// Free Apple accounts can't sign Sign in with Apple or App Attest:
+// set this empty in Secrets.xcconfig to run Debug on a real device.
+DEBUG_ENTITLEMENTS=iosApp/iosApp.entitlements
+
 // RevenueCat public iOS SDK key (appl_...). Empty = purchases disabled.
 REVENUECAT_IOS_KEY=
 // AdMob ids. Defaults are Google's public TEST ids — replace before release.

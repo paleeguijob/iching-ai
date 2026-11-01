@@ -27,5 +27,6 @@ backend/functions/.secret.local
 
 # Firebase: per-developer config and CLI cache
 frontend/androidApp/google-services.json
-frontend/iosApp/iosApp/GoogleService-Info.plist
+GoogleService-Info.plist
+firebase-debug*.log
 backend/.firebase/
