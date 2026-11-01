@@ -115,6 +115,7 @@
    keyPassword=...
    ```
 4. ☐ `./gradlew :androidApp:bundleRelease` → ได้ `.aab` (เพิ่ม `versionCode` ใน `frontend/androidApp/build.gradle.kts` ทุกครั้งที่อัปโหลด)
+   - release เปิด R8 และ resource shrinking แล้ว (rules อยู่ที่ `frontend/androidApp/proguard-rules.pro`) · ตอน build จะอัปโหลด mapping ให้ Crashlytics เอง จึงต้องต่อเน็ต · เก็บ `androidApp/build/outputs/mapping/release/mapping.txt` ของทุกเวอร์ชันที่ปล่อยไว้ด้วย
 
 ---
 
