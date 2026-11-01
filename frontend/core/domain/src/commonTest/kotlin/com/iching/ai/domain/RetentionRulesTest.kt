@@ -95,6 +95,11 @@ class RetentionRulesTest {
     }
 
     @Test
+    fun speechKeepsParagraphsSeparateEvenWhenTheyWouldFit() {
+        assertEquals(listOf("หนึ่ง", "สอง สาม"), splitForSpeech("หนึ่ง\n\nสอง สาม\n", 200))
+    }
+
+    @Test
     fun speechSplitsAtSpacesAndHardCutsLongRuns() {
         assertEquals(listOf("หนึ่ง สอง", "สาม"), splitForSpeech("หนึ่ง สอง สาม", 9))
         val parts = splitForSpeech("ก".repeat(9000), 4000)

@@ -4,6 +4,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,16 +13,24 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iching.ai.platform.SpeechState
 import com.iching.ai.platform.rememberSpeechPlayer
 import com.iching.ai.ui.components.ZenSecondaryButton
 
 enum class ListenAction { OPEN_PAYWALL, SPEAK, STOP }
 
 /** Stopping comes first: a subscription lapsing mid-reading must not leave the voice unstoppable. */
-fun listenAction(premium: Boolean, speaking: Boolean): ListenAction = when {
-    speaking -> ListenAction.STOP
+fun listenAction(premium: Boolean, state: SpeechState): ListenAction = when {
+    state != SpeechState.IDLE -> ListenAction.STOP
     premium -> ListenAction.SPEAK
     else -> ListenAction.OPEN_PAYWALL
+}
+
+fun listenLabel(premium: Boolean, state: SpeechState): String = when {
+    state == SpeechState.PREPARING -> "กำลังเตรียมเสียง…"
+    state == SpeechState.SPEAKING -> "หยุดอ่าน"
+    premium -> "ฟังคำทำนาย"
+    else -> "ฟังคำทำนาย · Premium"
 }
 
 /** Reads the hermit's words aloud with the device's voice. A Premium perk. */
@@ -34,20 +43,18 @@ fun ListenButton(
     modifier: Modifier = Modifier,
 ) {
     val player = rememberSpeechPlayer()
-    val speaking by player.speaking.collectAsStateWithLifecycle()
+    val state by player.state.collectAsStateWithLifecycle()
     var noVoice by remember { mutableStateOf(false) }
 
+    // Only subscribers can get past the paywall, so only they pay for starting the engine early.
+    LaunchedEffect(player, premium) { if (premium) player.prepare() }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { player.stop() }
 
     ZenSecondaryButton(
-        text = when {
-            speaking -> "หยุดอ่าน"
-            premium -> "ฟังคำทำนาย"
-            else -> "ฟังคำทำนาย · Premium"
-        },
+        text = listenLabel(premium, state),
         modifier = modifier,
         onClick = {
-            when (listenAction(premium, speaking)) {
+            when (listenAction(premium, state)) {
                 ListenAction.OPEN_PAYWALL -> onOpenPaywall()
                 ListenAction.STOP -> player.stop()
                 ListenAction.SPEAK -> {

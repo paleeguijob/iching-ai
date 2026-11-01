@@ -6,10 +6,16 @@ private val SPACES = Regex("[ \\t]+")
 /** The prompt asks for plain text, but a model can still return markdown; cards and speech must not show it. */
 fun stripMarkup(text: String): String = text.replace(MARKUP, "").replace(SPACES, " ").trim()
 
-/** Splits [text] into pieces of at most [maxChars] for a speech engine, at spaces when possible. */
-fun splitForSpeech(text: String, maxChars: Int): List<String> {
+/**
+ * Splits [text] into short pieces for a speech engine: each paragraph apart, then at most [maxChars]
+ * each, at spaces when possible. Short pieces matter because the first one decides when the voice starts.
+ */
+fun splitForSpeech(text: String, maxChars: Int): List<String> =
+    text.lines().flatMap { splitLine(it, maxChars) }
+
+private fun splitLine(line: String, maxChars: Int): List<String> {
     val parts = mutableListOf<String>()
-    var rest = text.trim()
+    var rest = line.trim()
     while (rest.isNotEmpty()) {
         if (rest.length <= maxChars) {
             parts += rest

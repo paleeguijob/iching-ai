@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import com.iching.ai.domain.oracle.stripMarkup
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,21 +20,31 @@ import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.darwin.NSObject
 
 private class IosSpeechPlayer : SpeechPlayer {
-    private val _speaking = MutableStateFlow(false)
-    override val speaking: StateFlow<Boolean> = _speaking.asStateFlow()
+    private val _state = MutableStateFlow(SpeechState.IDLE)
+    override val state: StateFlow<SpeechState> = _state.asStateFlow()
 
     private val synthesizer = AVSpeechSynthesizer()
 
     // The synthesizer only holds its delegate weakly, so this property keeps it alive.
+    @OptIn(ExperimentalForeignApi::class)
     private val delegate = object : NSObject(), AVSpeechSynthesizerDelegateProtocol {
+        @ObjCSignatureOverride
+        override fun speechSynthesizer(synthesizer: AVSpeechSynthesizer, didStartSpeechUtterance: AVSpeechUtterance) {
+            _state.compareAndSet(SpeechState.PREPARING, SpeechState.SPEAKING)
+        }
+
+        @ObjCSignatureOverride
         override fun speechSynthesizer(synthesizer: AVSpeechSynthesizer, didFinishSpeechUtterance: AVSpeechUtterance) {
-            _speaking.value = false
+            _state.value = SpeechState.IDLE
         }
     }
 
     init {
         synthesizer.delegate = delegate
     }
+
+    /** iOS loads the voice when it first speaks; there is no engine to start ahead of time. */
+    override fun prepare() = Unit
 
     override fun speak(text: String, onUnavailable: () -> Unit) {
         val voice = AVSpeechSynthesisVoice.voiceWithLanguage("th-TH")
@@ -43,13 +55,13 @@ private class IosSpeechPlayer : SpeechPlayer {
         }
         val utterance = AVSpeechUtterance.speechUtteranceWithString(cleaned)
         utterance.voice = voice
-        _speaking.value = true
+        _state.value = SpeechState.PREPARING
         synthesizer.speakUtterance(utterance)
     }
 
     override fun stop() {
         synthesizer.stopSpeakingAtBoundary(AVSpeechBoundary.AVSpeechBoundaryImmediate)
-        _speaking.value = false
+        _state.value = SpeechState.IDLE
     }
 
     override fun openVoiceSettings() {
