@@ -17,3 +17,16 @@ node_modules/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Release secrets
+keystore.properties
+*.jks
+*.keystore
+frontend/iosApp/Configuration/Secrets.xcconfig
+backend/functions/.secret.local
+
+# Firebase: per-developer config and CLI cache
+frontend/androidApp/google-services.json
+GoogleService-Info.plist
+firebase-debug*.log
+backend/.firebase/

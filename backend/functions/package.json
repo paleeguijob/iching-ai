@@ -1,0 +1,27 @@
+{
+  "name": "iching-ai-functions",
+  "private": true,
+  "description": "Backend for อี้จิง AI: server-side casting, quota, safety and Gemini streaming",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "copy-data": "node scripts/copy-data.mjs",
+    "build": "npm run copy-data && tsc -p tsconfig.json",
+    "typecheck:core": "tsc -p tsconfig.core.json",
+    "test": "npm run copy-data && node --import tsx --test test/*.test.ts",
+    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
+    "deploy": "firebase deploy --only functions,firestore:rules,hosting",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

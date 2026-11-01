@@ -2,51 +2,52 @@
 
 แอปทำนายและให้คำปรึกษาผ่านคัมภีร์อี้จิง ในบทบาท "นักพรตเต๋า" — Kotlin / Compose Multiplatform (Android + iOS)
 
-## ฟีเจอร์
-- **เสี่ยงทาย** — โยนเหรียญโบราณ 3 เหรียญ × 6 ครั้ง พร้อมแอนิเมชันและเสียงเหรียญ / กระดิ่งลม
-- **คำทำนาย** — RAG: คำถาม + ตัวบทคัมภีร์ (กวาหลัก, เส้นแปร, กวาแปร) + Persona → Gemini แบบ streaming
-  แสดงในม้วนคัมภีร์แบบพิมพ์ทีละตัว ถ้าไม่มีกุญแจ/ออฟไลน์ จะแสดงตัวบทจากคัมภีร์แทน
-- **คัมภีร์ ๖๔ กวา** — ค้นหาได้ พร้อมคำตัดสิน ภาพลักษณ์ ภาพรวม และเส้นทั้งหก (๓๘๔ เส้น)
-- **บันทึกชะตา** — ประวัติคำถาม–คำตอบเป็นไทม์ไลน์ เก็บในเครื่อง
-- **ตั้งค่า** — Gemini API key, เลือกโมเดล, เปิด/ปิดเสียง
+## ฟีเจอร์ (v1.0 — Store Release)
+- **เสี่ยงทาย** — สุ่มฝั่ง server (3 เหรียญ × 6 ครั้ง) แอปเล่นแอนิเมชัน + เสียง + haptic ตามผล ออฟไลน์สุ่มในเครื่องได้
+- **คำทำนาย AI** — RAG: คำถาม + ตัวบทคัมภีร์ + Persona → Gemini (streaming) ผ่าน Cloud Function
+  Free 1 ครั้ง/วัน + ชมโฆษณาแลก 2 ครั้ง · Premium 10 ครั้ง/วัน · เหรียญอี้จิง
+- **ถามต่อกับนักพรต** (Premium) 3 คำถามต่อคำทำนาย
+- **คัมภีร์ ๖๔ กวา** — ค้นหาได้ ออฟไลน์
+- **บันทึกชะตา** — Free 7 วันล่าสุด · Premium ไม่จำกัด + กู้คืนข้ามเครื่อง · "เกิดขึ้นจริงไหม" + บันทึกส่วนตัว
+- **บัญชี** — Anonymous → ผูก Apple / Google · Restore purchases · ลบบัญชีในแอป
+- **Safety** — คำถามวิกฤตได้รับสายด่วน 1323/1669 แทนคำทำนาย · ป้าย AI-generated · ปุ่มรายงานคำตอบ
 
-## สถาปัตยกรรม (Clean Architecture)
+## สถาปัตยกรรม
 
 ```
-androidApp ─┐
-iosApp ─────┴─► composeApp (UI, ViewModel, DI) ─► core:data ─► core:domain
+iching-ai/
+├── frontend/   แอปมือถือ (Kotlin Compose Multiplatform) — เปิดโฟลเดอร์นี้ใน Android Studio
+│   ├── androidApp/   Firebase/RevenueCat/AdMob SDK (Kotlin)
+│   ├── iosApp/       Swift bridges + SPM packages (เปิด iosApp.xcodeproj ใน Xcode)
+│   ├── composeApp/   UI, ViewModel, AppSession, NativeBridges
+│   └── core/         domain (Kotlin ล้วน) + data (Ktor → backend, Room, DataStore, คัมภีร์ hexagrams.json)
+├── backend/    Firebase — รัน firebase CLI จากโฟลเดอร์นี้
+│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account
+│   ├── hosting/      privacy / terms / delete-account
+│   └── firebase.json, .firebaserc, firestore.rules
+└── docs/       spec + คู่มือขึ้น store
+
+frontend ↔ backend คุยกันผ่าน HTTPS เท่านั้น (สัญญา API: backend/functions/src/core/api.ts ↔ frontend/core/data/.../HttpOracleApi.kt)
+ข้อมูลที่ใช้ร่วมกันมีชิ้นเดียวคือคัมภีร์: ต้นฉบับอยู่ที่ frontend/core/data/src/commonMain/composeResources/files/hexagrams.json
+และ backend คัดลอกไปใช้อัตโนมัติตอน build/test
 ```
 
 | Module | หน้าที่ |
 |---|---|
-| `core/domain` | Model, repository interfaces, use cases, prompt builder — Kotlin ล้วน |
-| `core/data` | คัมภีร์ (`composeResources/files/hexagrams.json`), Gemini (Ktor SSE), Room (journal), DataStore (settings) |
-| `composeApp` | Compose UI, MVVM + StateFlow, Navigation, Koin, เสียง (expect/actual) |
-| `androidApp` / `iosApp` | จุดเริ่มของแต่ละแพลตฟอร์ม |
+| `frontend/core/domain` | Model, repository interfaces, use cases — Kotlin ล้วน |
+| `frontend/core/data` | คัมภีร์ (`hexagrams.json`), `HttpOracleApi` (SSE), Room v2 (journal), DataStore |
+| `frontend/composeApp` | Compose UI, ViewModel, Koin, `AppSession`, `NativeBridges` (สัญญากับโค้ด native) |
+| `frontend/androidApp` / `frontend/iosApp` | จุดเริ่ม + implementation ของ NativeBridges ด้วย SDK ทางการ |
+| `backend/functions` | ตรรกะ server ทั้งหมดอยู่ใน `src/core` (ทดสอบได้โดยไม่ต้องมี Firebase) |
 
-รายละเอียดดีไซน์: [docs/specs/2026-10-30-iching-ai-design.md](docs/specs/2026-10-30-iching-ai-design.md)
-
-## เริ่มใช้งาน
-
-1. สร้าง `local.properties` ที่ root (ไฟล์นี้ไม่ถูก commit):
-   ```properties
-   sdk.dir=/Users/<you>/Library/Android/sdk
-   GEMINI_API_KEY=<กุญแจของคุณ>   # ไม่บังคับ — ใช้เป็นค่าเริ่มต้นของ dev build
-   ```
-2. Android: `./gradlew :androidApp:installDebug`
-3. iOS: เปิด `iosApp/iosApp.xcodeproj` ใน Xcode แล้วกด Run (build phase จะเรียก Gradle ให้เอง)
-
-ต้องใช้ JDK 17+ (ใช้ JBR ที่มากับ Android Studio ได้)
+## เริ่มใช้งาน / ขึ้น store
+ดู **[docs/RELEASE.md](docs/RELEASE.md)** — ขั้นตอนตั้งค่า Firebase, RevenueCat, AdMob, build และส่ง review ทีละข้อ
 
 ## ทดสอบ
 ```bash
-./gradlew :core:domain:jvmTest :core:data:testAndroid
+cd backend/functions && npm install && npm test   # backend 35 tests
+cd frontend && ./gradlew :core:domain:jvmTest :core:data:testAndroid
 ```
-
-## หมายเหตุเรื่องความปลอดภัย
-แอปเรียก Gemini ตรงจากเครื่องผู้ใช้ กุญแจที่ใส่ใน `local.properties` จะถูกฝังใน dev build —
-อย่าแจกจ่าย build ที่มีกุญแจของคุณ สำหรับการเผยแพร่จริง ให้ผู้ใช้ใส่กุญแจเองในหน้าตั้งค่า
-หรือย้ายการเรียก LLM ไปไว้หลัง backend
 
 ## ฟอนต์
 Noto Serif Thai และ Charm — SIL Open Font License
