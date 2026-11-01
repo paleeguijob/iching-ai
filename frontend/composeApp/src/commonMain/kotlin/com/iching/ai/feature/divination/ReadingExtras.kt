@@ -104,7 +104,8 @@ fun ReadingNoticeCard(
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton("รับคำชี้แนะจากนักพรต", onClick = onRetry, modifier = Modifier.fillMaxWidth())
             }
-            quota -> {
+            // Premium has nothing left to buy or watch today; its quota simply resets tomorrow.
+            quota -> if (!status.premium) {
                 Spacer(Modifier.height(12.dp))
                 if (status.adsWatchableLeft > 0 && canRetry) {
                     ZenPrimaryButton(

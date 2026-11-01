@@ -64,6 +64,7 @@ import com.iching.ai.navigation.JournalRoute
 import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
@@ -142,7 +143,17 @@ private fun MainNavigation() {
                 .background(ZenColors.PaperCream)
                 .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } },
         ) {
-            NavHost(nav, startDestination = HomeRoute, modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                nav,
+                startDestination = HomeRoute,
+                modifier = Modifier.fillMaxSize(),
+                enterTransition = platformNavTransitions.enter,
+                exitTransition = platformNavTransitions.exit,
+                popEnterTransition = platformNavTransitions.popEnter,
+                popExitTransition = platformNavTransitions.popExit,
+                predictivePopEnterTransition = platformNavTransitions.predictivePopEnter,
+                predictivePopExitTransition = platformNavTransitions.predictivePopExit,
+            ) {
                 composable<HomeRoute> {
                     HomeScreen(
                         viewModel = koinViewModel(),
