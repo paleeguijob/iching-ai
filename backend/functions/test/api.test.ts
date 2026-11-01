@@ -243,6 +243,13 @@ describe("api", () => {
     assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
   });
 
+  it("logs why a request was rejected, without its credentials", async () => {
+    const warnings: { message: string; data: Record<string, unknown> }[] = [];
+    deps.log.warn = (message, data) => void warnings.push({ message, data: (data ?? {}) as Record<string, unknown> });
+    await handle(req("GET", "/status", {}, { "x-firebase-appcheck": "nope" }), new FakeRes());
+    assert.deepEqual(warnings, [{ message: "request_rejected", data: { code: "app_check_invalid", path: "/status" } }]);
+  });
+
   it("logs the model error where the logger cannot overwrite it", async () => {
     const warnings: Record<string, unknown>[] = [];
     deps.log.warn = (_message, data) => void warnings.push((data ?? {}) as Record<string, unknown>);

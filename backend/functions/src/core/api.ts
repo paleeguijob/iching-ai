@@ -505,6 +505,7 @@ export function createApi(deps: Deps) {
     } catch (e) {
       const err = e instanceof HttpError ? e : new HttpError(500, "internal");
       if (!(e instanceof HttpError)) deps.log.error("api_error", { detail: (e as Error)?.message, stack: (e as Error)?.stack });
+      if (err.status === 401) deps.log.warn("request_rejected", { code: err.code, path: req.path });
       if (!res.headersSent) res.status(err.status).json({ error: err.code });
       else if (!res.writableEnded) {
         res.write(`event: error\ndata: ${JSON.stringify({ code: err.code })}\n\n`);
