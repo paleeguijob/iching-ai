@@ -15,7 +15,7 @@
 |---|---|---|
 | เรียก AI | แอปเรียก Gemini ตรง ฝัง API key ในแอป | ผ่าน Cloud Function `api` เท่านั้น key อยู่ใน Firebase Secret |
 | สุ่มกวา | ในเครื่อง | ฝั่ง server (crypto RNG, 3 เหรียญ = 1/8, 3/8, 3/8, 1/8) แอปเล่นแอนิเมชันตามผล · ออฟไลน์ยังสุ่มในเครื่องได้แต่ได้แค่ตัวบท |
-| โควตา | ไม่มี | Free 1/วัน (`gemini-2.5-flash-lite`) + โฆษณาแลก 2/วัน · Premium 10/วัน (`gemini-2.5-flash`) · เหรียญ 1 = 1 คำทำนาย · จำกัดต่อเครื่อง · rate limit 8 วิ · Gemini error = คืนโควตา |
+| โควตา | ไม่มี | Free 1/วัน (`gemini-3.1-flash-lite`) + โฆษณาแลก 2/วัน · Premium 10/วัน (`gemini-3.5-flash-lite`) · เหรียญ 1 = 1 คำทำนาย · จำกัดต่อเครื่อง · rate limit 8 วิ · Gemini error = คืนโควตา |
 | บัญชี | ไม่มี | Firebase Anonymous → ผูก Google (Android) / Sign in with Apple (iOS) · ลบบัญชีในแอป |
 | เงิน | ไม่มี | RevenueCat (รายเดือน 79 / รายปี 590 + ทดลอง 7 วัน / เหรียญ 35 บาท 10 เหรียญ) + AdMob rewarded |
 | ถามต่อ | ไม่มี | Premium ถามต่อ 3 รอบ/คำทำนาย (ส่งสรุป ไม่ส่ง history เต็ม) |
@@ -35,7 +35,7 @@
 | Google Play | $25 จ่ายครั้งเดียว |
 | ค่าธรรมเนียม Play | 15% ของรายได้ 1M USD แรก |
 | RevenueCat | ฟรีถึงรายได้ $2,500/เดือน จากนั้น 1% |
-| Gemini paid tier | 2.5 Flash-Lite ~0.02 บาท/คำทำนาย · 2.5 Flash ~0.09 บาท/คำทำนาย (input 2,000 + output 800 tokens) |
+| Gemini paid tier | 3.1 Flash-Lite ~0.06 บาท/คำทำนาย · 3.5 Flash-Lite ~0.09 บาท/คำทำนาย (input 2,000 + output 800 tokens) · รุ่น 2.5 ไม่เปิดให้ผู้ใช้ใหม่แล้ว |
 | Firebase Blaze | จ่ายตามใช้ มีโควตาฟรี |
 | Apple Developer (ตอนทำ iOS) | $99/ปี |
 
@@ -69,7 +69,7 @@
 11. ☐ แก้ `backend/hosting/public/*.html`: แทน `SUPPORT_EMAIL`, `DEVELOPER_NAME`, `EFFECTIVE_DATE` แล้ว deploy hosting อีกรอบ
 
 **Kill-switch / ปรับโควตาโดยไม่ต้อง deploy:** สร้างเอกสาร Firestore `config/runtime` ใส่ฟิลด์ที่ต้องการ override เช่น
-`aiEnabled: false` (ปิด AI ทุกคน → ได้ตัวบทแทน), `forceModel: "gemini-2.5-flash-lite"` (สลับทุกคนไปรุ่นถูก),
+`aiEnabled: false` (ปิด AI ทุกคน → ได้ตัวบทแทน), `forceModel: "gemini-3.1-flash-lite"` (สลับทุกคนไปรุ่นถูก),
 `freeDailyReadings`, `premiumDailyReadings`, `adRewardsPerDay`, `enforceAppCheck` — มีผลภายใน 60 วินาที (ดูค่าทั้งหมดใน `backend/functions/src/core/quota.ts`)
 
 **รุ่น Gemini:** ห้ามใช้ alias `-latest` เพราะอาจถูกเลื่อนไปรุ่นที่แพงกว่าโดยไม่ต้องแก้โค้ด (เช่น 3.8 Flash $0.75/$3.75 ถึงสิ้นปี 2026 และ $1.50/$7.50 ตั้งแต่ 1 ม.ค. 2027)
@@ -87,7 +87,7 @@
 1. ☐ สร้างโปรเจกต์ RevenueCat → Apps and providers → Test configuration → สร้าง **Test Store** เพื่อรับ key `test_...`
 2. ☐ Product catalog: สร้างสินค้า Test Store โดยใช้ id ตรงตามนี้ (backend เทียบ id ของเหรียญแบบตรงตัว)
    - `iching_premium_monthly` · `iching_premium_yearly` · `iching_coins_10`
-3. ☐ Entitlement ชื่อ **`premium`** ผูกกับ 2 subscription
+3. ☐ Entitlement ชื่อ **`iching_premium`** ผูกกับ 2 subscription (backend เทียบชื่อนี้แบบตรงตัว)
 4. ☐ Offering ที่เป็น **Current**: package Monthly, Annual และ custom package สำหรับ `iching_coins_10`
 5. ☐ ใส่ test key ใน `frontend/local.properties` (ใช้เฉพาะ debug build):
    ```properties
@@ -130,7 +130,7 @@
    - `iching_premium_yearly` — subscription + base plan รายปี 590 บาท + **offer ทดลองฟรี 7 วัน**
    - `iching_coins_10` — in-app product 35 บาท
 5. ☐ RevenueCat → เพิ่มแอป Play Store → อัปโหลด **service account JSON** ที่มีสิทธิ์ใน Play Console (สิทธิ์อาจใช้เวลาสักพักกว่าจะมีผล) และตั้ง Google Real-time developer notifications ตามคู่มือของ RevenueCat
-6. ☐ Import สินค้า → ตั้ง `iching_coins_10` เป็น **consumable** → เพิ่มเข้า entitlement `premium` (2 subscription) และ offering เดียวกับหัวข้อ 2
+6. ☐ Import สินค้า → ตั้ง `iching_coins_10` เป็น **consumable** → เพิ่มเข้า entitlement `iching_premium` (2 subscription) และ offering เดียวกับหัวข้อ 2
 7. ☐ Integrations → Webhooks: URL `https://asia-southeast1-<project-id>.cloudfunctions.net/revenuecatWebhook`, Authorization header = `Bearer <REVENUECAT_WEBHOOK_AUTH>`
 8. ☐ ใส่ public SDK key (ใช้ใน release และใน debug ถ้าไม่ได้ตั้ง test key):
    ```properties
@@ -181,7 +181,7 @@
 - ☐ โหมดเครื่องบิน → ยังเสี่ยงทายได้ (ตัวบทจากคัมภีร์) · Library ใช้ได้ออฟไลน์
 - ☐ ลบบัญชี → ข้อมูลหายทั้งในเครื่องและ Firestore
 - ☐ Firestore `config/runtime.aiEnabled=false` → ทุกคนได้ตัวบท ไม่มี error
-- ☐ `reading_cost` ใน log แสดงรุ่น `gemini-2.5-*` และต้นทุนไม่เกินค่าใน spec
+- ☐ `reading_cost` ใน log แสดงรุ่น `gemini-3.1-flash-lite` หรือ `gemini-3.5-flash-lite` และต้นทุนไม่เกินค่าในหัวข้อค่าใช้จ่าย
 
 ---
 

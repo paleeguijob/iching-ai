@@ -270,7 +270,7 @@ export function createApi(deps: Deps) {
       });
       if (resuming) await deps.store.updateReading(uid, reading.id, { interrupted: null });
       const code = e instanceof GeminiError ? e.code : "internal";
-      deps.log.warn("reading_failed", { uid, code, message: (e as Error).message });
+      deps.log.warn("reading_failed", { uid, code, detail: (e as Error).message });
       sse.send("error", { code, refunded: true });
     } finally {
       clearInterval(watcher);
@@ -402,6 +402,17 @@ export function createApi(deps: Deps) {
     }
   }
 
+  /**
+   * A passed expiry may only mean the renewal webhook has not arrived, so ask the store before
+   * treating the seeker as lapsed. A real lapse clears premiumUntil, which stops further asking.
+   */
+  async function refreshLapsedPremium(uid: string) {
+    if (!deps.fetchEntitlements) return;
+    const until = await deps.store.quotaTx(uid, null, (user) => ({ result: user.premiumUntil }));
+    if (until === null || until > deps.now()) return;
+    await syncPurchases(uid).catch((e) => deps.log.warn("premium_refresh_failed", { uid, detail: String(e) }));
+  }
+
   const toClientReading = (r: StoredReading) => ({
     id: r.id,
     question: r.question,
@@ -425,6 +436,8 @@ export function createApi(deps: Deps) {
       const deviceHash = hashDevice(req.get("x-device-id"));
       const route = `${req.method.toUpperCase()} ${req.path.replace(/\/+$/, "") || "/"}`;
       const b = body(req);
+
+      if (route !== "POST /purchases/sync" && route !== "DELETE /account") await refreshLapsedPremium(uid);
 
       if (route === "POST /divine") return await divine(req, res, uid, deviceHash, cfg);
       if (route === "POST /follow-up") return await followUp(req, res, uid, deviceHash, cfg);
@@ -491,7 +504,7 @@ export function createApi(deps: Deps) {
       throw new HttpError(404, "not_found");
     } catch (e) {
       const err = e instanceof HttpError ? e : new HttpError(500, "internal");
-      if (!(e instanceof HttpError)) deps.log.error("api_error", { message: (e as Error)?.message, stack: (e as Error)?.stack });
+      if (!(e instanceof HttpError)) deps.log.error("api_error", { detail: (e as Error)?.message, stack: (e as Error)?.stack });
       if (!res.headersSent) res.status(err.status).json({ error: err.code });
       else if (!res.writableEnded) {
         res.write(`event: error\ndata: ${JSON.stringify({ code: err.code })}\n\n`);
@@ -552,7 +565,7 @@ export function createRevenueCatWebhook(deps: Pick<Deps, "store" | "fetchEntitle
       deps.log.info("revenuecat_event", { type: event.type, uids: uidsFromEvent(event) });
       res.status(200).json({ ok: true });
     } catch (e) {
-      deps.log.error("revenuecat_webhook_failed", { message: (e as Error).message });
+      deps.log.error("revenuecat_webhook_failed", { detail: (e as Error).message });
       // Non-2xx makes RevenueCat retry later.
       res.status(500).json({ error: "retry" });
     }
@@ -566,7 +579,7 @@ interface RcSubscriber {
   };
 }
 
-export const PREMIUM_ENTITLEMENT = "premium";
+export const PREMIUM_ENTITLEMENT = "iching_premium";
 const FOREVER = Date.UTC(2100, 0, 1);
 
 export function parseEntitlements(json: RcSubscriber, now: number): Entitlements {

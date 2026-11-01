@@ -195,8 +195,8 @@ describe("quota", () => {
 
   it("kill switch and forced model", () => {
     assert.deepEqual(chargeReading(fresh(), dev(), { ...cfg, aiEnabled: false }, now), { ok: false, reason: "ai_disabled" });
-    const r = chargeReading({ ...fresh(), premiumUntil: now + 1000 }, null, { ...cfg, forceModel: "gemini-2.5-flash-lite" }, now);
-    assert.ok(r.ok && r.model === "gemini-2.5-flash-lite");
+    const r = chargeReading({ ...fresh(), premiumUntil: now + 1000 }, null, { ...cfg, forceModel: "gemini-3.1-flash-lite" }, now);
+    assert.ok(r.ok && r.model === "gemini-3.1-flash-lite");
   });
 
   it("usage resets on a new day", () => {
@@ -250,10 +250,12 @@ describe("gemini stream", () => {
 
   it("estimates cost in baht", () => {
     const usage = { tokensIn: 2000, tokensOut: 800 };
-    const lite = estimateCostThb("gemini-2.5-flash-lite", usage);
-    assert.ok(lite > 0.01 && lite < 0.03);
-    const flash = estimateCostThb("gemini-2.5-flash", usage);
-    assert.ok(flash > 0.08 && flash < 0.1);
+    assert.equal(DEFAULT_CONFIG.freeModel, "gemini-3.1-flash-lite");
+    assert.equal(DEFAULT_CONFIG.premiumModel, "gemini-3.5-flash-lite");
+    const free = estimateCostThb(DEFAULT_CONFIG.freeModel, usage);
+    assert.ok(free > 0.05 && free < 0.07);
+    const premium = estimateCostThb(DEFAULT_CONFIG.premiumModel, usage);
+    assert.ok(premium > 0.08 && premium < 0.1);
   });
 
   it("default models are pinned versions with a known price", () => {

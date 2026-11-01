@@ -243,6 +243,15 @@ describe("api", () => {
     assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
   });
 
+  it("logs the model error where the logger cannot overwrite it", async () => {
+    const warnings: Record<string, unknown>[] = [];
+    deps.log.warn = (_message, data) => void warnings.push((data ?? {}) as Record<string, unknown>);
+    modelMode = "fail";
+    await handle(req("POST", "/divine", { question: "a" }), new FakeRes());
+    assert.equal(warnings[0].detail, "busy");
+    assert.equal("message" in warnings[0], false);
+  });
+
   it("answers crisis questions with hotlines, no cast and no charge", async () => {
     const res = new FakeRes();
     await handle(req("POST", "/divine", { question: "ไม่อยากมีชีวิตอยู่แล้ว" }), res);
@@ -395,6 +404,54 @@ describe("api", () => {
     assert.equal(readings[0].outcomeNote, "ได้งานจริง");
   });
 
+  describe("lapsed premium", () => {
+    const premium = async () => {
+      const res = new FakeRes();
+      await handle(req("GET", "/status"), res);
+      assert.equal(res.code, 200);
+      return (res.payload as { premium: boolean }).premium;
+    };
+    let fetches: number;
+
+    beforeEach(async () => {
+      entitlements = { premiumUntil: now + 1000, coinPurchases: [] };
+      await handle(req("POST", "/purchases/sync"), new FakeRes());
+      fetches = 0;
+      deps.fetchEntitlements = async () => {
+        fetches++;
+        return entitlements;
+      };
+      now += 2000;
+    });
+
+    it("keeps premium when the store renewed without telling us", async () => {
+      entitlements = { premiumUntil: now + 86_400_000, coinPurchases: [] };
+      assert.equal(await premium(), true);
+      assert.equal(await premium(), true);
+      assert.equal(fetches, 1);
+    });
+
+    it("ends premium once, then stops asking the store", async () => {
+      entitlements = { premiumUntil: null, coinPurchases: [] };
+      assert.equal(await premium(), false);
+      assert.equal(await premium(), false);
+      assert.equal(fetches, 1);
+    });
+
+    it("still answers when the store cannot be reached", async () => {
+      deps.fetchEntitlements = async () => {
+        throw new Error("RevenueCat HTTP 429");
+      };
+      assert.equal(await premium(), false);
+    });
+
+    it("does not ask the store for someone who never subscribed", async () => {
+      store.users.delete("u1");
+      await premium();
+      assert.equal(fetches, 0);
+    });
+  });
+
   it("coin purchases are granted once even if synced twice", async () => {
     entitlements = { premiumUntil: null, coinPurchases: [{ transactionId: "GPA.1", productId: "iching_coins_10" }] };
     await handle(req("POST", "/purchases/sync"), new FakeRes());
@@ -427,7 +484,7 @@ describe("api", () => {
     const e = parseEntitlements(
       {
         subscriber: {
-          entitlements: { premium: { expires_date: "2026-12-01T00:00:00Z" } },
+          entitlements: { iching_premium: { expires_date: "2026-12-01T00:00:00Z" } },
           non_subscriptions: { iching_coins_10: [{ id: "a", store_transaction_id: "tx1" }] },
         },
       },
@@ -435,6 +492,6 @@ describe("api", () => {
     );
     assert.equal(e.premiumUntil, Date.parse("2026-12-01T00:00:00Z"));
     assert.deepEqual(e.coinPurchases, [{ transactionId: "tx1", productId: "iching_coins_10" }]);
-    assert.equal(parseEntitlements({ subscriber: { entitlements: { premium: { expires_date: "2020-01-01T00:00:00Z" } } } }, now).premiumUntil, null);
+    assert.equal(parseEntitlements({ subscriber: { entitlements: { iching_premium: { expires_date: "2020-01-01T00:00:00Z" } } } }, now).premiumUntil, null);
   });
 });
