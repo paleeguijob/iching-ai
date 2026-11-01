@@ -3,13 +3,15 @@ import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { castHexagram, changingPositions, Coin, resolveLines } from "../src/core/cast";
 import { estimateCostThb, GeminiError, PRICES_USD_PER_M, streamGemini } from "../src/core/gemini";
-import { loadScripture } from "../src/core/hexagrams";
+import { bangkokEpochDay, buildDailyPush, dailyHexagramId } from "../src/core/daily";
+import { loadScripture, shortNameTh } from "../src/core/hexagrams";
 import { buildFollowUpPrompt, buildReadingPrompt, PERSONA, sanitizeQuestion } from "../src/core/prompt";
 import {
   bangkokDay,
   chargeReading,
   DEFAULT_CONFIG,
   grantAdReward,
+  mergeConfig,
   normalizeDevice,
   normalizeUser,
   refundReading,
@@ -50,6 +52,44 @@ describe("casting", () => {
     assert.ok(Math.abs(counts[7] / total - 0.375) < 0.02);
     assert.ok(Math.abs(counts[8] / total - 0.375) < 0.02);
     assert.ok(Math.abs(counts[9] / total - 0.125) < 0.015);
+  });
+});
+
+describe("daily hexagram", () => {
+  it("matches the app's shared vectors", () => {
+    for (const [day, id] of [[0, 12], [20000, 44], [20759, 31], [20760, 4], [-1, 39]]) {
+      assert.equal(dailyHexagramId(day), id);
+    }
+  });
+
+  it("rolls over at Bangkok midnight", () => {
+    assert.equal(bangkokEpochDay(17 * 3600_000 - 1), 0);
+    assert.equal(bangkokEpochDay(17 * 3600_000), 1);
+    assert.equal(bangkokEpochDay(-7 * 3600_000 - 1), -1);
+  });
+
+  it("builds the 07:00 push from the scripture", () => {
+    const now = Date.UTC(2026, 10, 1, 0, 0);
+    const push = buildDailyPush(now, scripture);
+    const h = scripture.get(dailyHexagramId(bangkokEpochDay(now)));
+    assert.equal(push.topic, "daily-hexagram-th");
+    assert.equal(push.title, `${h.nameCn} ${shortNameTh(h)}`);
+    assert.equal(push.body, h.dailyMessage);
+    assert.ok(push.body.length > 0);
+    assert.equal(push.hexagramId, h.id);
+    assert.equal(push.ttlMs, 12 * 3600_000);
+  });
+
+  it("the kill-switch defaults on and can be turned off", () => {
+    assert.equal(mergeConfig(undefined).dailyPushEnabled, true);
+    assert.equal(mergeConfig({ dailyPushEnabled: false }).dailyPushEnabled, false);
+  });
+
+  it("never reaches the reading prompt", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work");
+    assert.ok(cast.primary.dailyMessage.length > 0);
+    assert.ok(!JSON.stringify(p).includes(cast.primary.dailyMessage));
   });
 });
 

@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.QuestionCategory
@@ -64,11 +65,16 @@ import com.iching.ai.ui.theme.ZenColors
 fun HomeScreen(
     viewModel: HomeViewModel,
     onCast: (String, QuestionCategory?) -> Unit,
-    onOpenHexagram: (Int) -> Unit,
+    onOpenDaily: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
+    val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refreshDay()
+        onPauseOrDispose { }
+    }
     var question by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -166,7 +172,7 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(36.dp))
-            daily?.let { DailyHexagramCard(it, onClick = { onOpenHexagram(it.id) }) }
+            daily?.let { DailyHexagramCard(it, streakDays, onClick = onOpenDaily) }
             Spacer(Modifier.height(120.dp))
         }
     }
@@ -193,7 +199,7 @@ private fun BreathingTitle() {
 }
 
 @Composable
-private fun DailyHexagramCard(hexagram: Hexagram, onClick: () -> Unit) {
+private fun DailyHexagramCard(hexagram: Hexagram, streakDays: Int, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -224,14 +230,22 @@ private fun DailyHexagramCard(hexagram: Hexagram, onClick: () -> Unit) {
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            hexagram.image,
+            hexagram.dailyMessage,
             style = MaterialTheme.typography.bodyMedium,
             color = ZenColors.InkSoft,
             maxLines = 4,
         )
         Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Text("อ่านต่อในคัมภีร์ →", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (streakDays > 0) {
+                Text(
+                    "ต่อเนื่อง ${streakDays.toThaiNumerals()} วัน",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ZenColors.BambooDeep,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Text("เปิดกวาประจำวัน →", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
         }
     }
     Spacer(Modifier.size(0.dp))

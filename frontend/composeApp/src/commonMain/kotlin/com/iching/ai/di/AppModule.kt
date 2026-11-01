@@ -4,9 +4,12 @@ import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.repository.OracleApi
+import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
+import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
+import com.iching.ai.domain.usecase.RecordDailyViewUseCase
 import com.iching.ai.domain.usecase.GetHexagramsUseCase
 import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveJournalUseCase
@@ -16,6 +19,7 @@ import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.SearchHexagramsUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.feature.daily.DailyViewModel
 import com.iching.ai.feature.divination.DivinationViewModel
 import com.iching.ai.feature.home.HomeViewModel
 import com.iching.ai.feature.journal.JournalEntryViewModel
@@ -43,6 +47,9 @@ val domainModule = module {
     factoryOf(::ResolveCastUseCase)
     factoryOf(::GetHexagramsUseCase)
     factoryOf(::GetHexagramUseCase)
+    factoryOf(::GetDailyHexagramUseCase)
+    factoryOf(::RecordDailyViewUseCase)
+    factoryOf(::ClaimPushPromptUseCase)
     factoryOf(::SearchHexagramsUseCase)
     factoryOf(::ObserveJournalUseCase)
     factoryOf(::GetReadingUseCase)
@@ -73,6 +80,17 @@ fun platformModule(bridges: NativeBridges): Module = module {
 
 val presentationModule = module {
     viewModelOf(::HomeViewModel)
+    viewModel {
+        val session = get<AppSession>()
+        DailyViewModel(
+            getDaily = get(),
+            recordView = get(),
+            claimPushPrompt = get(),
+            log = session::log,
+            pushSupported = { session.dailyPushSupported },
+            enablePush = { session.setDailyPush(true) },
+        )
+    }
     viewModel { params ->
         DivinationViewModel(
             question = params.values.filterIsInstance<String>().first(),

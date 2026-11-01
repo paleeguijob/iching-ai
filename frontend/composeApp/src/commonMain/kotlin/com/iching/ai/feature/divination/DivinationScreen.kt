@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.feature.reading.CastSummary
+import com.iching.ai.feature.share.ShareCardSheet
+import com.iching.ai.feature.share.readingShareContent
 import com.iching.ai.feature.reading.AiContentLabel
 import com.iching.ai.feature.reading.OracleScroll
 import com.iching.ai.feature.reading.ScriptureSection
@@ -241,6 +243,7 @@ private fun ReadingStage(
         return
     }
     var showReport by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
     Column(
         Modifier
@@ -287,6 +290,25 @@ private fun ReadingStage(
                     onReport = if (state.isAiReading) ({ showReport = true }) else null,
                     reported = state.reported,
                 )
+                Spacer(Modifier.height(12.dp))
+                if (state.isAiReading) {
+                    ListenButton(
+                        text = state.interpretation,
+                        premium = state.status.premium,
+                        onOpenPaywall = onOpenPaywall,
+                        log = viewModel::logEvent,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                ZenSecondaryButton("แชร์การ์ดคำทำนาย", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+                if (sharing) {
+                    ShareCardSheet(
+                        content = readingShareContent(cast.primary, state.interpretation.takeIf { state.isAiReading }),
+                        log = viewModel::logEvent,
+                        onDismiss = { sharing = false },
+                    )
+                }
                 Spacer(Modifier.height(20.dp))
                 if (state.isAiReading) {
                     FollowUpSection(state, viewModel::onSendFollowUp, onOpenPaywall)

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -13,13 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,14 +46,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.data.BuildConfig
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
+import com.iching.ai.domain.model.currentOn
+import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.formatThaiDate
 import com.iching.ai.ui.theme.ZenColors
+import com.iching.ai.ui.theme.paletteFor
+import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
+import kotlin.time.Clock
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit) {
@@ -58,7 +71,23 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
     val message by viewModel.message.collectAsStateWithLifecycle()
     val uri = LocalUriHandler.current
     var confirmDelete by remember { mutableStateOf(false) }
+    val notificationsGranted by viewModel.notificationsGranted.collectAsStateWithLifecycle()
+    val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refreshNotificationPermission()
+        onPauseOrDispose { }
+    }
     val current = settings ?: return
+
+    if (pushBlocked) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPushBlocked,
+            title = { Text("ยังไม่ได้รับอนุญาตให้แจ้งเตือน") },
+            text = { Text("โปรดเปิดการแจ้งเตือนของแอปนี้ในการตั้งค่าของเครื่อง") },
+            confirmButton = { TextButton(onClick = viewModel::openNotificationSettings) { Text("เปิดการตั้งค่า") } },
+            dismissButton = { TextButton(onClick = viewModel::dismissPushBlocked) { Text("ไว้ก่อน") } },
+        )
+    }
 
     LaunchedEffect(message) {
         if (message != null) {
@@ -179,6 +208,44 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                     }
                 }
 
+                if (viewModel.dailyPushSupported) {
+                    Card {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("แจ้งเตือนกวาประจำวัน", style = MaterialTheme.typography.bodyMedium)
+                                Text("ทุกเช้าเวลา ๗ นาฬิกา", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                            }
+                            Switch(
+                                checked = current.dailyPushEnabled && notificationsGranted,
+                                onCheckedChange = viewModel::setDailyPush,
+                                colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
+                            )
+                        }
+                    }
+                }
+
+                SectionLabel("ธีม")
+                Card {
+                    Text(
+                        "เปิดดูกวาประจำวันต่อเนื่อง ${current.streak.currentOn(bangkokEpochDay(Clock.System.now().toEpochMilliseconds())).toThaiNumerals()} วัน · ดีที่สุด ${current.streak.best.toThaiNumerals()} วัน",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ZenColors.InkSoft,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    )
+                    AppTheme.entries.forEach { theme ->
+                        Divider()
+                        ThemeRow(
+                            theme = theme,
+                            selected = theme == current.selectedTheme,
+                            unlocked = theme in current.streak.unlocked,
+                            onSelect = { viewModel.selectTheme(theme) },
+                        )
+                    }
+                }
+
                 SectionLabel("ว่าด้วยแอปนี้")
                 Text(
                     "อี้จิง AI ใช้การโยนเหรียญสามเหรียญหกครั้งตามตำราดั้งเดิม แล้วอ้างอิงตัวบทคัมภีร์อี้จิง ๖๔ กวา ๓๘๔ เส้น " +
@@ -192,7 +259,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                     Divider()
                     LinkRow("ข้อกำหนดการใช้งาน") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }
                 }
-                Text("เวอร์ชัน 1.0.0", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                Text("เวอร์ชัน ${viewModel.appVersion}", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 Spacer(Modifier.height(32.dp))
             }
         }
@@ -218,6 +285,45 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก", color = ZenColors.InkSoft) } },
         )
+    }
+}
+
+@Composable
+private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, onSelect: () -> Unit) {
+    val swatch = paletteFor(theme)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = unlocked, onClick = onSelect)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(swatch.paperCream)
+                .border(5.dp, swatch.inkBlack, CircleShape),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                theme.labelTh,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (unlocked) ZenColors.InkBlack else ZenColors.InkFaint,
+            )
+            if (!unlocked) {
+                Text(
+                    "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ZenColors.InkFaint,
+                )
+            }
+        }
+        when {
+            selected -> Icon(Icons.Outlined.Check, contentDescription = "ใช้อยู่", tint = ZenColors.BambooDeep)
+            !unlocked -> Icon(Icons.Outlined.Lock, contentDescription = "ยังล็อกอยู่", tint = ZenColors.InkFaint)
+        }
     }
 }
 

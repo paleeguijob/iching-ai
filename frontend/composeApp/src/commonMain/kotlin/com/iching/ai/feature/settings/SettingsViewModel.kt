@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.Account
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.platform.NativeException
 import com.iching.ai.session.AppSession
+import com.iching.ai.session.DailyPushResult
 import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,6 +47,43 @@ class SettingsViewModel(
 
     fun setSound(enabled: Boolean) {
         viewModelScope.launch { updateSettings { it.copy(soundEnabled = enabled) } }
+    }
+
+    val appVersion: String get() = session.appVersion
+    val dailyPushSupported: Boolean get() = session.dailyPushSupported
+
+    private val _notificationsGranted = MutableStateFlow(session.notificationsGranted())
+    val notificationsGranted: StateFlow<Boolean> = _notificationsGranted.asStateFlow()
+    private val _pushBlocked = MutableStateFlow(false)
+
+    /** The system refused: the only way forward is the system's own settings screen. */
+    val pushBlocked: StateFlow<Boolean> = _pushBlocked.asStateFlow()
+
+    /** The user may have changed the permission in system settings while away. */
+    fun refreshNotificationPermission() {
+        _notificationsGranted.value = session.notificationsGranted()
+    }
+
+    fun setDailyPush(enabled: Boolean) {
+        viewModelScope.launch {
+            _pushBlocked.value = session.setDailyPush(enabled) == DailyPushResult.PERMISSION_DENIED
+            refreshNotificationPermission()
+        }
+    }
+
+    fun openNotificationSettings() {
+        _pushBlocked.value = false
+        session.openNotificationSettings()
+    }
+
+    fun dismissPushBlocked() {
+        _pushBlocked.value = false
+    }
+
+    fun selectTheme(theme: AppTheme) {
+        if (theme !in settings.value?.streak?.unlocked.orEmpty()) return
+        viewModelScope.launch { updateSettings { it.copy(selectedTheme = theme) } }
+        session.log("theme_selected", mapOf("theme" to theme.wire))
     }
 
     fun link(provider: SignInProvider) = launchBusy {

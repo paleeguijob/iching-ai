@@ -366,6 +366,8 @@ class DivinationViewModel(
         }
     }
 
+    fun logEvent(name: String, params: Map<String, String>) = session.log(name, params)
+
     fun onMessageShown() = _state.update { it.copy(message = null) }
 
     /** Writes the reading to the Destiny Journal; later changes update the same entry. */

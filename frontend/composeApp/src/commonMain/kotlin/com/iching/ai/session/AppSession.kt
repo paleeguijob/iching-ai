@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -83,6 +84,8 @@ private data class ProductJson(
     val trial: String? = null,
 )
 
+enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
+
 /**
  * App-wide account state: who is signed in, what they may do today, and the actions that change
  * it (ads, purchases, linking Apple/Google, deleting the account). Screens observe [status].
@@ -128,6 +131,43 @@ class AppSession(
                 bridges.analytics.recordError("session_start: ${e.message}")
             }
             bridges.ads.preload()
+        }
+        scope.launch { syncDailyPush() }
+    }
+
+    val appVersion: String get() = bridges.auth.appVersion()
+    val dailyPushSupported: Boolean get() = bridges.notifications.isSupported()
+    fun notificationsGranted(): Boolean = bridges.notifications.permissionGranted()
+    fun openNotificationSettings() = bridges.notifications.openSystemSettings()
+
+    suspend fun setDailyPush(enabled: Boolean): DailyPushResult {
+        if (enabled && !bridges.notifications.permissionGranted()) {
+            val answer = try {
+                awaitNative { bridges.notifications.requestPermission(it) }
+            } catch (e: NativeException) {
+                "denied"
+            }
+            if (answer != "granted") return DailyPushResult.PERMISSION_DENIED
+        }
+        settings.update { it.copy(dailyPushEnabled = enabled, dailyPushSynced = false) }
+        log("push_toggle", mapOf("enabled" to enabled.toString()))
+        // Not awaited: an FCM topic change can wait a long time for connectivity.
+        scope.launch { syncDailyPush() }
+        return if (enabled) DailyPushResult.ENABLED else DailyPushResult.DISABLED
+    }
+
+    /** Brings the FCM topic in line with the setting. A failure (offline) is retried on the next launch. */
+    private suspend fun syncDailyPush() {
+        try {
+            val current = settings.settings.firstOrNull() ?: return
+            if (current.dailyPushSynced || !dailyPushSupported) return
+            val enabled = current.dailyPushEnabled
+            awaitNative { bridges.notifications.setDailySubscribed(enabled, it) }
+            settings.update { if (it.dailyPushEnabled == enabled) it.copy(dailyPushSynced = true) else it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("daily_push_sync: ${e.message}")
         }
     }
 
@@ -298,12 +338,17 @@ class AppSession(
 
     /** Deletes server data and the auth user, wipes this device, then starts a fresh anonymous session. */
     suspend fun deleteAccount(): Result<Unit> = try {
+        val pushWasOn = settings.settings.firstOrNull()?.let { it.dailyPushEnabled || !it.dailyPushSynced } == true
         api.deleteAccount()
         bridges.purchases.logOut()
         purchaserUid = null
         bridges.auth.signOut()
         journal.clear()
         settings.clear()
+        if (pushWasOn) {
+            settings.update { it.copy(dailyPushEnabled = false, dailyPushSynced = false) }
+            scope.launch { syncDailyPush() }
+        }
         _account.value = null
         _status.value = AccountStatus.UNKNOWN_FREE
         val uid = apiSession.ensureSignedIn()

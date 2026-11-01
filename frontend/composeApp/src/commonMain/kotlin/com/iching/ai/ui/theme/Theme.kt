@@ -1,10 +1,15 @@
 package com.iching.ai.ui.theme
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -12,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.resources.Res
 import com.iching.ai.resources.charm_400
 import com.iching.ai.resources.charm_700
@@ -20,20 +26,31 @@ import com.iching.ai.resources.noto_serif_thai_600
 import com.iching.ai.resources.noto_serif_thai_700
 import org.jetbrains.compose.resources.Font
 
-/** Palette from the spec: Zen minimalist ink on paper. */
+/** The selected theme's colours. Backed by snapshot state, so screens recompose when the theme changes. */
 object ZenColors {
-    val PaperCream = Color(0xFFFAF9F6)
-    val PaperShade = Color(0xFFF1EEE6)
-    val PaperDeep = Color(0xFFE7E1D3)
-    val InkBlack = Color(0xFF2D3748)
-    val InkSoft = Color(0xFF5A6578)
-    val InkFaint = Color(0xFF9AA1AD)
-    val BambooGreen = Color(0xFF8F9779)
-    val BambooDeep = Color(0xFF6B7357)
-    val CinnabarRed = Color(0xFF9C4221)
-    val CinnabarSoft = Color(0xFFC9785A)
-    val Scroll = Color(0xFFF6F0E1)
-    val ScrollWood = Color(0xFF5B4636)
+    private var palette by mutableStateOf(InkPaperPalette)
+
+    fun useTheme(theme: AppTheme) {
+        palette = paletteFor(theme)
+    }
+
+    val current: ZenPalette get() = palette
+    val PaperCream get() = palette.paperCream
+    val PaperMid get() = palette.paperMid
+    val PaperShade get() = palette.paperShade
+    val PaperDeep get() = palette.paperDeep
+    val InkBlack get() = palette.inkBlack
+    val InkSoft get() = palette.inkSoft
+    val InkFaint get() = palette.inkFaint
+    val BambooGreen get() = palette.bambooGreen
+    val BambooDeep get() = palette.bambooDeep
+    val CinnabarRed get() = palette.cinnabarRed
+    val CinnabarSoft get() = palette.cinnabarSoft
+    val Scroll get() = palette.scroll
+    val ScrollEdge get() = palette.scrollEdge
+    val ScrollWood get() = palette.scrollWood
+    val ScrollRollerLight get() = palette.scrollRollerLight
+    val ScrollRollerDark get() = palette.scrollRollerDark
 }
 
 @Composable
@@ -74,14 +91,16 @@ private fun zenTypography(): Typography {
 
 @Composable
 fun ZenTheme(content: @Composable () -> Unit) {
+    val palette = ZenColors.current
+    SystemBarsEffect(darkIcons = !palette.isDark)
     val colors = lightColorScheme(
         primary = ZenColors.InkBlack,
         onPrimary = ZenColors.PaperCream,
         primaryContainer = ZenColors.PaperDeep,
         onPrimaryContainer = ZenColors.InkBlack,
         secondary = ZenColors.BambooGreen,
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFFE6E8DC),
+        onSecondary = if (palette.isDark) palette.paperCream else Color.White,
+        secondaryContainer = palette.secondaryContainer,
         onSecondaryContainer = ZenColors.BambooDeep,
         tertiary = ZenColors.CinnabarRed,
         onTertiary = ZenColors.PaperCream,
@@ -92,10 +111,10 @@ fun ZenTheme(content: @Composable () -> Unit) {
         surfaceVariant = ZenColors.PaperShade,
         onSurfaceVariant = ZenColors.InkSoft,
         surfaceContainer = ZenColors.PaperShade,
-        surfaceContainerLow = Color(0xFFF6F4EE),
+        surfaceContainerLow = palette.surfaceLow,
         surfaceContainerHigh = ZenColors.PaperDeep,
-        outline = Color(0xFFCFC8B8),
-        outlineVariant = Color(0xFFE3DDCF),
+        outline = palette.outline,
+        outlineVariant = palette.outlineVariant,
         error = ZenColors.CinnabarRed,
     )
     MaterialTheme(
@@ -106,6 +125,8 @@ fun ZenTheme(content: @Composable () -> Unit) {
             medium = RoundedCornerShape(14.dp),
             large = RoundedCornerShape(22.dp),
         ),
-        content = content,
-    )
+    ) {
+        // The app has no Surface to set this: without it, uncoloured Text falls back to black on every theme.
+        CompositionLocalProvider(LocalContentColor provides ZenColors.InkBlack, content = content)
+    }
 }

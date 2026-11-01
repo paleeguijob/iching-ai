@@ -55,7 +55,7 @@ fun PaperBackground(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(ZenColors.PaperCream, Color(0xFFF7F4EC), ZenColors.PaperShade),
+                    listOf(ZenColors.PaperCream, ZenColors.PaperMid, ZenColors.PaperShade),
                 )
             )
     ) {
@@ -103,13 +103,15 @@ fun CinnabarSeal(
     size: Dp = 56.dp,
     modifier: Modifier = Modifier,
     tilt: Float = -6f,
+    color: Color = ZenColors.CinnabarRed,
+    glyphColor: Color = ZenColors.PaperCream,
 ) {
     Box(
         modifier
             .rotate(tilt)
             .size(size)
-            .background(ZenColors.CinnabarRed.copy(alpha = 0.92f), RoundedCornerShape(size * 0.12f))
-            .border(size * 0.04f, ZenColors.PaperCream.copy(alpha = 0.5f), RoundedCornerShape(size * 0.1f))
+            .background(color.copy(alpha = 0.92f), RoundedCornerShape(size * 0.12f))
+            .border(size * 0.04f, glyphColor.copy(alpha = 0.5f), RoundedCornerShape(size * 0.1f))
             .padding(size * 0.05f),
         contentAlignment = Alignment.Center,
     ) {
@@ -121,7 +123,7 @@ fun CinnabarSeal(
             else -> 0.3f
         }
         val glyphStyle = TextStyle(
-            color = ZenColors.PaperCream,
+            color = glyphColor,
             fontSize = (size.value * glyphScale).sp,
             lineHeight = (size.value * glyphScale * 1.08f).sp,
             fontWeight = FontWeight.Bold,

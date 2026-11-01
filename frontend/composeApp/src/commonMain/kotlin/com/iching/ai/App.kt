@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -49,6 +50,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.iching.ai.feature.daily.DailyScreen
 import com.iching.ai.feature.divination.DivinationScreen
 import com.iching.ai.feature.home.HomeScreen
 import com.iching.ai.feature.journal.JournalEntryScreen
@@ -56,6 +58,7 @@ import com.iching.ai.feature.journal.JournalScreen
 import com.iching.ai.feature.library.HexagramDetailScreen
 import com.iching.ai.feature.library.LibraryScreen
 import com.iching.ai.feature.settings.SettingsScreen
+import com.iching.ai.navigation.DailyRoute
 import com.iching.ai.navigation.DivinationRoute
 import com.iching.ai.navigation.HexagramRoute
 import com.iching.ai.navigation.HomeRoute
@@ -63,6 +66,7 @@ import com.iching.ai.navigation.JournalEntryRoute
 import com.iching.ai.navigation.JournalRoute
 import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
+import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
@@ -89,13 +93,14 @@ private val TABS = listOf(
 
 @Composable
 fun App() {
+    val observeSettings = koinInject<ObserveSettingsUseCase>()
+    val settings by remember { observeSettings() }.collectAsState(initial = null)
+    val current = settings
+    SideEffect { current?.let { ZenColors.useTheme(it.selectedTheme) } }
     ZenTheme {
-        val observeSettings = koinInject<ObserveSettingsUseCase>()
         val updateSettings = koinInject<UpdateSettingsUseCase>()
         val session = koinInject<AppSession>()
-        val settings by remember { observeSettings() }.collectAsState(initial = null)
         val scope = rememberCoroutineScope()
-        val current = settings
         when {
             current == null -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
             !current.onboardingAccepted -> OnboardingScreen(onAccept = {
@@ -133,6 +138,14 @@ private fun MainNavigation() {
             }
         }
 
+        val pendingDaily by PendingNavigation.daily.collectAsState()
+        LaunchedEffect(pendingDaily) {
+            if (pendingDaily) {
+                nav.navigate(DailyRoute) { launchSingleTop = true }
+                PendingNavigation.consumeDaily()
+            }
+        }
+
         val focusManager = LocalFocusManager.current
 
         // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
@@ -158,8 +171,15 @@ private fun MainNavigation() {
                     HomeScreen(
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
-                        onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onOpenDaily = { nav.navigate(DailyRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
+                    )
+                }
+                composable<DailyRoute> { entry ->
+                    DailyScreen(
+                        viewModel = koinViewModel(),
+                        onBack = { nav.popFrom(entry) },
+                        onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                     )
                 }
                 composable<DivinationRoute> { entry ->

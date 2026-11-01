@@ -110,3 +110,13 @@ final class IosAnalytics: NSObject, NativeAnalytics {
         Crashlytics.crashlytics().record(error: NSError(domain: "IChing", code: 0, userInfo: [NSLocalizedDescriptionKey: message]))
     }
 }
+
+/// Push needs an APNs key from the Apple Developer account (docs/RELEASE.md, section 9). Until then
+/// the app hides the daily push switch.
+final class IosNotifications: NSObject, NativeNotifications {
+    func isSupported() -> Bool { false }
+    func permissionGranted() -> Bool { false }
+    func requestPermission(callback: ResultCallback) { callback.onResult(value: "denied", error: nil) }
+    func setDailySubscribed(enabled: Bool, callback: ResultCallback) { callback.onResult(value: "ok", error: nil) }
+    func openSystemSettings() {}
+}

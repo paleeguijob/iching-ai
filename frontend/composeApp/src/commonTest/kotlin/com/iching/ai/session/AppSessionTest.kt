@@ -17,6 +17,7 @@ import com.iching.ai.platform.NativeAds
 import com.iching.ai.platform.NativeAnalytics
 import com.iching.ai.platform.NativeAuth
 import com.iching.ai.platform.NativeBridges
+import com.iching.ai.platform.NativeNotifications
 import com.iching.ai.platform.NativePurchases
 import com.iching.ai.platform.ResultCallback
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +29,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-private class FakeAuth : NativeAuth {
+internal class FakeAuth : NativeAuth {
     override fun currentUserId() = "uid1"
     override fun currentProvider() = "anonymous"
     override fun currentEmail(): String? = null
@@ -44,7 +45,7 @@ private class FakeAuth : NativeAuth {
     override fun appVersion() = "1.0"
 }
 
-private class FakePurchases : NativePurchases {
+internal class FakePurchases : NativePurchases {
     var logInWorks = true
     val logIns = mutableListOf<String>()
     var identifiedAs: String? = null
@@ -74,18 +75,18 @@ private class FakePurchases : NativePurchases {
     }
 }
 
-private object NoAds : NativeAds {
+internal object NoAds : NativeAds {
     override fun showRewarded(callback: ResultCallback) = callback.onResult("dismissed", null)
     override fun preload() = Unit
 }
 
-private object NoAnalytics : NativeAnalytics {
+internal object NoAnalytics : NativeAnalytics {
     override fun logEvent(name: String, params: Map<String, String>) = Unit
     override fun setUserId(uid: String?) = Unit
     override fun recordError(message: String) = Unit
 }
 
-private class FakeApi : OracleApi {
+internal class FakeApi : OracleApi {
     var statusAfterSync = AccountStatus.UNKNOWN_FREE
     var syncFails = false
     var deleteFails = false
@@ -110,7 +111,7 @@ private class FakeApi : OracleApi {
     override suspend fun deleteAccount() = Unit
 }
 
-private class FakeJournal : JournalRepository {
+internal class FakeJournal : JournalRepository {
     val pending = mutableListOf<String>()
     override fun observeAll(): Flow<List<Reading>> = emptyFlow()
     override suspend fun get(id: Long): Reading? = null
@@ -142,7 +143,7 @@ class AppSessionTest {
     private val journal = FakeJournal()
 
     private fun session(scope: CoroutineScope) = FakeAuth().let { auth ->
-        AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics), FirebaseApiSession(auth), api, journal, NoSettings, scope)
+        AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics, NoNotifications), FirebaseApiSession(auth), api, journal, NoSettings, scope)
     }
 
     private fun TestScope.started(): AppSession = session(backgroundScope).also {
@@ -238,4 +239,12 @@ class AppSessionTest {
 
         assertEquals(listOf("s1"), journal.pending)
     }
+}
+
+private object NoNotifications : NativeNotifications {
+    override fun isSupported() = false
+    override fun permissionGranted() = false
+    override fun requestPermission(callback: ResultCallback) = callback.onResult("denied", null)
+    override fun setDailySubscribed(enabled: Boolean, callback: ResultCallback) = callback.onResult("ok", null)
+    override fun openSystemSettings() = Unit
 }

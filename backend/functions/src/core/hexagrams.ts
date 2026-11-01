@@ -17,6 +17,8 @@ export interface Hexagram {
   description: string;
   lines: string[];
   allLines?: string | null;
+  /** Pre-written message for the daily hexagram and its push. Not part of the reading prompt. */
+  dailyMessage: string;
 }
 
 export const TRIGRAMS: Record<string, { symbol: string; nameCn: string; natureTh: string }> = {

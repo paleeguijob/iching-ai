@@ -1,4 +1,4 @@
-# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP)
+# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP) และ v1.1 (หัวข้อ 11)
 
 **ลำดับการปล่อย: Android ก่อน** · iOS ทำภายหลังเมื่อสมัคร Apple Developer แล้ว (รวมไว้ที่หัวข้อ 9)
 
@@ -201,6 +201,8 @@
 
 **ต้องแก้โค้ดก่อน**
 - ☐ **ถอนสิทธิ์ Sign in with Apple ตอนลบบัญชี** — ตอนนี้ยังไม่มีโค้ด revoke และ Apple กำหนดให้ทำ
+- ☐ **Push กวาประจำวัน (v1.1)** — อัปโหลด APNs key ใน Firebase, เพิ่ม `FirebaseMessaging` ใน Xcode และทำ `IosNotifications` ใน `Bridges/IosAdsAndAnalytics.swift` ให้ทำงานจริง (ตอนนี้ `isSupported()` คืน `false` แอปจึงซ่อนสวิตช์) แล้วเรียก `PendingNavigation.requestDaily()` เมื่อแตะแจ้งเตือน
+- ☐ **สี status bar ของธีมมืด (v1.1)** — `SystemBars.ios.kt` ยังไม่ทำงาน ตัวอักษร status bar จะเป็นสีเข้มบนพื้นเข้มในธีมราตรีหมึก
 - ☐ แยก RevenueCat test key ของ debug ออกจาก release แบบเดียวกับ Android และตรวจว่า SDK เป็น 5.43.0 ขึ้นไป
 
 **Firebase**
@@ -241,8 +243,35 @@
 
 ---
 
-## 10. สิ่งที่ยังไม่ได้ทำ (ตั้งใจเว้นไว้ตามขอบเขต MVP)
-- v1.1: กว้าประจำวัน + push 07:00, การ์ดแชร์, streak, TTS (หมวดคำถามทำแล้วในหน้าแรก)
-- schema กวา: `name_en`, `daily_message` (ใช้ตอนทำ v1.1/v2)
+## 10. สิ่งที่ยังไม่ได้ทำ (ตั้งใจเว้นไว้)
+- ปลดล็อกเสียงจาก streak — ต้องมีไฟล์เสียงที่ใช้ได้ตามลิขสิทธิ์ก่อน
+- schema กวา: `name_en` (ใช้ตอนทำ v2)
 - context caching ของ Gemini (prompt ยังสั้นกว่าขั้นต่ำที่ caching คุ้ม)
 - Server-side verification (SSV) ของ AdMob — ตอนนี้ server เชื่อสัญญาณจากแอปที่ผ่าน App Check และจำกัด 2 ครั้ง/วัน/เครื่อง ถ้าเห็นการโกงค่อยเพิ่ม
+
+---
+
+## 11. ปล่อย v1.1 (หลัง v1.0 ขึ้น store แล้ว)
+
+ฟีเจอร์: กวาประจำวัน + push 07:00, การ์ดแชร์, streak + ธีม, เสียงอ่าน (Premium) · `versionCode` 110 เว้นเลข 3–109 ไว้ให้ v1.0 ออก patch
+
+**ค่าใช้จ่ายเพิ่ม:** FCM ฟรี · Cloud Functions ใช้ราว 30 ครั้ง/เดือน อยู่ในโควตาฟรี · Cloud Scheduler 1 งาน อยู่ในโควตาฟรี 3 งานต่อ billing account (เกินคิดราว $0.10/งาน/เดือน — เช็กราคาล่าสุดใน Google Cloud)
+
+1. ☐ อ่านและแก้ข้อความใน [`docs/content/daily-messages.md`](content/daily-messages.md) (Claude ร่าง ต้องให้คนตรวจตามสเปก) · ถ้าแก้ ให้แก้ที่ `hexagrams.json` ฟิลด์ `dailyMessage` ไม่เกิน 120 ตัวอักษร
+2. ☐ Deploy: รันใน `backend/` → `firebase deploy --only functions,hosting` (การ deploy ครั้งแรกจะสร้างงาน Cloud Scheduler `dailyPush` ให้เอง ต้องเปิด Cloud Scheduler API ถ้า CLI ถาม)
+3. ☐ ตรวจว่า `dailyPush` อยู่ใน Cloud Scheduler เวลา `0 7 * * *` เขต `Asia/Bangkok` · log ที่ควรเห็นทุกเช้า: `daily_push_sent`
+4. ☐ ปิดฉุกเฉินได้ด้วย Firestore `config/runtime.dailyPushEnabled = false`
+5. ☐ Play Console → Data safety: ทบทวนรายการ Device IDs เพราะเพิ่ม FCM registration token (ใช้เพื่อ App functionality และเก็บเมื่อผู้ใช้เปิดรับแจ้งเตือนเท่านั้น)
+6. ☐ เพิ่มหัวข้อ "แจ้งเตือน" ในคำอธิบายแอป และประกาศสิทธิ์ `POST_NOTIFICATIONS` ถ้า Play ถาม
+
+**ทดสอบบน Android**
+- ☐ Firebase Console → Messaging → ส่งไปที่ topic `daily-hexagram-th` พร้อม custom data `type=daily` → แอปปิดอยู่ แตะแล้วเปิดหน้ากวาประจำวัน
+- ☐ ปฏิเสธสิทธิ์แจ้งเตือนแล้วเปิดสวิตช์ → มีปุ่มพาไปหน้าตั้งค่าของระบบ · กลับมาแล้วสวิตช์ตรงกับสิทธิ์จริง
+- ☐ แชร์การ์ดไป LINE และ IG Story → ภาพครบ 1080×1920 ไม่ถูกตัด · การ์ดจากคำทำนายมีป้าย AI และไม่มีคำถามของผู้ใช้
+- ☐ เปลี่ยนวันที่เครื่องทีละวัน → streak เพิ่ม, ถึง 7 วันปลดล็อกไผ่เขียว, ข้ามวันแล้วเริ่มนับใหม่แต่ธีมยังอยู่, ย้อนวันแล้วไม่เปลี่ยน
+- ☐ เปลี่ยนทุกธีมแล้วไล่ดูทุกหน้า โดยเฉพาะราตรีหมึก
+- ☐ Premium ฟังคำทำนายจนจบและกดหยุด · Free กดแล้วไป paywall · เครื่องที่ไม่มีเสียงไทยได้ข้อความพาไปหน้าตั้งค่า · ออกจากแอปแล้วเสียงหยุด
+- ☐ ลบบัญชี → ธีมกลับเป็นค่าเริ่มต้น streak เป็นศูนย์ และไม่ได้รับแจ้งเตือนอีก
+- ☐ เช้าถัดจาก deploy: ได้รับแจ้งเตือนเวลา 07:00 จริง และข้อความตรงกับกวาในแอป
+
+**ดูผล KPI ใน Firebase Analytics:** อัตราแชร์ = `share_card` (source=reading) ÷ `reading_completed` · D7 retention · `daily_view`, `streak_milestone`, `theme_selected`, `tts_play`, `push_toggle`, `push_open`

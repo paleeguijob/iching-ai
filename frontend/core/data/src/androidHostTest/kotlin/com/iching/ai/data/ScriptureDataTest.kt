@@ -34,6 +34,13 @@ class ScriptureDataTest {
     }
 
     @Test
+    fun everyHexagramHasAShortUniqueDailyMessage() = runTest {
+        val all = repo.all()
+        assertTrue(all.all { it.dailyMessage.isNotBlank() && it.dailyMessage.length <= 120 })
+        assertEquals(64, all.map { it.dailyMessage }.toSet().size)
+    }
+
+    @Test
     fun onlyFirstTwoHexagramsHaveAllLinesStatement() = runTest {
         assertEquals(listOf(1, 2), repo.all().filter { it.allLines != null }.map { it.id })
     }

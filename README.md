@@ -12,6 +12,12 @@
 - **บัญชี** — Anonymous → ผูก Apple / Google · Restore purchases · ลบบัญชีในแอป
 - **Safety** — คำถามวิกฤตได้รับสายด่วน 1323/1669 แทนคำทำนาย · ป้าย AI-generated · ปุ่มรายงานคำตอบ
 
+## ฟีเจอร์ (v1.1)
+- **กวาประจำวัน** — กวาเดียวกันทุกคนตามวันเวลาไทย พร้อมข้อความที่เขียนไว้ล่วงหน้า 64 ชุด ไม่เรียก AI · แจ้งเตือน 07:00 ผ่าน FCM (เลือกเปิดเอง, ยังไม่รองรับ iOS)
+- **การ์ดแชร์** — ภาพม้วนคัมภีร์ 1080×1920 จากกวาประจำวันหรือคำทำนาย ไม่มีคำถามของผู้ใช้
+- **เส้นทางเต๋า** — นับวันที่เปิดดูกวาประจำวันต่อเนื่อง ปลดล็อกธีมที่ 7, 30 และ 100 วัน
+- **ฟังคำทำนาย** (Premium) — ใช้เสียงอ่านของเครื่อง
+
 ## สถาปัตยกรรม
 
 ```
@@ -22,7 +28,7 @@ iching-ai/
 │   ├── composeApp/   UI, ViewModel, AppSession, NativeBridges
 │   └── core/         domain (Kotlin ล้วน) + data (Ktor → backend, Room, DataStore, คัมภีร์ hexagrams.json)
 ├── backend/    Firebase — รัน firebase CLI จากโฟลเดอร์นี้
-│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account
+│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account · `dailyPush` (ตั้งเวลา 07:00)
 │   ├── hosting/      privacy / terms / delete-account
 │   └── firebase.json, .firebaserc, firestore.rules
 └── docs/       spec + คู่มือขึ้น store
@@ -45,8 +51,8 @@ frontend ↔ backend คุยกันผ่าน HTTPS เท่านั้�
 
 ## ทดสอบ
 ```bash
-cd backend/functions && npm install && npm test   # backend 35 tests
-cd frontend && ./gradlew :core:domain:jvmTest :core:data:testAndroid
+cd backend/functions && npm install && npm test   # backend 54 tests
+cd frontend && ./gradlew :core:domain:jvmTest :core:data:testAndroid :composeApp:testAndroid
 ```
 
 ## ฟอนต์

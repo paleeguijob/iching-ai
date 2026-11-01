@@ -40,6 +40,7 @@ dependencies {
     debugImplementation(libs.firebase.appcheck.debug)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.messaging)
     implementation(libs.revenuecat.purchases)
     implementation(libs.play.services.ads)
     implementation(libs.ump)
@@ -57,8 +58,8 @@ android {
         applicationId = "com.iching.ai"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 110
+        versionName = "1.1.0"
 
         buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"${prop("ADMOB_REWARDED_ANDROID", "ca-app-pub-3940256099942544/5224354917")}\"")
         manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID_ANDROID", "ca-app-pub-3940256099942544~3347511713")

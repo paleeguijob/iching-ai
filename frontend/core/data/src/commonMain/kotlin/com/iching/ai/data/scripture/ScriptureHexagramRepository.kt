@@ -21,11 +21,12 @@ internal data class HexagramDto(
     val description: String,
     val lines: List<String>,
     val allLines: String? = null,
+    val dailyMessage: String = "",
 ) {
     fun toDomain() = Hexagram(
         id = id, nameCn = nameCn, pinyin = pinyin, nameTh = nameTh, pattern = pattern,
         keywords = keywords, judgment = judgment, image = image, description = description,
-        lines = lines, allLines = allLines,
+        lines = lines, allLines = allLines, dailyMessage = dailyMessage,
     )
 }
 
