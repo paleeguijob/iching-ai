@@ -145,7 +145,11 @@ class DivinationViewModel(
             _state.update { it.copy(currentToss = toss, tossKey = it.tossKey + 1, awaitingCast = false) }
             delay(TOSS_ANIMATION_MILLIS)
             _state.update { it.copy(tosses = it.tosses + toss, isTossing = false) }
-            if (_state.value.tosses.size == 6) finishCast()
+            if (_state.value.tosses.size == 6) {
+                // Leave the settled coins and the sixth line on screen before moving on.
+                delay(LAST_TOSS_HOLD_MILLIS)
+                finishCast()
+            }
         }
     }
 
@@ -396,6 +400,7 @@ class DivinationViewModel(
 
     companion object {
         const val TOSS_ANIMATION_MILLIS = 1350L
+        const val LAST_TOSS_HOLD_MILLIS = 1500L
         const val REVEAL_MILLIS = 2200L
         const val CAST_TIMEOUT_MILLIS = 12_000L
     }

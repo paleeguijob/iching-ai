@@ -128,7 +128,7 @@ internal class FakeJournal : JournalRepository {
     override suspend fun clear() = Unit
 }
 
-private object NoSettings : SettingsRepository {
+internal object NoSettings : SettingsRepository {
     override val settings: Flow<AppSettings> = emptyFlow()
     override suspend fun update(transform: (AppSettings) -> AppSettings) = Unit
     override suspend fun clear() = Unit
@@ -241,7 +241,7 @@ class AppSessionTest {
     }
 }
 
-private object NoNotifications : NativeNotifications {
+internal object NoNotifications : NativeNotifications {
     override fun isSupported() = false
     override fun permissionGranted() = false
     override fun requestPermission(callback: ResultCallback) = callback.onResult("denied", null)
