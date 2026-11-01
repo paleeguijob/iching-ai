@@ -245,8 +245,8 @@ private fun ReadingStage(
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(scroll)
             .imePadding()
+            .verticalScroll(scroll)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

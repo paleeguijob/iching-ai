@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavBackStackEntry
@@ -129,7 +132,16 @@ private fun MainNavigation() {
             }
         }
 
-        Box(Modifier.fillMaxSize().background(ZenColors.PaperCream)) {
+        val focusManager = LocalFocusManager.current
+
+        // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
+        // and a scroll cancels the gesture, so neither reaches this.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(ZenColors.PaperCream)
+                .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } },
+        ) {
             NavHost(nav, startDestination = HomeRoute, modifier = Modifier.fillMaxSize()) {
                 composable<HomeRoute> {
                     HomeScreen(
