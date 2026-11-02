@@ -119,6 +119,7 @@ internal fun failureReason(code: String) = when (code) {
     "network" -> FailureReason.NETWORK
     "unauthenticated", "app_check_missing", "app_check_invalid" -> FailureReason.UNAUTHENTICATED
     "premium_required" -> FailureReason.PREMIUM_REQUIRED
+    "reading_not_found" -> FailureReason.NOT_FOUND
     else -> FailureReason.UNKNOWN
 }
 

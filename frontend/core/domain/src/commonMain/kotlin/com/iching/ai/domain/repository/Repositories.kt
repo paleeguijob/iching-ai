@@ -20,7 +20,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {
@@ -74,6 +74,10 @@ interface JournalRepository {
     suspend fun markDeleted(serverId: String)
     suspend fun pendingDeletions(): List<String>
     suspend fun deletionSynced(serverId: String)
+    /** Remembers a reading whose outcome the server has not confirmed saving yet. */
+    suspend fun markOutcomeUnsynced(serverId: String)
+    suspend fun unsyncedOutcomes(): List<Reading>
+    suspend fun outcomeSynced(serverId: String)
     /** Inserts server readings that are not on this device yet (matched by serverId), skipping deleted ones. */
     suspend fun mergeFromServer(readings: List<Reading>): Int
     suspend fun clear()

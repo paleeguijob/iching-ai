@@ -180,6 +180,13 @@ class HttpOracleApiTest {
     }
 
     @Test
+    fun anOutcomeForAMissingReadingFailsAsNotFound() = runTest {
+        val api = apiAnswering(HttpStatusCode.NotFound, """{"error":"reading_not_found"}""")
+        val e = assertFailsWith<ApiException> { api.saveOutcome("r1", null, null) }
+        assertEquals(FailureReason.NOT_FOUND, e.reason)
+    }
+
+    @Test
     fun premiumRequiredBecomesFailedEvent() = runTest {
         val engine = MockEngine { respond("{\"error\":\"premium_required\"}", HttpStatusCode.Forbidden) }
         val events = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").followUp("r1", "x").toList()

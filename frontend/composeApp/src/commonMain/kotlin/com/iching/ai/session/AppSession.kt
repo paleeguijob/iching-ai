@@ -193,7 +193,7 @@ class AppSession(
             bridges.analytics.recordError("purchases_login: ${e.message}")
         }
         refreshStatus()
-        if (_status.value.premium) syncJournal() else syncDeletions()
+        if (_status.value.premium) syncJournal() else syncPending()
     }
 
     private suspend fun identifyPurchaser(uid: String) {
@@ -202,7 +202,27 @@ class AppSession(
         purchaserUid = uid
     }
 
-    /** Deletes on the server what was deleted here while offline. */
+    /** Sends the server what changed here while offline. */
+    private suspend fun syncPending() {
+        syncDeletions()
+        syncOutcomes()
+    }
+
+    private suspend fun syncOutcomes() {
+        for (reading in journal.unsyncedOutcomes()) {
+            val serverId = reading.serverId ?: continue
+            try {
+                api.saveOutcome(serverId, reading.outcome, reading.outcomeNote)
+                journal.outcomeSynced(serverId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (e !is ApiException || e.reason != FailureReason.NOT_FOUND) return
+                journal.outcomeSynced(serverId)
+            }
+        }
+    }
+
     private suspend fun syncDeletions() {
         for (serverId in journal.pendingDeletions()) {
             try {
@@ -242,13 +262,15 @@ class AppSession(
     }
 
     /** Premium: copies server readings that are missing on this device (e.g. after reinstalling). */
-    suspend fun syncJournal(): Int = try {
-        syncDeletions()
-        journal.mergeFromServer(api.readings())
+    suspend fun syncJournal(): Result<Int> = try {
+        syncPending()
+        Result.success(journal.mergeFromServer(api.readings()))
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        0
+        bridges.analytics.recordError("journal_sync: ${e.message}")
+        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) refreshStatus()
+        Result.failure(e)
     }
 
     suspend fun watchAdForReading(): AdResult {

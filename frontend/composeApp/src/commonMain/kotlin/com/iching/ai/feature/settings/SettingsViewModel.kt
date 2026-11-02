@@ -7,6 +7,8 @@ import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
+import com.iching.ai.domain.repository.ApiException
+import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.paywall.restoreMessage
@@ -107,8 +109,7 @@ class SettingsViewModel(
     }
 
     fun syncJournal() = launchBusy {
-        val added = session.syncJournal()
-        _message.value = if (added > 0) "ดึงบันทึกชะตาจากระบบมา $added รายการ" else "บันทึกชะตาในเครื่องเป็นปัจจุบันแล้ว"
+        _message.value = journalSyncMessage(session.syncJournal())
     }
 
     fun deleteAccount(onDone: () -> Unit) = launchBusy {
@@ -134,3 +135,11 @@ class SettingsViewModel(
         }
     }
 }
+
+internal fun journalSyncMessage(result: Result<Int>): String = result.fold(
+    onSuccess = { added -> if (added > 0) "ดึงบันทึกชะตาจากระบบมา $added รายการ" else "บันทึกชะตาในเครื่องเป็นปัจจุบันแล้ว" },
+    onFailure = { e ->
+        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) "การดึงบันทึกชะตาจากระบบเป็นสิทธิ์ของสมาชิก Premium"
+        else "ดึงบันทึกชะตาไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
+    },
+)

@@ -2,6 +2,8 @@ package com.iching.ai.session
 
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
+import com.iching.ai.domain.model.InterpretationSource
+import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
@@ -27,6 +29,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertIs
 
 internal class FakeAuth : NativeAuth {
@@ -113,8 +116,17 @@ internal class FakeApi : OracleApi {
     override suspend fun status() = statusNow ?: throw ApiException(FailureReason.NETWORK, "offline")
     override suspend fun claimAdReward() = false to AccountStatus.UNKNOWN_FREE
     override suspend fun report(readingId: String, reason: String, note: String) = Unit
-    override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) = Unit
-    override suspend fun readings() = serverReadings
+    var saveOutcomeFailure: FailureReason? = null
+    val outcomesSaved = mutableListOf<String>()
+    override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) {
+        saveOutcomeFailure?.let { throw ApiException(it, "failed") }
+        outcomesSaved += readingId
+    }
+    var readingsFailure: FailureReason? = null
+    override suspend fun readings(): List<Reading> {
+        readingsFailure?.let { throw ApiException(it, "failed") }
+        return serverReadings
+    }
     override suspend fun deleteReading(readingId: String) {
         if (deleteFails) throw ApiException(FailureReason.NETWORK, "offline")
         deleted += readingId
@@ -151,7 +163,13 @@ internal class FakeJournal : JournalRepository {
     override suspend fun deletionSynced(serverId: String) {
         pending -= serverId
     }
-    override suspend fun mergeFromServer(readings: List<Reading>) = 0
+    val unsynced = mutableListOf<Reading>()
+    override suspend fun markOutcomeUnsynced(serverId: String) = Unit
+    override suspend fun unsyncedOutcomes() = unsynced.toList()
+    override suspend fun outcomeSynced(serverId: String) {
+        unsynced.removeAll { it.serverId == serverId }
+    }
+    override suspend fun mergeFromServer(readings: List<Reading>) = readings.size
     override suspend fun clear() {
         cleared = true
     }
@@ -257,6 +275,69 @@ class AppSessionTest {
 
         assertEquals(listOf("s1"), api.deleted)
         assertEquals(emptyList(), journal.pending)
+    }
+
+    private val unsyncedReading = Reading(
+        question = "q", createdAtMillis = 1, lines = List(6) { LineType.YOUNG_YANG }, primaryId = 1, relatingId = null,
+        interpretation = "text", source = InterpretationSource.AI, serverId = "s1", outcome = Outcome.YES,
+    )
+
+    @Test
+    fun unsavedOutcomesAreRetriedAtSignIn() = runTest {
+        journal.unsynced += unsyncedReading
+
+        started()
+
+        assertEquals(listOf("s1"), api.outcomesSaved)
+        assertEquals(emptyList(), journal.unsynced)
+    }
+
+    @Test
+    fun anOutcomeThatStillFailsStaysUnsynced() = runTest {
+        journal.unsynced += unsyncedReading
+        api.saveOutcomeFailure = FailureReason.NETWORK
+
+        started()
+
+        assertEquals(listOf(unsyncedReading), journal.unsynced)
+    }
+
+    @Test
+    fun anOutcomeForAReadingGoneFromTheServerIsDropped() = runTest {
+        journal.unsynced += unsyncedReading
+        api.saveOutcomeFailure = FailureReason.NOT_FOUND
+
+        started()
+
+        assertEquals(emptyList(), journal.unsynced)
+    }
+
+    @Test
+    fun syncJournalCountsWhatItAdded() = runTest {
+        val session = started()
+        api.serverReadings = listOf(unsyncedReading)
+
+        assertEquals(1, session.syncJournal().getOrNull())
+    }
+
+    @Test
+    fun aFailedJournalFetchIsReportedAsAFailure() = runTest {
+        val session = started()
+        api.readingsFailure = FailureReason.NETWORK
+
+        assertTrue(session.syncJournal().isFailure)
+    }
+
+    @Test
+    fun aJournalFetchRefusedForLapsedPremiumUpdatesTheStatus() = runTest {
+        api.statusNow = AccountStatus.UNKNOWN_FREE.copy(premium = true)
+        val session = started()
+        api.statusNow = AccountStatus.UNKNOWN_FREE
+        api.readingsFailure = FailureReason.PREMIUM_REQUIRED
+
+        session.syncJournal()
+
+        assertEquals(false, session.status.value.premium)
     }
 
     @Test

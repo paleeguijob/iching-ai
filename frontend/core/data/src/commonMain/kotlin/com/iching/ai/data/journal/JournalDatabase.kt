@@ -50,6 +50,10 @@ data class ReadingEntity(
 @Entity(tableName = "deleted_readings")
 data class DeletedReadingEntity(@PrimaryKey val serverId: String)
 
+/** A server reading whose outcome changed here and that the server has not confirmed saving yet. */
+@Entity(tableName = "unsynced_outcomes")
+data class UnsyncedOutcomeEntity(@PrimaryKey val serverId: String)
+
 @Dao
 interface ReadingDao {
     @Query("SELECT * FROM readings ORDER BY createdAtMillis DESC")
@@ -81,9 +85,21 @@ interface ReadingDao {
 
     @Query("DELETE FROM deleted_readings")
     suspend fun clearDeleted()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun markOutcomeUnsynced(entity: UnsyncedOutcomeEntity)
+
+    @Query("SELECT readings.* FROM readings INNER JOIN unsynced_outcomes ON readings.serverId = unsynced_outcomes.serverId")
+    suspend fun unsyncedOutcomes(): List<ReadingEntity>
+
+    @Query("DELETE FROM unsynced_outcomes WHERE serverId = :serverId")
+    suspend fun outcomeSynced(serverId: String)
+
+    @Query("DELETE FROM unsynced_outcomes")
+    suspend fun clearUnsyncedOutcomes()
 }
 
-@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class], version = 3)
+@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class, UnsyncedOutcomeEntity::class], version = 4)
 @ConstructedBy(JournalDatabaseConstructor::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun readingDao(): ReadingDao
@@ -104,6 +120,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `deleted_readings` (`serverId` TEXT NOT NULL, PRIMARY KEY(`serverId`))")
+    }
+}
+
+/** v3 → v4: outcomes the server has not saved yet, so they are not lost with the device. */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `unsynced_outcomes` (`serverId` TEXT NOT NULL, PRIMARY KEY(`serverId`))")
     }
 }
 
@@ -158,14 +181,22 @@ class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {
     override fun observeAll(): Flow<List<Reading>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
     override suspend fun get(id: Long): Reading? = dao.get(id)?.toDomain()
     override suspend fun save(reading: Reading): Long = dao.upsert(reading.toEntity())
-    override suspend fun delete(id: Long) = dao.delete(id)
+    override suspend fun delete(id: Long) {
+        dao.get(id)?.serverId?.let { dao.outcomeSynced(it) }
+        dao.delete(id)
+    }
+
     override suspend fun markDeleted(serverId: String) = dao.markDeleted(DeletedReadingEntity(serverId))
     override suspend fun pendingDeletions(): List<String> = dao.deletedServerIds()
     override suspend fun deletionSynced(serverId: String) = dao.deletionSynced(serverId)
+    override suspend fun markOutcomeUnsynced(serverId: String) = dao.markOutcomeUnsynced(UnsyncedOutcomeEntity(serverId))
+    override suspend fun unsyncedOutcomes(): List<Reading> = dao.unsyncedOutcomes().map { it.toDomain() }
+    override suspend fun outcomeSynced(serverId: String) = dao.outcomeSynced(serverId)
 
     override suspend fun clear() {
         dao.clear()
         dao.clearDeleted()
+        dao.clearUnsyncedOutcomes()
     }
 
     override suspend fun mergeFromServer(readings: List<Reading>): Int {

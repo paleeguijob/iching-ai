@@ -15,6 +15,7 @@ import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveJournalUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.ResolveCastUseCase
+import com.iching.ai.domain.usecase.SaveOutcomeUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.SearchHexagramsUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
@@ -55,6 +56,7 @@ val domainModule = module {
     factoryOf(::GetReadingUseCase)
     factoryOf(::SaveReadingUseCase)
     factory { DeleteReadingUseCase(get(), get<OracleApi>()::deleteReading) }
+    factory { SaveOutcomeUseCase(get(), get<OracleApi>()::saveOutcome) }
     factory { FilterJournalUseCase() }
     factoryOf(::ObserveSettingsUseCase)
     factoryOf(::UpdateSettingsUseCase)
@@ -106,7 +108,7 @@ val presentationModule = module {
     viewModelOf(::LibraryViewModel)
     viewModel { params -> HexagramDetailViewModel(params.get(), get()) }
     viewModelOf(::JournalViewModel)
-    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get(), get()) }
+    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get()) }
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PaywallViewModel)
 }

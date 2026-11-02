@@ -9,6 +9,7 @@ import com.iching.ai.domain.model.LineType.OLD_YANG
 import com.iching.ai.domain.model.LineType.OLD_YIN
 import com.iching.ai.domain.model.LineType.YOUNG_YANG
 import com.iching.ai.domain.model.LineType.YOUNG_YIN
+import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
@@ -19,6 +20,8 @@ import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
+import com.iching.ai.domain.usecase.GetReadingUseCase
+import com.iching.ai.domain.usecase.SaveOutcomeUseCase
 import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import kotlinx.coroutines.flow.Flow
@@ -57,7 +60,11 @@ private class FakeJournal(vararg initial: Reading) : JournalRepository {
     val pending = mutableListOf<String>()
     override fun observeAll(): Flow<List<Reading>> = flowOf(readings)
     override suspend fun get(id: Long) = readings.firstOrNull { it.id == id }
-    override suspend fun save(reading: Reading) = reading.id
+    override suspend fun save(reading: Reading): Long {
+        readings.removeAll { it.id == reading.id }
+        readings += reading
+        return reading.id
+    }
     override suspend fun delete(id: Long) {
         readings.removeAll { it.id == id }
     }
@@ -67,6 +74,14 @@ private class FakeJournal(vararg initial: Reading) : JournalRepository {
     override suspend fun pendingDeletions() = pending.toList()
     override suspend fun deletionSynced(serverId: String) {
         pending -= serverId
+    }
+    val unsynced = mutableListOf<String>()
+    override suspend fun markOutcomeUnsynced(serverId: String) {
+        unsynced += serverId
+    }
+    override suspend fun unsyncedOutcomes() = readings.filter { it.serverId in unsynced }
+    override suspend fun outcomeSynced(serverId: String) {
+        unsynced -= serverId
     }
     override suspend fun mergeFromServer(readings: List<Reading>) = 0
     override suspend fun clear() = readings.clear()
@@ -97,6 +112,51 @@ class DeleteReadingTest {
         DeleteReadingUseCase(journal) { error("no server copy exists") }(1)
         assertEquals(emptyList(), journal.readings)
         assertEquals(emptyList(), journal.pending)
+    }
+}
+
+class SaveOutcomeTest {
+    private val answered = fakeReading(1, "s1").copy(outcome = Outcome.YES, outcomeNote = "note")
+
+    @Test
+    fun savesOnTheServerToo() = runTest {
+        val journal = FakeJournal(fakeReading(1, "s1"))
+        val sent = mutableListOf<Triple<String, Outcome?, String?>>()
+        SaveOutcomeUseCase(journal) { id, outcome, note -> sent += Triple(id, outcome, note) }(answered)
+        assertEquals(listOf(Triple<String, Outcome?, String?>("s1", Outcome.YES, "note")), sent)
+        assertEquals(emptyList(), journal.unsynced)
+    }
+
+    @Test
+    fun offlineOutcomeStaysOnTheDeviceAndMarkedForLater() = runTest {
+        val journal = FakeJournal(fakeReading(1, "s1"))
+        SaveOutcomeUseCase(journal) { _, _, _ -> throw ApiException(FailureReason.NETWORK, "offline") }(answered)
+        assertEquals(Outcome.YES, journal.get(1)?.outcome)
+        assertEquals(listOf("s1"), journal.unsynced)
+    }
+
+    @Test
+    fun readingCastOnThisDeviceNeverCallsTheServer() = runTest {
+        val journal = FakeJournal(fakeReading(1, null))
+        SaveOutcomeUseCase(journal) { _, _, _ -> error("no server copy exists") }(fakeReading(1, null).copy(outcome = Outcome.NO))
+        assertEquals(Outcome.NO, journal.get(1)?.outcome)
+        assertEquals(emptyList(), journal.unsynced)
+    }
+}
+
+class GetReadingTest {
+    private fun useCase(journal: FakeJournal) = GetReadingUseCase(journal, ResolveCastUseCase(FakeHexagrams))
+
+    @Test
+    fun aReadingFetchedWithoutTextShowsTheScripture() = runTest {
+        val blank = fakeReading(1, "s1").copy(interpretation = "", source = InterpretationSource.SCRIPTURE)
+        val text = useCase(FakeJournal(blank))(1)?.interpretation.orEmpty()
+        assertTrue("judgment-64" in text, text)
+    }
+
+    @Test
+    fun aReadingWithTextIsLeftAlone() = runTest {
+        assertEquals("text", useCase(FakeJournal(fakeReading(1, "s1")))(1)?.interpretation)
     }
 }
 
