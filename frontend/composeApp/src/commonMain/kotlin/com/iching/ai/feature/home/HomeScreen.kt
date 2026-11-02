@@ -48,8 +48,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.ui.toThaiNumerals
@@ -152,28 +154,79 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
+            GuidanceQuotaBar(guidanceQuota(status))
+            Spacer(Modifier.height(12.dp))
             ZenPrimaryButton(
                 text = "เริ่มเสี่ยงทาย",
                 onClick = { onCast(question.trim(), QuestionCategory.fromWire(category)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(
-                when {
-                    !status.aiEnabled -> "นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้"
-                    status.premium -> "Premium · วันนี้เหลือคำชี้แนะจากนักพรต ${status.includedLeft.toThaiNumerals()} ครั้ง"
-                    status.readingsLeft > 0 -> "วันนี้เหลือคำชี้แนะจากนักพรต ${status.readingsLeft.toThaiNumerals()} ครั้ง"
-                    else -> "คำชี้แนะของวันนี้ครบแล้ว — ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = ZenColors.InkFaint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-            )
 
             Spacer(Modifier.height(36.dp))
             daily?.let { DailyHexagramCard(it, streakDays, onClick = onOpenDaily) }
             Spacer(Modifier.height(120.dp))
+        }
+    }
+}
+
+/** What the home screen says about today's guidance; [count] is null when no count applies. */
+data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
+
+fun guidanceQuota(status: AccountStatus): GuidanceQuota {
+    if (!status.aiEnabled) {
+        return GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null)
+    }
+    val label = if (status.premium) "Premium · วันนี้เหลือคำชี้แนะจากนักพรต" else "วันนี้เหลือคำชี้แนะจากนักพรต"
+    val count = if (status.premium) status.includedLeft else status.readingsLeft
+    val note = when {
+        count > 0 -> null
+        !status.premium && status.adsWatchableLeft > 0 -> "ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม"
+        else -> "ยังเสี่ยงทายและอ่านตัวบทได้"
+    }
+    return GuidanceQuota(label, count, note)
+}
+
+@Composable
+private fun GuidanceQuotaBar(quota: GuidanceQuota) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ZenColors.PaperCream.copy(alpha = 0.75f))
+            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.08f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                quota.label,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (quota.count == null) ZenColors.InkSoft else ZenColors.InkBlack,
+            )
+            quota.note?.let {
+                Spacer(Modifier.height(2.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
+            }
+        }
+        quota.count?.let { count ->
+            val countColor = if (count > 0) ZenColors.BambooDeep else ZenColors.CinnabarRed
+            Spacer(Modifier.width(12.dp))
+            Row {
+                Text(
+                    count.toThaiNumerals(),
+                    style = MaterialTheme.typography.displayMedium.copy(lineHeight = 44.sp),
+                    color = countColor,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "ครั้ง",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = countColor,
+                    modifier = Modifier.alignByBaseline(),
+                )
+            }
         }
     }
 }
