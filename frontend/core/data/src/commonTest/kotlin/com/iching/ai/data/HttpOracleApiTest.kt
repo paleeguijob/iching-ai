@@ -5,6 +5,7 @@ import com.iching.ai.data.api.HttpOracleApi
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.LimitReason
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -36,6 +38,64 @@ private class FakeSession : ApiSession {
 class HttpOracleApiTest {
 
     private val sse = headersOf(HttpHeaders.ContentType, "text/event-stream")
+
+    private fun apiAnswering(status: HttpStatusCode, body: String) =
+        HttpOracleApi(HttpClient(MockEngine { respond(body, status) }), FakeSession(), "https://x/api")
+
+    @Test
+    fun syncPurchasesReadsTheEntitlementsTheServerReturns() = runTest {
+        var request = ""
+        val engine = MockEngine { r ->
+            request = "${r.method.value} ${r.url.encodedPath}"
+            respond("""{"premium":true,"premiumUntil":1893456000000,"coins":10}""", HttpStatusCode.OK)
+        }
+        val status = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").syncPurchases()
+        assertEquals("POST /api/purchases/sync", request)
+        assertTrue(status.premium)
+        assertEquals(1893456000000L, status.premiumUntilMillis)
+        assertEquals(10, status.coins)
+    }
+
+    @Test
+    fun syncPurchasesFailsLoudlyWhenPurchasesAreNotConfigured() = runTest {
+        val api = apiAnswering(HttpStatusCode.ServiceUnavailable, """{"error":"purchases_not_configured"}""")
+        assertFailsWith<ApiException> { api.syncPurchases() }
+    }
+
+    @Test
+    fun aRejectedTokenThatStaysRejectedIsUnauthenticated() = runTest {
+        val session = FakeSession()
+        val engine = MockEngine { respond("""{"error":"unauthenticated"}""", HttpStatusCode.Unauthorized) }
+        val failure = assertFailsWith<ApiException> { HttpOracleApi(HttpClient(engine), session, "https://x/api").syncPurchases() }
+        assertEquals(FailureReason.UNAUTHENTICATED, failure.reason)
+        assertEquals(listOf(false, true), session.forced)
+    }
+
+    @Test
+    fun mergeAccountSendsTheLeftBehindAccountsToken() = runTest {
+        var sent = ""
+        val engine = MockEngine { r ->
+            sent = "${r.method.value} ${r.url.encodedPath} ${(r.body as TextContent).text}"
+            respond("""{"coins":10}""", HttpStatusCode.OK)
+        }
+        val status = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").mergeAccount("anon-token")
+        assertEquals("""POST /api/account/merge {"fromIdToken":"anon-token"}""", sent)
+        assertEquals(10, status.coins)
+    }
+
+    @Test
+    fun deleteAccountCallsTheAccountRouteAndReportsFailure() = runTest {
+        var request = ""
+        val engine = MockEngine { r ->
+            request = "${r.method.value} ${r.url.encodedPath}"
+            respond("""{"ok":true}""", HttpStatusCode.OK)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").deleteAccount()
+        assertEquals("DELETE /api/account", request)
+
+        val api = apiAnswering(HttpStatusCode.InternalServerError, """{"error":"internal"}""")
+        assertFailsWith<ApiException> { api.deleteAccount() }
+    }
 
     @Test
     fun deleteReadingCallsTheReadingRoute() = runTest {

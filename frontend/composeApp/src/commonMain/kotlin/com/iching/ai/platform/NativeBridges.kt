@@ -53,7 +53,7 @@ interface NativePurchases {
      */
     fun offerings(callback: ResultCallback)
 
-    /** value = "purchased" or "cancelled". */
+    /** value = "purchased", "cancelled" or "pending" (the store is still waiting for the payment). */
     fun purchase(packageId: String, callback: ResultCallback)
 
     /** value = "ok". */

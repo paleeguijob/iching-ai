@@ -11,6 +11,7 @@
     "build": "npm run copy-data && tsc -p tsconfig.json",
     "typecheck:core": "tsc -p tsconfig.core.json",
     "test": "npm run copy-data && node --import tsx --test test/*.test.ts",
+    "test:emulator": "npm run copy-data && firebase emulators:exec --project demo-iching --only firestore 'node --import tsx --test test/store.emulator.test.ts'",
     "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
     "deploy": "firebase deploy --only functions,firestore:rules,hosting",
     "logs": "firebase functions:log"

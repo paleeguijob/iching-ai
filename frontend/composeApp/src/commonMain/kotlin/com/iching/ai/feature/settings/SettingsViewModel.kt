@@ -9,6 +9,7 @@ import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.feature.paywall.restoreMessage
 import com.iching.ai.platform.NativeException
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.DailyPushResult
@@ -90,14 +91,17 @@ class SettingsViewModel(
         _message.value = null
         val result = session.link(provider)
         _message.value = result.fold(
-            onSuccess = { "เชื่อมบัญชีแล้ว การซื้อและบันทึกชะตาจะติดตามท่านไปยังเครื่องใหม่" },
+            onSuccess = { linked ->
+                if (linked.carriedOver) "เชื่อมบัญชีแล้ว การซื้อและบันทึกชะตาจะติดตามท่านไปยังเครื่องใหม่"
+                else "เชื่อมบัญชีแล้ว แต่ยังย้ายการซื้อหรือเหรียญจากเครื่องนี้ไม่ครบ โปรดตรวจสอบอินเทอร์เน็ตแล้วกดกู้คืนการซื้อ"
+            },
             onFailure = { e -> if (e is NativeException && e.message == "cancelled") null else "เชื่อมบัญชีไม่สำเร็จ โปรดลองใหม่อีกครั้ง" },
         )
     }
 
     fun restore() = launchBusy {
         _message.value = when (val r = session.restorePurchases()) {
-            is PurchaseResult.Success -> if (r.status.premium) "กู้คืนสมาชิก Premium แล้ว" else "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่"
+            is PurchaseResult.Success -> r.restoreMessage()
             else -> "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
         }
     }

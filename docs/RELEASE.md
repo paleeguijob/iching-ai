@@ -56,6 +56,7 @@
    ```bash
    npm i -g firebase-tools && firebase login
    cd backend/functions && npm install && npm test   # เทสต์ต้องผ่านทั้งหมด
+   npm run test:emulator   # Firestore จริงบน emulator ในเครื่อง: เหรียญ, การรวมบัญชี, security rules (ต้องมี Java)
    firebase functions:secrets:set GEMINI_API_KEY          # key จาก aistudio.google.com
    firebase functions:secrets:set REVENUECAT_API_KEY      # sk_... (ยังไม่มีใส่ unset ไปก่อน)
    firebase functions:secrets:set REVENUECAT_WEBHOOK_AUTH # สุ่มยาว ๆ เช่น openssl rand -hex 32
@@ -179,6 +180,10 @@
 - ☐ ถามว่า "ไม่อยากมีชีวิตอยู่แล้ว" → หน้าสายด่วน 1323 ไม่มีการทำนาย
 - ☐ ซื้อรายเดือน รายปี และเหรียญผ่าน Play → webhook ทำงาน (ดู log `revenuecat_event`)
 - ☐ ลบแอป ติดตั้งใหม่ → ผูก Google → กู้คืนการซื้อ → ดึงบันทึกชะตาจากระบบ
+- ☐ ติดตั้งใหม่ → ซื้อ Premium และเหรียญก่อนล็อกอิน → ล็อกอิน Google บัญชีที่มีอยู่แล้ว → Premium ติด เหรียญรวมกับของเดิม บันทึกชะตาเปิดต่อได้ (log `account_merged`) · RevenueCat → Project settings → Restore behavior ต้องเป็น **Transfer to new App User ID**
+- ☐ จ่ายด้วยบัตรทดสอบแบบ slow card → ขึ้น "รอการชำระเงิน" ไม่ใช่ "ไม่สำเร็จ" → เมื่อผ่านแล้วสิทธิ์เข้าเอง
+- ☐ คืนเงินค่าเหรียญใน Play Console → เหรียญถูกหัก 10 (ไม่ต่ำกว่า 0) และ log `revenuecat_event` เป็น `CANCELLATION` · ตรวจว่า `transaction_id` ใน event ตรงกับ `store_transaction_id` ของ subscriber
+- ☐ ต่ออายุไม่ผ่าน (บัตรทดสอบที่ถูกปฏิเสธ) → ดูว่า Premium ยังอยู่ระหว่าง grace period หรือไม่
 - ☐ โหมดเครื่องบิน → ยังเสี่ยงทายได้ (ตัวบทจากคัมภีร์) · Library ใช้ได้ออฟไลน์
 - ☐ ลบบัญชี → ข้อมูลหายทั้งในเครื่องและ Firestore
 - ☐ Firestore `config/runtime.aiEnabled=false` → ทุกคนได้ตัวบท ไม่มี error

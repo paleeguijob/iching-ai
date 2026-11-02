@@ -60,6 +60,8 @@ interface OracleApi {
     suspend fun readings(): List<Reading>
     suspend fun deleteReading(readingId: String)
     suspend fun syncPurchases(): AccountStatus
+    /** Moves coins and readings of the anonymous account behind [fromIdToken] into the signed-in one. */
+    suspend fun mergeAccount(fromIdToken: String): AccountStatus
     suspend fun deleteAccount()
 }
 

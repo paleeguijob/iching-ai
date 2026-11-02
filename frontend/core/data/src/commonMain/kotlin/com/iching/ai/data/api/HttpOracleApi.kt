@@ -211,6 +211,12 @@ class HttpOracleApi(
     override suspend fun syncPurchases(): AccountStatus =
         json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain()
 
+    override suspend fun mergeAccount(fromIdToken: String): AccountStatus =
+        json.decodeFromString(
+            StatusDto.serializer(),
+            call(HttpMethod.Post, "/account/merge", buildJsonObject { put("fromIdToken", fromIdToken) }),
+        ).toDomain()
+
     override suspend fun deleteAccount() {
         call(HttpMethod.Delete, "/account")
     }

@@ -27,6 +27,14 @@ data class PaywallUiState(
 }
 
 private const val PENDING_MESSAGE = "ชำระเงินแล้ว แต่ระบบยังไม่อัปเดตสิทธิ์ โปรดอย่าซื้อซ้ำ กดกู้คืนการซื้ออีกครั้งในอีกสักครู่"
+private const val AWAITING_PAYMENT_MESSAGE = "รอการชำระเงินให้เสร็จสิ้น สิทธิ์จะเข้าเองเมื่อชำระแล้ว โปรดอย่าซื้อซ้ำ"
+
+/** What restoring brought back; a coin pack counts, not only a subscription. */
+fun PurchaseResult.Success.restoreMessage(): String = when {
+    status.premium -> "กู้คืนสมาชิก Premium แล้ว"
+    coinsAdded > 0 -> "ได้รับ $coinsAdded เหรียญแล้ว"
+    else -> "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่"
+}
 
 class PaywallViewModel(private val session: AppSession) : ViewModel() {
     private val _state = MutableStateFlow(PaywallUiState())
@@ -72,6 +80,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
                     PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
+                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE)
                     is PurchaseResult.Error -> it.copy(busy = false, message = "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
                 }
             }
@@ -87,11 +96,12 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                 when (result) {
                     is PurchaseResult.Success -> it.copy(
                         busy = false,
-                        purchased = result.status.premium,
-                        message = if (result.status.premium) "กู้คืนสมาชิก Premium แล้ว" else "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่",
+                        purchased = result.status.premium || result.coinsAdded > 0,
+                        message = result.restoreMessage(),
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
                     PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
+                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE)
                     is PurchaseResult.Error -> it.copy(busy = false, message = "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
                 }
             }

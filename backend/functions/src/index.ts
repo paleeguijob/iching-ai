@@ -52,13 +52,21 @@ function deps(): Deps {
     fetchEntitlements: rc ? rc.fetchEntitlements : null,
     deletePurchaser: rc ? rc.deleteSubscriber : null,
     deleteAuthUser: (uid) => getAuth().deleteUser(uid),
+    isAnonymousUser: (uid) =>
+      getAuth()
+        .getUser(uid)
+        .then((user) => user.providerData.length === 0)
+        .catch((e) => {
+          if (e?.code === "auth/user-not-found") return null;
+          throw e;
+        }),
     now: Date.now,
     log: logger,
     skipAppCheck: process.env.FUNCTIONS_EMULATOR === "true",
   };
 }
 
-/** The app's API: /divine, /follow-up, /status, /ad-reward, /report, /readings, /purchases/sync, /account. */
+/** The app's API: /divine, /follow-up, /status, /ad-reward, /report, /readings, /purchases/sync, /account, /account/merge. */
 export const api = onRequest(
   {
     region: REGION,

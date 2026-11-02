@@ -51,6 +51,13 @@ internal class FakePurchases : NativePurchases {
     var identifiedAs: String? = null
     /** The RevenueCat id each purchase was made under. */
     val purchasesUnder = mutableListOf<String?>()
+    var restores = 0
+    var logOuts = 0
+    /** What the store answers: value or error. Null holds the answer back until [answerHeld]. */
+    var purchaseAnswer: Pair<String?, String?>? = "purchased" to null
+    var restoreError: String? = null
+    private var held: ResultCallback? = null
+    fun answerHeld() = held?.onResult("purchased", null)
     override fun logIn(uid: String, callback: ResultCallback) {
         logIns += uid
         if (logInWorks) {
@@ -63,14 +70,17 @@ internal class FakePurchases : NativePurchases {
     override fun offerings(callback: ResultCallback) = callback.onResult("[]", null)
     override fun purchase(packageId: String, callback: ResultCallback) {
         purchasesUnder += identifiedAs
-        callback.onResult("purchased", null)
+        val answer = purchaseAnswer
+        if (answer == null) held = callback else callback.onResult(answer.first, answer.second)
     }
     override fun restore(callback: ResultCallback) {
         purchasesUnder += identifiedAs
-        callback.onResult("ok", null)
+        restores++
+        restoreError?.let { callback.onResult(null, it) } ?: callback.onResult("ok", null)
     }
     override fun manageSubscriptionsUrl() = ""
     override fun logOut() {
+        logOuts++
         identifiedAs = null
     }
 }
@@ -92,10 +102,15 @@ internal class FakeApi : OracleApi {
     var deleteFails = false
     val deleted = mutableListOf<String>()
     var serverReadings = emptyList<Reading>()
+    /** GET /status; null answers as if the server cannot be reached. */
+    var statusNow: AccountStatus? = AccountStatus.UNKNOWN_FREE
+    var syncCalls = 0
+    var deleteAccountFails = false
+    var deleteAccountCalls = 0
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
-    override suspend fun status() = AccountStatus.UNKNOWN_FREE
+    override suspend fun status() = statusNow ?: throw ApiException(FailureReason.NETWORK, "offline")
     override suspend fun claimAdReward() = false to AccountStatus.UNKNOWN_FREE
     override suspend fun report(readingId: String, reason: String, note: String) = Unit
     override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) = Unit
@@ -105,14 +120,26 @@ internal class FakeApi : OracleApi {
         deleted += readingId
     }
     override suspend fun syncPurchases(): AccountStatus {
+        syncCalls++
         if (syncFails) throw ApiException(FailureReason.NETWORK, "offline")
         return statusAfterSync
     }
-    override suspend fun deleteAccount() = Unit
+    var mergeFails = false
+    val merged = mutableListOf<String>()
+    override suspend fun mergeAccount(fromIdToken: String): AccountStatus {
+        if (mergeFails) throw ApiException(FailureReason.NETWORK, "offline")
+        merged += fromIdToken
+        return statusAfterSync
+    }
+    override suspend fun deleteAccount() {
+        deleteAccountCalls++
+        if (deleteAccountFails) throw ApiException(FailureReason.NETWORK, "offline")
+    }
 }
 
 internal class FakeJournal : JournalRepository {
     val pending = mutableListOf<String>()
+    var cleared = false
     override fun observeAll(): Flow<List<Reading>> = emptyFlow()
     override suspend fun get(id: Long): Reading? = null
     override suspend fun save(reading: Reading) = 0L
@@ -125,7 +152,9 @@ internal class FakeJournal : JournalRepository {
         pending -= serverId
     }
     override suspend fun mergeFromServer(readings: List<Reading>) = 0
-    override suspend fun clear() = Unit
+    override suspend fun clear() {
+        cleared = true
+    }
 }
 
 internal object NoSettings : SettingsRepository {

@@ -112,8 +112,12 @@ export interface Store {
   listReadings(uid: string, limit: number): Promise<StoredReading[]>;
   addReport(report: { uid: string; readingId: string; reason: string; note: string; createdAt: number }): Promise<void>;
   setPremiumUntil(uid: string, premiumUntil: number | null): Promise<void>;
-  /** Adds coins once per transaction id; returns false if this transaction was already granted. */
+  /** Adds coins once per transaction id, across all accounts; returns false if it was already granted. */
   grantCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
+  /** Takes back a refunded pack (never below zero), once; a pack refunded before it was granted is never granted. */
+  revokeCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
+  /** Moves coins and readings from [fromUid] to [toUid], then deletes [fromUid]'s data. Safe to repeat. */
+  mergeUser(fromUid: string, toUid: string): Promise<void>;
   deleteUser(uid: string): Promise<void>;
 }
 
@@ -133,6 +137,8 @@ export interface Deps {
   /** RevenueCat lookup; null when RevenueCat is not configured. */
   fetchEntitlements: ((uid: string) => Promise<Entitlements>) | null;
   deleteAuthUser(uid: string): Promise<void>;
+  /** Whether the login is still anonymous; null when it no longer exists. */
+  isAnonymousUser(uid: string): Promise<boolean | null>;
   deletePurchaser: ((uid: string) => Promise<void>) | null;
   now(): number;
   log: { info(msg: string, data?: object): void; warn(msg: string, data?: object): void; error(msg: string, data?: object): void };
@@ -424,6 +430,36 @@ export function createApi(deps: Deps) {
     await syncPurchases(uid).catch((e) => deps.log.warn("premium_refresh_failed", { uid, detail: String(e) }));
   }
 
+  /** Already gone counts as done: the app may be retrying after the first answer was lost. */
+  async function deleteLogin(uid: string) {
+    await deps.deleteAuthUser(uid).catch((e) => {
+      if ((e as { code?: string })?.code !== "auth/user-not-found") throw e;
+    });
+  }
+
+  const deletePurchaserQuietly = async (uid: string) => {
+    if (deps.deletePurchaser) await deps.deletePurchaser(uid).catch((e) => deps.log.warn("revenuecat_delete_failed", { uid, e: String(e) }));
+  };
+
+  /**
+   * Signing into an existing account from a fresh install leaves the install's anonymous account
+   * behind. Holding its ID token proves it is the caller's, and only anonymous accounts can be
+   * absorbed, so a leaked token of a real account cannot be used to empty it.
+   */
+  async function mergeAnonymousAccount(uid: string, fromIdToken: string) {
+    const from = await deps.verifyIdToken(fromIdToken).catch(() => {
+      throw new HttpError(403, "merge_refused");
+    });
+    if (from.uid === uid) throw new HttpError(400, "bad_request");
+    const anonymous = await deps.isAnonymousUser(from.uid);
+    if (anonymous === false) throw new HttpError(403, "merge_refused");
+    if (anonymous === null) return;
+    await deps.store.mergeUser(from.uid, uid);
+    await deletePurchaserQuietly(from.uid);
+    await deleteLogin(from.uid);
+    deps.log.info("account_merged", { from: from.uid, to: uid });
+  }
+
   const toClientReading = (r: StoredReading) => ({
     id: r.id,
     question: r.question,
@@ -504,10 +540,16 @@ export function createApi(deps: Deps) {
         res.status(200).json(await readStatus(uid, deviceHash, cfg));
         return;
       }
+      if (route === "POST /account/merge") {
+        if (typeof b.fromIdToken !== "string" || !b.fromIdToken) throw new HttpError(400, "bad_request");
+        await mergeAnonymousAccount(uid, b.fromIdToken);
+        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        return;
+      }
       if (route === "DELETE /account") {
         await deps.store.deleteUser(uid);
-        if (deps.deletePurchaser) await deps.deletePurchaser(uid).catch((e) => deps.log.warn("revenuecat_delete_failed", { uid, e: String(e) }));
-        await deps.deleteAuthUser(uid);
+        await deletePurchaserQuietly(uid);
+        await deleteLogin(uid);
         deps.log.info("account_deleted", { uid });
         res.status(200).json({ ok: true });
         return;
@@ -535,6 +577,8 @@ export interface RevenueCatEvent {
   aliases?: string[];
   transferred_from?: string[];
   transferred_to?: string[];
+  product_id?: string;
+  transaction_id?: string;
 }
 
 /** Firebase uids the webhook event refers to (RevenueCat anonymous ids are skipped). */
@@ -551,7 +595,8 @@ export function uidsFromEvent(event: RevenueCatEvent): string[] {
 
 /**
  * Webhook: RevenueCat's own advice is to re-read the subscriber on every event rather than
- * interpreting each event type, so ordering and retries cannot leave a wrong state.
+ * interpreting each event type, so ordering and retries cannot leave a wrong state. The exception
+ * is a refunded coin pack: coins are our own ledger, so only this event can take them back.
  */
 export function createRevenueCatWebhook(deps: Pick<Deps, "store" | "fetchEntitlements" | "log">, authSecret: () => string) {
   return async function handle(req: HttpReq, res: HttpRes): Promise<void> {
@@ -566,6 +611,9 @@ export function createRevenueCatWebhook(deps: Pick<Deps, "store" | "fetchEntitle
       return;
     }
     try {
+      const refundedCoins = event.type === "CANCELLATION" && event.product_id ? COINS_PER_PACK[event.product_id] : undefined;
+      const holder = uidsFromEvent(event)[0];
+      if (refundedCoins && event.transaction_id && holder) await deps.store.revokeCoins(holder, event.transaction_id, refundedCoins);
       for (const uid of uidsFromEvent(event)) {
         const ent = await deps.fetchEntitlements(uid);
         await deps.store.setPremiumUntil(uid, ent.premiumUntil);

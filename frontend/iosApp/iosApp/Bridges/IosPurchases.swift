@@ -78,6 +78,8 @@ final class IosPurchases: NSObject, NativePurchases {
             Purchases.shared.purchase(package: pkg) { _, _, error, userCancelled in
                 if userCancelled {
                     callback.onResult(value: "cancelled", error: nil)
+                } else if (error as? RevenueCat.ErrorCode) == .paymentPendingError {
+                    callback.onResult(value: "pending", error: nil)
                 } else if let error {
                     callback.onResult(value: nil, error: error.localizedDescription)
                 } else {
