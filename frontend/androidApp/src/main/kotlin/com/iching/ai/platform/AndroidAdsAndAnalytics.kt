@@ -17,6 +17,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 /** Remembers the foreground activity, which ads, purchases and Google sign-in need. */
 class ActivityTracker : Application.ActivityLifecycleCallbacks {
@@ -69,7 +70,8 @@ class AndroidAds(
 
     private fun initialise() {
         if (initialised.getAndSet(true)) return
-        MobileAds.initialize(context) { preload() }
+        // Takes about 200 ms on a mid-range phone, and this runs while the app is opening.
+        thread(name = "ads-init") { MobileAds.initialize(context) { preload() } }
     }
 
     override fun preload() {

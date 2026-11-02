@@ -1,6 +1,5 @@
 package com.iching.ai.ui.components
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,12 +25,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.CacheDrawScope
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
@@ -50,37 +53,44 @@ fun PaperBackground(
     showMountains: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Box(
-        modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(ZenColors.PaperCream, ZenColors.PaperMid, ZenColors.PaperShade),
-                )
-            )
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            // Ensō — the Zen circle, left slightly open.
-            val r = size.minDimension * 0.34f
-            drawArc(
-                color = ZenColors.InkBlack.copy(alpha = 0.035f),
-                startAngle = -60f,
-                sweepAngle = 320f,
-                useCenter = false,
-                topLeft = Offset(size.width - r * 1.35f, -r * 0.55f),
-                size = Size(r * 2, r * 2),
-                style = Stroke(width = r * 0.16f, cap = StrokeCap.Round),
-            )
-            if (showMountains) {
-                drawMountains(0.80f, 0.055f, ZenColors.BambooGreen)
-                drawMountains(0.87f, 0.075f, ZenColors.InkBlack)
-            }
-        }
+    Box(modifier.fillMaxSize()) {
+        // Never changes while a screen is up, so it stays in a texture instead of being repainted
+        // behind every frame of whatever moves in front of it.
+        Spacer(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithCache {
+                    val paper = Brush.verticalGradient(listOf(ZenColors.PaperCream, ZenColors.PaperMid, ZenColors.PaperShade))
+                    // Ensō — the Zen circle, left slightly open.
+                    val r = size.minDimension * 0.34f
+                    val ensoColor = ZenColors.InkBlack.copy(alpha = 0.035f)
+                    val ensoStroke = Stroke(width = r * 0.16f, cap = StrokeCap.Round)
+                    val back = mountains(0.80f, 0.055f, ZenColors.BambooGreen)
+                    val front = mountains(0.87f, 0.075f, ZenColors.InkBlack)
+                    onDrawBehind {
+                        drawRect(paper)
+                        drawArc(
+                            color = ensoColor,
+                            startAngle = -60f,
+                            sweepAngle = 320f,
+                            useCenter = false,
+                            topLeft = Offset(size.width - r * 1.35f, -r * 0.55f),
+                            size = Size(r * 2, r * 2),
+                            style = ensoStroke,
+                        )
+                        if (showMountains) {
+                            drawPath(back.first, back.second)
+                            drawPath(front.first, front.second)
+                        }
+                    }
+                }
+        )
         content()
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMountains(baseline: Float, alpha: Float, color: Color) {
+private fun CacheDrawScope.mountains(baseline: Float, alpha: Float, color: Color): Pair<Path, Brush> {
     val w = size.width
     val h = size.height
     val path = Path().apply {
@@ -93,7 +103,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMountains(basel
         lineTo(w, h)
         close()
     }
-    drawPath(path, Brush.verticalGradient(listOf(color.copy(alpha = alpha), color.copy(alpha = alpha * 0.2f))))
+    return path to Brush.verticalGradient(listOf(color.copy(alpha = alpha), color.copy(alpha = alpha * 0.2f)))
 }
 
 /** Square cinnabar seal stamp with Chinese characters arranged in columns, right to left. */

@@ -36,14 +36,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +63,7 @@ import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -231,6 +234,8 @@ private fun GuidanceQuotaBar(quota: GuidanceQuota) {
     }
 }
 
+private const val BREATH_STEPS = 128f
+
 @Composable
 private fun BreathingTitle() {
     val transition = rememberInfiniteTransition(label = "breath")
@@ -240,13 +245,15 @@ private fun BreathingTitle() {
         animationSpec = infiniteRepeatable(tween(3200), RepeatMode.Reverse),
         label = "alpha",
     )
+    // Steps too small to see, so the screen redraws ~10 times a second instead of on every vsync, forever.
+    val steppedAlpha by remember { derivedStateOf { (alpha * BREATH_STEPS).roundToInt() / BREATH_STEPS } }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("問道", style = MaterialTheme.typography.displayMedium, color = ZenColors.InkBlack.copy(alpha = 0.12f))
         Text(
             "ถามทางแห่งเต๋า",
             style = MaterialTheme.typography.displaySmall,
             color = ZenColors.InkBlack,
-            modifier = Modifier.alpha(alpha),
+            modifier = Modifier.graphicsLayer { this.alpha = steppedAlpha },
         )
     }
 }

@@ -45,6 +45,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -68,6 +69,7 @@ import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
 import com.iching.ai.feature.paywall.PaywallScreen
@@ -122,6 +124,12 @@ private fun NavController.popFrom(entry: NavBackStackEntry) {
     if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) popBackStack()
 }
 
+private inline fun <reified T : Any> NavGraphBuilder.screen(noinline content: @Composable (NavBackStackEntry) -> Unit) {
+    composable<T> { entry ->
+        Box(Modifier.fillMaxSize().cachedWhileTransitioning(this)) { content(entry) }
+    }
+}
+
 @Composable
 private fun MainNavigation() {
     run {
@@ -167,7 +175,7 @@ private fun MainNavigation() {
                 predictivePopEnterTransition = platformNavTransitions.predictivePopEnter,
                 predictivePopExitTransition = platformNavTransitions.predictivePopExit,
             ) {
-                composable<HomeRoute> {
+                screen<HomeRoute> {
                     HomeScreen(
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
@@ -175,14 +183,14 @@ private fun MainNavigation() {
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                     )
                 }
-                composable<DailyRoute> { entry ->
+                screen<DailyRoute> { entry ->
                     DailyScreen(
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                     )
                 }
-                composable<DivinationRoute> { entry ->
+                screen<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
                         viewModel = koinViewModel { parametersOf(route.question, QuestionCategory.fromWire(route.category)) },
@@ -192,17 +200,17 @@ private fun MainNavigation() {
                         onDone = { nav.popFrom(entry) },
                     )
                 }
-                composable<LibraryRoute> {
+                screen<LibraryRoute> {
                     LibraryScreen(viewModel = koinViewModel(), onOpenHexagram = { nav.navigate(HexagramRoute(it)) })
                 }
-                composable<HexagramRoute> { entry ->
+                screen<HexagramRoute> { entry ->
                     val route = entry.toRoute<HexagramRoute>()
                     HexagramDetailScreen(
                         viewModel = koinViewModel(key = "hexagram-${route.id}") { parametersOf(route.id) },
                         onBack = { nav.popFrom(entry) },
                     )
                 }
-                composable<JournalRoute> {
+                screen<JournalRoute> {
                     JournalScreen(
                         viewModel = koinViewModel(),
                         onOpenEntry = { nav.navigate(JournalEntryRoute(it)) },
@@ -210,7 +218,7 @@ private fun MainNavigation() {
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
-                composable<JournalEntryRoute> { entry ->
+                screen<JournalEntryRoute> { entry ->
                     val route = entry.toRoute<JournalEntryRoute>()
                     JournalEntryScreen(
                         viewModel = koinViewModel { parametersOf(route.id) },
@@ -218,14 +226,14 @@ private fun MainNavigation() {
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                     )
                 }
-                composable<SettingsRoute> { entry ->
+                screen<SettingsRoute> { entry ->
                     SettingsScreen(
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
-                composable<PaywallRoute> { entry ->
+                screen<PaywallRoute> { entry ->
                     PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popFrom(entry) })
                 }
             }

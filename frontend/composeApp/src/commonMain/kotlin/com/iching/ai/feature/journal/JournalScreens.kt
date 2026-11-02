@@ -6,18 +6,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.feature.reading.AiContentLabel
 import com.iching.ai.ui.components.SectionLabel
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,7 +60,6 @@ import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.formatThaiDate
-import com.iching.ai.ui.formatThaiMonth
 import com.iching.ai.ui.formatThaiTime
 import com.iching.ai.ui.theme.ZenColors
 
@@ -77,10 +74,10 @@ fun JournalScreen(
     PaperBackground(showMountains = false) {
         when (val s = state) {
             JournalUiState.Loading -> Unit
-            is JournalUiState.Loaded -> if (s.entries.isEmpty() && s.hiddenCount == 0) {
+            is JournalUiState.Loaded -> if (s.isEmpty) {
                 EmptyJournal(onStartCasting)
             } else {
-                Timeline(s.entries, s.hiddenCount, s.journalDays, onOpenEntry, onOpenPaywall)
+                Timeline(s.months, s.entryCount, s.hiddenCount, s.journalDays, onOpenEntry, onOpenPaywall)
             }
         }
     }
@@ -88,13 +85,13 @@ fun JournalScreen(
 
 @Composable
 private fun Timeline(
-    entries: List<JournalEntry>,
+    months: List<JournalMonth>,
+    entryCount: Int,
     hiddenCount: Int,
     journalDays: Int?,
     onOpenEntry: (Long) -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
-    val grouped = remember(entries) { entries.groupBy { formatThaiMonth(it.reading.createdAtMillis) } }
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 120.dp),
@@ -102,8 +99,8 @@ private fun Timeline(
         item {
             Text("บันทึกชะตา", style = MaterialTheme.typography.headlineLarge, color = ZenColors.InkBlack)
             Text(
-                if (journalDays == null) "ย้อนมองเส้นทางที่ผ่านมา ${entries.size} ครั้งแห่งการถามไถ่"
-                else "${journalDays} วันล่าสุด · ${entries.size} ครั้งแห่งการถามไถ่",
+                if (journalDays == null) "ย้อนมองเส้นทางที่ผ่านมา $entryCount ครั้งแห่งการถามไถ่"
+                else "${journalDays} วันล่าสุด · $entryCount ครั้งแห่งการถามไถ่",
                 style = MaterialTheme.typography.bodyMedium,
                 color = ZenColors.InkSoft,
             )
@@ -133,17 +130,17 @@ private fun Timeline(
                 }
             }
         }
-        grouped.forEach { (month, monthEntries) ->
-            item(key = "month-$month") {
+        months.forEach { month ->
+            item(key = "month-${month.label}", contentType = "month") {
                 Text(
-                    month,
+                    month.label,
                     style = MaterialTheme.typography.labelLarge,
                     color = ZenColors.CinnabarRed,
                     modifier = Modifier.padding(top = 12.dp, bottom = 8.dp, start = 2.dp),
                 )
             }
-            items(monthEntries, key = { it.reading.id }) { entry ->
-                TimelineItem(entry, isLast = entry == monthEntries.last(), onClick = { onOpenEntry(entry.reading.id) })
+            items(month.entries, key = { it.reading.id }, contentType = { "reading" }) { entry ->
+                TimelineItem(entry, isLast = entry === month.entries.last(), onClick = { onOpenEntry(entry.reading.id) })
             }
         }
     }
@@ -152,22 +149,22 @@ private fun Timeline(
 @Composable
 private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Unit) {
     val reading = entry.reading
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        // Brush-ink spine with a dot for each reading.
-        Box(Modifier.width(22.dp).fillMaxHeight()) {
-            Canvas(Modifier.fillMaxSize()) {
-                val x = size.width / 2
-                drawLine(
-                    ZenColors.InkBlack.copy(alpha = 0.12f),
-                    Offset(x, 0f),
-                    Offset(x, if (isLast) size.height * 0.3f else size.height),
-                    strokeWidth = 2.dp.toPx(),
-                )
-                drawCircle(ZenColors.BambooGreen, 5.dp.toPx(), Offset(x, 30.dp.toPx()))
-                drawCircle(ZenColors.PaperCream, 2.dp.toPx(), Offset(x, 30.dp.toPx()))
-            }
+    // The spine is drawn behind the row rather than sized by an intrinsic measurement, which would
+    // measure every text in the card twice each time a row scrolls into view.
+    Row(
+        Modifier.fillMaxWidth().drawBehind {
+            val x = 11.dp.toPx()
+            drawLine(
+                ZenColors.InkBlack.copy(alpha = 0.12f),
+                Offset(x, 0f),
+                Offset(x, if (isLast) size.height * 0.3f else size.height),
+                strokeWidth = 2.dp.toPx(),
+            )
+            drawCircle(ZenColors.BambooGreen, 5.dp.toPx(), Offset(x, 30.dp.toPx()))
+            drawCircle(ZenColors.PaperCream, 2.dp.toPx(), Offset(x, 30.dp.toPx()))
         }
-        Spacer(Modifier.width(10.dp))
+    ) {
+        Spacer(Modifier.width(32.dp))
         Row(
             Modifier
                 .weight(1f)

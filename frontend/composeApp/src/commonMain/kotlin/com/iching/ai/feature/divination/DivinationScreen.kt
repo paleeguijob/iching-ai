@@ -176,6 +176,7 @@ private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRem
             pattern = null,
             lines = state.tosses.map { it.line } + List(6 - state.tosses.size) { LineType.YOUNG_YANG },
             revealed = state.tosses.size,
+            animateReveal = true,
             lineWidth = 150.dp,
             lineHeight = 14.dp,
             gap = 11.dp,

@@ -3,8 +3,10 @@ package com.iching.ai.data.scripture
 import com.iching.ai.data.resources.Res
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.repository.HexagramRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -52,7 +54,8 @@ class ScriptureHexagramRepository(
     private var byPattern: Map<String, Hexagram> = emptyMap()
 
     override suspend fun all(): List<Hexagram> = mutex.withLock {
-        cache ?: ScriptureParser.parse(loadRaw()).also { loaded ->
+        // Parsing nearly 300 KB of JSON takes long enough on a phone to drop frames on the main thread.
+        cache ?: loadRaw().let { raw -> withContext(Dispatchers.Default) { ScriptureParser.parse(raw) } }.also { loaded ->
             cache = loaded
             byPattern = loaded.associateBy { it.pattern }
         }
