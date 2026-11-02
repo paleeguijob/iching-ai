@@ -127,10 +127,10 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                         Column(Modifier.weight(1f)) {
                             Text(if (status.premium) "Premium" else "ผู้ใช้ทั่วไป", style = MaterialTheme.typography.titleSmall)
                             Text(
-                                if (status.premium) {
-                                    "วันนี้เหลือ ${status.includedLeft} คำทำนาย" + (status.premiumUntilMillis?.let { " · ถึง ${formatThaiDate(it)}" } ?: "")
-                                } else {
-                                    "วันนี้เหลือ ${status.readingsLeft} คำทำนาย · เหรียญ ${status.coins}"
+                                buildString {
+                                    append("วันนี้เหลือ ${status.readingsLeftToday} คำทำนาย")
+                                    if (!status.premium || status.coins > 0) append(" · เหรียญ ${status.coins} (ไม่มีวันหมดอายุ)")
+                                    if (status.premium) status.premiumUntilMillis?.let { append(" · ถึง ${formatThaiDate(it)}") }
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ZenColors.InkFaint,

@@ -23,6 +23,9 @@ data class AccountStatus(
     val journalDays: Int?,
     val aiEnabled: Boolean,
 ) {
+    /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
+    val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)
+
     companion object {
         /** Assumed before the first server answer arrives (or while offline). */
         val UNKNOWN_FREE = AccountStatus(

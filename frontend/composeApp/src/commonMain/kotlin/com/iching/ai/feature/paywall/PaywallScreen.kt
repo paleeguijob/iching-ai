@@ -154,7 +154,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                                 Column(Modifier.weight(1f)) {
                                     Text("เหรียญอี้จิง ๑๐ เหรียญ", style = MaterialTheme.typography.titleSmall)
                                     Text(
-                                        "๑ เหรียญ = ๑ คำทำนายจากนักพรต ไม่มีวันหมดอายุ · มีอยู่ ${state.status.coins} เหรียญ",
+                                        "๑ เหรียญ = ๑ คำทำนายจากนักพรต ไม่มีวันหมดอายุ · ใช้เมื่อสิทธิ์ของวันหมด · มีอยู่ ${state.status.coins} เหรียญ",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = ZenColors.InkFaint,
                                     )

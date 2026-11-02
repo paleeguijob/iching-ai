@@ -180,14 +180,24 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
     if (!status.aiEnabled) {
         return GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null)
     }
-    val label = if (status.premium) "Premium · วันนี้เหลือคำชี้แนะจากนักพรต" else "วันนี้เหลือคำชี้แนะจากนักพรต"
-    val count = if (status.premium) status.includedLeft else status.readingsLeft
-    val note = when {
-        count > 0 -> null
-        !status.premium && status.adsWatchableLeft > 0 -> "ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม"
-        else -> "ยังเสี่ยงทายและอ่านตัวบทได้"
+    val prefix = if (status.premium) "Premium · " else ""
+    val label = "${prefix}วันนี้เหลือคำชี้แนะจากนักพรต"
+    val count = status.readingsLeftToday
+    val coins = status.coins
+    if (count > 0) {
+        val note = if (coins > 0) "และมีเหรียญอี้จิงอีก ${coins.toThaiNumerals()} เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ" else null
+        return GuidanceQuota(label, count, note)
     }
-    return GuidanceQuota(label, count, note)
+    if (coins > 0) return GuidanceQuota("${prefix}เหรียญอี้จิงใช้ทำนายได้อีก", coins, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ")
+    // A zero here would read as "no more today", so point to the ads while any are left.
+    if (!status.premium && status.adsWatchableLeft > 0) {
+        return GuidanceQuota(
+            "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
+            count = status.adsWatchableLeft,
+            note = "กดเริ่มเสี่ยงทายได้เลย แล้วชมโฆษณาในหน้าคำทำนาย",
+        )
+    }
+    return GuidanceQuota(label, count, note = "ยังเสี่ยงทายและอ่านตัวบทได้")
 }
 
 @Composable

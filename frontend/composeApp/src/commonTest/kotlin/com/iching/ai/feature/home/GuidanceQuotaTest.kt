@@ -15,19 +15,51 @@ class GuidanceQuotaTest {
     )
 
     @Test
-    fun premiumShowsIncludedLeft() = assertEquals(
+    fun premiumShowsReadingsLeftToday() = assertEquals(
         GuidanceQuota("Premium · วันนี้เหลือคำชี้แนะจากนักพรต", count = 10, note = null),
-        guidanceQuota(premium.copy(includedLeft = 10, readingsLeft = 12)),
+        guidanceQuota(premium.copy(includedLeft = 10, readingsLeft = 10)),
     )
 
     @Test
-    fun freeAtZeroOffersAnAdWhileOneCanStillBeWatched() = assertEquals(
+    fun coinsAreNotCountedAsToday() = assertEquals(
         GuidanceQuota(
             "วันนี้เหลือคำชี้แนะจากนักพรต",
-            count = 0,
-            note = "ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม",
+            count = 1,
+            note = "และมีเหรียญอี้จิงอีก ๑๐ เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ",
         ),
-        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 1)),
+        guidanceQuota(free.copy(coins = 10, includedLeft = 1, readingsLeft = 11)),
+    )
+
+    @Test
+    fun premiumCoinsAreNotCountedAsToday() = assertEquals(
+        GuidanceQuota(
+            "Premium · วันนี้เหลือคำชี้แนะจากนักพรต",
+            count = 3,
+            note = "และมีเหรียญอี้จิงอีก ๑๐ เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ",
+        ),
+        guidanceQuota(premium.copy(coins = 10, includedLeft = 3, readingsLeft = 13)),
+    )
+
+    @Test
+    fun freeOutOfTodayShowsCoinsInsteadOfAds() = assertEquals(
+        GuidanceQuota("เหรียญอี้จิงใช้ทำนายได้อีก", count = 10, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ"),
+        guidanceQuota(free.copy(coins = 10, includedLeft = 0, readingsLeft = 10, adsWatchableLeft = 2)),
+    )
+
+    @Test
+    fun premiumOutOfTodayShowsCoinsInsteadOfZero() = assertEquals(
+        GuidanceQuota("Premium · เหรียญอี้จิงใช้ทำนายได้อีก", count = 10, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ"),
+        guidanceQuota(premium.copy(coins = 10, includedLeft = 0, readingsLeft = 10)),
+    )
+
+    @Test
+    fun freeAtZeroShowsTheAdsLeftInsteadOfZero() = assertEquals(
+        GuidanceQuota(
+            "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
+            count = 2,
+            note = "กดเริ่มเสี่ยงทายได้เลย แล้วชมโฆษณาในหน้าคำทำนาย",
+        ),
+        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2)),
     )
 
     @Test

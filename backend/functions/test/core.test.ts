@@ -298,6 +298,15 @@ describe("quota", () => {
     assert.equal(u.usage.free, 0);
     assert.equal(u.usage.adEarned, 0);
   });
+
+  it("coins carry over to a new day while the daily allowance starts again", () => {
+    const old = { premiumUntil: null, coins: 10, lastReadingAt: null, usage: { day: "2026-10-30", free: 1, premium: 0, adEarned: 2, adUsed: 2 } };
+    const s = status(normalizeUser(old, day), dev(), cfg, now);
+    assert.equal(s.coins, 10);
+    assert.equal(s.includedLeft, cfg.freeDailyReadings);
+    assert.equal(s.adCreditsLeft, 0);
+    assert.equal(s.readingsLeft, cfg.freeDailyReadings + 10);
+  });
 });
 
 describe("gemini stream", () => {

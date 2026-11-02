@@ -76,7 +76,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     is PurchaseResult.Success -> it.copy(
                         busy = false,
                         purchased = true,
-                        message = if (product.kind == ProductKind.COINS) "ได้รับเหรียญแล้ว ขอบคุณที่สนับสนุน" else "ยินดีต้อนรับสู่ Premium",
+                        message = if (product.kind == ProductKind.COINS) "ได้รับเหรียญแล้ว เก็บไว้ใช้วันไหนก็ได้ ไม่มีวันหมดอายุ" else "ยินดีต้อนรับสู่ Premium",
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
                     PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
