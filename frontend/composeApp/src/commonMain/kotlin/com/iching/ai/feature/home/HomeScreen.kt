@@ -176,6 +176,8 @@ fun HomeScreen(
 /** What the home screen says about today's guidance; [count] is null when no count applies. */
 data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
 
+private const val FREE_OUT_OF_GUIDANCE_NOTE = "สมัคร Premium หรือใช้เหรียญอี้จิงเพื่อรับคำชี้แนะต่อ · ยังเสี่ยงทายและอ่านตัวบทได้"
+
 fun guidanceQuota(status: AccountStatus): GuidanceQuota {
     if (!status.aiEnabled) {
         return GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null)
@@ -197,7 +199,8 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
             note = "กดเริ่มเสี่ยงทายได้เลย แล้วชมโฆษณาในหน้าคำทำนาย",
         )
     }
-    return GuidanceQuota(label, count, note = "ยังเสี่ยงทายและอ่านตัวบทได้")
+    val note = if (status.premium) "ยังเสี่ยงทายและอ่านตัวบทได้" else FREE_OUT_OF_GUIDANCE_NOTE
+    return GuidanceQuota(label, count, note)
 }
 
 @Composable

@@ -8,8 +8,10 @@ import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.CoinToss
 import com.iching.ai.domain.model.FollowUpTurn
 import com.iching.ai.domain.model.InterpretationSource
+import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
@@ -20,7 +22,11 @@ import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import com.iching.ai.session.AdResult
+import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
+import com.iching.ai.feature.paywall.COINS_RECEIVED_MESSAGE
+import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AppSession
+import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -43,6 +49,18 @@ sealed interface ReadingNotice {
     /** The server could not be reached; the coins were cast on this device. */
     data object Offline : ReadingNotice
 }
+
+/**
+ * A free seeker with nothing left today (no daily reading, no ad, no coin) is offered Premium or a coin pack.
+ * While an ad can still unlock this cast, the ad comes first; Premium is never offered coins here.
+ */
+fun offersQuotaUpsell(notice: ReadingNotice?, status: AccountStatus, canRetry: Boolean): Boolean =
+    notice is ReadingNotice.Limited && notice.reason == LimitReason.QUOTA &&
+        status.aiEnabled && !status.premium && status.readingsLeft == 0 &&
+        !(status.adsWatchableLeft > 0 && canRetry)
+
+/** What the out-of-quota card sells; null fields are hidden until the store answers. */
+data class QuotaUpsell(val coins: StoreProduct? = null, val premiumTrial: String? = null, val buyingCoins: Boolean = false)
 
 data class FollowUpUi(val question: String, val answer: String, val streaming: Boolean)
 
@@ -69,6 +87,7 @@ data class DivinationUiState(
     val safetyMessage: String? = null,
     val status: AccountStatus = AccountStatus.UNKNOWN_FREE,
     val isWatchingAd: Boolean = false,
+    val upsell: QuotaUpsell = QuotaUpsell(),
     val message: String? = null,
     val followUps: List<FollowUpUi> = emptyList(),
     val followUpBusy: Boolean = false,
@@ -113,13 +132,20 @@ class DivinationViewModel(
     /** Model text received so far; shown once the hexagram has been revealed. */
     private var streamText = StringBuilder()
     private var outcome: StreamOutcome? = null
+    private var upsellShown = false
+    private var upsellPremiumTapped = false
 
     init {
         viewModelScope.launch {
             observeSettings().collect { s -> _state.update { it.copy(soundEnabled = s.soundEnabled) } }
         }
         viewModelScope.launch {
-            session.status.collect { s -> _state.update { it.copy(status = s) } }
+            session.status.collect { s ->
+                if (s.premium && upsellPremiumTapped && !_state.value.status.premium) {
+                    session.log("quota_upsell_purchase", mapOf("option" to "premium"))
+                }
+                _state.update { it.copy(status = s) }
+            }
         }
         session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
     }
@@ -301,6 +327,54 @@ class DivinationViewModel(
                 AdResult.NotCompleted -> _state.update { it.copy(message = "ต้องชมโฆษณาจนจบจึงจะได้รับสิทธิ์") }
                 AdResult.LimitReached -> _state.update { it.copy(message = "วันนี้ใช้สิทธิ์ชมโฆษณาครบแล้ว") }
                 is AdResult.Error -> _state.update { it.copy(message = "ยังไม่มีโฆษณาพร้อมแสดง โปรดลองใหม่อีกครู่") }
+            }
+        }
+    }
+
+    /** The out-of-quota card is on screen: count it once and fetch the coin price and trial from the store. */
+    fun onQuotaUpsellShown() {
+        if (upsellShown) return
+        upsellShown = true
+        session.log("quota_upsell_shown")
+        viewModelScope.launch {
+            val products = runCatching { session.products() }.getOrElse { emptyList() }
+            _state.update {
+                it.copy(
+                    upsell = it.upsell.copy(
+                        coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
+                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                    ),
+                )
+            }
+        }
+    }
+
+    fun onUpsellPremium() {
+        upsellPremiumTapped = true
+        session.log("quota_upsell_tap", mapOf("option" to "premium"))
+    }
+
+    /** Buys the coin pack straight from the store; the card then offers this cast's reading. */
+    fun onUpsellBuyCoins() {
+        val upsell = _state.value.upsell
+        val coins = upsell.coins ?: return
+        if (upsell.buyingCoins) return
+        session.log("quota_upsell_tap", mapOf("option" to "coins"))
+        _state.update { it.copy(upsell = it.upsell.copy(buyingCoins = true), message = null) }
+        viewModelScope.launch {
+            val result = session.purchase(coins)
+            if (result is PurchaseResult.Success) session.log("quota_upsell_purchase", mapOf("option" to "coins"))
+            _state.update {
+                it.copy(
+                    upsell = it.upsell.copy(buyingCoins = false),
+                    message = when (result) {
+                        is PurchaseResult.Success -> COINS_RECEIVED_MESSAGE
+                        PurchaseResult.Cancelled -> null
+                        PurchaseResult.Pending -> PENDING_MESSAGE
+                        PurchaseResult.AwaitingPayment -> AWAITING_PAYMENT_MESSAGE
+                        is PurchaseResult.Error -> "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
+                    },
+                )
             }
         }
     }

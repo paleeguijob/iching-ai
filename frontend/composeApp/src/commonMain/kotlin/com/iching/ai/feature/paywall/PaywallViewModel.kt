@@ -26,8 +26,9 @@ data class PaywallUiState(
     val coins: StoreProduct? get() = products.firstOrNull { it.kind == ProductKind.COINS }
 }
 
-private const val PENDING_MESSAGE = "ชำระเงินแล้ว แต่ระบบยังไม่อัปเดตสิทธิ์ โปรดอย่าซื้อซ้ำ กดกู้คืนการซื้ออีกครั้งในอีกสักครู่"
-private const val AWAITING_PAYMENT_MESSAGE = "รอการชำระเงินให้เสร็จสิ้น สิทธิ์จะเข้าเองเมื่อชำระแล้ว โปรดอย่าซื้อซ้ำ"
+internal const val PENDING_MESSAGE = "ชำระเงินแล้ว แต่ระบบยังไม่อัปเดตสิทธิ์ โปรดอย่าซื้อซ้ำ กดกู้คืนการซื้ออีกครั้งในอีกสักครู่"
+internal const val AWAITING_PAYMENT_MESSAGE = "รอการชำระเงินให้เสร็จสิ้น สิทธิ์จะเข้าเองเมื่อชำระแล้ว โปรดอย่าซื้อซ้ำ"
+internal const val COINS_RECEIVED_MESSAGE = "ได้รับเหรียญแล้ว เก็บไว้ใช้วันไหนก็ได้ ไม่มีวันหมดอายุ"
 
 /** What restoring brought back; a coin pack counts, not only a subscription. */
 fun PurchaseResult.Success.restoreMessage(): String = when {
@@ -76,7 +77,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     is PurchaseResult.Success -> it.copy(
                         busy = false,
                         purchased = true,
-                        message = if (product.kind == ProductKind.COINS) "ได้รับเหรียญแล้ว เก็บไว้ใช้วันไหนก็ได้ ไม่มีวันหมดอายุ" else "ยินดีต้อนรับสู่ Premium",
+                        message = if (product.kind == ProductKind.COINS) COINS_RECEIVED_MESSAGE else "ยินดีต้อนรับสู่ Premium",
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
                     PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)

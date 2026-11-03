@@ -272,9 +272,13 @@ private fun ReadingStage(
                         status = state.status,
                         canRetry = state.serverReadingId != null,
                         isWatchingAd = state.isWatchingAd,
+                        upsell = state.upsell,
                         onRetry = viewModel::onInterpretAgain,
                         onWatchAd = viewModel::onWatchAd,
                         onOpenPaywall = onOpenPaywall,
+                        onUpsellShown = viewModel::onQuotaUpsellShown,
+                        onUpsellPremium = viewModel::onUpsellPremium,
+                        onUpsellBuyCoins = viewModel::onUpsellBuyCoins,
                     )
                     Spacer(Modifier.height(16.dp))
                 }

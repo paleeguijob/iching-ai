@@ -64,7 +64,11 @@ class GuidanceQuotaTest {
 
     @Test
     fun freeAtZeroStopsOfferingAdsOnceTheyAreUsedUp() = assertEquals(
-        GuidanceQuota("วันนี้เหลือคำชี้แนะจากนักพรต", count = 0, note = "ยังเสี่ยงทายและอ่านตัวบทได้"),
+        GuidanceQuota(
+            "วันนี้เหลือคำชี้แนะจากนักพรต",
+            count = 0,
+            note = "สมัคร Premium หรือใช้เหรียญอี้จิงเพื่อรับคำชี้แนะต่อ · ยังเสี่ยงทายและอ่านตัวบทได้",
+        ),
         guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 0)),
     )
 
