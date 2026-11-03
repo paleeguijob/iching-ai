@@ -61,7 +61,7 @@ android {
         applicationId = "com.iching.ai"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 110
+        versionCode = 111
         versionName = "1.1.0"
     }
     buildFeatures {
@@ -108,5 +108,15 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
+    }
+}
+
+// Release ships the key inside the app, so it must be RevenueCat's public goog_ key, never a secret sk_ key.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    // Locals only: the configuration cache can't serialize references to the build script.
+    val isPublicKey = revenueCatKey.startsWith("goog_")
+    val keyPrefix = revenueCatKey.take(3).ifBlank { "nothing" }
+    doFirst {
+        require(isPublicKey) { "REVENUECAT_ANDROID_KEY must be the public goog_ key for release builds (found $keyPrefix...)" }
     }
 }
