@@ -8,12 +8,15 @@ plugins {
     alias(libs.plugins.firebaseCrashlytics)
 }
 
-// Keys live in local.properties (not committed). Defaults are Google's public AdMob *test* ids.
+// Keys live in local.properties (not committed). Release falls back to Google's public AdMob *test* ids.
 val localProps = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use(::load)
 }
 fun prop(name: String, default: String) = (findProperty(name) as String?) ?: localProps.getProperty(name) ?: default
+
+val admobTestAppId = "ca-app-pub-3940256099942544~3347511713"
+val admobTestRewarded = "ca-app-pub-3940256099942544/5224354917"
 
 // RevenueCat crashes a release build on purpose if it finds a Test Store key, so that key is debug-only.
 val revenueCatKey = prop("REVENUECAT_ANDROID_KEY", "")
@@ -60,9 +63,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 110
         versionName = "1.1.0"
-
-        buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"${prop("ADMOB_REWARDED_ANDROID", "ca-app-pub-3940256099942544/5224354917")}\"")
-        manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID_ANDROID", "ca-app-pub-3940256099942544~3347511713")
     }
     buildFeatures {
         buildConfig = true
@@ -85,9 +85,14 @@ android {
     buildTypes {
         getByName("debug") {
             buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${revenueCatTestKey.ifBlank { revenueCatKey }}\"")
+            // Debug always serves Google's test ads, so clicking our own ads can't get the AdMob account flagged.
+            buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"$admobTestRewarded\"")
+            manifestPlaceholders["admobAppId"] = admobTestAppId
         }
         getByName("release") {
             buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"$revenueCatKey\"")
+            buildConfigField("String", "ADMOB_REWARDED_ANDROID", "\"${prop("ADMOB_REWARDED_ANDROID", admobTestRewarded)}\"")
+            manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID_ANDROID", admobTestAppId)
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
