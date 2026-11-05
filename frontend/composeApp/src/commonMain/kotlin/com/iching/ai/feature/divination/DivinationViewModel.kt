@@ -164,7 +164,7 @@ class DivinationViewModel(
         viewModelScope.launch {
             session.status.collect { s ->
                 if (s.premium && upsellPremiumTapped && !_state.value.status.premium) {
-                    session.log("quota_upsell_purchase", mapOf("option" to "premium"))
+                    session.log("quota_upsell_purchase", mapOf("option" to "premium", "placement" to "reading"))
                 }
                 _state.update { it.copy(status = s) }
             }
@@ -388,7 +388,7 @@ class DivinationViewModel(
     fun onQuotaUpsellShown() {
         if (upsellShown) return
         upsellShown = true
-        session.log("quota_upsell_shown")
+        session.log("quota_upsell_shown", mapOf("placement" to "reading"))
         viewModelScope.launch {
             val products = runCatching { session.products() }.getOrElse { emptyList() }
             _state.update {
@@ -404,7 +404,7 @@ class DivinationViewModel(
 
     fun onUpsellPremium() {
         upsellPremiumTapped = true
-        session.log("quota_upsell_tap", mapOf("option" to "premium"))
+        session.log("quota_upsell_tap", mapOf("option" to "premium", "placement" to "reading"))
     }
 
     /** Buys the coin pack straight from the store; the card then offers this cast's reading. */
@@ -412,11 +412,11 @@ class DivinationViewModel(
         val upsell = _state.value.upsell
         val coins = upsell.coins ?: return
         if (upsell.buyingCoins) return
-        session.log("quota_upsell_tap", mapOf("option" to "coins"))
+        session.log("quota_upsell_tap", mapOf("option" to "coins", "placement" to "reading"))
         _state.update { it.copy(upsell = it.upsell.copy(buyingCoins = true), message = null) }
         viewModelScope.launch {
             val result = session.purchase(coins)
-            if (result is PurchaseResult.Success) session.log("quota_upsell_purchase", mapOf("option" to "coins"))
+            if (result is PurchaseResult.Success) session.log("quota_upsell_purchase", mapOf("option" to "coins", "placement" to "reading"))
             _state.update {
                 it.copy(
                     upsell = it.upsell.copy(buyingCoins = false),
