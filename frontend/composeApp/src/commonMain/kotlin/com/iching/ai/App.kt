@@ -181,6 +181,7 @@ private fun MainNavigation() {
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenDaily = { nav.navigate(DailyRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
                 screen<DailyRoute> { entry ->

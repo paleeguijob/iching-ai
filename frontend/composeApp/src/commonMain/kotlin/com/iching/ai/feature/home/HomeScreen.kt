@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,8 +73,28 @@ fun HomeScreen(
     onCast: (String, QuestionCategory?) -> Unit,
     onOpenDaily: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenPaywall: () -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
+    val sheet by viewModel.sheet.collectAsStateWithLifecycle()
+    val deciding by viewModel.deciding.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.castRequests.collect { onCast(it.question, it.category) }
+    }
+    sheet?.let { ui ->
+        PreCastSheet(
+            ui = ui,
+            onWatchAd = viewModel::onWatchAd,
+            onBuyCoins = viewModel::onBuyCoins,
+            onScriptureOnly = viewModel::onScriptureOnly,
+            onPremium = {
+                viewModel.onPremium()
+                onOpenPaywall()
+            },
+            onCastFromReady = viewModel::onCastFromReady,
+            onDismiss = viewModel::onSheetDismissed,
+        )
+    }
     val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
@@ -162,7 +183,8 @@ fun HomeScreen(
             Spacer(Modifier.height(12.dp))
             ZenPrimaryButton(
                 text = "เริ่มเสี่ยงทาย",
-                onClick = { onCast(question.trim(), QuestionCategory.fromWire(category)) },
+                onClick = { viewModel.onStart(question.trim(), QuestionCategory.fromWire(category)) },
+                enabled = !deciding,
                 modifier = Modifier.fillMaxWidth(),
             )
 

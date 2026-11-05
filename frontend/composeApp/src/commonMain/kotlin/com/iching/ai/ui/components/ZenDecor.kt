@@ -176,9 +176,10 @@ fun ZenPrimaryButton(
 }
 
 @Composable
-fun ZenSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ZenSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.heightIn(min = 48.dp),
         shape = RoundedCornerShape(24.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, ZenColors.InkBlack.copy(alpha = 0.35f)),
