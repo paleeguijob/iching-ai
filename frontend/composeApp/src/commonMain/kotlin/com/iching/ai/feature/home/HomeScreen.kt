@@ -196,7 +196,7 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
         return GuidanceQuota(
             "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
             count = status.adsWatchableLeft,
-            note = "กดเริ่มเสี่ยงทายได้เลย แล้วชมโฆษณาในหน้าคำทำนาย",
+            note = "กดเริ่มเสี่ยงทาย แล้วชมโฆษณาสั้นก่อนโยนเหรียญ",
         )
     }
     val note = if (status.premium) "ยังเสี่ยงทายและอ่านตัวบทได้" else FREE_OUT_OF_GUIDANCE_NOTE

@@ -57,7 +57,7 @@ class GuidanceQuotaTest {
         GuidanceQuota(
             "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
             count = 2,
-            note = "กดเริ่มเสี่ยงทายได้เลย แล้วชมโฆษณาในหน้าคำทำนาย",
+            note = "กดเริ่มเสี่ยงทาย แล้วชมโฆษณาสั้นก่อนโยนเหรียญ",
         ),
         guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2)),
     )
