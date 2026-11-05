@@ -56,8 +56,8 @@ private class SwitchingAuth : NativeAuth {
     override fun appVersion() = "1.1"
 }
 
-private val monthly = StoreProduct("m", "iching_premium_monthly", ProductKind.MONTHLY, "", "฿79", "เดือน", null)
-private val coinPack = StoreProduct("c", "iching_coins_10", ProductKind.COINS, "", "฿35", null, null)
+private val monthly = StoreProduct("m", "iching_premium_monthly", ProductKind.MONTHLY, "", "฿49", "เดือน", null)
+private val coinPack = StoreProduct("c", "iching_coins_10", ProductKind.COINS, "", "฿29", null, null)
 private val premium = AccountStatus.UNKNOWN_FREE.copy(premium = true)
 
 class AccountAndMoneyTest {

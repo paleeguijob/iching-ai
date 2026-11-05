@@ -17,7 +17,7 @@
 | สุ่มกวา | ในเครื่อง | ฝั่ง server (crypto RNG, 3 เหรียญ = 1/8, 3/8, 3/8, 1/8) แอปเล่นแอนิเมชันตามผล · ออฟไลน์ยังสุ่มในเครื่องได้แต่ได้แค่ตัวบท |
 | โควตา | ไม่มี | Free 1/วัน (`gemini-3.1-flash-lite`) + โฆษณาแลก 2/วัน · Premium 10/วัน (`gemini-3.5-flash-lite`) · เหรียญ 1 = 1 คำทำนาย · จำกัดต่อเครื่อง · rate limit 8 วิ · Gemini error = คืนโควตา |
 | บัญชี | ไม่มี | Firebase Anonymous → ผูก Google (Android) / Sign in with Apple (iOS) · ลบบัญชีในแอป |
-| เงิน | ไม่มี | RevenueCat (รายเดือน 79 / รายปี 590 + ทดลอง 7 วัน / เหรียญ 35 บาท 10 เหรียญ) + AdMob rewarded |
+| เงิน | ไม่มี | RevenueCat (รายเดือน 49 / รายปี 390 + ทดลอง 7 วัน / เหรียญ 29 บาท 10 เหรียญ) + AdMob rewarded |
 | ถามต่อ | ไม่มี | Premium ถามต่อ 3 รอบ/คำทำนาย (ส่งสรุป ไม่ส่ง history เต็ม) |
 | Journal | เก็บในเครื่อง | Free เห็น 7 วันล่าสุด · Premium ไม่จำกัด + ดึงจาก server ข้ามเครื่อง · ปุ่ม "เกิดขึ้นจริงไหม" + บันทึกส่วนตัว |
 | Safety | ไม่มี | คำถามทำร้ายตนเอง/ฉุกเฉินทางการแพทย์ → ข้อความคงที่ + 1323/1669 ไม่ทำนาย ไม่ตัดโควตา |
@@ -128,9 +128,9 @@
 2. ☐ อัปโหลด `.aab` ขึ้น **Internal testing**
 3. ☐ นำ SHA ของ **App signing key** (Setup → App signing) ไปเพิ่มใน Firebase แล้วใส่ `google-services.json` ใหม่ ไม่งั้น Google Sign-In จะใช้ไม่ได้ในเวอร์ชันที่ลงจาก Play
 4. ☐ สร้างสินค้าใน Play:
-   - `iching_premium_monthly` — subscription + base plan รายเดือน 79 บาท
-   - `iching_premium_yearly` — subscription + base plan รายปี 590 บาท + **offer ทดลองฟรี 7 วัน**
-   - `iching_coins_10` — in-app product 35 บาท
+   - `iching_premium_monthly` — subscription + base plan รายเดือน 49 บาท
+   - `iching_premium_yearly` — subscription + base plan รายปี 390 บาท + **offer ทดลองฟรี 7 วัน**
+   - `iching_coins_10` — in-app product 29 บาท
 5. ☐ RevenueCat → เพิ่มแอป Play Store → อัปโหลด **service account JSON** ที่มีสิทธิ์ใน Play Console (สิทธิ์อาจใช้เวลาสักพักกว่าจะมีผล) และตั้ง Google Real-time developer notifications ตามคู่มือของ RevenueCat
 6. ☐ Import สินค้า → ตั้ง `iching_coins_10` เป็น **consumable** → เพิ่มเข้า entitlement `iching_premium` (2 subscription) และ offering เดียวกับหัวข้อ 2
 7. ☐ Integrations → Webhooks: URL `https://asia-southeast1-<project-id>.cloudfunctions.net/revenuecatWebhook`, Authorization header = `Bearer <REVENUECAT_WEBHOOK_AUTH>`

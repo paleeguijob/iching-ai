@@ -30,8 +30,8 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private val monthly = StoreProduct("m", "iching_premium_monthly", ProductKind.MONTHLY, "", "฿79", "เดือน", null)
-private val coinPack = StoreProduct("c", "iching_coins_10", ProductKind.COINS, "", "฿35", null, null)
+private val monthly = StoreProduct("m", "iching_premium_monthly", ProductKind.MONTHLY, "", "฿49", "เดือน", null)
+private val coinPack = StoreProduct("c", "iching_coins_10", ProductKind.COINS, "", "฿29", null, null)
 private const val NO_SUBSCRIPTION = "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่"
 
 @OptIn(ExperimentalCoroutinesApi::class)

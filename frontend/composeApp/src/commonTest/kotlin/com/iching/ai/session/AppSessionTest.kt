@@ -208,7 +208,7 @@ internal object NoSettings : SettingsRepository {
 }
 
 private val monthly = StoreProduct("pkg", "iching_monthly", ProductKind.MONTHLY, "", "฿99", "เดือน", null)
-private val coins = StoreProduct("pkg", "iching_coins_10", ProductKind.COINS, "", "฿35", null, null)
+private val coins = StoreProduct("pkg", "iching_coins_10", ProductKind.COINS, "", "฿29", null, null)
 
 class AppSessionTest {
     private val purchases = FakePurchases()
