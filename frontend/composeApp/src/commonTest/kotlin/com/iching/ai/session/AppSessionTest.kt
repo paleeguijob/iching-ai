@@ -28,6 +28,7 @@ import com.iching.ai.platform.NativeNotifications
 import com.iching.ai.platform.NativePurchases
 import com.iching.ai.platform.ResultCallback
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
@@ -75,7 +76,9 @@ internal class FakePurchases : NativePurchases {
             callback.onResult(null, "offline")
         }
     }
-    override fun offerings(callback: ResultCallback) = callback.onResult("[]", null)
+    /** The store's packages, as the native bridge reports them. */
+    var offeringsJson = "[]"
+    override fun offerings(callback: ResultCallback) = callback.onResult(offeringsJson, null)
     override fun purchase(packageId: String, callback: ResultCallback) {
         purchasesUnder += identifiedAs
         val answer = purchaseAnswer
@@ -95,6 +98,12 @@ internal class FakePurchases : NativePurchases {
 
 internal object NoAds : NativeAds {
     override fun showRewarded(callback: ResultCallback) = callback.onResult("dismissed", null)
+    override fun preload() = Unit
+}
+
+/** A rewarded ad that ends with [answer] ("rewarded" when watched to the end); null fails to show. */
+internal class FakeAds(var answer: String? = "rewarded") : NativeAds {
+    override fun showRewarded(callback: ResultCallback) = answer?.let { callback.onResult(it, null) } ?: callback.onResult(null, "no fill")
     override fun preload() = Unit
 }
 
@@ -118,8 +127,15 @@ internal class FakeApi : OracleApi {
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
-    override suspend fun status() = statusNow ?: throw ApiException(FailureReason.NETWORK, "offline")
-    override suspend fun claimAdReward() = false to AccountStatus.UNKNOWN_FREE
+    /** How long GET /status takes to answer. */
+    var statusDelayMillis = 0L
+    override suspend fun status(): AccountStatus {
+        if (statusDelayMillis > 0) delay(statusDelayMillis)
+        return statusNow ?: throw ApiException(FailureReason.NETWORK, "offline")
+    }
+    /** What POST /ad-reward answers: granted, and the status after it. */
+    var adGrant: Pair<Boolean, AccountStatus> = false to AccountStatus.UNKNOWN_FREE
+    override suspend fun claimAdReward() = adGrant
     override suspend fun report(readingId: String, reason: String, note: String) = Unit
     var saveOutcomeFailure: FailureReason? = null
     val outcomesSaved = mutableListOf<String>()
