@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.InterpretationSource
+import com.iching.ai.domain.model.Reading
 import com.iching.ai.feature.reading.CastSummary
 import com.iching.ai.feature.reading.OracleScroll
 import com.iching.ai.feature.reading.ScriptureSection
@@ -241,7 +242,12 @@ private fun EmptyJournal(onStartCasting: () -> Unit) {
 }
 
 @Composable
-fun JournalEntryScreen(viewModel: JournalEntryViewModel, onBack: () -> Unit, onOpenHexagram: (Int) -> Unit) {
+fun JournalEntryScreen(
+    viewModel: JournalEntryViewModel,
+    onBack: () -> Unit,
+    onOpenHexagram: (Int) -> Unit,
+    onAskHermit: (Reading) -> Unit,
+) {
     val entry by viewModel.entry.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     PaperBackground(showMountains = false) {
@@ -280,6 +286,10 @@ fun JournalEntryScreen(viewModel: JournalEntryViewModel, onBack: () -> Unit, onO
                     source = e.reading.source,
                 )
                 AiContentLabel(source = e.reading.source, onReport = null)
+                if (e.reading.source == InterpretationSource.SCRIPTURE && e.reading.serverId != null) {
+                    Spacer(Modifier.height(16.dp))
+                    AskHermitCard(onClick = { onAskHermit(e.reading) })
+                }
                 if (e.reading.followUps.isNotEmpty()) {
                     Spacer(Modifier.height(20.dp))
                     SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
@@ -361,5 +371,25 @@ private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?
         if (draft != note.orEmpty()) {
             TextButton(onClick = { onChange(outcome, draft) }) { Text("บันทึก", color = ZenColors.CinnabarRed) }
         }
+    }
+}
+
+/** A cast the server knows but the hermit never finished (left mid-reading, out of quota, or a failure). */
+@Composable
+private fun AskHermitCard(onClick: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(ZenColors.CinnabarRed.copy(alpha = 0.07f))
+            .padding(16.dp),
+    ) {
+        Text(
+            "กวานี้ยังไม่ได้รับคำชี้แนะจากนักพรต หากคำทำนายถูกตัดกลางทาง ท่านรับต่อได้โดยไม่เสียสิทธิ์ซ้ำ",
+            style = MaterialTheme.typography.bodySmall,
+            color = ZenColors.InkBlack,
+        )
+        Spacer(Modifier.height(12.dp))
+        ZenPrimaryButton("รับคำชี้แนะจากนักพรต", onClick = onClick, modifier = Modifier.fillMaxWidth())
     }
 }

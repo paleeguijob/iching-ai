@@ -1,5 +1,8 @@
 package com.iching.ai.feature.divination
 
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -31,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,6 +78,23 @@ fun DivinationScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sound = rememberSoundPlayer()
+    var confirmLeave by remember { mutableStateOf(false) }
+    val requestBack = { if (state.leavingInterrupts) confirmLeave = true else onBack() }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = state.leavingInterrupts,
+        onBackCompleted = { confirmLeave = true },
+    )
+    if (confirmLeave) {
+        LeaveReadingDialog(
+            savedInJournal = state.savedReadingId != null && state.serverReadingId != null,
+            onStay = { confirmLeave = false },
+            onLeave = {
+                confirmLeave = false
+                onBack()
+            },
+        )
+    }
     val haptics = LocalHapticFeedback.current
 
     LaunchedEffect(state.tossKey) {
@@ -106,7 +127,7 @@ fun DivinationScreen(
     PaperBackground(showMountains = state.phase == DivinationPhase.CASTING) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = requestBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
                 }
                 Text(
@@ -353,4 +374,24 @@ private fun ReadingStage(
     LaunchedEffect(state.interpretation.length / 120) {
         if (state.phase == DivinationPhase.INTERPRETING && scroll.maxValue > 0) scroll.animateScrollTo(scroll.maxValue)
     }
+}
+
+@Composable
+private fun LeaveReadingDialog(savedInJournal: Boolean, onStay: () -> Unit, onLeave: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onStay,
+        title = { Text("ยังทำนายไม่จบ ออกตอนนี้?", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Text(
+                if (savedInJournal) {
+                    "กวานี้บันทึกในบันทึกชะตาแล้ว ท่านกลับมารับคำชี้แนะจากนักพรตต่อได้ที่บันทึกชะตา โดยไม่เสียสิทธิ์ซ้ำ"
+                } else {
+                    "หากออกตอนนี้ การเสี่ยงทายครั้งนี้จะไม่ถูกบันทึก"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = { TextButton(onClick = onStay) { Text("อยู่ต่อ", color = ZenColors.BambooDeep) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text("ออก", color = ZenColors.InkSoft) } },
+    )
 }

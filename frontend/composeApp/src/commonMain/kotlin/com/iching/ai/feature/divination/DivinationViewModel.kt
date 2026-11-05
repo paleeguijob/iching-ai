@@ -17,6 +17,7 @@ import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.LimitReason
 import com.iching.ai.domain.repository.OracleApi
+import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
@@ -27,6 +28,7 @@ import com.iching.ai.feature.paywall.COINS_RECEIVED_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -36,6 +38,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
 
@@ -97,6 +101,14 @@ data class DivinationUiState(
     val tossesDone: Int get() = tosses.size
     val canToss: Boolean get() = phase == DivinationPhase.CASTING && !isTossing && tosses.size < 6
     val isAiReading: Boolean get() = source == InterpretationSource.AI && serverReadingId != null
+
+    /**
+     * Leaving now would cut a reading short: the coins are being cast or the hermit is still speaking.
+     * The reading is in the journal by then whenever the server cast it, so it can be resumed there.
+     */
+    val leavingInterrupts: Boolean
+        get() = (phase == DivinationPhase.CASTING && (isTossing || tosses.isNotEmpty())) ||
+            phase == DivinationPhase.REVEAL || phase == DivinationPhase.INTERPRETING
     val followUpsLeft: Int get() = (status.followUpsPerReading - followUps.count { !it.streaming }).coerceAtLeast(0)
 }
 
@@ -111,6 +123,10 @@ private sealed interface StreamOutcome {
     data class Scripture(val notice: ReadingNotice) : StreamOutcome
 }
 
+/**
+ * One reading: casting the coins and streaming the hermit's words, or, given [resumeReadingId], asking
+ * the hermit again about a cast already in the journal (one left before its interpretation finished).
+ */
 class DivinationViewModel(
     question: String,
     category: QuestionCategory?,
@@ -120,6 +136,8 @@ class DivinationViewModel(
     private val api: OracleApi,
     private val session: AppSession,
     observeSettings: ObserveSettingsUseCase,
+    resumeReadingId: Long? = null,
+    getReading: GetReadingUseCase? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DivinationUiState(question = question.trim(), category = category))
@@ -135,6 +153,10 @@ class DivinationViewModel(
     private var upsellShown = false
     private var upsellPremiumTapped = false
 
+    /** The journal entry this reading continues; its outcome and notes are kept on every save. */
+    private var savedBase: Reading? = null
+    private val persistLock = Mutex()
+
     init {
         viewModelScope.launch {
             observeSettings().collect { s -> _state.update { it.copy(soundEnabled = s.soundEnabled) } }
@@ -147,7 +169,38 @@ class DivinationViewModel(
                 _state.update { it.copy(status = s) }
             }
         }
-        session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
+        if (resumeReadingId != null && getReading != null) {
+            resume(resumeReadingId, getReading)
+        } else {
+            session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
+        }
+    }
+
+    private fun resume(id: Long, getReading: GetReadingUseCase) {
+        _state.update { it.copy(phase = DivinationPhase.INTERPRETING) }
+        viewModelScope.launch {
+            val reading = getReading(id)
+            val serverId = reading?.serverId
+            if (reading == null || serverId == null) {
+                _state.update { it.copy(phase = DivinationPhase.COMPLETE, error = "ไม่พบบันทึกนี้") }
+                return@launch
+            }
+            savedBase = reading
+            val cast = resolveCast(reading.lines)
+            _state.update {
+                it.copy(
+                    question = reading.question,
+                    category = reading.category,
+                    tosses = reading.lines.map { line -> CoinToss(facesFor(line.value)) },
+                    cast = cast,
+                    serverReadingId = serverId,
+                    savedReadingId = reading.id,
+                    createdAtMillis = reading.createdAtMillis,
+                )
+            }
+            session.log("reading_resumed")
+            requestJob = viewModelScope.launch { consume(api.interpretAgain(serverId), fromCast = false) }
+        }
     }
 
     // ---------- casting ----------
@@ -227,7 +280,7 @@ class DivinationViewModel(
                     cast = cast,
                     phase = DivinationPhase.REVEAL,
                     serverReadingId = (source as? CastSource.Server)?.event?.readingId,
-                    createdAtMillis = Clock.System.now().toEpochMilliseconds(),
+                    createdAtMillis = it.createdAtMillis.takeIf { t -> t > 0 } ?: Clock.System.now().toEpochMilliseconds(),
                 )
             }
             delay(REVEAL_MILLIS)
@@ -246,7 +299,7 @@ class DivinationViewModel(
             when (event) {
                 is DivinationEvent.Cast -> {
                     sawCast = true
-                    castSource.complete(CastSource.Server(event))
+                    if (castSource.complete(CastSource.Server(event)) && fromCast) saveCast(event)
                 }
                 is DivinationEvent.Delta -> {
                     streamText.append(event.text)
@@ -450,27 +503,56 @@ class DivinationViewModel(
 
     fun onMessageShown() = _state.update { it.copy(message = null) }
 
+    /**
+     * The server has cast and is charging for this reading, so it goes into the journal now: a seeker
+     * who leaves before the hermit finishes can still find the cast there and ask for the reading again.
+     * Saved without words, like a reading synced from the server, so the journal shows the scripture.
+     */
+    private suspend fun saveCast(event: DivinationEvent.Cast) {
+        try {
+            val cast = resolveCast(event.lines)
+            val now = Clock.System.now().toEpochMilliseconds()
+            _state.update { it.copy(createdAtMillis = it.createdAtMillis.takeIf { t -> t > 0 } ?: now) }
+            persist(cast, event.readingId, interpretation = "", source = InterpretationSource.SCRIPTURE)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            session.log("reading_early_save_failed")
+        }
+    }
+
     /** Writes the reading to the Destiny Journal; later changes update the same entry. */
     private suspend fun persist() {
         val s = _state.value
-        val cast = s.cast ?: return
-        val id = saveReading(
-            Reading(
+        persist(s.cast ?: return, s.serverReadingId, s.interpretation, s.source ?: InterpretationSource.SCRIPTURE)
+    }
+
+    private suspend fun persist(cast: CastResult, serverId: String?, interpretation: String, source: InterpretationSource) =
+        persistLock.withLock {
+            val s = _state.value
+            val fields = Reading(
                 id = s.savedReadingId ?: 0,
                 question = s.question,
                 createdAtMillis = s.createdAtMillis,
                 lines = cast.lines,
                 primaryId = cast.primary.id,
                 relatingId = cast.relating?.id,
-                interpretation = s.interpretation,
-                source = s.source ?: InterpretationSource.SCRIPTURE,
-                serverId = s.serverReadingId,
+                interpretation = interpretation,
+                source = source,
+                serverId = serverId,
                 category = s.category,
                 followUps = s.followUps.filter { !it.streaming && it.answer.isNotBlank() }.map { FollowUpTurn(it.question, it.answer) },
             )
-        )
-        _state.update { it.copy(savedReadingId = id) }
-    }
+            val base = savedBase
+            val reading = if (base == null) fields else fields.copy(
+                outcome = base.outcome,
+                outcomeNote = base.outcomeNote,
+                followUps = fields.followUps.ifEmpty { base.followUps },
+            )
+            val id = saveReading(reading)
+            savedBase = reading.copy(id = id)
+            _state.update { it.copy(savedReadingId = id) }
+        }
 
     companion object {
         const val TOSS_ANIMATION_MILLIS = 1350L

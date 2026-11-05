@@ -104,6 +104,8 @@ val presentationModule = module {
             api = get(),
             session = get(),
             observeSettings = get(),
+            resumeReadingId = params.values.filterIsInstance<Long>().firstOrNull(),
+            getReading = get(),
         )
     }
     viewModelOf(::LibraryViewModel)

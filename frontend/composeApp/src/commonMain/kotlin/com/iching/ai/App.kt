@@ -193,7 +193,9 @@ private fun MainNavigation() {
                 screen<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
-                        viewModel = koinViewModel { parametersOf(route.question, QuestionCategory.fromWire(route.category)) },
+                        viewModel = koinViewModel {
+                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId).toTypedArray())
+                        },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
@@ -224,6 +226,12 @@ private fun MainNavigation() {
                         viewModel = koinViewModel { parametersOf(route.id) },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onAskHermit = { reading ->
+                            // Replaces the entry: once the hermit has spoken, back leads to the refreshed journal.
+                            nav.navigate(DivinationRoute(reading.question, reading.category?.wire, resumeId = reading.id)) {
+                                popUpTo<JournalEntryRoute> { inclusive = true }
+                            }
+                        },
                     )
                 }
                 screen<SettingsRoute> { entry ->
