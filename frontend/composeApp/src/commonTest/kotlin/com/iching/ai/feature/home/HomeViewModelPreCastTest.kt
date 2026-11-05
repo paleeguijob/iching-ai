@@ -15,7 +15,7 @@ import com.iching.ai.session.FakeAuth
 import com.iching.ai.session.FakeJournal
 import com.iching.ai.session.FakePurchases
 import com.iching.ai.session.FirebaseApiSession
-import com.iching.ai.session.NoAnalytics
+import com.iching.ai.session.LoggedAnalytics
 import com.iching.ai.session.NoNotifications
 import com.iching.ai.session.NoSettings
 import kotlinx.coroutines.CoroutineScope
@@ -66,6 +66,7 @@ class HomeViewModelPreCastTest {
     private val api = FakeApi()
     private val purchases = FakePurchases().apply { offeringsJson = OFFERINGS }
     private val ads = FakeAds()
+    private val analytics = LoggedAnalytics()
     private val casts = mutableListOf<CastRequest>()
     private lateinit var session: AppSession
 
@@ -83,7 +84,7 @@ class HomeViewModelPreCastTest {
         api.statusNow = serverStatus
         val auth = FakeAuth()
         session = AppSession(
-            NativeBridges(auth, purchases, ads, NoAnalytics, NoNotifications),
+            NativeBridges(auth, purchases, ads, analytics, NoNotifications),
             FirebaseApiSession(auth),
             api,
             FakeJournal(),
@@ -244,6 +245,45 @@ class HomeViewModelPreCastTest {
         vm.onStart("ถาม", null)
         advance(1_000)
         assertEquals(1, casts.size)
+    }
+
+    /** A second tap while the casting screen slides in, or one replayed on return, must not cast again. */
+    @Test
+    fun startIsIgnoredUntilHomeResumes() {
+        val vm = viewModel(status(readingsLeft = 1)).started()
+        vm.started()
+        assertEquals(1, casts.size)
+        vm.onResumed()
+        vm.started()
+        assertEquals(2, casts.size)
+    }
+
+    @Test
+    fun premiumTapThenDismissDoesNotCountALaterPurchase() {
+        val vm = viewModel(status(adsWatchableLeft = 0)).started()
+        vm.onPremium()
+        vm.onSheetDismissed()
+        session.updateStatus(status(premium = true, readingsLeft = 10, adsWatchableLeft = 0))
+        scheduler.runCurrent()
+        assertTrue(analytics.events.none { it.first == "quota_upsell_purchase" })
+    }
+
+    @Test
+    fun premiumBoughtFromTheSheetIsCountedOnce() {
+        val vm = viewModel(status(adsWatchableLeft = 0)).started()
+        vm.onPremium()
+        session.updateStatus(status(premium = true, readingsLeft = 10, adsWatchableLeft = 0))
+        scheduler.runCurrent()
+        session.updateStatus(status(premium = true, readingsLeft = 9, adsWatchableLeft = 0))
+        scheduler.runCurrent()
+        val purchases = analytics.events.filter { it.first == "quota_upsell_purchase" }
+        assertEquals(listOf(mapOf("option" to "premium", "placement" to "precast")), purchases.map { it.second })
+    }
+
+    @Test
+    fun startButtonSaysItIsWaiting() {
+        assertEquals("เริ่มเสี่ยงทาย", startButtonText(deciding = false))
+        assertEquals("กำลังตั้งจิต...", startButtonText(deciding = true))
     }
 
     @Test

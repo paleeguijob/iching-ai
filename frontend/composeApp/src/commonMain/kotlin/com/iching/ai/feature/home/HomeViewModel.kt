@@ -83,6 +83,9 @@ class HomeViewModel(
 
     /** The cast the open sheet is about. */
     private var pending: CastRequest? = null
+
+    /** A cast was sent and Home has not come back to the front since: further taps are the old one's echo. */
+    private var castSent = false
     private var premiumTapped = false
 
     init {
@@ -107,8 +110,14 @@ class HomeViewModel(
 
     // ---------- before casting ----------
 
+    /** Home is in front again (first shown, or back from the casting screen). */
+    fun onResumed() {
+        castSent = false
+        refreshDay()
+    }
+
     fun onStart(question: String, category: QuestionCategory?) {
-        if (_deciding.value || _sheet.value != null) return
+        if (_deciding.value || _sheet.value != null || castSent) return
         _deciding.value = true
         viewModelScope.launch {
             try {
@@ -116,7 +125,7 @@ class HomeViewModel(
                 withTimeoutOrNull(STATUS_WAIT_MILLIS) { session.refreshStatus() }
                 val request = CastRequest(question, category)
                 when (preCastOffer(session.status.value, session.online.value)) {
-                    PreCastOffer.NONE -> casts.send(request)
+                    PreCastOffer.NONE -> send(request)
                     PreCastOffer.AD -> openSheet(request, PreCastSheetKind.AD)
                     PreCastOffer.UPSELL -> openSheet(request, PreCastSheetKind.UPSELL)
                 }
@@ -219,6 +228,8 @@ class HomeViewModel(
         session.log("precast_choice", mapOf("option" to "dismiss"))
         _sheet.value = null
         pending = null
+        // A Premium bought later, from anywhere else, is not this sheet's sale.
+        premiumTapped = false
     }
 
     private fun settle(message: String?) = _sheet.update { it?.copy(busy = false, message = message) }
@@ -228,6 +239,12 @@ class HomeViewModel(
         if (_sheet.value == null) return
         _sheet.value = null
         pending = null
+        premiumTapped = false
+        send(request)
+    }
+
+    private suspend fun send(request: CastRequest) {
+        castSent = true
         casts.send(request)
     }
 

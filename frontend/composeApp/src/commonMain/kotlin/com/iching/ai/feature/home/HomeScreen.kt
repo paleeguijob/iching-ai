@@ -98,7 +98,7 @@ fun HomeScreen(
     val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
-        viewModel.refreshDay()
+        viewModel.onResumed()
         onPauseOrDispose { }
     }
     var question by rememberSaveable { mutableStateOf("") }
@@ -182,7 +182,7 @@ fun HomeScreen(
             GuidanceQuotaBar(guidanceQuota(status))
             Spacer(Modifier.height(12.dp))
             ZenPrimaryButton(
-                text = "เริ่มเสี่ยงทาย",
+                text = startButtonText(deciding),
                 onClick = { viewModel.onStart(question.trim(), QuestionCategory.fromWire(category)) },
                 enabled = !deciding,
                 modifier = Modifier.fillMaxWidth(),
@@ -194,6 +194,9 @@ fun HomeScreen(
         }
     }
 }
+
+/** The Start button waits, with a word, while the status is checked before casting. */
+fun startButtonText(deciding: Boolean): String = if (deciding) "กำลังตั้งจิต..." else "เริ่มเสี่ยงทาย"
 
 /** What the home screen says about today's guidance; [count] is null when no count applies. */
 data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
