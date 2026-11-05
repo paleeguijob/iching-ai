@@ -1,5 +1,10 @@
 package com.iching.ai.session
 
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.MutableStateFlow
+import com.iching.ai.domain.model.mergedWith
+import com.iching.ai.domain.model.AppTheme
+import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.InterpretationSource
@@ -122,6 +127,14 @@ internal class FakeApi : OracleApi {
         saveOutcomeFailure?.let { throw ApiException(it, "failed") }
         outcomesSaved += readingId
     }
+    var serverStreak = StreakState()
+    var streakFails = false
+    val streaksSent = mutableListOf<StreakState>()
+    override suspend fun syncStreak(streak: StreakState): StreakState {
+        if (streakFails) throw ApiException(FailureReason.NETWORK, "offline")
+        streaksSent += streak
+        return serverStreak.mergedWith(streak).also { serverStreak = it }
+    }
     var readingsFailure: FailureReason? = null
     override suspend fun readings(): List<Reading> {
         readingsFailure?.let { throw ApiException(it, "failed") }
@@ -179,6 +192,15 @@ internal class FakeJournal : JournalRepository {
     }
 }
 
+private class StreakSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
+    val state = MutableStateFlow(initial)
+    override val settings: Flow<AppSettings> = state
+    override suspend fun update(transform: (AppSettings) -> AppSettings) = state.update(transform)
+    override suspend fun clear() {
+        state.value = AppSettings()
+    }
+}
+
 internal object NoSettings : SettingsRepository {
     override val settings: Flow<AppSettings> = emptyFlow()
     override suspend fun update(transform: (AppSettings) -> AppSettings) = Unit
@@ -193,11 +215,11 @@ class AppSessionTest {
     private val api = FakeApi()
     private val journal = FakeJournal()
 
-    private fun session(scope: CoroutineScope) = FakeAuth().let { auth ->
-        AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics, NoNotifications), FirebaseApiSession(auth), api, journal, NoSettings, scope)
+    private fun session(scope: CoroutineScope, settings: SettingsRepository = NoSettings) = FakeAuth().let { auth ->
+        AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics, NoNotifications), FirebaseApiSession(auth), api, journal, settings, scope)
     }
 
-    private fun TestScope.started(): AppSession = session(backgroundScope).also {
+    private fun TestScope.started(settings: SettingsRepository = NoSettings): AppSession = session(backgroundScope, settings).also {
         it.start()
         testScheduler.runCurrent()
     }
@@ -314,6 +336,38 @@ class AppSessionTest {
         started()
 
         assertEquals(emptyList(), journal.unsynced)
+    }
+
+    @Test
+    fun aReinstallGetsTheStreakAndThemesBackAtSignIn() = runTest {
+        val kept = StreakState(current = 8, best = 30, lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO, AppTheme.CINNABAR_DAWN))
+        api.serverStreak = kept
+        val settings = StreakSettings()
+
+        started(settings)
+
+        assertEquals(kept, settings.state.value.streak)
+    }
+
+    @Test
+    fun thisDevicesStreakIsSentToTheAccount() = runTest {
+        val here = StreakState(current = 7, best = 7, lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO))
+        val session = started(StreakSettings(AppSettings(streak = here)))
+
+        assertEquals(listOf(here), api.streaksSent)
+        session.syncStreak()
+        assertEquals(here, api.serverStreak)
+    }
+
+    @Test
+    fun anOfflineStreakSyncLeavesTheDeviceStreakAlone() = runTest {
+        api.streakFails = true
+        val here = StreakState(current = 3, best = 3, lastEpochDay = 100)
+        val settings = StreakSettings(AppSettings(streak = here))
+
+        started(settings)
+
+        assertEquals(here, settings.state.value.streak)
     }
 
     @Test

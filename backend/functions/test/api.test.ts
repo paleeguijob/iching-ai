@@ -16,6 +16,7 @@ import {
 } from "../src/core/api";
 import { GeminiError, Usage } from "../src/core/gemini";
 import { loadScripture } from "../src/core/hexagrams";
+import { EMPTY_STREAK, mergeStreaks, StreakDoc } from "../src/core/streak";
 import { bangkokDay, DEFAULT_CONFIG, DeviceDoc, normalizeDevice, normalizeUser, RuntimeConfig, UserDoc } from "../src/core/quota";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
@@ -69,6 +70,12 @@ class MemoryStore implements Store {
       .filter(([k, v]) => k.startsWith(`${uid}/`) && (since == null || v.createdAt >= since))
       .map(([, v]) => v);
   }
+  streaks = new Map<string, StreakDoc>();
+  async updateStreak(uid: string, fn: (stored: StreakDoc) => StreakDoc) {
+    const next = fn(this.streaks.get(uid) ?? EMPTY_STREAK);
+    this.streaks.set(uid, next);
+    return next;
+  }
   async addReport(r: unknown) {
     this.reports.push(r);
   }
@@ -99,10 +106,13 @@ class MemoryStore implements Store {
     const target = normalizeUser(this.users.get(to), bangkokDay(this.now()));
     this.users.set(to, { ...target, coins: target.coins + coins });
     for (const [k, v] of [...this.readings.entries()]) if (k.startsWith(`${from}/`)) this.readings.set(`${to}/${v.id}`, v);
+    const left = this.streaks.get(from) ?? EMPTY_STREAK;
+    await this.updateStreak(to, (stored) => mergeStreaks(stored, left));
     await this.deleteUser(from);
   }
   async deleteUser(uid: string) {
     this.users.delete(uid);
+    this.streaks.delete(uid);
     for (const k of [...this.readings.keys()]) if (k.startsWith(`${uid}/`)) this.readings.delete(k);
   }
 }
@@ -468,6 +478,23 @@ describe("api", () => {
     const readings = (list.payload as { readings: { outcome: string; outcomeNote: string }[] }).readings;
     assert.equal(readings[0].outcome, "yes");
     assert.equal(readings[0].outcomeNote, "ได้งานจริง");
+  });
+
+  it("keeps the streak per account so a reinstall gets it back", async () => {
+    const today = Math.floor((now + 7 * 3_600_000) / 86_400_000);
+    const sent = new FakeRes();
+    await handle(req("POST", "/streak", { current: 8, best: 8, lastEpochDay: today, unlocked: ["ink_paper", "bamboo", "bogus"] }), sent);
+    assert.equal(sent.code, 200);
+    const fresh = new FakeRes();
+    await handle(req("POST", "/streak", { current: 0, best: 0, lastEpochDay: null, unlocked: [] }), fresh);
+    assert.deepEqual((fresh.payload as { streak: unknown }).streak, { current: 8, best: 8, lastEpochDay: today, unlocked: ["ink_paper", "bamboo"] });
+  });
+
+  it("refuses a streak from a clock set in the future", async () => {
+    const today = Math.floor((now + 7 * 3_600_000) / 86_400_000);
+    const res = new FakeRes();
+    await handle(req("POST", "/streak", { current: 300, best: 300, lastEpochDay: today + 30, unlocked: [] }), res);
+    assert.equal(res.code, 400);
   });
 
   describe("lapsed premium", () => {
@@ -866,6 +893,13 @@ describe("api", () => {
         assert.equal(await store.getReading("anon", id), null);
         assert.equal(store.users.has("anon"), false);
         assert.deepEqual(deletedLogins, ["anon"]);
+      });
+
+      it("carries the anonymous account's streak and themes over", async () => {
+        store.streaks.set("anon", { current: 9, best: 9, lastEpochDay: 20_000, unlocked: ["ink_paper", "bamboo"] });
+        await merge("token-anon");
+        assert.deepEqual(store.streaks.get("u1"), { current: 9, best: 9, lastEpochDay: 20_000, unlocked: ["ink_paper", "bamboo"] });
+        assert.equal(store.streaks.has("anon"), false);
       });
 
       it("does not double the coins when the app repeats the call", async () => {

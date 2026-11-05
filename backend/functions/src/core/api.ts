@@ -35,6 +35,7 @@ import {
   UserDoc,
 } from "./quota";
 import { checkSafety } from "./safety";
+import { mergeStreaks, parseStreak, StreakDoc } from "./streak";
 import { SummarySplitter } from "./summary";
 
 // ---------- transport ----------
@@ -117,7 +118,9 @@ export interface Store {
   grantCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
   /** Takes back a refunded pack (never below zero), once; a pack refunded before it was granted is never granted. */
   revokeCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
-  /** Moves coins and readings from [fromUid] to [toUid], then deletes [fromUid]'s data. Safe to repeat. */
+  /** Applies [fn] to the stored streak (empty when there is none) in one transaction; returns what was saved. */
+  updateStreak(uid: string, fn: (stored: StreakDoc) => StreakDoc): Promise<StreakDoc>;
+  /** Moves coins, readings and the streak from [fromUid] to [toUid], then deletes [fromUid]'s data. Safe to repeat. */
   mergeUser(fromUid: string, toUid: string): Promise<void>;
   deleteUser(uid: string): Promise<void>;
 }
@@ -535,6 +538,13 @@ export function createApi(deps: Deps) {
       if (removed) {
         await deps.store.deleteReading(uid, removed[1]);
         res.status(200).json({ ok: true });
+        return;
+      }
+      if (route === "POST /streak") {
+        // The app sends what it has; both sides then keep the merge, so a reinstall gets it back.
+        const sent = parseStreak(b, deps.now());
+        if (!sent) throw new HttpError(400, "bad_request");
+        res.status(200).json({ streak: await deps.store.updateStreak(uid, (stored) => mergeStreaks(stored, sent)) });
         return;
       }
       if (route === "POST /purchases/sync") {

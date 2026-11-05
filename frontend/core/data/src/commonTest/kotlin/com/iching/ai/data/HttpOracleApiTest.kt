@@ -2,9 +2,11 @@ package com.iching.ai.data
 
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.api.HttpOracleApi
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
@@ -81,6 +83,19 @@ class HttpOracleApiTest {
         val status = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").mergeAccount("anon-token")
         assertEquals("""POST /api/account/merge {"fromIdToken":"anon-token"}""", sent)
         assertEquals(10, status.coins)
+    }
+
+    @Test
+    fun syncStreakSendsTheThemeWireNamesAndReadsTheMergedCopy() = runTest {
+        var sent = ""
+        val engine = MockEngine { r ->
+            sent = "${r.method.value} ${r.url.encodedPath} ${(r.body as TextContent).text}"
+            respond("""{"streak":{"current":9,"best":30,"lastEpochDay":101,"unlocked":["ink_paper","bamboo","new_one"]}}""", HttpStatusCode.OK)
+        }
+        val here = StreakState(current = 2, best = 2, lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO))
+        val merged = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").syncStreak(here)
+        assertEquals("""POST /api/streak {"current":2,"best":2,"lastEpochDay":100,"unlocked":["ink_paper","bamboo"]}""", sent)
+        assertEquals(StreakState(current = 9, best = 30, lastEpochDay = 101, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO)), merged)
     }
 
     @Test

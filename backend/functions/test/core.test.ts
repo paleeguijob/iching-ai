@@ -18,6 +18,7 @@ import {
   status,
 } from "../src/core/quota";
 import { checkSafety } from "../src/core/safety";
+import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
@@ -365,5 +366,27 @@ describe("gemini stream", () => {
       assert.ok(!model.endsWith("-latest"), `${model} is an alias whose price can change`);
       assert.ok(PRICES_USD_PER_M[model], `${model} has no price`);
     }
+  });
+});
+
+describe("streak merge", () => {
+  const s = (current: number, best: number, lastEpochDay: number | null, unlocked = ["ink_paper"]) => ({ current, best, lastEpochDay, unlocked });
+
+  it("keeps the run that counted most recently", () => {
+    assert.deepEqual(mergeStreaks(s(3, 10, 100), s(12, 12, 90)), s(3, 12, 100));
+    assert.deepEqual(mergeStreaks(s(12, 12, 90), s(3, 10, 100)), s(3, 12, 100));
+  });
+
+  it("on the same day keeps the longer run", () => {
+    assert.deepEqual(mergeStreaks(s(2, 2, 100), s(7, 7, 100)), s(7, 7, 100));
+  });
+
+  it("never loses an unlocked theme", () => {
+    const merged = mergeStreaks(s(1, 1, 100, ["ink_paper", "bamboo"]), s(31, 31, 99, ["ink_paper", "cinnabar_dawn"]));
+    assert.deepEqual(merged.unlocked, ["ink_paper", "bamboo", "cinnabar_dawn"]);
+  });
+
+  it("an empty stored streak takes what the app sent", () => {
+    assert.deepEqual(mergeStreaks(normalizeStreak(undefined), s(4, 5, 100)), s(4, 5, 100));
   });
 });

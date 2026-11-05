@@ -2,11 +2,13 @@ import { DocumentData, FieldValue, Firestore } from "firebase-admin/firestore";
 import { QuotaTxResult, Store, StoredReading } from "./core/api";
 import type { Coin } from "./core/cast";
 import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "./core/quota";
+import { mergeStreaks, normalizeStreak } from "./core/streak";
 
 /**
  * Firestore layout
  *   users/{uid}                      premiumUntil, coins, usage{day,...}, lastReadingAt
  *   users/{uid}/readings/{id}        one divination (the spec's `readings` table)
+ *   users/{uid}/meta/streak          daily-hexagram streak and unlocked themes (core/streak.ts)
  *   coinGrants/{txId}                coins, at, revokedAt: one per store transaction, across accounts and
  *                                    kept after account deletion (no uid), so a pack is never credited twice
  *   users/{uid}/coinGrants/{txId}    the same marker as written before it moved; still honoured
@@ -18,6 +20,7 @@ import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "
 export function firestoreStore(db: Firestore): Store {
   const users = db.collection("users");
   const readings = (uid: string) => users.doc(uid).collection("readings");
+  const streakRef = (uid: string) => users.doc(uid).collection("meta").doc("streak");
   const safeId = (id: string) => id.replace(/[/.#$\[\]]/g, "_").slice(0, 200) || "unknown";
   const grantRefs = (uid: string, transactionId: string) => ({
     grantRef: db.collection("coinGrants").doc(safeId(transactionId)),
@@ -166,7 +169,17 @@ export function firestoreStore(db: Firestore): Store {
       });
     },
 
+    async updateStreak(uid, fn) {
+      return db.runTransaction(async (tx) => {
+        const next = fn(normalizeStreak((await tx.get(streakRef(uid))).data()));
+        tx.set(streakRef(uid), next);
+        return next;
+      });
+    },
+
     async mergeUser(fromUid, toUid) {
+      const left = normalizeStreak((await streakRef(fromUid).get()).data());
+      await this.updateStreak(toUid, (stored) => mergeStreaks(stored, left));
       await db.runTransaction(async (tx) => {
         const from = await tx.get(users.doc(fromUid));
         const coins = Math.max(0, Math.floor(from.data()?.coins ?? 0));

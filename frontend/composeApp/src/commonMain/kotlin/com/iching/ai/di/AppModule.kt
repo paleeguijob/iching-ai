@@ -91,6 +91,7 @@ val presentationModule = module {
             log = session::log,
             pushSupported = { session.dailyPushSupported },
             enablePush = { session.setDailyPush(true) },
+            syncStreak = session::syncStreak,
         )
     }
     viewModel { params ->

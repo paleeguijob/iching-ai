@@ -3,6 +3,7 @@ package com.iching.ai.domain
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.model.currentOn
+import com.iching.ai.domain.model.mergedWith
 import com.iching.ai.domain.model.recordView
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.oracle.dailyHexagramId
@@ -106,5 +107,32 @@ class RetentionRulesTest {
         assertTrue(parts.all { it.length <= 4000 })
         assertEquals(9000, parts.sumOf { it.length })
         assertEquals(emptyList(), splitForSpeech("   ", 4000))
+    }
+
+    @Test
+    fun mergeKeepsTheLaterRunAndTheBestOfBoth() {
+        val here = StreakState(current = 3, best = 10, lastEpochDay = 100)
+        val server = StreakState(current = 12, best = 12, lastEpochDay = 90)
+        assertEquals(StreakState(current = 3, best = 12, lastEpochDay = 100), here.mergedWith(server))
+        assertEquals(StreakState(current = 3, best = 12, lastEpochDay = 100), server.mergedWith(here))
+    }
+
+    @Test
+    fun mergeOnTheSameDayKeepsTheLongerRun() {
+        val merged = StreakState(current = 2, best = 2, lastEpochDay = 100).mergedWith(StreakState(current = 7, best = 7, lastEpochDay = 100))
+        assertEquals(7, merged.current)
+    }
+
+    @Test
+    fun mergeNeverLosesAnUnlockedTheme() {
+        val a = StreakState(lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO))
+        val b = StreakState(lastEpochDay = 99, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.CINNABAR_DAWN))
+        assertEquals(setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO, AppTheme.CINNABAR_DAWN), a.mergedWith(b).unlocked)
+    }
+
+    @Test
+    fun aFreshInstallTakesTheServerStreak() {
+        val server = StreakState(current = 8, best = 30, lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO, AppTheme.CINNABAR_DAWN))
+        assertEquals(server, StreakState().mergedWith(server))
     }
 }

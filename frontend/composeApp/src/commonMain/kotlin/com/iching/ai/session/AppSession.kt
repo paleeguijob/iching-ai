@@ -6,6 +6,7 @@ import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.model.StoreProduct
+import com.iching.ai.domain.model.mergedWith
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.JournalRepository
@@ -195,6 +196,21 @@ class AppSession(
         refreshStatus()
         // Free accounts get back their recent days (the server decides how many), Premium everything.
         syncJournal()
+        syncStreak()
+    }
+
+    /** Keeps the streak and unlocked themes on the account, so a reinstall or a new device gets them back. */
+    suspend fun syncStreak() {
+        try {
+            val local = settings.settings.firstOrNull()?.streak ?: return
+            val account = api.syncStreak(local)
+            // Merged again: the daily screen may have counted today while the call was out.
+            settings.update { it.copy(streak = it.streak.mergedWith(account)) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("streak_sync: ${e.message}")
+        }
     }
 
     private suspend fun identifyPurchaser(uid: String) {

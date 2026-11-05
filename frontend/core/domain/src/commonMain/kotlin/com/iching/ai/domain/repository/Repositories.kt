@@ -8,6 +8,7 @@ import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StreakState
 import kotlinx.coroutines.flow.Flow
 
 interface HexagramRepository {
@@ -56,13 +57,15 @@ interface OracleApi {
     suspend fun claimAdReward(): Pair<Boolean, AccountStatus>
     suspend fun report(readingId: String, reason: String, note: String)
     suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?)
-    /** Premium only: the server copy of the journal, newest first. */
+    /** The server copy of the journal, newest first: the free journal window, or everything for Premium. */
     suspend fun readings(): List<Reading>
     suspend fun deleteReading(readingId: String)
     suspend fun syncPurchases(): AccountStatus
     /** Moves coins and readings of the anonymous account behind [fromIdToken] into the signed-in one. */
     suspend fun mergeAccount(fromIdToken: String): AccountStatus
     suspend fun deleteAccount()
+    /** Sends this device's streak; returns the account's copy merged with it (see StreakState.mergedWith). */
+    suspend fun syncStreak(streak: StreakState): StreakState
 }
 
 interface JournalRepository {

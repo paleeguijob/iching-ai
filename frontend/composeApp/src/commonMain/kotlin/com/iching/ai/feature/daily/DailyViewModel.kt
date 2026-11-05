@@ -29,6 +29,8 @@ class DailyViewModel(
     private val log: (String, Map<String, String>) -> Unit,
     private val pushSupported: () -> Boolean,
     private val enablePush: suspend () -> Unit,
+    /** Saves a newly counted day to the account. */
+    private val syncStreak: suspend () -> Unit = {},
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) : ViewModel() {
 
@@ -45,7 +47,10 @@ class DailyViewModel(
             val nowMillis = now()
             val hexagram = getDaily(nowMillis)
             val update = recordView(nowMillis)
-            if (update.counted) log("daily_view", emptyMap())
+            if (update.counted) {
+                log("daily_view", emptyMap())
+                launch { syncStreak() }
+            }
             update.newlyUnlocked.forEach { log("streak_milestone", mapOf("days" to it.unlockDays.toString())) }
             val offerPush = pushSupported() && claimPushPrompt()
             _state.update {

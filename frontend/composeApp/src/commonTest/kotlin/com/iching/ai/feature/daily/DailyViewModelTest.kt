@@ -70,8 +70,11 @@ class DailyViewModelTest {
         log = { name, params -> events += name to params },
         pushSupported = { pushSupported },
         enablePush = enablePush,
+        syncStreak = { streakSyncs++ },
         now = { now },
     )
+
+    private var streakSyncs = 0
 
     @Test
     fun openingCountsOnceAndLogs() {
@@ -79,6 +82,16 @@ class DailyViewModelTest {
         vm.refresh()
         assertEquals(1, vm.state.value.streak.current)
         assertEquals(1, events.count { it.first == "daily_view" })
+    }
+
+    @Test
+    fun onlyACountedDayIsSavedToTheAccount() {
+        val vm = viewModel()
+        vm.refresh()
+        assertEquals(1, streakSyncs)
+        now += DAY_MS
+        vm.refresh()
+        assertEquals(2, streakSyncs)
     }
 
     @Test

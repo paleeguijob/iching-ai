@@ -48,3 +48,24 @@ fun StreakState.recordView(today: Long): StreakUpdate {
         counted = true,
     )
 }
+
+/**
+ * Combines this device's streak with the account's copy on the server: the run that counted on the
+ * later day wins, and best and unlocked themes only ever grow. Matches mergeStreaks in the backend.
+ */
+fun StreakState.mergedWith(other: StreakState): StreakState {
+    val mine = lastEpochDay ?: -1
+    val theirs = other.lastEpochDay ?: -1
+    val run = when {
+        mine > theirs -> this
+        theirs > mine -> other
+        current >= other.current -> this
+        else -> other
+    }
+    return StreakState(
+        current = run.current,
+        best = maxOf(best, other.best, run.current),
+        lastEpochDay = run.lastEpochDay,
+        unlocked = unlocked + other.unlocked + AppTheme.INK_PAPER,
+    )
+}
