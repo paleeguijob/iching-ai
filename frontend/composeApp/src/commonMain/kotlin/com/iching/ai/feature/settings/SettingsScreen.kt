@@ -182,10 +182,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                             LinkRow("ลงชื่อเข้าใช้ด้วย Google", enabled = !busy) { viewModel.link(SignInProvider.GOOGLE) }
                         }
                     }
-                    if (status.premium) {
-                        Divider()
-                        LinkRow("ดึงบันทึกชะตาจากระบบ", enabled = !busy) { viewModel.syncJournal() }
-                    }
+                    Divider()
+                    LinkRow("ดึงบันทึกชะตาจากระบบ", enabled = !busy) { viewModel.syncJournal() }
                     Divider()
                     LinkRow("ลบบัญชีและข้อมูลทั้งหมด", color = ZenColors.CinnabarRed, enabled = !busy) { confirmDelete = true }
                 }

@@ -193,7 +193,8 @@ class AppSession(
             bridges.analytics.recordError("purchases_login: ${e.message}")
         }
         refreshStatus()
-        if (_status.value.premium) syncJournal() else syncPending()
+        // Free accounts get back their recent days (the server decides how many), Premium everything.
+        syncJournal()
     }
 
     private suspend fun identifyPurchaser(uid: String) {
@@ -261,7 +262,7 @@ class AppSession(
         null
     }
 
-    /** Premium: copies server readings that are missing on this device (e.g. after reinstalling). */
+    /** Copies server readings that are missing on this device (e.g. after reinstalling or signing in on a new one). */
     suspend fun syncJournal(): Result<Int> = try {
         syncPending()
         Result.success(journal.mergeFromServer(api.readings()))

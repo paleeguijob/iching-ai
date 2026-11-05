@@ -109,7 +109,8 @@ export interface Store {
   reserveFollowUp(uid: string, id: string, limit: number): Promise<boolean>;
   releaseFollowUp(uid: string, id: string): Promise<void>;
   appendFollowUp(uid: string, id: string, turn: FollowUpTurn & { at: number }): Promise<void>;
-  listReadings(uid: string, limit: number): Promise<StoredReading[]>;
+  /** Newest first; only readings made at or after [since] (epoch ms) when it is given. */
+  listReadings(uid: string, limit: number, since?: number): Promise<StoredReading[]>;
   addReport(report: { uid: string; readingId: string; reason: string; note: string; createdAt: number }): Promise<void>;
   setPremiumUntil(uid: string, premiumUntil: number | null): Promise<void>;
   /** Adds coins once per transaction id, across all accounts; returns false if it was already granted. */
@@ -511,10 +512,11 @@ export function createApi(deps: Deps) {
         return;
       }
       if (route === "GET /readings") {
+        // Free accounts get back the days their journal shows; Premium gets everything.
         const st = await readStatus(uid, deviceHash, cfg);
-        if (!st.premium) throw new HttpError(403, "premium_required");
+        const since = st.journalDays == null ? undefined : deps.now() - st.journalDays * 86_400_000;
         const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
-        res.status(200).json({ readings: (await deps.store.listReadings(uid, limit)).map(toClientReading) });
+        res.status(200).json({ readings: (await deps.store.listReadings(uid, limit, since)).map(toClientReading) });
         return;
       }
       const outcome = route.match(/^POST \/readings\/([A-Za-z0-9_-]{1,64})\/outcome$/);

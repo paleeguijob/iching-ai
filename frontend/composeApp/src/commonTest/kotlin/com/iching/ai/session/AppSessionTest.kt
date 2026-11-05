@@ -169,7 +169,11 @@ internal class FakeJournal : JournalRepository {
     override suspend fun outcomeSynced(serverId: String) {
         unsynced.removeAll { it.serverId == serverId }
     }
-    override suspend fun mergeFromServer(readings: List<Reading>) = readings.size
+    val merged = mutableListOf<Reading>()
+    override suspend fun mergeFromServer(readings: List<Reading>): Int {
+        merged += readings
+        return readings.size
+    }
     override suspend fun clear() {
         cleared = true
     }
@@ -310,6 +314,15 @@ class AppSessionTest {
         started()
 
         assertEquals(emptyList(), journal.unsynced)
+    }
+
+    @Test
+    fun aFreeAccountGetsItsServerReadingsBackAtSignIn() = runTest {
+        api.serverReadings = listOf(unsyncedReading)
+
+        started()
+
+        assertEquals(listOf(unsyncedReading), journal.merged)
     }
 
     @Test

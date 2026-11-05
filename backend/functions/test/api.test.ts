@@ -64,8 +64,10 @@ class MemoryStore implements Store {
   async deleteReading(uid: string, id: string) {
     this.readings.delete(`${uid}/${id}`);
   }
-  async listReadings(uid: string) {
-    return [...this.readings.entries()].filter(([k]) => k.startsWith(`${uid}/`)).map(([, v]) => v);
+  async listReadings(uid: string, _limit: number, since?: number) {
+    return [...this.readings.entries()]
+      .filter(([k, v]) => k.startsWith(`${uid}/`) && (since == null || v.createdAt >= since))
+      .map(([, v]) => v);
   }
   async addReport(r: unknown) {
     this.reports.push(r);
@@ -444,16 +446,21 @@ describe("api", () => {
     assert.equal((await store.getReading("u1", id as string))!.followUps.length, 3);
   });
 
-  it("journal sync is premium-only; outcome notes are saved", async () => {
+  it("journal sync gives free accounts their recent days and Premium everything; outcome notes are saved", async () => {
     const first = new FakeRes();
     await handle(req("POST", "/divine", { question: "a" }), first);
     const id = first.events[0].data.readingId;
     const out = new FakeRes();
     await handle(req("POST", `/readings/${id}/outcome`, { outcome: "yes", note: "ได้งานจริง" }), out);
     assert.equal(out.code, 200);
-    const denied = new FakeRes();
-    await handle(req("GET", "/readings"), denied);
-    assert.equal(denied.code, 403);
+    store.readings.get(`u1/${id}`)!.createdAt = now - 30 * 86_400_000;
+    const second = new FakeRes();
+    await handle(req("POST", "/divine", { question: "b" }), second);
+    const recentId = second.events[0].data.readingId;
+    const free = new FakeRes();
+    await handle(req("GET", "/readings"), free);
+    assert.equal(free.code, 200);
+    assert.deepEqual((free.payload as { readings: { id: string }[] }).readings.map((r) => r.id), [recentId]);
     entitlements = { premiumUntil: now + 86_400_000, coinPurchases: [] };
     await handle(req("POST", "/purchases/sync"), new FakeRes());
     const list = new FakeRes();

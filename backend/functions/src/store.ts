@@ -120,8 +120,9 @@ export function firestoreStore(db: Firestore): Store {
       await readings(uid).doc(id).update({ followUps: FieldValue.arrayUnion(turn) });
     },
 
-    async listReadings(uid, limit) {
-      const snap = await readings(uid).orderBy("createdAt", "desc").limit(limit).get();
+    async listReadings(uid, limit, since) {
+      const query = since == null ? readings(uid) : readings(uid).where("createdAt", ">=", since);
+      const snap = await query.orderBy("createdAt", "desc").limit(limit).get();
       return snap.docs.map((d) => toReading(d.id, d.data()));
     },
 
