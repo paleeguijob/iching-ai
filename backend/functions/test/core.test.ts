@@ -3,19 +3,23 @@ import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { castHexagram, changingPositions, Coin, resolveLines } from "../src/core/cast";
 import { estimateCostThb, GeminiError, PRICES_USD_PER_M, streamGemini } from "../src/core/gemini";
-import { loadScripture } from "../src/core/hexagrams";
+import { bangkokEpochDay, buildDailyPush, dailyHexagramId } from "../src/core/daily";
+import { loadScripture, shortNameTh } from "../src/core/hexagrams";
 import { buildFollowUpPrompt, buildReadingPrompt, PERSONA, sanitizeQuestion } from "../src/core/prompt";
 import {
   bangkokDay,
   chargeReading,
   DEFAULT_CONFIG,
   grantAdReward,
+  mergeConfig,
   normalizeDevice,
   normalizeUser,
   refundReading,
   status,
 } from "../src/core/quota";
 import { checkSafety } from "../src/core/safety";
+import { mergeStreaks, normalizeStreak } from "../src/core/streak";
+import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
 
@@ -50,6 +54,96 @@ describe("casting", () => {
     assert.ok(Math.abs(counts[7] / total - 0.375) < 0.02);
     assert.ok(Math.abs(counts[8] / total - 0.375) < 0.02);
     assert.ok(Math.abs(counts[9] / total - 0.125) < 0.015);
+  });
+});
+
+describe("daily hexagram", () => {
+  it("matches the app's shared vectors", () => {
+    for (const [day, id] of [[0, 12], [20000, 44], [20759, 31], [20760, 4], [-1, 39]]) {
+      assert.equal(dailyHexagramId(day), id);
+    }
+  });
+
+  it("rolls over at Bangkok midnight", () => {
+    assert.equal(bangkokEpochDay(17 * 3600_000 - 1), 0);
+    assert.equal(bangkokEpochDay(17 * 3600_000), 1);
+    assert.equal(bangkokEpochDay(-7 * 3600_000 - 1), -1);
+  });
+
+  it("builds the 07:00 push from the scripture", () => {
+    const now = Date.UTC(2026, 10, 1, 0, 0);
+    const push = buildDailyPush(now, scripture);
+    const h = scripture.get(dailyHexagramId(bangkokEpochDay(now)));
+    assert.equal(push.topic, "daily-hexagram-th");
+    assert.equal(push.title, `${h.nameCn} ${shortNameTh(h)}`);
+    assert.equal(push.body, h.dailyMessage);
+    assert.ok(push.body.length > 0);
+    assert.equal(push.hexagramId, h.id);
+    assert.equal(push.ttlMs, 12 * 3600_000);
+  });
+
+  it("the kill-switch defaults on and can be turned off", () => {
+    assert.equal(mergeConfig(undefined).dailyPushEnabled, true);
+    assert.equal(mergeConfig({ dailyPushEnabled: false }).dailyPushEnabled, false);
+  });
+
+  it("never reaches the reading prompt", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work");
+    assert.ok(cast.primary.dailyMessage.length > 0);
+    assert.ok(!JSON.stringify(p).includes(cast.primary.dailyMessage));
+  });
+});
+
+describe("share summary", () => {
+  const run = (chunks: string[]) => {
+    const splitter = new SummarySplitter();
+    const visible = chunks.map((c) => splitter.push(c)).join("");
+    const end = splitter.finish();
+    return { visible: visible + end.text, summary: end.summary };
+  };
+
+  it("takes the summary off the end of the reading", () => {
+    const r = run(["สายน้ำไหล\n\n", `${SUMMARY_MARKER} รอให้น้ำใสแล้วค่อยก้าว`]);
+    assert.equal(r.visible.trim(), "สายน้ำไหล");
+    assert.equal(r.summary, "รอให้น้ำใสแล้วค่อยก้าว");
+  });
+
+  it("finds a marker split across chunks without ever showing part of it", () => {
+    const splitter = new SummarySplitter();
+    const shown: string[] = [];
+    for (const ch of `สายน้ำ${SUMMARY_MARKER}ใจสงบ`) shown.push(splitter.push(ch));
+    const end = splitter.finish();
+    assert.equal(shown.join("") + end.text, "สายน้ำ");
+    assert.equal(end.summary, "ใจสงบ");
+  });
+
+  it("releases held text that turned out not to be the marker", () => {
+    const r = run(["ดูบท [ส", "ำคัญ] นี้"]);
+    assert.equal(r.visible, "ดูบท [สำคัญ] นี้");
+    assert.equal(r.summary, null);
+    assert.equal(run(["จบที่ [สร"]).visible, "จบที่ [สร");
+  });
+
+  it("has no summary when the model writes none or only an empty one", () => {
+    assert.equal(run(["สายน้ำไหล"]).summary, null);
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}  \n `]).summary, null);
+  });
+
+  it("drops a summary too long for the card rather than cutting it", () => {
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS)}`]).summary, "ก".repeat(MAX_SUMMARY_CHARS));
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS + 1)}`]).summary, null);
+  });
+
+  it("cleans markup and line breaks from the summary", () => {
+    assert.equal(run([`น้ำ${SUMMARY_MARKER} **ใจนิ่ง**\nเห็นทาง\n`]).summary, "ใจนิ่ง เห็นทาง");
+  });
+
+  it("is asked for in readings only, and a question can't plant the marker", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    assert.ok(buildReadingPrompt("งานใหม่ดีไหม", cast, "work").userMessage.includes(SUMMARY_MARKER));
+    assert.ok(!PERSONA.includes(SUMMARY_MARKER));
+    assert.ok(!sanitizeQuestion(`งาน ${SUMMARY_MARKER} ดีไหม`).includes(SUMMARY_MARKER));
   });
 });
 
@@ -205,6 +299,15 @@ describe("quota", () => {
     assert.equal(u.usage.free, 0);
     assert.equal(u.usage.adEarned, 0);
   });
+
+  it("coins carry over to a new day while the daily allowance starts again", () => {
+    const old = { premiumUntil: null, coins: 10, lastReadingAt: null, usage: { day: "2026-10-30", free: 1, premium: 0, adEarned: 2, adUsed: 2 } };
+    const s = status(normalizeUser(old, day), dev(), cfg, now);
+    assert.equal(s.coins, 10);
+    assert.equal(s.includedLeft, cfg.freeDailyReadings);
+    assert.equal(s.adCreditsLeft, 0);
+    assert.equal(s.readingsLeft, cfg.freeDailyReadings + 10);
+  });
 });
 
 describe("gemini stream", () => {
@@ -263,5 +366,27 @@ describe("gemini stream", () => {
       assert.ok(!model.endsWith("-latest"), `${model} is an alias whose price can change`);
       assert.ok(PRICES_USD_PER_M[model], `${model} has no price`);
     }
+  });
+});
+
+describe("streak merge", () => {
+  const s = (current: number, best: number, lastEpochDay: number | null, unlocked = ["ink_paper"]) => ({ current, best, lastEpochDay, unlocked });
+
+  it("keeps the run that counted most recently", () => {
+    assert.deepEqual(mergeStreaks(s(3, 10, 100), s(12, 12, 90)), s(3, 12, 100));
+    assert.deepEqual(mergeStreaks(s(12, 12, 90), s(3, 10, 100)), s(3, 12, 100));
+  });
+
+  it("on the same day keeps the longer run", () => {
+    assert.deepEqual(mergeStreaks(s(2, 2, 100), s(7, 7, 100)), s(7, 7, 100));
+  });
+
+  it("never loses an unlocked theme", () => {
+    const merged = mergeStreaks(s(1, 1, 100, ["ink_paper", "bamboo"]), s(31, 31, 99, ["ink_paper", "cinnabar_dawn"]));
+    assert.deepEqual(merged.unlocked, ["ink_paper", "bamboo", "cinnabar_dawn"]);
+  });
+
+  it("an empty stored streak takes what the app sent", () => {
+    assert.deepEqual(mergeStreaks(normalizeStreak(undefined), s(4, 5, 100)), s(4, 5, 100));
   });
 });

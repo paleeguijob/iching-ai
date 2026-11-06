@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon (Android 13+) layer: the same three coins, slightly smaller so they
+     don't touch, since a single-tone icon can't separate overlapping shapes. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Scaled to sit inside the 66dp adaptive-icon safe zone -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.92"
+        android:scaleY="0.92">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M25.48,66.32a13.5,13.5 0,1 0,27 0a13.5,13.5 0,1 0,-27 0zM34.78,62.12h8.4v8.4h-8.4z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M55.52,66.32a13.5,13.5 0,1 0,27 0a13.5,13.5 0,1 0,-27 0zM64.82,62.12h8.4v8.4h-8.4z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M40.5,41.68a13.5,13.5 0,1 0,27 0a13.5,13.5 0,1 0,-27 0zM49.8,37.48h8.4v8.4h-8.4z" />
+    </group>
+</vector>

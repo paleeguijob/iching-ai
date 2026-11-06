@@ -23,6 +23,8 @@ export interface RuntimeConfig {
   freeJournalDays: number;
   /** Reject requests without a valid App Check token (turn off only while debugging). */
   enforceAppCheck: boolean;
+  /** Kill-switch for the 07:00 daily hexagram push. */
+  dailyPushEnabled: boolean;
 }
 
 export const DEFAULT_CONFIG: RuntimeConfig = {
@@ -39,6 +41,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   minSecondsBetweenReadings: 8,
   freeJournalDays: 7,
   enforceAppCheck: true,
+  dailyPushEnabled: true,
 };
 
 /** Merges the Firestore config/runtime doc over the defaults, ignoring fields of the wrong type. */

@@ -53,7 +53,7 @@ interface NativePurchases {
      */
     fun offerings(callback: ResultCallback)
 
-    /** value = "purchased" or "cancelled". */
+    /** value = "purchased", "cancelled" or "pending" (the store is still waiting for the payment). */
     fun purchase(packageId: String, callback: ResultCallback)
 
     /** value = "ok". */
@@ -74,11 +74,25 @@ interface NativeAnalytics {
     fun recordError(message: String)
 }
 
+interface NativeNotifications {
+    /** False where push isn't set up yet (iOS until APNs is configured); the app then hides the feature. */
+    fun isSupported(): Boolean
+    fun permissionGranted(): Boolean
+
+    /** value = "granted" or "denied". */
+    fun requestPermission(callback: ResultCallback)
+
+    /** Subscribes to or leaves the daily hexagram FCM topic. value = "ok". */
+    fun setDailySubscribed(enabled: Boolean, callback: ResultCallback)
+    fun openSystemSettings()
+}
+
 class NativeBridges(
     val auth: NativeAuth,
     val purchases: NativePurchases,
     val ads: NativeAds,
     val analytics: NativeAnalytics,
+    val notifications: NativeNotifications,
 )
 
 class NativeException(message: String) : Exception(message)

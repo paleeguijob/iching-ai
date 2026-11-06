@@ -5,11 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.Account
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
+import com.iching.ai.domain.repository.ApiException
+import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.feature.paywall.restoreMessage
 import com.iching.ai.platform.NativeException
 import com.iching.ai.session.AppSession
+import com.iching.ai.session.DailyPushResult
 import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,25 +52,64 @@ class SettingsViewModel(
         viewModelScope.launch { updateSettings { it.copy(soundEnabled = enabled) } }
     }
 
+    val appVersion: String get() = session.appVersion
+    val dailyPushSupported: Boolean get() = session.dailyPushSupported
+
+    private val _notificationsGranted = MutableStateFlow(session.notificationsGranted())
+    val notificationsGranted: StateFlow<Boolean> = _notificationsGranted.asStateFlow()
+    private val _pushBlocked = MutableStateFlow(false)
+
+    /** The system refused: the only way forward is the system's own settings screen. */
+    val pushBlocked: StateFlow<Boolean> = _pushBlocked.asStateFlow()
+
+    /** The user may have changed the permission in system settings while away. */
+    fun refreshNotificationPermission() {
+        _notificationsGranted.value = session.notificationsGranted()
+    }
+
+    fun setDailyPush(enabled: Boolean) {
+        viewModelScope.launch {
+            _pushBlocked.value = session.setDailyPush(enabled) == DailyPushResult.PERMISSION_DENIED
+            refreshNotificationPermission()
+        }
+    }
+
+    fun openNotificationSettings() {
+        _pushBlocked.value = false
+        session.openNotificationSettings()
+    }
+
+    fun dismissPushBlocked() {
+        _pushBlocked.value = false
+    }
+
+    fun selectTheme(theme: AppTheme) {
+        if (theme !in settings.value?.streak?.unlocked.orEmpty()) return
+        viewModelScope.launch { updateSettings { it.copy(selectedTheme = theme) } }
+        session.log("theme_selected", mapOf("theme" to theme.wire))
+    }
+
     fun link(provider: SignInProvider) = launchBusy {
         _message.value = null
         val result = session.link(provider)
         _message.value = result.fold(
-            onSuccess = { "เชื่อมบัญชีแล้ว การซื้อและบันทึกชะตาจะติดตามท่านไปยังเครื่องใหม่" },
+            onSuccess = { linked ->
+                if (linked.carriedOver) "เชื่อมบัญชีแล้ว การซื้อและบันทึกชะตาจะติดตามท่านไปยังเครื่องใหม่"
+                else "เชื่อมบัญชีแล้ว แต่ยังย้ายการซื้อหรือเหรียญจากเครื่องนี้ไม่ครบ โปรดตรวจสอบอินเทอร์เน็ตแล้วกดกู้คืนการซื้อ"
+            },
             onFailure = { e -> if (e is NativeException && e.message == "cancelled") null else "เชื่อมบัญชีไม่สำเร็จ โปรดลองใหม่อีกครั้ง" },
         )
     }
 
     fun restore() = launchBusy {
         _message.value = when (val r = session.restorePurchases()) {
-            is PurchaseResult.Success -> if (r.status.premium) "กู้คืนสมาชิก Premium แล้ว" else "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่"
+            is PurchaseResult.Success -> r.restoreMessage()
             else -> "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
         }
     }
 
     fun syncJournal() = launchBusy {
-        val added = session.syncJournal()
-        _message.value = if (added > 0) "ดึงบันทึกชะตาจากระบบมา $added รายการ" else "บันทึกชะตาในเครื่องเป็นปัจจุบันแล้ว"
+        _message.value = journalSyncMessage(session.syncJournal())
     }
 
     fun deleteAccount(onDone: () -> Unit) = launchBusy {
@@ -91,3 +135,11 @@ class SettingsViewModel(
         }
     }
 }
+
+internal fun journalSyncMessage(result: Result<Int>): String = result.fold(
+    onSuccess = { added -> if (added > 0) "ดึงบันทึกชะตาจากระบบมา $added รายการ" else "บันทึกชะตาในเครื่องเป็นปัจจุบันแล้ว" },
+    onFailure = { e ->
+        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) "การดึงบันทึกชะตาจากระบบเป็นสิทธิ์ของสมาชิก Premium"
+        else "ดึงบันทึกชะตาไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
+    },
+)

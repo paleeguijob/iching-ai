@@ -35,6 +35,8 @@ import {
   UserDoc,
 } from "./quota";
 import { checkSafety } from "./safety";
+import { mergeStreaks, parseStreak, StreakDoc } from "./streak";
+import { SummarySplitter } from "./summary";
 
 // ---------- transport ----------
 
@@ -75,6 +77,8 @@ export interface StoredReading {
   primaryId: number;
   relatingId: number | null;
   aiText: string | null;
+  /** One line for the share card; missing on readings made before it existed. */
+  shareSummary?: string | null;
   source: "ai" | "scripture";
   model: string | null;
   tokensIn: number;
@@ -106,11 +110,18 @@ export interface Store {
   reserveFollowUp(uid: string, id: string, limit: number): Promise<boolean>;
   releaseFollowUp(uid: string, id: string): Promise<void>;
   appendFollowUp(uid: string, id: string, turn: FollowUpTurn & { at: number }): Promise<void>;
-  listReadings(uid: string, limit: number): Promise<StoredReading[]>;
+  /** Newest first; only readings made at or after [since] (epoch ms) when it is given. */
+  listReadings(uid: string, limit: number, since?: number): Promise<StoredReading[]>;
   addReport(report: { uid: string; readingId: string; reason: string; note: string; createdAt: number }): Promise<void>;
   setPremiumUntil(uid: string, premiumUntil: number | null): Promise<void>;
-  /** Adds coins once per transaction id; returns false if this transaction was already granted. */
+  /** Adds coins once per transaction id, across all accounts; returns false if it was already granted. */
   grantCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
+  /** Takes back a refunded pack (never below zero), once; a pack refunded before it was granted is never granted. */
+  revokeCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
+  /** Applies [fn] to the stored streak (empty when there is none) in one transaction; returns what was saved. */
+  updateStreak(uid: string, fn: (stored: StreakDoc) => StreakDoc): Promise<StreakDoc>;
+  /** Moves coins, readings and the streak from [fromUid] to [toUid], then deletes [fromUid]'s data. Safe to repeat. */
+  mergeUser(fromUid: string, toUid: string): Promise<void>;
   deleteUser(uid: string): Promise<void>;
 }
 
@@ -130,6 +141,8 @@ export interface Deps {
   /** RevenueCat lookup; null when RevenueCat is not configured. */
   fetchEntitlements: ((uid: string) => Promise<Entitlements>) | null;
   deleteAuthUser(uid: string): Promise<void>;
+  /** Whether the login is still anonymous; null when it no longer exists. */
+  isAnonymousUser(uid: string): Promise<boolean | null>;
   deletePurchaser: ((uid: string) => Promise<void>) | null;
   now(): number;
   log: { info(msg: string, data?: object): void; warn(msg: string, data?: object): void; error(msg: string, data?: object): void };
@@ -228,17 +241,25 @@ export function createApi(deps: Deps) {
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
+    const show = (visible: string) => {
+      if (!visible) return;
+      text += visible;
+      sse.send("delta", { text: visible });
+    };
     try {
       const stream = deps.streamModel(prompt, decision.model, abort.signal);
+      const splitter = new SummarySplitter();
       let step = await stream.next();
       while (!step.done) {
-        text += step.value;
-        sse.send("delta", { text: step.value });
+        show(splitter.push(step.value));
         step = await stream.next();
       }
       const usage = step.value;
+      const end = splitter.finish();
+      show(end.text);
       await deps.store.updateReading(uid, reading.id, {
         aiText: text.trim(),
+        shareSummary: end.summary,
         source: "ai",
         model: decision.model,
         tokensIn: usage.tokensIn,
@@ -254,7 +275,7 @@ export function createApi(deps: Deps) {
         tokensOut: usage.tokensOut,
         costThb: Number(estimateCostThb(decision.model, usage).toFixed(4)),
       });
-      sse.send("done", { model: decision.model, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg) });
     } catch (e) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
@@ -327,7 +348,7 @@ export function createApi(deps: Deps) {
     if (reading.aiText) {
       // Already interpreted (e.g. the app retried after a dropped connection): replay, never re-charge.
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
     } else {
       await interpret(sse, uid, deviceHash, cfg, reading, cast);
     }
@@ -413,6 +434,36 @@ export function createApi(deps: Deps) {
     await syncPurchases(uid).catch((e) => deps.log.warn("premium_refresh_failed", { uid, detail: String(e) }));
   }
 
+  /** Already gone counts as done: the app may be retrying after the first answer was lost. */
+  async function deleteLogin(uid: string) {
+    await deps.deleteAuthUser(uid).catch((e) => {
+      if ((e as { code?: string })?.code !== "auth/user-not-found") throw e;
+    });
+  }
+
+  const deletePurchaserQuietly = async (uid: string) => {
+    if (deps.deletePurchaser) await deps.deletePurchaser(uid).catch((e) => deps.log.warn("revenuecat_delete_failed", { uid, e: String(e) }));
+  };
+
+  /**
+   * Signing into an existing account from a fresh install leaves the install's anonymous account
+   * behind. Holding its ID token proves it is the caller's, and only anonymous accounts can be
+   * absorbed, so a leaked token of a real account cannot be used to empty it.
+   */
+  async function mergeAnonymousAccount(uid: string, fromIdToken: string) {
+    const from = await deps.verifyIdToken(fromIdToken).catch(() => {
+      throw new HttpError(403, "merge_refused");
+    });
+    if (from.uid === uid) throw new HttpError(400, "bad_request");
+    const anonymous = await deps.isAnonymousUser(from.uid);
+    if (anonymous === false) throw new HttpError(403, "merge_refused");
+    if (anonymous === null) return;
+    await deps.store.mergeUser(from.uid, uid);
+    await deletePurchaserQuietly(from.uid);
+    await deleteLogin(from.uid);
+    deps.log.info("account_merged", { from: from.uid, to: uid });
+  }
+
   const toClientReading = (r: StoredReading) => ({
     id: r.id,
     question: r.question,
@@ -464,10 +515,11 @@ export function createApi(deps: Deps) {
         return;
       }
       if (route === "GET /readings") {
+        // Free accounts get back the days their journal shows; Premium gets everything.
         const st = await readStatus(uid, deviceHash, cfg);
-        if (!st.premium) throw new HttpError(403, "premium_required");
+        const since = st.journalDays == null ? undefined : deps.now() - st.journalDays * 86_400_000;
         const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
-        res.status(200).json({ readings: (await deps.store.listReadings(uid, limit)).map(toClientReading) });
+        res.status(200).json({ readings: (await deps.store.listReadings(uid, limit, since)).map(toClientReading) });
         return;
       }
       const outcome = route.match(/^POST \/readings\/([A-Za-z0-9_-]{1,64})\/outcome$/);
@@ -488,15 +540,28 @@ export function createApi(deps: Deps) {
         res.status(200).json({ ok: true });
         return;
       }
+      if (route === "POST /streak") {
+        // The app sends what it has; both sides then keep the merge, so a reinstall gets it back.
+        const sent = parseStreak(b, deps.now());
+        if (!sent) throw new HttpError(400, "bad_request");
+        res.status(200).json({ streak: await deps.store.updateStreak(uid, (stored) => mergeStreaks(stored, sent)) });
+        return;
+      }
       if (route === "POST /purchases/sync") {
         await syncPurchases(uid);
         res.status(200).json(await readStatus(uid, deviceHash, cfg));
         return;
       }
+      if (route === "POST /account/merge") {
+        if (typeof b.fromIdToken !== "string" || !b.fromIdToken) throw new HttpError(400, "bad_request");
+        await mergeAnonymousAccount(uid, b.fromIdToken);
+        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        return;
+      }
       if (route === "DELETE /account") {
         await deps.store.deleteUser(uid);
-        if (deps.deletePurchaser) await deps.deletePurchaser(uid).catch((e) => deps.log.warn("revenuecat_delete_failed", { uid, e: String(e) }));
-        await deps.deleteAuthUser(uid);
+        await deletePurchaserQuietly(uid);
+        await deleteLogin(uid);
         deps.log.info("account_deleted", { uid });
         res.status(200).json({ ok: true });
         return;
@@ -524,6 +589,8 @@ export interface RevenueCatEvent {
   aliases?: string[];
   transferred_from?: string[];
   transferred_to?: string[];
+  product_id?: string;
+  transaction_id?: string;
 }
 
 /** Firebase uids the webhook event refers to (RevenueCat anonymous ids are skipped). */
@@ -540,7 +607,8 @@ export function uidsFromEvent(event: RevenueCatEvent): string[] {
 
 /**
  * Webhook: RevenueCat's own advice is to re-read the subscriber on every event rather than
- * interpreting each event type, so ordering and retries cannot leave a wrong state.
+ * interpreting each event type, so ordering and retries cannot leave a wrong state. The exception
+ * is a refunded coin pack: coins are our own ledger, so only this event can take them back.
  */
 export function createRevenueCatWebhook(deps: Pick<Deps, "store" | "fetchEntitlements" | "log">, authSecret: () => string) {
   return async function handle(req: HttpReq, res: HttpRes): Promise<void> {
@@ -555,6 +623,9 @@ export function createRevenueCatWebhook(deps: Pick<Deps, "store" | "fetchEntitle
       return;
     }
     try {
+      const refundedCoins = event.type === "CANCELLATION" && event.product_id ? COINS_PER_PACK[event.product_id] : undefined;
+      const holder = uidsFromEvent(event)[0];
+      if (refundedCoins && event.transaction_id && holder) await deps.store.revokeCoins(holder, event.transaction_id, refundedCoins);
       for (const uid of uidsFromEvent(event)) {
         const ent = await deps.fetchEntitlements(uid);
         await deps.store.setPremiumUntil(uid, ent.premiumUntil);

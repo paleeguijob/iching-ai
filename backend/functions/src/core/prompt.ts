@@ -1,5 +1,6 @@
 import { Cast, changingPositions } from "./cast";
 import { Hexagram, lowerTrigram, upperTrigram } from "./hexagrams";
+import { SUMMARY_MARKER } from "./summary";
 
 export interface Prompt {
   systemInstruction: string;
@@ -47,6 +48,12 @@ export const PERSONA = `
 - เอ่ยชื่อกวาเป็นภาษาไทยอย่างน้อยหนึ่งครั้ง และหากมีเส้นแปร ให้เชื่อมความหมายของเส้นแปรและกวาแปรเข้ากับคำถามด้วย
 `.trim();
 
+/** Asked for in the reading prompt only: follow-ups have no share card. */
+const SUMMARY_RULE = `
+เมื่อจบคำทำนายแล้ว ให้ขึ้นบรรทัดใหม่ พิมพ์ ${SUMMARY_MARKER} ตามด้วยใจความของคำทำนายนี้เป็นประโยคเดียว ไม่เกิน 90 ตัวอักษร สำหรับให้ผู้แสวงหาแชร์แก่ผู้อื่น
+เขียนเป็นคำสอนที่ใครอ่านก็เข้าใจ ห้ามเอ่ยถึงคำถาม ชื่อคน หรือเรื่องส่วนตัวของผู้แสวงหา และไม่พิมพ์สิ่งใดต่อจากนั้น
+`.trim();
+
 export const FOLLOW_UP_RULES = `
 ขณะนี้ผู้แสวงหาถามต่อเนื่องจากคำทำนายเดิม
 - ตอบในบทบาทเดิม ยึดกวาและเส้นแปรเดิมเป็นแก่น ห้ามเสี่ยงทายใหม่หรือเปลี่ยนกวา
@@ -89,7 +96,7 @@ export function sanitizeQuestion(raw: unknown, max = MAX_QUESTION_CHARS): string
   // Strip control characters and fake section markers a user might use to steer the prompt.
   return raw
     .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ")
-    .replace(/\[(context data|คำถาม|system)[^\]]*\]/gi, " ")
+    .replace(/\[(context data|คำถาม|system|สรุป)[^\]]*\]/gi, " ")
     .trim()
     .slice(0, max);
 }
@@ -114,7 +121,7 @@ export function buildReadingPrompt(
   ]
     .filter((x) => x !== null)
     .join("\n");
-  return { systemInstruction: PERSONA, userMessage: user };
+  return { systemInstruction: PERSONA, userMessage: `${user}\n\n${SUMMARY_RULE}` };
 }
 
 export interface FollowUpTurn {

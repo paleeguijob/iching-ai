@@ -6,6 +6,7 @@ import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.model.StoreProduct
+import com.iching.ai.domain.model.mergedWith
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.JournalRepository
@@ -20,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -57,13 +59,20 @@ class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
 }
 
 sealed interface PurchaseResult {
-    data class Success(val status: AccountStatus) : PurchaseResult
+    /** [coinsAdded] is how far the balance rose, as far as the balance beforehand was known. */
+    data class Success(val status: AccountStatus, val coinsAdded: Int = 0) : PurchaseResult
     data object Cancelled : PurchaseResult
 
     /** The store took the payment but the server has not confirmed it yet; restoring picks it up. */
     data object Pending : PurchaseResult
+
+    /** The store is still waiting for the money (e.g. a slower payment method); nothing to do but wait. */
+    data object AwaitingPayment : PurchaseResult
     data class Error(val message: String) : PurchaseResult
 }
+
+/** How connecting an account went; [carriedOver] is false when something bought here still has to follow. */
+data class LinkOutcome(val account: Account, val carriedOver: Boolean)
 
 sealed interface AdResult {
     data class Granted(val status: AccountStatus) : AdResult
@@ -82,6 +91,8 @@ private data class ProductJson(
     val period: String? = null,
     val trial: String? = null,
 )
+
+enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
 
 /**
  * App-wide account state: who is signed in, what they may do today, and the actions that change
@@ -111,6 +122,9 @@ class AppSession(
     /** The uid RevenueCat knows this customer by; purchases made before logIn would land elsewhere. */
     private var purchaserUid: String? = null
 
+    /** ID token of an anonymous account signed out of by linking, until its contents have moved. */
+    private var unmergedToken: String? = null
+
     val supportsApple: Boolean get() = bridges.auth.supportsApple()
     val supportsGoogle: Boolean get() = bridges.auth.supportsGoogle()
     val manageSubscriptionsUrl: String get() = bridges.purchases.manageSubscriptionsUrl()
@@ -129,6 +143,43 @@ class AppSession(
             }
             bridges.ads.preload()
         }
+        scope.launch { syncDailyPush() }
+    }
+
+    val appVersion: String get() = bridges.auth.appVersion()
+    val dailyPushSupported: Boolean get() = bridges.notifications.isSupported()
+    fun notificationsGranted(): Boolean = bridges.notifications.permissionGranted()
+    fun openNotificationSettings() = bridges.notifications.openSystemSettings()
+
+    suspend fun setDailyPush(enabled: Boolean): DailyPushResult {
+        if (enabled && !bridges.notifications.permissionGranted()) {
+            val answer = try {
+                awaitNative { bridges.notifications.requestPermission(it) }
+            } catch (e: NativeException) {
+                "denied"
+            }
+            if (answer != "granted") return DailyPushResult.PERMISSION_DENIED
+        }
+        settings.update { it.copy(dailyPushEnabled = enabled, dailyPushSynced = false) }
+        log("push_toggle", mapOf("enabled" to enabled.toString()))
+        // Not awaited: an FCM topic change can wait a long time for connectivity.
+        scope.launch { syncDailyPush() }
+        return if (enabled) DailyPushResult.ENABLED else DailyPushResult.DISABLED
+    }
+
+    /** Brings the FCM topic in line with the setting. A failure (offline) is retried on the next launch. */
+    private suspend fun syncDailyPush() {
+        try {
+            val current = settings.settings.firstOrNull() ?: return
+            if (current.dailyPushSynced || !dailyPushSupported) return
+            val enabled = current.dailyPushEnabled
+            awaitNative { bridges.notifications.setDailySubscribed(enabled, it) }
+            settings.update { if (it.dailyPushEnabled == enabled) it.copy(dailyPushSynced = true) else it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("daily_push_sync: ${e.message}")
+        }
     }
 
     private suspend fun onSignedIn(uid: String) {
@@ -143,7 +194,23 @@ class AppSession(
             bridges.analytics.recordError("purchases_login: ${e.message}")
         }
         refreshStatus()
-        if (_status.value.premium) syncJournal() else syncDeletions()
+        // Free accounts get back their recent days (the server decides how many), Premium everything.
+        syncJournal()
+        syncStreak()
+    }
+
+    /** Keeps the streak and unlocked themes on the account, so a reinstall or a new device gets them back. */
+    suspend fun syncStreak() {
+        try {
+            val local = settings.settings.firstOrNull()?.streak ?: return
+            val account = api.syncStreak(local)
+            // Merged again: the daily screen may have counted today while the call was out.
+            settings.update { it.copy(streak = it.streak.mergedWith(account)) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("streak_sync: ${e.message}")
+        }
     }
 
     private suspend fun identifyPurchaser(uid: String) {
@@ -152,7 +219,27 @@ class AppSession(
         purchaserUid = uid
     }
 
-    /** Deletes on the server what was deleted here while offline. */
+    /** Sends the server what changed here while offline. */
+    private suspend fun syncPending() {
+        syncDeletions()
+        syncOutcomes()
+    }
+
+    private suspend fun syncOutcomes() {
+        for (reading in journal.unsyncedOutcomes()) {
+            val serverId = reading.serverId ?: continue
+            try {
+                api.saveOutcome(serverId, reading.outcome, reading.outcomeNote)
+                journal.outcomeSynced(serverId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (e !is ApiException || e.reason != FailureReason.NOT_FOUND) return
+                journal.outcomeSynced(serverId)
+            }
+        }
+    }
+
     private suspend fun syncDeletions() {
         for (serverId in journal.pendingDeletions()) {
             try {
@@ -191,14 +278,16 @@ class AppSession(
         null
     }
 
-    /** Premium: copies server readings that are missing on this device (e.g. after reinstalling). */
-    suspend fun syncJournal(): Int = try {
-        syncDeletions()
-        journal.mergeFromServer(api.readings())
+    /** Copies server readings that are missing on this device (e.g. after reinstalling or signing in on a new one). */
+    suspend fun syncJournal(): Result<Int> = try {
+        syncPending()
+        Result.success(journal.mergeFromServer(api.readings()))
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        0
+        bridges.analytics.recordError("journal_sync: ${e.message}")
+        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) refreshStatus()
+        Result.failure(e)
     }
 
     suspend fun watchAdForReading(): AdResult {
@@ -232,10 +321,18 @@ class AppSession(
         }.sortedBy { it.kind.ordinal }
     }
 
+    /** The balance on the server, or null when it cannot be told from the assumed starting status. */
+    private suspend fun knownCoins(): Int? {
+        if (!_online.value) refreshStatus()
+        return if (_online.value) _status.value.coins else null
+    }
+
     suspend fun purchase(product: StoreProduct): PurchaseResult = try {
         identifyPurchaser(apiSession.ensureSignedIn())
+        val coinsBefore = knownCoins()
         when (awaitNative { bridges.purchases.purchase(product.packageId, it) }) {
-            "purchased" -> confirmPurchase(product)
+            "purchased" -> confirmPurchase(product, coinsBefore)
+            "pending" -> PurchaseResult.AwaitingPayment
             else -> PurchaseResult.Cancelled
         }
     } catch (e: CancellationException) {
@@ -245,8 +342,7 @@ class AppSession(
     }
 
     /** The store has the money by now, so a failure here must not read as a failed payment. */
-    private suspend fun confirmPurchase(product: StoreProduct): PurchaseResult {
-        val coinsBefore = _status.value.coins
+    private suspend fun confirmPurchase(product: StoreProduct, coinsBefore: Int?): PurchaseResult {
         val status = try {
             // The webhook updates the server too; syncing now makes the change instant.
             api.syncPurchases()
@@ -257,23 +353,26 @@ class AppSession(
             return PurchaseResult.Pending
         }
         updateStatus(status)
-        val applied = if (product.kind == ProductKind.COINS) status.coins > coinsBefore else status.premium
+        val coinsAdded = coinsBefore?.let { (status.coins - it).coerceAtLeast(0) } ?: 0
+        val applied = if (product.kind == ProductKind.COINS) coinsAdded > 0 else status.premium
         if (!applied) {
             bridges.analytics.recordError("purchase_not_applied: ${product.productId}")
             return PurchaseResult.Pending
         }
         log("purchase_completed", mapOf("product" to product.productId))
         if (status.premium) syncJournal()
-        return PurchaseResult.Success(status)
+        return PurchaseResult.Success(status, coinsAdded)
     }
 
     suspend fun restorePurchases(): PurchaseResult = try {
         identifyPurchaser(apiSession.ensureSignedIn())
+        val coinsBefore = knownCoins()
+        mergeLeftBehind()
         awaitNative { bridges.purchases.restore(it) }
         val status = api.syncPurchases()
         updateStatus(status)
         if (status.premium) syncJournal()
-        PurchaseResult.Success(status)
+        PurchaseResult.Success(status, coinsBefore?.let { (status.coins - it).coerceAtLeast(0) } ?: 0)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -281,33 +380,87 @@ class AppSession(
     }
 
     /** Links Apple/Google so purchases and the journal follow the seeker to a new device. */
-    suspend fun link(provider: SignInProvider): Result<Account> = try {
+    suspend fun link(provider: SignInProvider): Result<LinkOutcome> = try {
+        val before = bridges.auth.currentUserId()
+        // Taken now: if this Google/Apple account already exists, the sheet signs out of this one.
+        val fromToken = if (bridges.auth.currentProvider() == "anonymous") anonymousToken() else null
         val uid = when (provider) {
             SignInProvider.APPLE -> awaitNative { bridges.auth.linkApple(it) }
             SignInProvider.GOOGLE -> awaitNative { bridges.auth.linkGoogle(it) }
             SignInProvider.ANONYMOUS -> error("Nothing to link")
         }
+        val carriedOver = if (before != null && uid != before) carryOver(uid, fromToken) else true
         onSignedIn(uid)
         log("account_linked", mapOf("provider" to provider.name.lowercase()))
-        Result.success(currentAccount()!!)
+        Result.success(LinkOutcome(currentAccount()!!, carriedOver))
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
         Result.failure(e)
     }
 
+    private suspend fun anonymousToken(): String? = try {
+        apiSession.idToken(forceRefresh = false)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        bridges.analytics.recordError("link_token: ${e.message}")
+        null
+    }
+
+    /**
+     * Signed into an existing account: brings along what was bought on the account just left.
+     * The store purchase moves by restoring under the new customer; coins and readings live on our
+     * server. Whatever fails is retried by the seeker's next restore.
+     */
+    private suspend fun carryOver(uid: String, fromToken: String?): Boolean {
+        unmergedToken = fromToken
+        val restored = attempt("link_restore") {
+            identifyPurchaser(uid)
+            awaitNative { bridges.purchases.restore(it) }
+        }
+        val merged = mergeLeftBehind()
+        val synced = attempt("link_sync") { updateStatus(api.syncPurchases()) }
+        return fromToken != null && restored && merged && synced
+    }
+
+    private suspend fun mergeLeftBehind(): Boolean {
+        val token = unmergedToken ?: return true
+        return attempt("account_merge") {
+            updateStatus(api.mergeAccount(token))
+            unmergedToken = null
+        }
+    }
+
+    private suspend fun attempt(label: String, block: suspend () -> Unit): Boolean = try {
+        block()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        bridges.analytics.recordError("$label: ${e.message}")
+        false
+    }
+
     /** Deletes server data and the auth user, wipes this device, then starts a fresh anonymous session. */
     suspend fun deleteAccount(): Result<Unit> = try {
+        val pushWasOn = settings.settings.firstOrNull()?.let { it.dailyPushEnabled || !it.dailyPushSynced } == true
         api.deleteAccount()
         bridges.purchases.logOut()
         purchaserUid = null
+        unmergedToken = null
         bridges.auth.signOut()
         journal.clear()
         settings.clear()
+        if (pushWasOn) {
+            settings.update { it.copy(dailyPushEnabled = false, dailyPushSynced = false) }
+            scope.launch { syncDailyPush() }
+        }
         _account.value = null
         _status.value = AccountStatus.UNKNOWN_FREE
-        val uid = apiSession.ensureSignedIn()
-        onSignedIn(uid)
+        _online.value = false
+        // The account is gone by now: being offline for the fresh session must not read as a failed delete.
+        attempt("restart_after_delete") { onSignedIn(apiSession.ensureSignedIn()) }
         Result.success(Unit)
     } catch (e: CancellationException) {
         throw e

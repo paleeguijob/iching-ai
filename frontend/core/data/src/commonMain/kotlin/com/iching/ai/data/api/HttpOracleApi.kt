@@ -7,7 +7,9 @@ import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
@@ -36,6 +38,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.put
@@ -80,11 +84,13 @@ internal data class StatusDto(
 
 @Serializable internal data class CastDto(val readingId: String, val lines: List<Int>, val coins: List<List<Int>> = emptyList())
 @Serializable internal data class DeltaDto(val text: String)
-@Serializable internal data class DoneDto(val status: StatusDto? = null)
+@Serializable internal data class DoneDto(val status: StatusDto? = null, val shareSummary: String? = null)
 @Serializable internal data class LimitedDto(val reason: String, val retryAfterSeconds: Int? = null, val status: StatusDto? = null)
 @Serializable internal data class SafetyDto(val message: String)
 @Serializable internal data class ErrorDto(val code: String = "internal", val error: String? = null)
 @Serializable internal data class AdRewardDto(val granted: Boolean, val status: StatusDto)
+@Serializable internal data class StreakDto(val current: Int, val best: Int, val lastEpochDay: Long? = null, val unlocked: List<String> = emptyList())
+@Serializable internal data class StreakResponseDto(val streak: StreakDto)
 @Serializable internal data class TurnDto(val q: String, val a: String)
 
 @Serializable
@@ -119,6 +125,7 @@ internal fun failureReason(code: String) = when (code) {
     "network" -> FailureReason.NETWORK
     "unauthenticated", "app_check_missing", "app_check_invalid" -> FailureReason.UNAUTHENTICATED
     "premium_required" -> FailureReason.PREMIUM_REQUIRED
+    "reading_not_found" -> FailureReason.NOT_FOUND
     else -> FailureReason.UNKNOWN
 }
 
@@ -132,7 +139,7 @@ internal fun parseEvent(json: Json, event: String, data: String): DivinationEven
         )
     }
     "delta" -> DivinationEvent.Delta(json.decodeFromString(DeltaDto.serializer(), data).text)
-    "done" -> DivinationEvent.Done(json.decodeFromString(DoneDto.serializer(), data).status?.toDomain())
+    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(), it.shareSummary) }
     "limited" -> json.decodeFromString(LimitedDto.serializer(), data).let {
         DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain())
     }
@@ -211,8 +218,30 @@ class HttpOracleApi(
     override suspend fun syncPurchases(): AccountStatus =
         json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain()
 
+    override suspend fun mergeAccount(fromIdToken: String): AccountStatus =
+        json.decodeFromString(
+            StatusDto.serializer(),
+            call(HttpMethod.Post, "/account/merge", buildJsonObject { put("fromIdToken", fromIdToken) }),
+        ).toDomain()
+
     override suspend fun deleteAccount() {
         call(HttpMethod.Delete, "/account")
+    }
+
+    override suspend fun syncStreak(streak: StreakState): StreakState {
+        val body = buildJsonObject {
+            put("current", streak.current)
+            put("best", streak.best)
+            put("lastEpochDay", streak.lastEpochDay?.let { JsonPrimitive(it) } ?: JsonNull)
+            putJsonArray("unlocked") { streak.unlocked.forEach { add(it.wire) } }
+        }
+        val dto = json.decodeFromString(StreakResponseDto.serializer(), call(HttpMethod.Post, "/streak", body)).streak
+        return StreakState(
+            current = dto.current,
+            best = dto.best,
+            lastEpochDay = dto.lastEpochDay,
+            unlocked = dto.unlocked.mapNotNull(AppTheme::fromWire).toSet() + AppTheme.INK_PAPER,
+        )
     }
 
     // ---------- plumbing ----------

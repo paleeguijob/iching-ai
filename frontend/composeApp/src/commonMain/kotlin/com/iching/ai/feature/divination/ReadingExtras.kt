@@ -34,6 +34,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,15 +63,23 @@ fun ReadingNoticeCard(
     status: AccountStatus,
     canRetry: Boolean,
     isWatchingAd: Boolean,
+    upsell: QuotaUpsell,
     onRetry: () -> Unit,
     onWatchAd: () -> Unit,
     onOpenPaywall: () -> Unit,
+    onUpsellShown: () -> Unit,
+    onUpsellPremium: () -> Unit,
+    onUpsellBuyCoins: () -> Unit,
 ) {
     val quota = notice is ReadingNotice.Limited && notice.reason == LimitReason.QUOTA
+    val offersUpsell = offersQuotaUpsell(notice, status, canRetry)
+    if (offersUpsell) LaunchedEffect(Unit) { onUpsellShown() }
     val message = when (notice) {
         is ReadingNotice.Limited -> when (notice.reason) {
             LimitReason.QUOTA -> if (status.readingsLeft > 0) {
                 "ท่านได้รับสิทธิ์เพิ่มแล้ว แตะด้านล่างเพื่อรับคำชี้แนะจากนักพรตสำหรับกวานี้"
+            } else if (offersUpsell) {
+                "คำชี้แนะฟรีและจากโฆษณาของวันนี้ครบแล้ว ท่านยังรับคำชี้แนะสำหรับกวานี้ได้"
             } else {
                 "คำชี้แนะจากนักพรตสำหรับวันนี้ครบแล้ว ท่านยังอ่านตัวบทคัมภีร์ด้านล่างได้เสมอ"
             }
@@ -103,6 +112,30 @@ fun ReadingNoticeCard(
             quota && status.readingsLeft > 0 && canRetry -> {
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton("รับคำชี้แนะจากนักพรต", onClick = onRetry, modifier = Modifier.fillMaxWidth())
+            }
+            offersUpsell -> {
+                Spacer(Modifier.height(12.dp))
+                ZenPrimaryButton(
+                    text = "Premium · วันละ ๑๐ คำทำนาย" + (upsell.premiumTrial?.let { " · $it" } ?: ""),
+                    onClick = { onUpsellPremium(); onOpenPaywall() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                upsell.coins?.let { coins ->
+                    Spacer(Modifier.height(8.dp))
+                    ZenSecondaryButton(
+                        text = if (upsell.buyingCoins) "กำลังดำเนินการ..." else "เหรียญอี้จิง ๑๐ เหรียญ · ${coins.price}",
+                        onClick = onUpsellBuyCoins,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ฟรีเริ่มนับใหม่ทุกวัน",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ZenColors.InkBlack.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             // Premium has nothing left to buy or watch today; its quota simply resets tomorrow.
             quota -> if (!status.premium) {

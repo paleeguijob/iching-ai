@@ -1,5 +1,8 @@
 package com.iching.ai.feature.divination
 
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -31,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.feature.reading.CastSummary
+import com.iching.ai.feature.share.ShareCardSheet
+import com.iching.ai.feature.share.readingShareContent
 import com.iching.ai.feature.reading.AiContentLabel
 import com.iching.ai.feature.reading.OracleScroll
 import com.iching.ai.feature.reading.ScriptureSection
@@ -72,6 +78,23 @@ fun DivinationScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sound = rememberSoundPlayer()
+    var confirmLeave by remember { mutableStateOf(false) }
+    val requestBack = { if (state.leavingInterrupts) confirmLeave = true else onBack() }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = state.leavingInterrupts,
+        onBackCompleted = { confirmLeave = true },
+    )
+    if (confirmLeave) {
+        LeaveReadingDialog(
+            savedInJournal = state.savedReadingId != null && state.serverReadingId != null,
+            onStay = { confirmLeave = false },
+            onLeave = {
+                confirmLeave = false
+                onBack()
+            },
+        )
+    }
     val haptics = LocalHapticFeedback.current
 
     LaunchedEffect(state.tossKey) {
@@ -104,7 +127,7 @@ fun DivinationScreen(
     PaperBackground(showMountains = state.phase == DivinationPhase.CASTING) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = requestBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
                 }
                 Text(
@@ -174,6 +197,7 @@ private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRem
             pattern = null,
             lines = state.tosses.map { it.line } + List(6 - state.tosses.size) { LineType.YOUNG_YANG },
             revealed = state.tosses.size,
+            animateReveal = true,
             lineWidth = 150.dp,
             lineHeight = 14.dp,
             gap = 11.dp,
@@ -241,6 +265,7 @@ private fun ReadingStage(
         return
     }
     var showReport by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
     Column(
         Modifier
@@ -268,9 +293,13 @@ private fun ReadingStage(
                         status = state.status,
                         canRetry = state.serverReadingId != null,
                         isWatchingAd = state.isWatchingAd,
+                        upsell = state.upsell,
                         onRetry = viewModel::onInterpretAgain,
                         onWatchAd = viewModel::onWatchAd,
                         onOpenPaywall = onOpenPaywall,
+                        onUpsellShown = viewModel::onQuotaUpsellShown,
+                        onUpsellPremium = viewModel::onUpsellPremium,
+                        onUpsellBuyCoins = viewModel::onUpsellBuyCoins,
                     )
                     Spacer(Modifier.height(16.dp))
                 }
@@ -287,6 +316,25 @@ private fun ReadingStage(
                     onReport = if (state.isAiReading) ({ showReport = true }) else null,
                     reported = state.reported,
                 )
+                Spacer(Modifier.height(12.dp))
+                if (state.isAiReading) {
+                    ListenButton(
+                        text = state.interpretation,
+                        premium = state.status.premium,
+                        onOpenPaywall = onOpenPaywall,
+                        log = viewModel::logEvent,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                ZenSecondaryButton("แชร์การ์ดคำทำนาย", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+                if (sharing) {
+                    ShareCardSheet(
+                        content = readingShareContent(cast.primary, state.shareSummary.takeIf { state.isAiReading }),
+                        log = viewModel::logEvent,
+                        onDismiss = { sharing = false },
+                    )
+                }
                 Spacer(Modifier.height(20.dp))
                 if (state.isAiReading) {
                     FollowUpSection(state, viewModel::onSendFollowUp, onOpenPaywall)
@@ -326,4 +374,24 @@ private fun ReadingStage(
     LaunchedEffect(state.interpretation.length / 120) {
         if (state.phase == DivinationPhase.INTERPRETING && scroll.maxValue > 0) scroll.animateScrollTo(scroll.maxValue)
     }
+}
+
+@Composable
+private fun LeaveReadingDialog(savedInJournal: Boolean, onStay: () -> Unit, onLeave: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onStay,
+        title = { Text("ยังทำนายไม่จบ ออกตอนนี้?", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Text(
+                if (savedInJournal) {
+                    "กวานี้บันทึกในบันทึกชะตาแล้ว ท่านกลับมารับคำชี้แนะจากนักพรตต่อได้ที่บันทึกชะตา โดยไม่เสียสิทธิ์ซ้ำ"
+                } else {
+                    "หากออกตอนนี้ การเสี่ยงทายครั้งนี้จะไม่ถูกบันทึก"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = { TextButton(onClick = onStay) { Text("อยู่ต่อ", color = ZenColors.BambooDeep) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text("ออก", color = ZenColors.InkSoft) } },
+    )
 }

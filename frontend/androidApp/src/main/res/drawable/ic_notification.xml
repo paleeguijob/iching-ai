@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon: a trigram. Android draws it from the alpha channel only. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,5h18v3H3z M3,10.5h7.5v3H3z M13.5,10.5H21v3h-7.5z M3,16h18v3H3z" />
+</vector>

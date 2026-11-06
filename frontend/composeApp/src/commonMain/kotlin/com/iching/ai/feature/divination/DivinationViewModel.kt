@@ -8,19 +8,27 @@ import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.CoinToss
 import com.iching.ai.domain.model.FollowUpTurn
 import com.iching.ai.domain.model.InterpretationSource
+import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.LimitReason
 import com.iching.ai.domain.repository.OracleApi
+import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import com.iching.ai.session.AdResult
+import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
+import com.iching.ai.feature.paywall.COINS_RECEIVED_MESSAGE
+import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AppSession
+import com.iching.ai.session.PurchaseResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +38,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
 
@@ -43,6 +53,18 @@ sealed interface ReadingNotice {
     /** The server could not be reached; the coins were cast on this device. */
     data object Offline : ReadingNotice
 }
+
+/**
+ * A free seeker with nothing left today (no daily reading, no ad, no coin) is offered Premium or a coin pack.
+ * While an ad can still unlock this cast, the ad comes first; Premium is never offered coins here.
+ */
+fun offersQuotaUpsell(notice: ReadingNotice?, status: AccountStatus, canRetry: Boolean): Boolean =
+    notice is ReadingNotice.Limited && notice.reason == LimitReason.QUOTA &&
+        status.aiEnabled && !status.premium && status.readingsLeft == 0 &&
+        !(status.adsWatchableLeft > 0 && canRetry)
+
+/** What the out-of-quota card sells; null fields are hidden until the store answers. */
+data class QuotaUpsell(val coins: StoreProduct? = null, val premiumTrial: String? = null, val buyingCoins: Boolean = false)
 
 data class FollowUpUi(val question: String, val answer: String, val streaming: Boolean)
 
@@ -59,6 +81,7 @@ data class DivinationUiState(
     val phase: DivinationPhase = DivinationPhase.CASTING,
     val cast: CastResult? = null,
     val interpretation: String = "",
+    val shareSummary: String? = null,
     val source: InterpretationSource? = null,
     val notice: ReadingNotice? = null,
     val serverReadingId: String? = null,
@@ -68,6 +91,7 @@ data class DivinationUiState(
     val safetyMessage: String? = null,
     val status: AccountStatus = AccountStatus.UNKNOWN_FREE,
     val isWatchingAd: Boolean = false,
+    val upsell: QuotaUpsell = QuotaUpsell(),
     val message: String? = null,
     val followUps: List<FollowUpUi> = emptyList(),
     val followUpBusy: Boolean = false,
@@ -77,6 +101,14 @@ data class DivinationUiState(
     val tossesDone: Int get() = tosses.size
     val canToss: Boolean get() = phase == DivinationPhase.CASTING && !isTossing && tosses.size < 6
     val isAiReading: Boolean get() = source == InterpretationSource.AI && serverReadingId != null
+
+    /**
+     * Leaving now would cut a reading short: the coins are being cast or the hermit is still speaking.
+     * The reading is in the journal by then whenever the server cast it, so it can be resumed there.
+     */
+    val leavingInterrupts: Boolean
+        get() = (phase == DivinationPhase.CASTING && (isTossing || tosses.isNotEmpty())) ||
+            phase == DivinationPhase.REVEAL || phase == DivinationPhase.INTERPRETING
     val followUpsLeft: Int get() = (status.followUpsPerReading - followUps.count { !it.streaming }).coerceAtLeast(0)
 }
 
@@ -91,6 +123,10 @@ private sealed interface StreamOutcome {
     data class Scripture(val notice: ReadingNotice) : StreamOutcome
 }
 
+/**
+ * One reading: casting the coins and streaming the hermit's words, or, given [resumeReadingId], asking
+ * the hermit again about a cast already in the journal (one left before its interpretation finished).
+ */
 class DivinationViewModel(
     question: String,
     category: QuestionCategory?,
@@ -100,6 +136,8 @@ class DivinationViewModel(
     private val api: OracleApi,
     private val session: AppSession,
     observeSettings: ObserveSettingsUseCase,
+    resumeReadingId: Long? = null,
+    getReading: GetReadingUseCase? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DivinationUiState(question = question.trim(), category = category))
@@ -112,15 +150,57 @@ class DivinationViewModel(
     /** Model text received so far; shown once the hexagram has been revealed. */
     private var streamText = StringBuilder()
     private var outcome: StreamOutcome? = null
+    private var upsellShown = false
+    private var upsellPremiumTapped = false
+
+    /** The journal entry this reading continues; its outcome and notes are kept on every save. */
+    private var savedBase: Reading? = null
+    private val persistLock = Mutex()
 
     init {
         viewModelScope.launch {
             observeSettings().collect { s -> _state.update { it.copy(soundEnabled = s.soundEnabled) } }
         }
         viewModelScope.launch {
-            session.status.collect { s -> _state.update { it.copy(status = s) } }
+            session.status.collect { s ->
+                if (s.premium && upsellPremiumTapped && !_state.value.status.premium) {
+                    session.log("quota_upsell_purchase", mapOf("option" to "premium", "placement" to "reading"))
+                }
+                _state.update { it.copy(status = s) }
+            }
         }
-        session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
+        if (resumeReadingId != null && getReading != null) {
+            resume(resumeReadingId, getReading)
+        } else {
+            session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
+        }
+    }
+
+    private fun resume(id: Long, getReading: GetReadingUseCase) {
+        _state.update { it.copy(phase = DivinationPhase.INTERPRETING) }
+        viewModelScope.launch {
+            val reading = getReading(id)
+            val serverId = reading?.serverId
+            if (reading == null || serverId == null) {
+                _state.update { it.copy(phase = DivinationPhase.COMPLETE, error = "ไม่พบบันทึกนี้") }
+                return@launch
+            }
+            savedBase = reading
+            val cast = resolveCast(reading.lines)
+            _state.update {
+                it.copy(
+                    question = reading.question,
+                    category = reading.category,
+                    tosses = reading.lines.map { line -> CoinToss(facesFor(line.value)) },
+                    cast = cast,
+                    serverReadingId = serverId,
+                    savedReadingId = reading.id,
+                    createdAtMillis = reading.createdAtMillis,
+                )
+            }
+            session.log("reading_resumed")
+            requestJob = viewModelScope.launch { consume(api.interpretAgain(serverId), fromCast = false) }
+        }
     }
 
     // ---------- casting ----------
@@ -144,7 +224,11 @@ class DivinationViewModel(
             _state.update { it.copy(currentToss = toss, tossKey = it.tossKey + 1, awaitingCast = false) }
             delay(TOSS_ANIMATION_MILLIS)
             _state.update { it.copy(tosses = it.tosses + toss, isTossing = false) }
-            if (_state.value.tosses.size == 6) finishCast()
+            if (_state.value.tosses.size == 6) {
+                // Leave the settled coins and the sixth line on screen before moving on.
+                delay(LAST_TOSS_HOLD_MILLIS)
+                finishCast()
+            }
         }
     }
 
@@ -196,7 +280,7 @@ class DivinationViewModel(
                     cast = cast,
                     phase = DivinationPhase.REVEAL,
                     serverReadingId = (source as? CastSource.Server)?.event?.readingId,
-                    createdAtMillis = Clock.System.now().toEpochMilliseconds(),
+                    createdAtMillis = it.createdAtMillis.takeIf { t -> t > 0 } ?: Clock.System.now().toEpochMilliseconds(),
                 )
             }
             delay(REVEAL_MILLIS)
@@ -215,7 +299,7 @@ class DivinationViewModel(
             when (event) {
                 is DivinationEvent.Cast -> {
                     sawCast = true
-                    castSource.complete(CastSource.Server(event))
+                    if (castSource.complete(CastSource.Server(event)) && fromCast) saveCast(event)
                 }
                 is DivinationEvent.Delta -> {
                     streamText.append(event.text)
@@ -225,6 +309,7 @@ class DivinationViewModel(
                 }
                 is DivinationEvent.Done -> {
                     session.updateStatus(event.status)
+                    _state.update { it.copy(shareSummary = event.shareSummary) }
                     outcome = StreamOutcome.Done
                     settleIfReady()
                 }
@@ -299,6 +384,54 @@ class DivinationViewModel(
         }
     }
 
+    /** The out-of-quota card is on screen: count it once and fetch the coin price and trial from the store. */
+    fun onQuotaUpsellShown() {
+        if (upsellShown) return
+        upsellShown = true
+        session.log("quota_upsell_shown", mapOf("placement" to "reading"))
+        viewModelScope.launch {
+            val products = runCatching { session.products() }.getOrElse { emptyList() }
+            _state.update {
+                it.copy(
+                    upsell = it.upsell.copy(
+                        coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
+                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                    ),
+                )
+            }
+        }
+    }
+
+    fun onUpsellPremium() {
+        upsellPremiumTapped = true
+        session.log("quota_upsell_tap", mapOf("option" to "premium", "placement" to "reading"))
+    }
+
+    /** Buys the coin pack straight from the store; the card then offers this cast's reading. */
+    fun onUpsellBuyCoins() {
+        val upsell = _state.value.upsell
+        val coins = upsell.coins ?: return
+        if (upsell.buyingCoins) return
+        session.log("quota_upsell_tap", mapOf("option" to "coins", "placement" to "reading"))
+        _state.update { it.copy(upsell = it.upsell.copy(buyingCoins = true), message = null) }
+        viewModelScope.launch {
+            val result = session.purchase(coins)
+            if (result is PurchaseResult.Success) session.log("quota_upsell_purchase", mapOf("option" to "coins", "placement" to "reading"))
+            _state.update {
+                it.copy(
+                    upsell = it.upsell.copy(buyingCoins = false),
+                    message = when (result) {
+                        is PurchaseResult.Success -> COINS_RECEIVED_MESSAGE
+                        PurchaseResult.Cancelled -> null
+                        PurchaseResult.Pending -> PENDING_MESSAGE
+                        PurchaseResult.AwaitingPayment -> AWAITING_PAYMENT_MESSAGE
+                        is PurchaseResult.Error -> "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
+                    },
+                )
+            }
+        }
+    }
+
     /** Called when the seeker returns from the paywall: if they bought something, unlock this reading. */
     fun onReturnedFromPaywall() {
         val s = _state.value
@@ -366,32 +499,64 @@ class DivinationViewModel(
         }
     }
 
+    fun logEvent(name: String, params: Map<String, String>) = session.log(name, params)
+
     fun onMessageShown() = _state.update { it.copy(message = null) }
+
+    /**
+     * The server has cast and is charging for this reading, so it goes into the journal now: a seeker
+     * who leaves before the hermit finishes can still find the cast there and ask for the reading again.
+     * Saved without words, like a reading synced from the server, so the journal shows the scripture.
+     */
+    private suspend fun saveCast(event: DivinationEvent.Cast) {
+        try {
+            val cast = resolveCast(event.lines)
+            val now = Clock.System.now().toEpochMilliseconds()
+            _state.update { it.copy(createdAtMillis = it.createdAtMillis.takeIf { t -> t > 0 } ?: now) }
+            persist(cast, event.readingId, interpretation = "", source = InterpretationSource.SCRIPTURE)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            session.log("reading_early_save_failed")
+        }
+    }
 
     /** Writes the reading to the Destiny Journal; later changes update the same entry. */
     private suspend fun persist() {
         val s = _state.value
-        val cast = s.cast ?: return
-        val id = saveReading(
-            Reading(
+        persist(s.cast ?: return, s.serverReadingId, s.interpretation, s.source ?: InterpretationSource.SCRIPTURE)
+    }
+
+    private suspend fun persist(cast: CastResult, serverId: String?, interpretation: String, source: InterpretationSource) =
+        persistLock.withLock {
+            val s = _state.value
+            val fields = Reading(
                 id = s.savedReadingId ?: 0,
                 question = s.question,
                 createdAtMillis = s.createdAtMillis,
                 lines = cast.lines,
                 primaryId = cast.primary.id,
                 relatingId = cast.relating?.id,
-                interpretation = s.interpretation,
-                source = s.source ?: InterpretationSource.SCRIPTURE,
-                serverId = s.serverReadingId,
+                interpretation = interpretation,
+                source = source,
+                serverId = serverId,
                 category = s.category,
                 followUps = s.followUps.filter { !it.streaming && it.answer.isNotBlank() }.map { FollowUpTurn(it.question, it.answer) },
             )
-        )
-        _state.update { it.copy(savedReadingId = id) }
-    }
+            val base = savedBase
+            val reading = if (base == null) fields else fields.copy(
+                outcome = base.outcome,
+                outcomeNote = base.outcomeNote,
+                followUps = fields.followUps.ifEmpty { base.followUps },
+            )
+            val id = saveReading(reading)
+            savedBase = reading.copy(id = id)
+            _state.update { it.copy(savedReadingId = id) }
+        }
 
     companion object {
         const val TOSS_ANIMATION_MILLIS = 1350L
+        const val LAST_TOSS_HOLD_MILLIS = 1500L
         const val REVEAL_MILLIS = 2200L
         const val CAST_TIMEOUT_MILLIS = 12_000L
     }

@@ -2,7 +2,13 @@ package com.iching.ai.domain.usecase
 
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StreakUpdate
+import com.iching.ai.domain.model.recordView
+import com.iching.ai.domain.oracle.ScriptureReadingComposer
+import com.iching.ai.domain.oracle.bangkokEpochDay
+import com.iching.ai.domain.oracle.dailyHexagramId
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
 import com.iching.ai.domain.repository.SettingsRepository
@@ -15,6 +21,36 @@ class GetHexagramsUseCase(private val hexagrams: HexagramRepository) {
 
 class GetHexagramUseCase(private val hexagrams: HexagramRepository) {
     suspend operator fun invoke(id: Int): Hexagram = hexagrams.byId(id)
+}
+
+/** A contemplation for today, the same for everyone on a given date. */
+class GetDailyHexagramUseCase(private val hexagrams: HexagramRepository) {
+    suspend operator fun invoke(nowMillis: Long): Hexagram =
+        hexagrams.byId(dailyHexagramId(bangkokEpochDay(nowMillis)))
+}
+
+/** Counts opening today's hexagram toward the streak. Safe to call more than once a day. */
+class RecordDailyViewUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(nowMillis: Long): StreakUpdate {
+        lateinit var update: StreakUpdate
+        settings.update { current ->
+            update = current.streak.recordView(bangkokEpochDay(nowMillis))
+            current.copy(streak = update.state)
+        }
+        return update
+    }
+}
+
+/** True the one time the app may offer the daily push; marks it as offered in the same write. */
+class ClaimPushPromptUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(): Boolean {
+        var claimed = false
+        settings.update { current ->
+            claimed = !current.pushPromptShown && !current.dailyPushEnabled
+            if (claimed) current.copy(pushPromptShown = true) else current
+        }
+        return claimed
+    }
 }
 
 /** Matches Thai name, Chinese name, pinyin, number or keyword. */
@@ -37,12 +73,37 @@ class ObserveJournalUseCase(private val journal: JournalRepository) {
     operator fun invoke(): Flow<List<Reading>> = journal.observeAll()
 }
 
-class GetReadingUseCase(private val journal: JournalRepository) {
-    suspend operator fun invoke(id: Long): Reading? = journal.get(id)
+class GetReadingUseCase(private val journal: JournalRepository, private val resolveCast: ResolveCastUseCase) {
+    /** A reading fetched from the server without AI text has nothing of its own to show, so it reads as scripture. */
+    suspend operator fun invoke(id: Long): Reading? = journal.get(id)?.let { reading ->
+        if (reading.interpretation.isNotBlank()) reading
+        else reading.copy(interpretation = ScriptureReadingComposer.compose(resolveCast(reading.lines)))
+    }
 }
 
 class SaveReadingUseCase(private val journal: JournalRepository) {
     suspend operator fun invoke(reading: Reading): Long = journal.save(reading)
+}
+
+/** Saves on the device and the server; offline, the reading stays marked for the next sign-in. */
+class SaveOutcomeUseCase(
+    private val journal: JournalRepository,
+    private val saveOnServer: suspend (String, Outcome?, String?) -> Unit,
+) {
+    suspend operator fun invoke(reading: Reading) {
+        val serverId = reading.serverId
+        if (serverId != null) journal.markOutcomeUnsynced(serverId)
+        journal.save(reading)
+        if (serverId == null) return
+        try {
+            saveOnServer(serverId, reading.outcome, reading.outcomeNote)
+            journal.outcomeSynced(serverId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Still marked: AppSession retries.
+        }
+    }
 }
 
 /** Deletes on the device and the server; offline, the server copy stays marked for the next sign-in. */

@@ -9,6 +9,7 @@ import com.iching.ai.platform.ActivityTracker
 import com.iching.ai.platform.AndroidAds
 import com.iching.ai.platform.AndroidAnalytics
 import com.iching.ai.platform.AndroidAuth
+import com.iching.ai.platform.AndroidNotifications
 import com.iching.ai.platform.AndroidPurchases
 import com.iching.ai.platform.NativeBridges
 import com.revenuecat.purchases.Purchases
@@ -19,6 +20,10 @@ class IChingApplication : Application() {
 
     val activities = ActivityTracker()
     lateinit var ads: AndroidAds
+        private set
+    lateinit var analytics: AndroidAnalytics
+        private set
+    lateinit var notifications: AndroidNotifications
         private set
 
     override fun onCreate() {
@@ -36,11 +41,14 @@ class IChingApplication : Application() {
         }
 
         ads = AndroidAds(this, activities, BuildConfig.ADMOB_REWARDED_ANDROID)
+        analytics = AndroidAnalytics(this)
+        notifications = AndroidNotifications(this).also { it.createChannel() }
         val bridges = NativeBridges(
             auth = AndroidAuth(this, activities, BuildConfig.VERSION_NAME),
             purchases = AndroidPurchases(activities, packageName, configured = revenueCatKey.isNotBlank()),
             ads = ads,
-            analytics = AndroidAnalytics(this),
+            analytics = analytics,
+            notifications = notifications,
         )
         initKoin(bridges) {
             androidContext(this@IChingApplication)

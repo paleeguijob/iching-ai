@@ -2,12 +2,16 @@ import { DocumentData, FieldValue, Firestore } from "firebase-admin/firestore";
 import { QuotaTxResult, Store, StoredReading } from "./core/api";
 import type { Coin } from "./core/cast";
 import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "./core/quota";
+import { mergeStreaks, normalizeStreak } from "./core/streak";
 
 /**
  * Firestore layout
  *   users/{uid}                      premiumUntil, coins, usage{day,...}, lastReadingAt
  *   users/{uid}/readings/{id}        one divination (the spec's `readings` table)
- *   users/{uid}/coinGrants/{txId}    idempotency marker for consumable purchases
+ *   users/{uid}/meta/streak          daily-hexagram streak and unlocked themes (core/streak.ts)
+ *   coinGrants/{txId}                coins, at, revokedAt: one per store transaction, across accounts and
+ *                                    kept after account deletion (no uid), so a pack is never credited twice
+ *   users/{uid}/coinGrants/{txId}    the same marker as written before it moved; still honoured
  *   devices/{sha256(deviceId)}       per-device daily free usage (anti account-farming)
  *   reports/{autoId}                 "report this answer" submissions
  *   config/runtime                   kill-switch and limits (see core/quota.ts RuntimeConfig)
@@ -16,7 +20,12 @@ import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "
 export function firestoreStore(db: Firestore): Store {
   const users = db.collection("users");
   const readings = (uid: string) => users.doc(uid).collection("readings");
+  const streakRef = (uid: string) => users.doc(uid).collection("meta").doc("streak");
   const safeId = (id: string) => id.replace(/[/.#$\[\]]/g, "_").slice(0, 200) || "unknown";
+  const grantRefs = (uid: string, transactionId: string) => ({
+    grantRef: db.collection("coinGrants").doc(safeId(transactionId)),
+    legacyRef: users.doc(uid).collection("coinGrants").doc(safeId(transactionId)),
+  });
 
   const toReading = (id: string, d: DocumentData): StoredReading => ({
     id,
@@ -114,8 +123,9 @@ export function firestoreStore(db: Firestore): Store {
       await readings(uid).doc(id).update({ followUps: FieldValue.arrayUnion(turn) });
     },
 
-    async listReadings(uid, limit) {
-      const snap = await readings(uid).orderBy("createdAt", "desc").limit(limit).get();
+    async listReadings(uid, limit, since) {
+      const query = since == null ? readings(uid) : readings(uid).where("createdAt", ">=", since);
+      const snap = await query.orderBy("createdAt", "desc").limit(limit).get();
       return snap.docs.map((d) => toReading(d.id, d.data()));
     },
 
@@ -125,17 +135,63 @@ export function firestoreStore(db: Firestore): Store {
     },
 
     async setPremiumUntil(uid, premiumUntil) {
-      await users.doc(uid).set({ premiumUntil, updatedAt: Date.now() }, { merge: true });
+      const ref = users.doc(uid);
+      await db.runTransaction(async (tx) => {
+        // "No premium" must not create a document: a late webhook would bring a deleted account back.
+        if (premiumUntil === null && !(await tx.get(ref)).exists) return;
+        tx.set(ref, { premiumUntil, updatedAt: Date.now() }, { merge: true });
+      });
     },
 
     async grantCoins(uid, transactionId, coins) {
-      const grantRef = users.doc(uid).collection("coinGrants").doc(safeId(transactionId));
+      const { grantRef, legacyRef } = grantRefs(uid, transactionId);
       return db.runTransaction(async (tx) => {
-        if ((await tx.get(grantRef)).exists) return false;
+        const grant = await tx.get(grantRef);
+        const legacy = await tx.get(legacyRef);
+        if (grant.exists || legacy.exists) return false;
         tx.set(grantRef, { coins, at: Date.now() });
         tx.set(users.doc(uid), { coins: FieldValue.increment(coins) }, { merge: true });
         return true;
       });
+    },
+
+    async revokeCoins(uid, transactionId, coins) {
+      const { grantRef, legacyRef } = grantRefs(uid, transactionId);
+      return db.runTransaction(async (tx) => {
+        const grant = await tx.get(grantRef);
+        const legacy = await tx.get(legacyRef);
+        const user = await tx.get(users.doc(uid));
+        if (grant.data()?.revokedAt) return false;
+        tx.set(grantRef, { coins, revokedAt: Date.now() }, { merge: true });
+        if (!(grant.exists || legacy.exists) || !user.exists) return false;
+        tx.set(users.doc(uid), { coins: Math.max(0, Math.floor(user.data()?.coins ?? 0) - coins) }, { merge: true });
+        return true;
+      });
+    },
+
+    async updateStreak(uid, fn) {
+      return db.runTransaction(async (tx) => {
+        const next = fn(normalizeStreak((await tx.get(streakRef(uid))).data()));
+        tx.set(streakRef(uid), next);
+        return next;
+      });
+    },
+
+    async mergeUser(fromUid, toUid) {
+      const left = normalizeStreak((await streakRef(fromUid).get()).data());
+      await this.updateStreak(toUid, (stored) => mergeStreaks(stored, left));
+      await db.runTransaction(async (tx) => {
+        const from = await tx.get(users.doc(fromUid));
+        const coins = Math.max(0, Math.floor(from.data()?.coins ?? 0));
+        if (coins === 0) return;
+        tx.set(users.doc(toUid), { coins: FieldValue.increment(coins) }, { merge: true });
+        tx.set(users.doc(fromUid), { coins: 0 }, { merge: true });
+      });
+      const writer = db.bulkWriter();
+      for (const doc of (await readings(fromUid).get()).docs) writer.set(readings(toUid).doc(doc.id), doc.data());
+      for (const doc of (await db.collection("reports").where("uid", "==", fromUid).get()).docs) writer.update(doc.ref, { uid: toUid });
+      await writer.close();
+      await this.deleteUser(fromUid);
     },
 
     async deleteUser(uid) {

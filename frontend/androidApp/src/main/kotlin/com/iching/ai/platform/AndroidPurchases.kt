@@ -3,6 +3,7 @@ package com.iching.ai.platform
 import com.revenuecat.purchases.PackageType
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.PurchasesErrorCode
 import com.revenuecat.purchases.getOfferingsWith
 import com.revenuecat.purchases.logInWith
 import com.revenuecat.purchases.logOutWith
@@ -82,7 +83,11 @@ class AndroidPurchases(
                 Purchases.sharedInstance.purchaseWith(
                     PurchaseParams.Builder(activity, pkg).build(),
                     onError = { error, userCancelled ->
-                        if (userCancelled) callback.onResult("cancelled", null) else callback.onResult(null, error.message)
+                        when {
+                            userCancelled -> callback.onResult("cancelled", null)
+                            error.code == PurchasesErrorCode.PaymentPendingError -> callback.onResult("pending", null)
+                            else -> callback.onResult(null, error.message)
+                        }
                     },
                     onSuccess = { _, _ -> callback.onResult("purchased", null) },
                 )

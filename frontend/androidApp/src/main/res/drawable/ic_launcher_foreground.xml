@@ -4,15 +4,53 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Cinnabar seal -->
-    <path
-        android:fillColor="#9C4221"
-        android:pathData="M36,30h36a6,6 0,0 1,6 6v36a6,6 0,0 1,-6 6h-36a6,6 0,0 1,-6 -6v-36a6,6 0,0 1,6 -6z" />
-    <!-- Hexagram 61 中孚, drawn top to bottom -->
-    <path android:fillColor="#FAF9F6" android:pathData="M40,36.5h28v3.6h-28z" />
-    <path android:fillColor="#FAF9F6" android:pathData="M40,43.5h28v3.6h-28z" />
-    <path android:fillColor="#FAF9F6" android:pathData="M40,50.5h11.5v3.6h-11.5zM56.5,50.5h11.5v3.6h-11.5z" />
-    <path android:fillColor="#FAF9F6" android:pathData="M40,57.5h11.5v3.6h-11.5zM56.5,57.5h11.5v3.6h-11.5z" />
-    <path android:fillColor="#FAF9F6" android:pathData="M40,64.5h28v3.6h-28z" />
-    <path android:fillColor="#FAF9F6" android:pathData="M40,71.5h28v3.6h-28z" />
+    <!-- Three divination coins (方孔錢). Drawn back to front: bottom-left, bottom-right, top.
+         Each coin: a background-colored disc that separates it from the coin behind,
+         the gold body with a see-through square hole, and an inner rim. -->
+
+    <!-- Scaled to sit inside the 66dp adaptive-icon safe zone -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
+        <!-- Bottom-left coin -->
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M21.94,66.32a17.04,17.04 0,1 0,34.08 0a17.04,17.04 0,1 0,-34.08 0z" />
+        <path
+            android:fillColor="#E3B04B"
+            android:fillType="evenOdd"
+            android:pathData="M22.95,66.32a16.03,16.03 0,1 0,32.06 0a16.03,16.03 0,1 0,-32.06 0zM34.34,61.68h9.28v9.28h-9.28z" />
+        <path
+            android:strokeColor="#B8862E"
+            android:strokeWidth="1.01"
+            android:pathData="M27.34,66.32a11.64,11.64 0,1 0,23.28 0a11.64,11.64 0,1 0,-23.28 0z" />
+
+        <!-- Bottom-right coin -->
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M51.98,66.32a17.04,17.04 0,1 0,34.08 0a17.04,17.04 0,1 0,-34.08 0z" />
+        <path
+            android:fillColor="#E3B04B"
+            android:fillType="evenOdd"
+            android:pathData="M52.99,66.32a16.03,16.03 0,1 0,32.06 0a16.03,16.03 0,1 0,-32.06 0zM64.38,61.68h9.28v9.28h-9.28z" />
+        <path
+            android:strokeColor="#B8862E"
+            android:strokeWidth="1.01"
+            android:pathData="M57.38,66.32a11.64,11.64 0,1 0,23.28 0a11.64,11.64 0,1 0,-23.28 0z" />
+
+        <!-- Top coin (lighter gold) -->
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M36.96,41.68a17.04,17.04 0,1 0,34.08 0a17.04,17.04 0,1 0,-34.08 0z" />
+        <path
+            android:fillColor="#F2C766"
+            android:fillType="evenOdd"
+            android:pathData="M37.97,41.68a16.03,16.03 0,1 0,32.06 0a16.03,16.03 0,1 0,-32.06 0zM49.36,37.04h9.28v9.28h-9.28z" />
+        <path
+            android:strokeColor="#B8862E"
+            android:strokeWidth="1.01"
+            android:pathData="M42.36,41.68a11.64,11.64 0,1 0,23.28 0a11.64,11.64 0,1 0,-23.28 0z" />
+    </group>
 </vector>

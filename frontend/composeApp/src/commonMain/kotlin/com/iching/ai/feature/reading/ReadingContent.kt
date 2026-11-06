@@ -157,7 +157,7 @@ fun OracleScroll(
                 .padding(horizontal = 6.dp)
                 .shadow(6.dp, RoundedCornerShape(2.dp), ambientColor = ZenColors.ScrollWood, spotColor = ZenColors.ScrollWood)
                 .background(
-                    Brush.verticalGradient(listOf(Color(0xFFF3EBD7), ZenColors.Scroll, Color(0xFFF3EBD7)))
+                    Brush.verticalGradient(listOf(ZenColors.ScrollEdge, ZenColors.Scroll, ZenColors.ScrollEdge))
                 )
                 .padding(horizontal = 24.dp, vertical = 28.dp)
                 .animateContentSize(tween(300)),
@@ -206,7 +206,7 @@ private fun ScrollRoller() {
             .height(14.dp)
             .clip(RoundedCornerShape(7.dp))
             .background(
-                Brush.verticalGradient(listOf(Color(0xFF7A5E48), ZenColors.ScrollWood, Color(0xFF3E2E22)))
+                Brush.verticalGradient(listOf(ZenColors.ScrollRollerLight, ZenColors.ScrollWood, ZenColors.ScrollRollerDark))
             )
     )
 }

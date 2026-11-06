@@ -36,19 +36,25 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.ui.toThaiNumerals
@@ -58,17 +64,43 @@ import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onCast: (String, QuestionCategory?) -> Unit,
-    onOpenHexagram: (Int) -> Unit,
+    onOpenDaily: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenPaywall: () -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
+    val sheet by viewModel.sheet.collectAsStateWithLifecycle()
+    val deciding by viewModel.deciding.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.castRequests.collect { onCast(it.question, it.category) }
+    }
+    sheet?.let { ui ->
+        PreCastSheet(
+            ui = ui,
+            onWatchAd = viewModel::onWatchAd,
+            onBuyCoins = viewModel::onBuyCoins,
+            onScriptureOnly = viewModel::onScriptureOnly,
+            onPremium = {
+                viewModel.onPremium()
+                onOpenPaywall()
+            },
+            onCastFromReady = viewModel::onCastFromReady,
+            onDismiss = viewModel::onSheetDismissed,
+        )
+    }
+    val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onResumed()
+        onPauseOrDispose { }
+    }
     var question by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -146,31 +178,101 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
+            GuidanceQuotaBar(guidanceQuota(status))
+            Spacer(Modifier.height(12.dp))
             ZenPrimaryButton(
-                text = "เริ่มเสี่ยงทาย",
-                onClick = { onCast(question.trim(), QuestionCategory.fromWire(category)) },
+                text = startButtonText(deciding),
+                onClick = { viewModel.onStart(question.trim(), QuestionCategory.fromWire(category)) },
+                enabled = !deciding,
                 modifier = Modifier.fillMaxWidth(),
-            )
-            Text(
-                when {
-                    !status.aiEnabled -> "นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้"
-                    status.premium -> "Premium · วันนี้เหลือคำชี้แนะจากนักพรต ${status.includedLeft.toThaiNumerals()} ครั้ง"
-                    status.readingsLeft > 0 -> "วันนี้เหลือคำชี้แนะจากนักพรต ${status.readingsLeft.toThaiNumerals()} ครั้ง"
-                    else -> "คำชี้แนะของวันนี้ครบแล้ว — ยังเสี่ยงทายและอ่านตัวบทได้ หรือชมโฆษณาเพื่อรับเพิ่ม"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = ZenColors.InkFaint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             )
 
             Spacer(Modifier.height(36.dp))
-            daily?.let { DailyHexagramCard(it, onClick = { onOpenHexagram(it.id) }) }
+            daily?.let { DailyHexagramCard(it, streakDays, onClick = onOpenDaily) }
             Spacer(Modifier.height(120.dp))
         }
     }
 }
+
+/** The Start button waits, with a word, while the status is checked before casting. */
+fun startButtonText(deciding: Boolean): String = if (deciding) "กำลังตั้งจิต..." else "เริ่มเสี่ยงทาย"
+
+/** What the home screen says about today's guidance; [count] is null when no count applies. */
+data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
+
+private const val FREE_OUT_OF_GUIDANCE_NOTE = "สมัคร Premium หรือใช้เหรียญอี้จิงเพื่อรับคำชี้แนะต่อ · ยังเสี่ยงทายและอ่านตัวบทได้"
+
+fun guidanceQuota(status: AccountStatus): GuidanceQuota {
+    if (!status.aiEnabled) {
+        return GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null)
+    }
+    val prefix = if (status.premium) "Premium · " else ""
+    val label = "${prefix}วันนี้เหลือคำชี้แนะจากนักพรต"
+    val count = status.readingsLeftToday
+    val coins = status.coins
+    if (count > 0) {
+        val note = if (coins > 0) "และมีเหรียญอี้จิงอีก ${coins.toThaiNumerals()} เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ" else null
+        return GuidanceQuota(label, count, note)
+    }
+    if (coins > 0) return GuidanceQuota("${prefix}เหรียญอี้จิงใช้ทำนายได้อีก", coins, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ")
+    // A zero here would read as "no more today", so point to the ads while any are left.
+    if (!status.premium && status.adsWatchableLeft > 0) {
+        return GuidanceQuota(
+            "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
+            count = status.adsWatchableLeft,
+            note = "กดเริ่มเสี่ยงทาย แล้วชมโฆษณาสั้นก่อนโยนเหรียญ",
+        )
+    }
+    val note = if (status.premium) "ยังเสี่ยงทายและอ่านตัวบทได้" else FREE_OUT_OF_GUIDANCE_NOTE
+    return GuidanceQuota(label, count, note)
+}
+
+@Composable
+private fun GuidanceQuotaBar(quota: GuidanceQuota) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ZenColors.PaperCream.copy(alpha = 0.75f))
+            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.08f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                quota.label,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (quota.count == null) ZenColors.InkSoft else ZenColors.InkBlack,
+            )
+            quota.note?.let {
+                Spacer(Modifier.height(2.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
+            }
+        }
+        quota.count?.let { count ->
+            val countColor = if (count > 0) ZenColors.BambooDeep else ZenColors.CinnabarRed
+            Spacer(Modifier.width(12.dp))
+            Row {
+                Text(
+                    count.toThaiNumerals(),
+                    style = MaterialTheme.typography.displayMedium.copy(lineHeight = 44.sp),
+                    color = countColor,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "ครั้ง",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = countColor,
+                    modifier = Modifier.alignByBaseline(),
+                )
+            }
+        }
+    }
+}
+
+private const val BREATH_STEPS = 128f
 
 @Composable
 private fun BreathingTitle() {
@@ -181,19 +283,21 @@ private fun BreathingTitle() {
         animationSpec = infiniteRepeatable(tween(3200), RepeatMode.Reverse),
         label = "alpha",
     )
+    // Steps too small to see, so the screen redraws ~10 times a second instead of on every vsync, forever.
+    val steppedAlpha by remember { derivedStateOf { (alpha * BREATH_STEPS).roundToInt() / BREATH_STEPS } }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("問道", style = MaterialTheme.typography.displayMedium, color = ZenColors.InkBlack.copy(alpha = 0.12f))
         Text(
             "ถามทางแห่งเต๋า",
             style = MaterialTheme.typography.displaySmall,
             color = ZenColors.InkBlack,
-            modifier = Modifier.alpha(alpha),
+            modifier = Modifier.graphicsLayer { this.alpha = steppedAlpha },
         )
     }
 }
 
 @Composable
-private fun DailyHexagramCard(hexagram: Hexagram, onClick: () -> Unit) {
+private fun DailyHexagramCard(hexagram: Hexagram, streakDays: Int, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -224,14 +328,22 @@ private fun DailyHexagramCard(hexagram: Hexagram, onClick: () -> Unit) {
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            hexagram.image,
+            hexagram.dailyMessage,
             style = MaterialTheme.typography.bodyMedium,
             color = ZenColors.InkSoft,
             maxLines = 4,
         )
         Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Text("อ่านต่อในคัมภีร์ →", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (streakDays > 0) {
+                Text(
+                    "ต่อเนื่อง ${streakDays.toThaiNumerals()} วัน",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ZenColors.BambooDeep,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Text("เปิดกวาประจำวัน →", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
         }
     }
     Spacer(Modifier.size(0.dp))

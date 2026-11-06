@@ -2,10 +2,13 @@ import { initializeApp } from "firebase-admin/app";
 import { getAppCheck } from "firebase-admin/app-check";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 import * as logger from "firebase-functions/logger";
 import { defineSecret } from "firebase-functions/params";
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { createApi, createRevenueCatWebhook, Deps, HttpReq, HttpRes, revenueCatClient } from "./core/api";
+import { buildDailyPush } from "./core/daily";
 import { streamGemini } from "./core/gemini";
 import { loadScripture } from "./core/hexagrams";
 import { mergeConfig, RuntimeConfig } from "./core/quota";
@@ -49,13 +52,21 @@ function deps(): Deps {
     fetchEntitlements: rc ? rc.fetchEntitlements : null,
     deletePurchaser: rc ? rc.deleteSubscriber : null,
     deleteAuthUser: (uid) => getAuth().deleteUser(uid),
+    isAnonymousUser: (uid) =>
+      getAuth()
+        .getUser(uid)
+        .then((user) => user.providerData.length === 0)
+        .catch((e) => {
+          if (e?.code === "auth/user-not-found") return null;
+          throw e;
+        }),
     now: Date.now,
     log: logger,
     skipAppCheck: process.env.FUNCTIONS_EMULATOR === "true",
   };
 }
 
-/** The app's API: /divine, /follow-up, /status, /ad-reward, /report, /readings, /purchases/sync, /account. */
+/** The app's API: /divine, /follow-up, /status, /ad-reward, /report, /readings, /purchases/sync, /account, /account/merge. */
 export const api = onRequest(
   {
     region: REGION,
@@ -69,6 +80,29 @@ export const api = onRequest(
   },
   async (req, res) => {
     await createApi(deps())(req as unknown as HttpReq, res as unknown as HttpRes);
+  },
+);
+
+/** Sends the daily hexagram to everyone who opted in. No retries: a repeat is worse than a miss. */
+export const dailyPush = onSchedule(
+  { schedule: "0 7 * * *", timeZone: "Asia/Bangkok", region: REGION, retryCount: 0, maxInstances: 1 },
+  async () => {
+    try {
+      if (!(await runtimeConfig()).dailyPushEnabled) {
+        logger.info("daily_push_skipped");
+        return;
+      }
+      const push = buildDailyPush(Date.now(), loadScripture());
+      await getMessaging().send({
+        topic: push.topic,
+        notification: { title: push.title, body: push.body },
+        data: { type: "daily", hexagramId: String(push.hexagramId) },
+        android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
+      });
+      logger.info("daily_push_sent", { hexagramId: push.hexagramId });
+    } catch (e) {
+      logger.error("daily_push_failed", { error: String(e) });
+    }
   },
 );
 

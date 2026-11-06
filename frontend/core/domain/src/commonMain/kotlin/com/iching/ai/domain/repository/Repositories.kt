@@ -8,6 +8,7 @@ import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.model.StreakState
 import kotlinx.coroutines.flow.Flow
 
 interface HexagramRepository {
@@ -20,7 +21,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {
@@ -32,7 +33,8 @@ sealed interface DivinationEvent {
     ) : DivinationEvent
 
     data class Delta(val text: String) : DivinationEvent
-    data class Done(val status: AccountStatus?) : DivinationEvent
+    /** [shareSummary] is the one line for the share card; null when the model didn't write a usable one. */
+    data class Done(val status: AccountStatus?, val shareSummary: String? = null) : DivinationEvent
     data class Limited(val reason: LimitReason, val retryAfterSeconds: Int?, val status: AccountStatus?) : DivinationEvent
 
     /** A crisis question: show this caring message (with hotlines) instead of a reading. */
@@ -55,11 +57,15 @@ interface OracleApi {
     suspend fun claimAdReward(): Pair<Boolean, AccountStatus>
     suspend fun report(readingId: String, reason: String, note: String)
     suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?)
-    /** Premium only: the server copy of the journal, newest first. */
+    /** The server copy of the journal, newest first: the free journal window, or everything for Premium. */
     suspend fun readings(): List<Reading>
     suspend fun deleteReading(readingId: String)
     suspend fun syncPurchases(): AccountStatus
+    /** Moves coins and readings of the anonymous account behind [fromIdToken] into the signed-in one. */
+    suspend fun mergeAccount(fromIdToken: String): AccountStatus
     suspend fun deleteAccount()
+    /** Sends this device's streak; returns the account's copy merged with it (see StreakState.mergedWith). */
+    suspend fun syncStreak(streak: StreakState): StreakState
 }
 
 interface JournalRepository {
@@ -71,6 +77,10 @@ interface JournalRepository {
     suspend fun markDeleted(serverId: String)
     suspend fun pendingDeletions(): List<String>
     suspend fun deletionSynced(serverId: String)
+    /** Remembers a reading whose outcome the server has not confirmed saving yet. */
+    suspend fun markOutcomeUnsynced(serverId: String)
+    suspend fun unsyncedOutcomes(): List<Reading>
+    suspend fun outcomeSynced(serverId: String)
     /** Inserts server readings that are not on this device yet (matched by serverId), skipping deleted ones. */
     suspend fun mergeFromServer(readings: List<Reading>): Int
     suspend fun clear()

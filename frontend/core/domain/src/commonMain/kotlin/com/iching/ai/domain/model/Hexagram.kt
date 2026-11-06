@@ -18,6 +18,8 @@ data class Hexagram(
     val lines: List<String>,
     /** Extra statement used when all six lines change (only hexagrams 1 and 2). */
     val allLines: String? = null,
+    /** Pre-written reflection for the day this hexagram is the daily one (≤ 120 chars, also the push body). */
+    val dailyMessage: String = "",
 ) {
     val lowerTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(0, 3))
     val upperTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(3, 6))
@@ -86,4 +88,10 @@ data class AppSettings(
     val soundEnabled: Boolean = true,
     /** The seeker has read and accepted the disclaimer on first launch. */
     val onboardingAccepted: Boolean = false,
+    val streak: StreakState = StreakState(),
+    val selectedTheme: AppTheme = AppTheme.INK_PAPER,
+    val dailyPushEnabled: Boolean = false,
+    /** False while the FCM topic subscription still has to catch up with [dailyPushEnabled]. */
+    val dailyPushSynced: Boolean = true,
+    val pushPromptShown: Boolean = false,
 )

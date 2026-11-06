@@ -4,6 +4,8 @@ import com.iching.ai.data.journal.DeletedReadingEntity
 import com.iching.ai.data.journal.ReadingDao
 import com.iching.ai.data.journal.ReadingEntity
 import com.iching.ai.data.journal.RoomJournalRepository
+import com.iching.ai.data.journal.UnsyncedOutcomeEntity
+import com.iching.ai.data.journal.toEntity
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Reading
@@ -35,6 +37,15 @@ private class FakeDao : ReadingDao {
         deleted -= serverId
     }
     override suspend fun clearDeleted() = deleted.clear()
+    val unsynced = mutableSetOf<String>()
+    override suspend fun markOutcomeUnsynced(entity: UnsyncedOutcomeEntity) {
+        unsynced += entity.serverId
+    }
+    override suspend fun unsyncedOutcomes() = rows.filter { it.serverId in unsynced }
+    override suspend fun outcomeSynced(serverId: String) {
+        unsynced -= serverId
+    }
+    override suspend fun clearUnsyncedOutcomes() = unsynced.clear()
 }
 
 private fun serverReading(id: String) = Reading(
@@ -54,6 +65,43 @@ class RoomJournalRepositoryTest {
 
         assertEquals(1, added)
         assertEquals(listOf("new"), dao.rows.map { it.serverId })
+    }
+
+    @Test
+    fun unsyncedOutcomesReturnTheMarkedReadings() = runTest {
+        val dao = FakeDao()
+        val repo = RoomJournalRepository(dao)
+        repo.save(serverReading("a"))
+        repo.save(serverReading("b"))
+
+        repo.markOutcomeUnsynced("a")
+        assertEquals(listOf("a"), repo.unsyncedOutcomes().map { it.serverId })
+
+        repo.outcomeSynced("a")
+        assertEquals(emptyList(), repo.unsyncedOutcomes())
+    }
+
+    @Test
+    fun deletingAReadingForgetsItsUnsyncedOutcome() = runTest {
+        val dao = FakeDao()
+        val repo = RoomJournalRepository(dao)
+        dao.rows += serverReading("a").toEntity().copy(id = 7)
+        repo.markOutcomeUnsynced("a")
+
+        repo.delete(7)
+
+        assertEquals(emptySet(), dao.unsynced)
+    }
+
+    @Test
+    fun clearForgetsUnsyncedOutcomes() = runTest {
+        val dao = FakeDao()
+        val repo = RoomJournalRepository(dao)
+        repo.markOutcomeUnsynced("a")
+
+        repo.clear()
+
+        assertEquals(emptySet(), dao.unsynced)
     }
 
     @Test

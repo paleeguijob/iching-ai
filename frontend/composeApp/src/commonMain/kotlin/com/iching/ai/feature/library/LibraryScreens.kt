@@ -102,7 +102,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
                     Spacer(Modifier.height(4.dp))
                 }
             }
-            items(state.hexagrams, key = { it.id }) { hexagram ->
+            items(state.hexagrams, key = { it.id }, contentType = { "hexagram" }) { hexagram ->
                 HexagramTile(hexagram, onClick = { onOpenHexagram(hexagram.id) })
             }
             if (!state.isLoading && state.hexagrams.isEmpty()) {

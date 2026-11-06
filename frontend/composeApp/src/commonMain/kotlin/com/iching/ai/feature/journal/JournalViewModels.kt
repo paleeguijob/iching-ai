@@ -5,30 +5,38 @@ import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.Reading
-import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.GetHexagramsUseCase
 import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveJournalUseCase
-import com.iching.ai.domain.usecase.SaveReadingUseCase
+import com.iching.ai.domain.usecase.SaveOutcomeUseCase
 import com.iching.ai.session.AppSession
+import com.iching.ai.ui.formatThaiMonth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
 data class JournalEntry(val reading: Reading, val primary: Hexagram, val relating: Hexagram?)
 
+/** One month of the timeline, newest first, with its heading. */
+data class JournalMonth(val label: String, val entries: List<JournalEntry>)
+
 sealed interface JournalUiState {
     data object Loading : JournalUiState
 
     /** [hiddenCount] older readings are kept on the device but shown only to Premium members. */
-    data class Loaded(val entries: List<JournalEntry>, val hiddenCount: Int, val journalDays: Int?) : JournalUiState
+    data class Loaded(val months: List<JournalMonth>, val hiddenCount: Int, val journalDays: Int?) : JournalUiState {
+        val isEmpty: Boolean get() = months.isEmpty() && hiddenCount == 0
+        val entryCount: Int get() = months.sumOf { it.entries.size }
+    }
 }
 
 class JournalViewModel(
@@ -42,15 +50,19 @@ class JournalViewModel(
     val state: StateFlow<JournalUiState> = combine(observeJournal(), session.status) { readings, status ->
         val byId = getHexagrams().associateBy { it.id }
         val (visible, hidden) = filterJournal(readings, status.journalDays, Clock.System.now().toEpochMilliseconds())
+        val entries = visible.mapNotNull { r ->
+            val primary = byId[r.primaryId] ?: return@mapNotNull null
+            JournalEntry(r, primary, r.relatingId?.let(byId::get))
+        }
         JournalUiState.Loaded(
-            entries = visible.mapNotNull { r ->
-                val primary = byId[r.primaryId] ?: return@mapNotNull null
-                JournalEntry(r, primary, r.relatingId?.let(byId::get))
-            },
+            months = entries.groupBy { formatThaiMonth(it.reading.createdAtMillis) }.map { (label, list) -> JournalMonth(label, list) },
             hiddenCount = hidden,
             journalDays = status.journalDays,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), JournalUiState.Loading)
+    }
+        // Decoding and grouping every reading must not hold up the frame that opens this tab.
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), JournalUiState.Loading)
 
     fun delete(id: Long) {
         viewModelScope.launch { deleteReading(id) }
@@ -62,8 +74,7 @@ class JournalEntryViewModel(
     getReading: GetReadingUseCase,
     getHexagrams: GetHexagramsUseCase,
     private val deleteReading: DeleteReadingUseCase,
-    private val saveReading: SaveReadingUseCase,
-    private val api: OracleApi,
+    private val saveOutcome: SaveOutcomeUseCase,
 ) : ViewModel() {
     private val _entry = MutableStateFlow<JournalEntry?>(null)
     val entry: StateFlow<JournalEntry?> = _entry.asStateFlow()
@@ -82,10 +93,7 @@ class JournalEntryViewModel(
         val current = _entry.value ?: return
         val updated = current.reading.copy(outcome = outcome, outcomeNote = note?.trim()?.ifEmpty { null })
         _entry.value = current.copy(reading = updated)
-        viewModelScope.launch {
-            saveReading(updated)
-            updated.serverId?.let { serverId -> runCatching { api.saveOutcome(serverId, updated.outcome, updated.outcomeNote) } }
-        }
+        viewModelScope.launch { saveOutcome(updated) }
     }
 
     fun delete(onDone: () -> Unit) {
