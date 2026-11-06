@@ -15,7 +15,7 @@ const projectId = "demo-iching";
 describe("firestore store", { skip: !host && "needs the Firestore emulator" }, () => {
   const db = host ? getFirestore(initializeApp({ projectId }, "store-test")) : (null as never);
   const store = host ? firestoreStore(db) : (null as never);
-  const cfg = { ...DEFAULT_CONFIG, minSecondsBetweenReadings: 0 };
+  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1, minSecondsBetweenReadings: 0 };
 
   const userDoc = async (uid: string) => (await db.doc(`users/${uid}`).get()).data();
   const seed = (uid: string, coins: number) =>

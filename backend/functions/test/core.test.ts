@@ -194,7 +194,8 @@ describe("safety", () => {
 });
 
 describe("quota", () => {
-  const cfg = DEFAULT_CONFIG;
+  // The free daily reading is off by default; these tests pin it on to keep that path covered.
+  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1 };
   const now = Date.UTC(2026, 9, 31, 5, 0, 0);
   const day = bangkokDay(now);
   const fresh = () => normalizeUser(undefined, day);
@@ -205,7 +206,21 @@ describe("quota", () => {
     assert.equal(bangkokDay(Date.UTC(2026, 9, 31, 17, 0)), "2026-11-01");
   });
 
-  it("free users get one Flash-Lite reading a day", () => {
+  it("by default free users get no reading without an ad or a coin", () => {
+    const s = status(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.equal(s.includedLeft, 0);
+    assert.equal(s.readingsLeft, 0);
+    assert.equal(s.adsWatchableLeft, DEFAULT_CONFIG.adRewardsPerDay);
+    assert.deepEqual(chargeReading(fresh(), dev(), DEFAULT_CONFIG, now), { ok: false, reason: "quota" });
+    const ad = grantAdReward(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.ok(ad.ok);
+    if (!ad.ok) return;
+    const paid = chargeReading(ad.user, ad.device, DEFAULT_CONFIG, now);
+    assert.ok(paid.ok);
+    if (paid.ok) assert.equal(paid.charge, "ad");
+  });
+
+  it("free users get one Flash-Lite reading a day when it is switched on", () => {
     const first = chargeReading(fresh(), dev(), cfg, now);
     assert.ok(first.ok);
     if (!first.ok) return;
