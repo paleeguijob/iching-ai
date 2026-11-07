@@ -228,7 +228,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
 
                 yearResult?.let { year ->
                     Card {
-                        LinkRow("กว้าประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
+                        LinkRow("กวาประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
                     }
                 }
 
@@ -297,7 +297,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
 /** Why a theme is still locked: days in a row for streak themes, the year hexagram for the campaign one. */
 internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String = when {
     theme.unlockDays >= 0 -> "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง"
-    campaignActive -> "รับได้จากการเสี่ยงทายกว้าประจำปี"
+    campaignActive -> "รับได้จากการเสี่ยงทายกวาประจำปี"
     else -> "ธีมพิเศษตรุษจีน"
 }
 

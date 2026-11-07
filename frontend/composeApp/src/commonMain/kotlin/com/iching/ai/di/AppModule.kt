@@ -103,6 +103,7 @@ val presentationModule = module {
             observeSettings = get(),
             log = session::log,
             campaignId = { session.status.value.campaign?.id.orEmpty() },
+            campaignActive = { session.status.value.campaign?.active },
             syncStreak = session::syncStreak,
         )
     }

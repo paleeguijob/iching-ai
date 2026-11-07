@@ -312,14 +312,14 @@ private fun BreathingTitle() {
 private fun CampaignHomeCard(card: CampaignCard, onClick: () -> Unit) {
     val (title, subtitle, button) = when (card) {
         is CampaignCard.New -> Triple(
-            "เสี่ยงทายกว้าประจำปี${campaignYearLabel(card.year)}",
-            "ตั้งจิตรับปีใหม่ ฟ้าประทานหนึ่งกว้าให้ท่านทั้งปี",
+            "เสี่ยงทายกวาประจำปี${campaignYearLabel(card.year)}",
+            "ตั้งจิตรับปีใหม่ ฟ้าประทานหนึ่งกวาให้ท่านทั้งปี",
             "เสี่ยงทายรับปีใหม่",
         )
         is CampaignCard.Cast -> Triple(
-            "กว้าประจำปีของท่าน: ${card.hexagram.shortNameTh}",
+            "กวาประจำปีของท่าน: ${card.hexagram.shortNameTh}",
             card.hexagram.yearMessage?.blessing.orEmpty(),
-            "ดูกว้าประจำปี",
+            "ดูกวาประจำปี",
         )
         CampaignCard.Hidden -> return
     }

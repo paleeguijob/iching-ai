@@ -58,8 +58,8 @@ export interface CampaignPush {
 const HOUR_MS = 3_600_000;
 
 const PUSH_COPY = [
-  { title: "คืนส่งท้ายปีมะเมีย", body: "ตั้งจิตรับปีมะแม เสี่ยงทายกว้าประจำปีของท่านได้แล้ววันนี้" },
-  { title: "ซินเจียยู่อี่ ซินนี้ฮวดไช้", body: "ฟ้าเปิดปีใหม่ รับกว้าประจำปีมะแม ๒๕๗๐ ของท่าน" },
+  { title: "คืนส่งท้ายปีมะเมีย", body: "ตั้งจิตรับปีมะแม เสี่ยงทายกวาประจำปีของท่านได้แล้ววันนี้" },
+  { title: "ซินเจียยู่อี่ ซินนี้ฮวดไช้", body: "ฟ้าเปิดปีใหม่ รับกวาประจำปีมะแม ๒๕๗๐ ของท่าน" },
 ];
 
 /** The campaign push whose hour contains `now`, or null. The hourly schedule plus the dedupe doc make it fire once. */

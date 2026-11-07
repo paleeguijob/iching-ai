@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.LineType
+import com.iching.ai.feature.divination.TossStage
 import com.iching.ai.platform.ZenSound
 import com.iching.ai.platform.rememberSoundPlayer
 import com.iching.ai.ui.components.AncientCoin
@@ -54,7 +55,6 @@ import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
 
-private const val TOSS_SETTLE_MILLIS = 900L
 private const val THEME_NOTICE = "ท่านได้รับธีมชาดทอง เลือกใช้ได้ในหน้าตั้งค่า"
 
 /**
@@ -104,8 +104,8 @@ fun YearHexagramScreen(
                 YearUi.Loading -> Message("กำลังตั้งจิต...")
                 is YearUi.Ritual -> RitualStage(ui, soundEnabled, sound::play, viewModel::onToss)
                 is YearUi.Result -> ResultStage(ui, onOpenHexagram, onShare, onAskHermit)
-                YearUi.Offline -> Message("ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อรับกว้าประจำปี", retry = viewModel::retry)
-                YearUi.Inactive -> Message("ช่วงเสี่ยงทายกว้าประจำปีสิ้นสุดแล้ว")
+                YearUi.Offline -> Message("ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อรับกวาประจำปี", retry = viewModel::retry)
+                YearUi.Inactive -> Message("ช่วงเสี่ยงทายกวาประจำปีสิ้นสุดแล้ว")
             }
         }
         if (notice) {
@@ -146,68 +146,29 @@ private fun Message(text: String, retry: (() -> Unit)? = null) {
     }
 }
 
-/** The coin toss of the daily reading's casting screen, minus the question. The lines appear with the result. */
+/** The reading's coin-toss stage, minus the question and the "toss until done" action. */
 @Composable
 private fun RitualStage(ui: YearUi.Ritual, soundEnabled: Boolean, play: (ZenSound) -> Unit, onToss: () -> Unit) {
     val haptics = LocalHapticFeedback.current
-    var tossKey by remember { mutableIntStateOf(0) }
-    var faces by remember { mutableStateOf<List<CoinFace>?>(null) }
-    var settling by remember { mutableStateOf(false) }
-    LaunchedEffect(tossKey) {
-        if (tossKey > 0) {
+    LaunchedEffect(ui.tossKey) {
+        if (ui.tossKey > 0) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             if (soundEnabled) {
                 delay(380)
                 play(ZenSound.COIN_TOSS)
             }
-            delay(TOSS_SETTLE_MILLIS - 380)
-            settling = false
         }
     }
-    val waiting = ui.tossesDone >= 6
-    Column(
-        Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "ตั้งจิตให้สงบ แล้วโยนเหรียญ",
-            style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
-            color = ZenColors.InkSoft,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            "เส้นที่ ${(ui.tossesDone + if (ui.tossesDone < 6) 1 else 0).coerceAtMost(6).toThaiNumerals()} จาก ๖",
-            style = MaterialTheme.typography.labelLarge,
-            color = ZenColors.BambooDeep,
-        )
-        Spacer(Modifier.height(24.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            repeat(3) { i ->
-                AncientCoin(face = faces?.get(i), tossKey = tossKey, delayMillis = i * 90, size = 78.dp)
-            }
-        }
-        Spacer(Modifier.height(18.dp))
-        Box(Modifier.height(28.dp), contentAlignment = Alignment.Center) {
-            if (waiting) {
-                Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
-            }
-        }
-        Spacer(Modifier.weight(1f))
-        ZenPrimaryButton(
-            text = if (ui.tossesDone == 0) "โยนเหรียญ" else "โยนครั้งต่อไป",
-            onClick = {
-                settling = true
-                faces = List(3) { CoinFace.entries.random() }
-                tossKey++
-                onToss()
-            },
-            enabled = !waiting && !settling,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(24.dp))
-    }
+    TossStage(
+        prompt = "ตั้งจิตให้สงบ แล้วโยนเหรียญ",
+        tosses = ui.tosses,
+        currentToss = ui.currentToss,
+        tossKey = ui.tossKey,
+        isTossing = ui.isTossing,
+        awaitingCast = ui.awaitingCast,
+        canToss = ui.canToss,
+        onToss = onToss,
+    )
 }
 
 @Composable
@@ -229,7 +190,7 @@ private fun ResultStage(
     ) {
         // 1. Header
         Text(
-            "กว้าประจำปี${campaignYearLabel(ui.year)}",
+            "กวาประจำปี${campaignYearLabel(ui.year)}",
             style = MaterialTheme.typography.headlineSmall,
             color = ZenColors.InkBlack,
             textAlign = TextAlign.Center,
@@ -290,13 +251,13 @@ private fun ResultStage(
         // 6. Scripture link
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = { onOpenHexagram(hexagram.id) }) {
-            Text("อ่านตัวบทคัมภีร์ของกว้านี้", color = ZenColors.CinnabarRed, style = MaterialTheme.typography.labelLarge)
+            Text("อ่านตัวบทคัมภีร์ของกวานี้", color = ZenColors.CinnabarRed, style = MaterialTheme.typography.labelLarge)
         }
 
         // 7. Footnote
         Spacer(Modifier.height(8.dp))
         Text(
-            "ข้อความประจำปีเขียนไว้ล่วงหน้าจากความหมายของกว้า ใช้เพื่อการสะท้อนคิด",
+            "ข้อความประจำปีเขียนไว้ล่วงหน้าจากความหมายของกวา ใช้เพื่อการสะท้อนคิด",
             style = MaterialTheme.typography.labelSmall,
             color = ZenColors.InkFaint,
             textAlign = TextAlign.Center,

@@ -92,8 +92,15 @@ class HomeViewModel(
     private val yearResult = MutableStateFlow<YearHexagram?>(null)
     private val yearHexagram = MutableStateFlow<Hexagram?>(null)
 
-    val campaignCard: StateFlow<CampaignCard> = combine(session.status, yearResult, yearHexagram) { s, year, hexagram ->
-        campaignCard(s.campaign, year, hexagram)
+    /**
+     * True once a year lookup has answered. Until then the card stays hidden: showing "new" first would
+     * flash the wrong card (and log it) for someone who already has a hexagram. A failed lookup never
+     * sets it, so offline the card stays hidden rather than guessing.
+     */
+    private val yearLookupAnswered = MutableStateFlow(false)
+
+    val campaignCard: StateFlow<CampaignCard> = combine(session.status, yearResult, yearHexagram, yearLookupAnswered) { s, year, hexagram, answered ->
+        if (answered) campaignCard(s.campaign, year, hexagram) else CampaignCard.Hidden
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CampaignCard.Hidden)
 
     private var loggedBannerState: String? = null
@@ -163,8 +170,10 @@ class HomeViewModel(
             } catch (e: Exception) {
                 return@launch
             }
-            yearHexagram.value = result?.let { runCatching { getHexagram(it.primaryId) }.getOrNull() }
+            val hexagram = result?.let { runCatching { getHexagram(it.primaryId) }.getOrNull() ?: return@launch }
+            yearHexagram.value = hexagram
             yearResult.value = result
+            yearLookupAnswered.value = true
         }
     }
 
