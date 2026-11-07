@@ -8,6 +8,12 @@ data class Account(
     val email: String? = null,
 )
 
+/** A seasonal campaign as the server reports it. */
+data class CampaignStatus(val id: String, val year: Int, val active: Boolean, val endsAtMillis: Long)
+
+/** The hexagram cast once per account for the year; [lines] hold values 6-9, [coins] the three coin values of each toss. */
+data class YearHexagram(val year: Int, val primaryId: Int, val lines: List<Int>, val coins: List<List<Int>>)
+
 /** Quota and entitlements as reported by the server (GET /status). */
 data class AccountStatus(
     val premium: Boolean,
@@ -22,6 +28,8 @@ data class AccountStatus(
     /** Days of journal history visible; null = unlimited (Premium). */
     val journalDays: Int?,
     val aiEnabled: Boolean,
+    /** The Chinese New Year campaign; null when the server runs none. */
+    val campaign: CampaignStatus? = null,
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)

@@ -5,9 +5,11 @@ import com.iching.ai.data.journal.ReadingDao
 import com.iching.ai.data.journal.ReadingEntity
 import com.iching.ai.data.journal.RoomJournalRepository
 import com.iching.ai.data.journal.UnsyncedOutcomeEntity
+import com.iching.ai.data.journal.toDomain
 import com.iching.ai.data.journal.toEntity
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
+import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -113,5 +115,13 @@ class RoomJournalRepositoryTest {
         repo.clear()
 
         assertEquals(emptyList(), repo.pendingDeletions())
+    }
+
+    @Test
+    fun theYearOfAReadingSurvivesTheEntity() {
+        val reading = serverReading("s1").copy(yearOf = 2027, category = QuestionCategory.NEWYEAR)
+        val back = reading.toEntity().toDomain()
+        assertEquals(2027, back.yearOf)
+        assertEquals(QuestionCategory.NEWYEAR, back.category)
     }
 }

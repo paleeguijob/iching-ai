@@ -3,6 +3,7 @@ package com.iching.ai.data
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.api.HttpOracleApi
 import com.iching.ai.domain.model.AppTheme
+import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.QuestionCategory
@@ -24,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private class FakeSession : ApiSession {
@@ -206,5 +208,107 @@ class HttpOracleApiTest {
         val engine = MockEngine { respond("{\"error\":\"premium_required\"}", HttpStatusCode.Forbidden) }
         val events = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").followUp("r1", "x").toList()
         assertEquals(listOf<DivinationEvent>(DivinationEvent.Failed(FailureReason.PREMIUM_REQUIRED)), events)
+    }
+
+    @Test
+    fun statusParsesTheCampaign() = runTest {
+        val api = apiAnswering(
+            HttpStatusCode.OK,
+            """{"premium":false,"coins":0,"campaign":{"id":"cny-2027","year":2027,"active":true,"endsAt":1801000000000}}""",
+        )
+        val campaign = api.status().campaign
+        assertEquals(CampaignStatus("cny-2027", 2027, true, 1801000000000L), campaign)
+    }
+
+    @Test
+    fun statusWithoutACampaignHasNone() = runTest {
+        assertNull(apiAnswering(HttpStatusCode.OK, """{"premium":false,"campaign":null}""").status().campaign)
+    }
+
+    @Test
+    fun yearHexagramReturnsNullOn404() = runTest {
+        assertNull(apiAnswering(HttpStatusCode.NotFound, """{"error":"year_hexagram_not_found"}""").yearHexagram())
+    }
+
+    @Test
+    fun yearHexagramParsesTheCast() = runTest {
+        var request = ""
+        val engine = MockEngine { r ->
+            request = "${r.method.value} ${r.url.encodedPath}"
+            respond(
+                """{"year":2027,"primaryId":11,"lines":[7,7,7,8,8,8],"coins":[[3,3,2],[3,3,2],[3,3,2],[2,2,3],[2,2,3],[2,2,3]],"castAt":1}""",
+                HttpStatusCode.OK,
+            )
+        }
+        val year = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").yearHexagram()
+        assertEquals("GET /api/year-hexagram", request)
+        assertEquals(11, year?.primaryId)
+        assertEquals(2027, year?.year)
+        assertEquals(listOf(7, 7, 7, 8, 8, 8), year?.lines)
+        assertEquals(listOf(3, 3, 2), year?.coins?.get(0))
+    }
+
+    @Test
+    fun castYearHexagramMapsCampaignInactive() = runTest {
+        val api = apiAnswering(HttpStatusCode.Conflict, """{"error":"campaign_inactive"}""")
+        val e = assertFailsWith<ApiException> { api.castYearHexagram() }
+        assertEquals(FailureReason.CAMPAIGN_INACTIVE, e.reason)
+    }
+
+    @Test
+    fun castYearHexagramPostsAnEmptyBody() = runTest {
+        var request = ""
+        var body = ""
+        val engine = MockEngine { r ->
+            request = "${r.method.value} ${r.url.encodedPath}"
+            body = (r.body as TextContent).text
+            respond("""{"year":2027,"primaryId":1,"lines":[7,7,7,7,7,7],"coins":[],"castAt":1}""", HttpStatusCode.OK)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").castYearHexagram()
+        assertEquals("POST /api/year-hexagram", request)
+        assertEquals("{}", body)
+    }
+
+    @Test
+    fun divineYearPostsModeYear() = runTest {
+        var sentBody = ""
+        val engine = MockEngine { r ->
+            sentBody = (r.body as TextContent).text
+            respond("event: delta\ndata: {\"text\":\"ok\"}\n\n", HttpStatusCode.OK, sse)
+        }
+        val events = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").divineYear("ปีนี้เป็นอย่างไร").toList()
+        assertTrue(sentBody.contains("\"mode\":\"year\""))
+        assertTrue(sentBody.contains("ปีนี้เป็นอย่างไร"))
+        assertEquals(listOf<DivinationEvent>(DivinationEvent.Delta("ok")), events)
+    }
+
+    @Test
+    fun divineYearWithoutAYearHexagramFails() = runTest {
+        val engine = MockEngine { respond("""{"error":"no_year_hexagram"}""", HttpStatusCode.Conflict) }
+        val events = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api").divineYear("x").toList()
+        assertEquals(listOf<DivinationEvent>(DivinationEvent.Failed(FailureReason.NO_YEAR_HEXAGRAM)), events)
+    }
+
+    @Test
+    fun readingsCarryTheYearAndTheNewYearCategory() = runTest {
+        val api = apiAnswering(
+            HttpStatusCode.OK,
+            """{"readings":[{"id":"r1","question":"q","category":"newyear","lines":[7,7,7,7,7,7],"primaryId":1,"createdAt":5,"yearOf":2027},
+                {"id":"r2","question":"q","lines":[7,7,7,7,7,7],"primaryId":1,"createdAt":4,"yearOf":null}]}""",
+        )
+        val readings = api.readings()
+        assertEquals(2027, readings[0].yearOf)
+        assertEquals(QuestionCategory.NEWYEAR, readings[0].category)
+        assertNull(readings[1].yearOf)
+    }
+
+    @Test
+    fun streakKeepsCinnabarGoldFromTheServer() = runTest {
+        val api = apiAnswering(
+            HttpStatusCode.OK,
+            """{"streak":{"current":1,"best":1,"lastEpochDay":1,"unlocked":["ink_paper","cinnabar_gold"]}}""",
+        )
+        val merged = api.syncStreak(StreakState())
+        assertTrue(AppTheme.CINNABAR_GOLD in merged.unlocked)
     }
 }

@@ -239,6 +239,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                             theme = theme,
                             selected = theme == current.selectedTheme,
                             unlocked = theme in current.streak.unlocked,
+                            lockedHint = lockedThemeHint(theme, status.campaign?.active == true),
                             onSelect = { viewModel.selectTheme(theme) },
                         )
                     }
@@ -286,8 +287,15 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
     }
 }
 
+/** Why a theme is still locked: days in a row for streak themes, the year hexagram for the campaign one. */
+internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String = when {
+    theme.unlockDays >= 0 -> "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง"
+    campaignActive -> "รับได้จากการเสี่ยงทายกว้าประจำปี"
+    else -> "ธีมพิเศษตรุษจีน"
+}
+
 @Composable
-private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, onSelect: () -> Unit) {
+private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, lockedHint: String, onSelect: () -> Unit) {
     val swatch = paletteFor(theme)
     Row(
         Modifier
@@ -312,7 +320,7 @@ private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, onSe
             )
             if (!unlocked) {
                 Text(
-                    "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง",
+                    lockedHint,
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkFaint,
                 )

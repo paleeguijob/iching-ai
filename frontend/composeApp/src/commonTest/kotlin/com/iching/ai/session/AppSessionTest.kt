@@ -12,6 +12,7 @@ import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.repository.ApiException
@@ -136,6 +137,11 @@ internal class FakeApi : OracleApi {
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
+    var yearHexagramNow: YearHexagram? = null
+    override suspend fun yearHexagram(): YearHexagram? = yearHexagramNow
+    override suspend fun castYearHexagram(): YearHexagram =
+        yearHexagramNow ?: throw ApiException(FailureReason.CAMPAIGN_INACTIVE, "inactive")
+    override fun divineYear(question: String): Flow<DivinationEvent> = emptyFlow()
     /** How long GET /status takes to answer. */
     var statusDelayMillis = 0L
     override suspend fun status(): AccountStatus {

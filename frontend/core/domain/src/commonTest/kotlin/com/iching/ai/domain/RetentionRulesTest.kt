@@ -85,7 +85,7 @@ class RetentionRulesTest {
 
     @Test
     fun themeThresholdsMatchTheSpec() {
-        assertEquals(listOf(0, 7, 30, 100), AppTheme.entries.map { it.unlockDays })
+        assertEquals(listOf(0, 7, 30, 100, -1), AppTheme.entries.map { it.unlockDays })
         assertEquals(AppTheme.INK_NIGHT, AppTheme.fromWire("ink_night"))
         assertNull(AppTheme.fromWire("nope"))
     }
@@ -134,5 +134,20 @@ class RetentionRulesTest {
     fun aFreshInstallTakesTheServerStreak() {
         val server = StreakState(current = 8, best = 30, lastEpochDay = 100, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.BAMBOO, AppTheme.CINNABAR_DAWN))
         assertEquals(server, StreakState().mergedWith(server))
+    }
+
+    @Test
+    fun streakNeverUnlocksCinnabarGold() {
+        val long = StreakState(current = 999, best = 999, lastEpochDay = 1000).recordView(1001)
+        assertFalse(AppTheme.CINNABAR_GOLD in long.state.unlocked)
+        assertFalse(AppTheme.CINNABAR_GOLD in long.newlyUnlocked)
+        assertTrue(AppTheme.INK_NIGHT in long.state.unlocked)
+    }
+
+    @Test
+    fun mergingKeepsCinnabarGoldFromTheServer() {
+        val server = StreakState(lastEpochDay = 99, unlocked = setOf(AppTheme.INK_PAPER, AppTheme.CINNABAR_GOLD))
+        val here = StreakState(current = 3, best = 3, lastEpochDay = 100)
+        assertTrue(AppTheme.CINNABAR_GOLD in here.mergedWith(server).unlocked)
     }
 }

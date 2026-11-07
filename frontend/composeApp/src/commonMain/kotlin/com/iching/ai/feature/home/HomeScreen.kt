@@ -155,7 +155,7 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuestionCategory.entries.forEach { c ->
+                QuestionCategory.entries.filter { it.pickable }.forEach { c ->
                     val selected = category == c.wire
                     Text(
                         c.labelTh,
@@ -170,7 +170,7 @@ fun HomeScreen(
                                     category = null
                                 } else {
                                     category = c.wire
-                                    if (question.isBlank() || QuestionCategory.entries.any { it.sampleTh == question }) question = c.sampleTh
+                                    if (question.isBlank() || QuestionCategory.entries.filter { it.pickable }.any { it.sampleTh == question }) question = c.sampleTh
                                 }
                             }
                             .padding(horizontal = 14.dp, vertical = 6.dp),

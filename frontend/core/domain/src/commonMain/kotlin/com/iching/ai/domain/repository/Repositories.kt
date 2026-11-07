@@ -9,6 +9,7 @@ import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StreakState
+import com.iching.ai.domain.model.YearHexagram
 import kotlinx.coroutines.flow.Flow
 
 interface HexagramRepository {
@@ -21,7 +22,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {
@@ -53,6 +54,12 @@ interface OracleApi {
     fun interpretAgain(readingId: String): Flow<DivinationEvent>
     fun followUp(readingId: String, message: String): Flow<DivinationEvent>
     suspend fun status(): AccountStatus
+    /** This account's hexagram for the year, or null when none was cast yet. */
+    suspend fun yearHexagram(): YearHexagram?
+    /** Casts the year hexagram (once per account; an existing one is returned again). */
+    suspend fun castYearHexagram(): YearHexagram
+    /** Interprets the year hexagram for [question]; fails with NO_YEAR_HEXAGRAM when none was cast. */
+    fun divineYear(question: String): Flow<DivinationEvent>
     /** Returns true when the server granted the ad credit. */
     suspend fun claimAdReward(): Pair<Boolean, AccountStatus>
     suspend fun report(readingId: String, reason: String, note: String)

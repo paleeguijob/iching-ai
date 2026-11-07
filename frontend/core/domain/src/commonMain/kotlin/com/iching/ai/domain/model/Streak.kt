@@ -1,11 +1,15 @@
 package com.iching.ai.domain.model
 
-/** Colour themes, unlocked by days in a row of opening the daily hexagram. [wire] is the stored value. */
+/**
+ * Colour themes, unlocked by days in a row of opening the daily hexagram. [wire] is the stored value.
+ * A negative [unlockDays] means no streak unlocks the theme (the server grants it).
+ */
 enum class AppTheme(val wire: String, val labelTh: String, val unlockDays: Int) {
     INK_PAPER("ink_paper", "กระดาษหมึก", 0),
     BAMBOO("bamboo", "ไผ่เขียว", 7),
     CINNABAR_DAWN("cinnabar_dawn", "อรุณชาด", 30),
-    INK_NIGHT("ink_night", "ราตรีหมึก", 100);
+    INK_NIGHT("ink_night", "ราตรีหมึก", 100),
+    CINNABAR_GOLD("cinnabar_gold", "ชาดทอง", -1);
 
     companion object {
         fun fromWire(value: String?): AppTheme? = entries.firstOrNull { it.wire == value }
@@ -36,7 +40,7 @@ fun StreakState.recordView(today: Long): StreakUpdate {
     val last = lastEpochDay
     if (last != null && today <= last) return StreakUpdate(this, emptyList(), counted = false)
     val nextCurrent = if (last == today - 1) current + 1 else 1
-    val newlyUnlocked = AppTheme.entries.filter { it.unlockDays <= nextCurrent && it !in unlocked }
+    val newlyUnlocked = AppTheme.entries.filter { it.unlockDays in 0..nextCurrent && it !in unlocked }
     return StreakUpdate(
         state = copy(
             current = nextCurrent,

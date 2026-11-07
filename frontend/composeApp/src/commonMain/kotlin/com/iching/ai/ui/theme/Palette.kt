@@ -121,9 +121,35 @@ private val InkNightPalette = ZenPalette(
     isDark = true,
 )
 
+/** Deep cinnabar red with pale gold ink; dark, so the status bar icons turn light like ink night. */
+private val CinnabarGoldPalette = ZenPalette(
+    paperCream = Color(0xFF4A0F0C),
+    paperMid = Color(0xFF531310),
+    paperShade = Color(0xFF5C1713),
+    paperDeep = Color(0xFF6E211A),
+    inkBlack = Color(0xFFF6E3A6),
+    inkSoft = Color(0xFFDCC48C),
+    inkFaint = Color(0xFFAD8F63),
+    bambooGreen = Color(0xFFC9A24B),
+    bambooDeep = Color(0xFFE6C56E),
+    cinnabarRed = Color(0xFFFFB08A),
+    cinnabarSoft = Color(0xFFD9805F),
+    scroll = Color(0xFF5A1814),
+    scrollEdge = Color(0xFF4F120F),
+    scrollWood = Color(0xFF2E0907),
+    scrollRollerLight = Color(0xFF8A5A2B),
+    scrollRollerDark = Color(0xFF260705),
+    secondaryContainer = Color(0xFF6A2A1C),
+    surfaceLow = Color(0xFF53130F),
+    outline = Color(0xFF8A4B33),
+    outlineVariant = Color(0xFF6B2E22),
+    isDark = true,
+)
+
 fun paletteFor(theme: AppTheme): ZenPalette = when (theme) {
     AppTheme.INK_PAPER -> InkPaperPalette
     AppTheme.BAMBOO -> BambooPalette
     AppTheme.CINNABAR_DAWN -> CinnabarDawnPalette
     AppTheme.INK_NIGHT -> InkNightPalette
+    AppTheme.CINNABAR_GOLD -> CinnabarGoldPalette
 }
