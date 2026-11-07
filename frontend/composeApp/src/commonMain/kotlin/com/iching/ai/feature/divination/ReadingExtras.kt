@@ -79,7 +79,7 @@ fun ReadingNoticeCard(
             LimitReason.QUOTA -> if (status.readingsLeft > 0) {
                 "ท่านได้รับสิทธิ์เพิ่มแล้ว แตะด้านล่างเพื่อรับคำชี้แนะจากนักพรตสำหรับกวานี้"
             } else if (offersUpsell) {
-                "คำชี้แนะฟรีและจากโฆษณาของวันนี้ครบแล้ว ท่านยังรับคำชี้แนะสำหรับกวานี้ได้"
+                "คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว ท่านยังรับคำชี้แนะสำหรับกวานี้ได้"
             } else {
                 "คำชี้แนะจากนักพรตสำหรับวันนี้ครบแล้ว ท่านยังอ่านตัวบทคัมภีร์ด้านล่างได้เสมอ"
             }
@@ -130,7 +130,7 @@ fun ReadingNoticeCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ฟรีเริ่มนับใหม่ทุกวัน",
+                    "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ชมโฆษณาเริ่มนับใหม่ทุกวัน",
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkBlack.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center,

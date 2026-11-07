@@ -85,7 +85,7 @@ private fun Heading(title: String, body: String?) {
 
 @Composable
 private fun AdChoice(ui: PreCastSheetUi, onWatchAd: () -> Unit, onScriptureOnly: () -> Unit, onPremium: () -> Unit) {
-    Heading("คำชี้แนะฟรีของวันนี้ใช้แล้ว", "ชมโฆษณาสั้น ๆ เพื่อรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้")
+    Heading("รับคำชี้แนะจากนักพรต", "ชมโฆษณาสั้น ๆ เพื่อรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้")
     ZenPrimaryButton(
         text = if (ui.busy) "กำลังเปิดโฆษณา..." else "ชมโฆษณาสั้น แล้วเริ่มเสี่ยงทาย (เหลือ ${ui.adsLeft.toThaiNumerals()})",
         onClick = onWatchAd,
@@ -102,7 +102,7 @@ private fun AdChoice(ui: PreCastSheetUi, onWatchAd: () -> Unit, onScriptureOnly:
 
 @Composable
 private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
-    Heading("คำชี้แนะฟรีและจากโฆษณาของวันนี้ครบแล้ว", "ท่านยังรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้ได้")
+    Heading("คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว", "ท่านยังรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้ได้")
     ZenPrimaryButton(
         text = "Premium · วันละ ๑๐ คำทำนาย" + (ui.premiumTrial?.let { " · $it" } ?: ""),
         onClick = onPremium,
@@ -120,7 +120,7 @@ private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: 
         Text("เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว", style = MaterialTheme.typography.labelMedium, color = ZenColors.InkSoft)
     }
     Text(
-        "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ฟรีเริ่มนับใหม่ทุกวัน",
+        "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ชมโฆษณาเริ่มนับใหม่ทุกวัน",
         style = MaterialTheme.typography.labelSmall,
         color = ZenColors.InkBlack.copy(alpha = 0.6f),
         textAlign = TextAlign.Center,

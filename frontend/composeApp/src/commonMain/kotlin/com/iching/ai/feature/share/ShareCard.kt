@@ -19,106 +19,122 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
-import com.iching.ai.ui.theme.InkPaperPalette
+
+/** Sepia tones of an old oracle card. Fixed, not the selected theme, so shared cards look like one brand. */
+private object CardInk {
+    val paper = Color(0xFFF3E6C8)
+    val paperEdge = Color(0xFFE2CB9A)
+    val ink = Color(0xFF4E3220)
+    val inkSoft = Color(0xFF7A5536)
+    val wash = Color(0xFF8C6239)
+    val frame = Color(0xFF9A7446)
+    val cinnabar = Color(0xFF9C4221)
+}
 
 /**
  * The card itself: 360×640 dp, rendered at density 3 by [ShareCardSheet] to give 1080×1920 px.
- * Always the original palette (not the selected theme), so shared cards look like one brand.
+ * Laid out like an oracle card: name top left, figure and number top right, the message, then a
+ * landscape painted from the hexagram's two trigrams.
  */
 @Composable
 fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
-    val palette = InkPaperPalette
     val hexagram = content.hexagram
-    // The judgment and summary together need more room than a single message.
-    val compact = content.judgment != null
     Box(
         modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(palette.scrollEdge, palette.scroll, palette.scrollEdge))),
+            .background(Brush.radialGradient(listOf(CardInk.paper, CardInk.paper, CardInk.paperEdge), radius = 1400f))
+            .padding(14.dp)
+            .border(2.dp, CardInk.frame, RoundedCornerShape(10.dp))
+            .padding(5.dp)
+            .border(0.75.dp, CardInk.frame.copy(alpha = 0.7f), RoundedCornerShape(7.dp)),
     ) {
-        Roller(Modifier.align(Alignment.TopCenter))
-        Roller(Modifier.align(Alignment.BottomCenter))
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 30.dp, vertical = 44.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text("กวาที่ ${hexagram.id}", style = MaterialTheme.typography.labelMedium, color = palette.bambooDeep)
-            Spacer(Modifier.height(16.dp))
-            if (compact) {
-                HexagramFigure(hexagram.pattern, lineWidth = 64.dp, lineHeight = 7.dp, gap = 5.dp, color = palette.inkBlack)
-            } else {
-                HexagramFigure(hexagram.pattern, lineWidth = 88.dp, lineHeight = 10.dp, gap = 7.dp, color = palette.inkBlack)
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 18.dp, top = 18.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(hexagram.nameCn, style = MaterialTheme.typography.displayLarge, color = CardInk.ink)
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            hexagram.shortNameTh,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = CardInk.ink,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                    }
+                    Text(
+                        hexagram.meaningTh,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = CardInk.cinnabar,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 10.dp)) {
+                    HexagramFigure(hexagram.pattern, lineWidth = 52.dp, lineHeight = 6.dp, gap = 4.dp, color = CardInk.ink)
+                    Text(
+                        "${hexagram.id}",
+                        style = MaterialTheme.typography.displayMedium.copy(fontSize = 40.sp, lineHeight = 48.sp),
+                        color = CardInk.ink,
+                    )
+                }
             }
-            Spacer(Modifier.height(if (compact) 8.dp else 14.dp))
-            Text(
-                hexagram.nameCn,
-                style = if (compact) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displayLarge,
-                color = palette.inkBlack,
-            )
-            Text(hexagram.shortNameTh, style = MaterialTheme.typography.titleMedium, color = palette.inkSoft)
-            Text(
-                hexagram.meaningTh,
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.bambooDeep,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(if (compact) 8.dp else 16.dp))
-            content.judgment?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.inkSoft,
-                    textAlign = TextAlign.Center,
-                    maxLines = 5,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-            Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center) {
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     content.body,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = palette.inkBlack,
-                    textAlign = TextAlign.Center,
+                    color = CardInk.ink,
+                    maxLines = if (content.judgment != null) 4 else 5,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = if (compact) 4 else 8,
-                    modifier = Modifier.fillMaxWidth(),
+                )
+                content.judgment?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = CardInk.inkSoft,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                TrigramScene(
+                    hexagram,
+                    SceneInk(ink = CardInk.ink, wash = CardInk.wash, paper = CardInk.paper, accent = CardInk.cinnabar),
+                    Modifier.fillMaxSize().padding(horizontal = 6.dp),
                 )
             }
-            if (content.aiLabel) {
-                Text(
-                    "เนื้อหาสร้างโดย AI · เพื่อการสะท้อนคิด",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.inkSoft,
-                    modifier = Modifier
-                        .border(1.dp, palette.outline, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CinnabarSeal(text = "易", size = 34.dp, tilt = -6f, color = palette.cinnabarRed, glyphColor = palette.paperCream)
-                Spacer(Modifier.width(10.dp))
-                Text("อี้จิง", style = MaterialTheme.typography.headlineSmall, color = palette.inkBlack)
+            Column(
+                Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (content.aiLabel) {
+                    Text(
+                        "เนื้อหาสร้างโดย AI · เพื่อการสะท้อนคิด",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = CardInk.inkSoft,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .border(1.dp, CardInk.frame.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CinnabarSeal(text = "易", size = 28.dp, tilt = -6f, color = CardInk.cinnabar, glyphColor = CardInk.paper)
+                    Spacer(Modifier.width(8.dp))
+                    Text("อี้จิง", style = MaterialTheme.typography.titleMedium, color = CardInk.ink)
+                }
             }
         }
     }
-}
-
-@Composable
-private fun Roller(modifier: Modifier) {
-    val palette = InkPaperPalette
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(20.dp)
-            .background(Brush.verticalGradient(listOf(palette.scrollRollerLight, palette.scrollWood, palette.scrollRollerDark))),
-    )
 }

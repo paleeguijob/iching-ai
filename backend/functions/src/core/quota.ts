@@ -2,8 +2,8 @@
  * Pure quota rules. The Firestore layer loads the docs, calls these inside a transaction and
  * writes the returned docs back, so the rules are testable without a database.
  *
- * Order of charging for a reading: premium daily allowance → free daily reading → rewarded-ad
- * credits → coins. A failed model call refunds exactly what was charged.
+ * Order of charging for a reading: premium daily allowance → free daily reading (0 by default since
+ * v1.1: free users pay with an ad or a coin) → rewarded-ad credits → coins. A failed model call refunds exactly what was charged.
  */
 
 export interface RuntimeConfig {
@@ -33,11 +33,11 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   // Pinned: "-latest" aliases can move to a pricier model without a code change.
   freeModel: "gemini-3.1-flash-lite",
   premiumModel: "gemini-3.5-flash-lite",
-  freeDailyReadings: 1,
+  freeDailyReadings: 0,
   premiumDailyReadings: 10,
   adRewardsPerDay: 2,
   followUpsPerReading: 3,
-  freeReadingsPerDevice: 1,
+  freeReadingsPerDevice: 0,
   minSecondsBetweenReadings: 8,
   freeJournalDays: 7,
   enforceAppCheck: true,

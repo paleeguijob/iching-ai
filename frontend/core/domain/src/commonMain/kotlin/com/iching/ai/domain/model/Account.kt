@@ -29,8 +29,8 @@ data class AccountStatus(
     companion object {
         /** Assumed before the first server answer arrives (or while offline). */
         val UNKNOWN_FREE = AccountStatus(
-            premium = false, premiumUntilMillis = null, coins = 0, includedLeft = 1, adCreditsLeft = 0,
-            adsWatchableLeft = 2, readingsLeft = 1, followUpsPerReading = 0, journalDays = 7, aiEnabled = true,
+            premium = false, premiumUntilMillis = null, coins = 0, includedLeft = 0, adCreditsLeft = 0,
+            adsWatchableLeft = 2, readingsLeft = 0, followUpsPerReading = 0, journalDays = 7, aiEnabled = true,
         )
     }
 }
