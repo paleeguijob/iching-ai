@@ -30,8 +30,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,7 +72,12 @@ import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
 import com.iching.ai.navigation.YearRoute
+import com.iching.ai.feature.share.ShareCardSheet
+import com.iching.ai.feature.share.yearShareContent
 import com.iching.ai.feature.year.YearHexagramScreen
+import com.iching.ai.feature.year.YearUi
+import com.iching.ai.feature.year.YearViewModel
+import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
@@ -203,14 +210,35 @@ private fun MainNavigation() {
                     )
                 }
                 screen<YearRoute> { entry ->
-                    // Share and Ask the hermit stay hidden until they are wired (null callbacks).
+                    val session = koinInject<AppSession>()
+                    val yearViewModel: YearViewModel = koinViewModel()
+                    val yearState by yearViewModel.state.collectAsState()
+                    var sharing by remember { mutableStateOf(false) }
+                    // Ask the hermit stays hidden until it is wired (null callback).
                     YearHexagramScreen(
-                        viewModel = koinViewModel(),
+                        viewModel = yearViewModel,
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
-                        onShare = null,
+                        onShare = { sharing = true },
                         onAskHermit = null,
                     )
+                    val result = yearState as? YearUi.Result
+                    if (sharing && result != null) {
+                        ShareCardSheet(
+                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year).substringAfter(' ')),
+                            log = { name, params ->
+                                session.log(name, params)
+                                // The sheet reports a finished share once; the year campaign counts it as its own event.
+                                if (name == "share_card") {
+                                    session.log(
+                                        "year_share",
+                                        mapOf("campaign_id" to session.status.value.campaign?.id.orEmpty(), "target" to "image"),
+                                    )
+                                }
+                            },
+                            onDismiss = { sharing = false },
+                        )
+                    }
                 }
                 screen<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
