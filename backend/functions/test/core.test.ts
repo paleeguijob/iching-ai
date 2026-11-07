@@ -17,6 +17,7 @@ import {
   refundReading,
   status,
 } from "../src/core/quota";
+import { campaignActive, parseCampaign } from "../src/core/campaign";
 import { checkSafety } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
@@ -418,5 +419,38 @@ describe("year messages", () => {
         assert.doesNotMatch(v, /\d{4}|มะแม|มะเมีย|ปีชวด|ปีขาล|ปีกุน/);
       }
     }
+  });
+});
+
+const raw = {
+  id: "cny-2027",
+  year: 2027,
+  startsAt: "2027-01-20T00:00:00+07:00",
+  endsAt: "2027-02-22T00:00:00+07:00",
+  pushes: ["2027-02-05T19:00:00+07:00"],
+  enabled: true,
+  yearContext: "x",
+};
+
+describe("campaign", () => {
+  it("is active only while enabled and inside the window", () => {
+    const c = parseCampaign(raw)!;
+    assert.equal(campaignActive(c, Date.parse("2027-01-19T23:59:59+07:00")), false);
+    assert.equal(campaignActive(c, Date.parse("2027-01-20T00:00:00+07:00")), true);
+    assert.equal(campaignActive(c, Date.parse("2027-02-22T00:00:00+07:00")), false);
+    assert.equal(campaignActive({ ...c, enabled: false }, c.startsAt), false);
+    assert.equal(campaignActive(null, c.startsAt), false);
+  });
+  it("treats a malformed config as no campaign", () => {
+    for (const bad of [null, {}, { ...raw, startsAt: "soon" }, { ...raw, endsAt: raw.startsAt }, { ...raw, id: "" }, { ...raw, pushes: "x" }])
+      assert.equal(parseCampaign(bad), null);
+    assert.equal(mergeConfig({ campaign: { ...raw, year: "2027" } }).campaign, null);
+  });
+  it("is off by default and reported in status", () => {
+    assert.equal(DEFAULT_CONFIG.campaign!.enabled, false);
+    assert.equal(mergeConfig({}).campaign, DEFAULT_CONFIG.campaign);
+    const cfg = mergeConfig({ campaign: raw });
+    const s = status(normalizeUser(undefined, "2027-02-01"), null, cfg, Date.parse("2027-02-01T12:00:00+07:00"));
+    assert.deepEqual(s.campaign, { id: "cny-2027", year: 2027, active: true, endsAt: Date.parse(raw.endsAt) });
   });
 });
