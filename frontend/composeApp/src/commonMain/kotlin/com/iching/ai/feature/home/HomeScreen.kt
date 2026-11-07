@@ -63,6 +63,7 @@ import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
+import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.ui.theme.ZenColors
 import kotlin.math.roundToInt
 
@@ -72,6 +73,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onCast: (String, QuestionCategory?) -> Unit,
     onOpenDaily: () -> Unit,
+    onOpenYear: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
@@ -95,6 +97,7 @@ fun HomeScreen(
             onDismiss = viewModel::onSheetDismissed,
         )
     }
+    val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
@@ -189,6 +192,15 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(36.dp))
+            val card = campaign
+            if (card != CampaignCard.Hidden) {
+                LaunchedEffect(card::class) { viewModel.onCampaignCardShown(card) }
+                CampaignHomeCard(card, onClick = {
+                    viewModel.onCampaignCardTapped(card)
+                    onOpenYear()
+                })
+                Spacer(Modifier.height(16.dp))
+            }
             daily?.let { DailyHexagramCard(it, streakDays, onClick = onOpenDaily) }
             Spacer(Modifier.height(120.dp))
         }
@@ -293,6 +305,39 @@ private fun BreathingTitle() {
             color = ZenColors.InkBlack,
             modifier = Modifier.graphicsLayer { this.alpha = steppedAlpha },
         )
+    }
+}
+
+@Composable
+private fun CampaignHomeCard(card: CampaignCard, onClick: () -> Unit) {
+    val (title, subtitle, button) = when (card) {
+        is CampaignCard.New -> Triple(
+            "เสี่ยงทายกว้าประจำปี${campaignYearLabel(card.year)}",
+            "ตั้งจิตรับปีใหม่ ฟ้าประทานหนึ่งกว้าให้ท่านทั้งปี",
+            "เสี่ยงทายรับปีใหม่",
+        )
+        is CampaignCard.Cast -> Triple(
+            "กว้าประจำปีของท่าน: ${card.hexagram.shortNameTh}",
+            card.hexagram.yearMessage?.blessing.orEmpty(),
+            "ดูกว้าประจำปี",
+        )
+        CampaignCard.Hidden -> return
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ZenColors.PaperCream.copy(alpha = 0.75f))
+            .border(1.dp, ZenColors.CinnabarRed.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+            .padding(20.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+        if (subtitle.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+        }
+        Spacer(Modifier.height(14.dp))
+        ZenPrimaryButton(text = button, onClick = onClick, modifier = Modifier.fillMaxWidth())
     }
 }
 

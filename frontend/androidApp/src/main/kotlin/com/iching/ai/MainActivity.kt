@@ -42,11 +42,20 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** FCM puts the message's data in the launch intent when the user taps a background notification. */
+    /**
+     * FCM puts the message's data in the launch intent when the user taps a background notification.
+     * Any other type is ignored, which is also how v1.1 treats a campaign push.
+     */
     private fun openFromPush(intent: Intent?) {
-        if (intent?.getStringExtra("type") != "daily") return
+        val type = intent?.getStringExtra("type")
+        if (type != "daily" && type != "campaign") return
         intent.removeExtra("type")
-        app.analytics.logEvent("push_open", emptyMap())
-        PendingNavigation.requestDaily()
+        if (type == "campaign") {
+            app.analytics.logEvent("push_open", mapOf("type" to "campaign"))
+            PendingNavigation.requestYear()
+        } else {
+            app.analytics.logEvent("push_open", emptyMap())
+            PendingNavigation.requestDaily()
+        }
     }
 }

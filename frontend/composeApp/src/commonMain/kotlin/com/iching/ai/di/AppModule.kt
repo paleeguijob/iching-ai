@@ -29,6 +29,7 @@ import com.iching.ai.feature.library.HexagramDetailViewModel
 import com.iching.ai.feature.library.LibraryViewModel
 import com.iching.ai.feature.paywall.PaywallViewModel
 import com.iching.ai.feature.settings.SettingsViewModel
+import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.FirebaseApiSession
@@ -91,6 +92,17 @@ val presentationModule = module {
             log = session::log,
             pushSupported = { session.dailyPushSupported },
             enablePush = { session.setDailyPush(true) },
+            syncStreak = session::syncStreak,
+        )
+    }
+    viewModel {
+        val session = get<AppSession>()
+        YearViewModel(
+            api = get(),
+            getHexagram = get(),
+            observeSettings = get(),
+            log = session::log,
+            campaignId = { session.status.value.campaign?.id.orEmpty() },
             syncStreak = session::syncStreak,
         )
     }

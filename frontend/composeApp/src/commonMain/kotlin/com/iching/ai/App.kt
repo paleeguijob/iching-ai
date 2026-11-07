@@ -69,6 +69,8 @@ import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.YearRoute
+import com.iching.ai.feature.year.YearHexagramScreen
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
@@ -154,6 +156,14 @@ private fun MainNavigation() {
             }
         }
 
+        val pendingYear by PendingNavigation.year.collectAsState()
+        LaunchedEffect(pendingYear) {
+            if (pendingYear) {
+                nav.navigate(YearRoute) { launchSingleTop = true }
+                PendingNavigation.consumeYear()
+            }
+        }
+
         val focusManager = LocalFocusManager.current
 
         // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
@@ -180,6 +190,7 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenDaily = { nav.navigate(DailyRoute) },
+                        onOpenYear = { nav.navigate(YearRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
@@ -189,6 +200,16 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                    )
+                }
+                screen<YearRoute> { entry ->
+                    // Share and Ask the hermit stay hidden until they are wired (null callbacks).
+                    YearHexagramScreen(
+                        viewModel = koinViewModel(),
+                        onBack = { nav.popFrom(entry) },
+                        onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onShare = null,
+                        onAskHermit = null,
                     )
                 }
                 screen<DivinationRoute> { entry ->
@@ -240,6 +261,7 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
+                        onOpenYear = { nav.navigate(YearRoute) },
                     )
                 }
                 screen<PaywallRoute> { entry ->

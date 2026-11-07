@@ -138,9 +138,22 @@ internal class FakeApi : OracleApi {
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
     var yearHexagramNow: YearHexagram? = null
-    override suspend fun yearHexagram(): YearHexagram? = yearHexagramNow
-    override suspend fun castYearHexagram(): YearHexagram =
-        yearHexagramNow ?: throw ApiException(FailureReason.CAMPAIGN_INACTIVE, "inactive")
+    var yearFailure: FailureReason? = null
+    /** What POST /year-hexagram answers; falls back to [yearHexagramNow]. */
+    var castYearResult: YearHexagram? = null
+    var castYearFailure: FailureReason? = null
+    var castYearCalls = 0
+    override suspend fun yearHexagram(): YearHexagram? {
+        yearFailure?.let { throw ApiException(it, "failed") }
+        return yearHexagramNow
+    }
+    override suspend fun castYearHexagram(): YearHexagram {
+        castYearCalls++
+        castYearFailure?.let { throw ApiException(it, "failed") }
+        val result = castYearResult ?: yearHexagramNow ?: throw ApiException(FailureReason.CAMPAIGN_INACTIVE, "inactive")
+        yearHexagramNow = result
+        return result
+    }
     override fun divineYear(question: String): Flow<DivinationEvent> = emptyFlow()
     /** How long GET /status takes to answer. */
     var statusDelayMillis = 0L

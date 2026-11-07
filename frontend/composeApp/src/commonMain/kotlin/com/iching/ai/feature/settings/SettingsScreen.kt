@@ -63,10 +63,11 @@ import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit) {
+fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit, onOpenYear: () -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
+    val yearResult by viewModel.yearResult.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val uri = LocalUriHandler.current
@@ -222,6 +223,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                                 colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
                             )
                         }
+                    }
+                }
+
+                yearResult?.let { year ->
+                    Card {
+                        LinkRow("กว้าประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
                     }
                 }
 
