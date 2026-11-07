@@ -28,7 +28,7 @@ iching-ai/
 │   ├── composeApp/   UI, ViewModel, AppSession, NativeBridges
 │   └── core/         domain (Kotlin ล้วน) + data (Ktor → backend, Room, DataStore, คัมภีร์ hexagrams.json)
 ├── backend/    Firebase — รัน firebase CLI จากโฟลเดอร์นี้
-│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account · `dailyPush` (ตั้งเวลา 07:00)
+│   ├── functions/    Cloud Functions (TypeScript): /divine /follow-up /status /ad-reward /report /readings /purchases/sync /account · `dailyPush` (ตั้งเวลา 07:00) · `campaignPush` (ทุกชั่วโมง ส่งเฉพาะชั่วโมงที่ตั้งไว้ ครั้งละหนึ่งครั้ง)
 │   ├── hosting/      privacy / terms / delete-account
 │   └── firebase.json, .firebaserc, firestore.rules
 └── docs/       spec + คู่มือขึ้น store

@@ -8,6 +8,7 @@ import { defineSecret } from "firebase-functions/params";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { createApi, createRevenueCatWebhook, Deps, HttpReq, HttpRes, revenueCatClient } from "./core/api";
+import { dueCampaignPush } from "./core/campaign";
 import { buildDailyPush } from "./core/daily";
 import { streamGemini } from "./core/gemini";
 import { loadScripture } from "./core/hexagrams";
@@ -102,6 +103,36 @@ export const dailyPush = onSchedule(
       logger.info("daily_push_sent", { hexagramId: push.hexagramId });
     } catch (e) {
       logger.error("daily_push_failed", { error: String(e) });
+    }
+  },
+);
+
+/** Sends each campaign push once: the dedupe doc is created before sending. No retries. */
+export const campaignPush = onSchedule(
+  { schedule: "0 * * * *", timeZone: "Asia/Bangkok", region: REGION, retryCount: 0, maxInstances: 1 },
+  async () => {
+    try {
+      const push = dueCampaignPush((await runtimeConfig()).campaign, Date.now());
+      if (!push) return;
+      try {
+        await getFirestore().collection("campaignPushes").doc(push.key).create({ sentAt: new Date().toISOString() });
+      } catch (e) {
+        const code = (e as { code?: unknown }).code;
+        if (code === 6 || code === "ALREADY_EXISTS") {
+          logger.info("campaign_push_skipped", { key: push.key });
+          return;
+        }
+        throw e;
+      }
+      await getMessaging().send({
+        topic: push.topic,
+        notification: { title: push.title, body: push.body },
+        data: push.data,
+        android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
+      });
+      logger.info("campaign_push_sent", { key: push.key });
+    } catch (e) {
+      logger.error("campaign_push_failed", { error: String(e) });
     }
   },
 );

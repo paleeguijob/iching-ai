@@ -17,7 +17,7 @@ import {
   refundReading,
   status,
 } from "../src/core/quota";
-import { campaignActive, parseCampaign } from "../src/core/campaign";
+import { campaignActive, dueCampaignPush, parseCampaign } from "../src/core/campaign";
 import { checkSafety } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
@@ -462,5 +462,14 @@ describe("campaign", () => {
     const cfg = mergeConfig({ campaign: raw });
     const s = status(normalizeUser(undefined, "2027-02-01"), null, cfg, Date.parse("2027-02-01T12:00:00+07:00"));
     assert.deepEqual(s.campaign, { id: "cny-2027", year: 2027, active: true, endsAt: Date.parse(raw.endsAt) });
+  });
+  it("campaign push is due only during its hour and only while enabled", () => {
+    const c = { ...parseCampaign(raw)!, pushes: [Date.parse("2027-02-05T19:00:00+07:00"), Date.parse("2027-02-06T08:00:00+07:00")] };
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T18:59:00+07:00")), null);
+    const eve = dueCampaignPush(c, Date.parse("2027-02-05T19:00:30+07:00"))!;
+    assert.deepEqual([eve.key, eve.title, eve.topic, eve.data.type], ["cny-2027-0", "คืนส่งท้ายปีมะเมีย", "daily-hexagram-th", "campaign"]);
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T20:00:00+07:00")), null);
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-06T08:10:00+07:00"))!.title, "ซินเจียยู่อี่ ซินนี้ฮวดไช้");
+    assert.equal(dueCampaignPush({ ...c, enabled: false }, c.pushes[0]), null);
   });
 });

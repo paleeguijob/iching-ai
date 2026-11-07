@@ -1,3 +1,5 @@
+import { DAILY_TOPIC } from "./daily";
+
 /** The Chinese New Year campaign window. Times are epoch ms; Firestore stores them as ISO strings. */
 export interface Campaign {
   id: string;
@@ -43,3 +45,27 @@ export function parseCampaign(raw: unknown): Campaign | null {
 
 export const campaignActive = (c: Campaign | null, now: number): boolean =>
   c !== null && c.enabled && c.startsAt <= now && now < c.endsAt;
+
+export interface CampaignPush {
+  key: string;
+  topic: string;
+  title: string;
+  body: string;
+  ttlMs: number;
+  data: { type: "campaign"; campaignId: string };
+}
+
+const HOUR_MS = 3_600_000;
+
+const PUSH_COPY = [
+  { title: "คืนส่งท้ายปีมะเมีย", body: "ตั้งจิตรับปีมะแม เสี่ยงทายกว้าประจำปีของท่านได้แล้ววันนี้" },
+  { title: "ซินเจียยู่อี่ ซินนี้ฮวดไช้", body: "ฟ้าเปิดปีใหม่ รับกว้าประจำปีมะแม ๒๕๗๐ ของท่าน" },
+];
+
+/** The campaign push whose hour contains `now`, or null. The hourly schedule plus the dedupe doc make it fire once. */
+export function dueCampaignPush(c: Campaign | null, now: number): CampaignPush | null {
+  if (c === null || !c.enabled) return null;
+  const i = c.pushes.findIndex((p) => p <= now && now < p + HOUR_MS);
+  if (i < 0 || i >= PUSH_COPY.length) return null;
+  return { key: `${c.id}-${i}`, topic: DAILY_TOPIC, ...PUSH_COPY[i], ttlMs: 6 * HOUR_MS, data: { type: "campaign", campaignId: c.id } };
+}
