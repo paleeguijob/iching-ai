@@ -97,6 +97,8 @@ data class DivinationUiState(
     val followUpBusy: Boolean = false,
     val reported: Boolean = false,
     val error: String? = null,
+    /** The year hexagram is interpreted as it is: no coins are tossed. */
+    val year: Boolean = false,
 ) {
     val tossesDone: Int get() = tosses.size
     val canToss: Boolean get() = phase == DivinationPhase.CASTING && !isTossing && tosses.size < 6
@@ -116,6 +118,8 @@ private sealed interface CastSource {
     data class Server(val event: DivinationEvent.Cast) : CastSource
     data class Local(val tosses: List<CoinToss>, val reason: ReadingNotice) : CastSource
     data class Safety(val message: String) : CastSource
+    /** Year mode only: the server has no cast to show, so there is nothing to reveal. */
+    data class Unavailable(val notice: ReadingNotice) : CastSource
 }
 
 private sealed interface StreamOutcome {
@@ -138,9 +142,12 @@ class DivinationViewModel(
     observeSettings: ObserveSettingsUseCase,
     resumeReadingId: Long? = null,
     getReading: GetReadingUseCase? = null,
+    private val year: Boolean = false,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(DivinationUiState(question = question.trim(), category = category))
+    private val _state = MutableStateFlow(
+        DivinationUiState(question = question.trim(), category = if (year) QuestionCategory.NEWYEAR else category, year = year),
+    )
     val state: StateFlow<DivinationUiState> = _state.asStateFlow()
 
     private val castSource = CompletableDeferred<CastSource>()
@@ -152,6 +159,12 @@ class DivinationViewModel(
     private var outcome: StreamOutcome? = null
     private var upsellShown = false
     private var upsellPremiumTapped = false
+
+    /** The year of a year reading, saved with it so the journal can mark it. */
+    private var yearOf: Int? = null
+
+    /** What the current year request is paid with, as the server will charge it: premium, free, ad or coin. */
+    private var yearCharge = ""
 
     /** The journal entry this reading continues; its outcome and notes are kept on every save. */
     private var savedBase: Reading? = null
@@ -171,6 +184,8 @@ class DivinationViewModel(
         }
         if (resumeReadingId != null && getReading != null) {
             resume(resumeReadingId, getReading)
+        } else if (year) {
+            startYear()
         } else {
             session.log("reading_started", mapOf("category" to (category?.wire ?: "none")))
         }
@@ -203,6 +218,48 @@ class DivinationViewModel(
         }
     }
 
+    // ---------- the year hexagram ----------
+
+    /** No toss: the server answers with the year hexagram's cast, which is revealed straight away. */
+    private fun startYear() {
+        val campaign = session.status.value.campaign
+        yearOf = campaign?.year
+        session.log("reading_started", mapOf("category" to QuestionCategory.NEWYEAR.wire))
+        session.log("year_ai_tap", mapOf("campaign_id" to campaign?.id.orEmpty()))
+        yearCharge = chargeFor(session.status.value)
+        val question = _state.value.question
+        requestJob = viewModelScope.launch { consume(api.divineYear(question), fromCast = true) }
+        viewModelScope.launch {
+            val source = withTimeoutOrNull(CAST_TIMEOUT_MILLIS) { castSource.await() }
+                ?: CastSource.Unavailable(ReadingNotice.Offline).also {
+                    if (castSource.complete(it)) requestJob?.cancel()
+                }
+            when (source) {
+                is CastSource.Server -> finishCast()
+                is CastSource.Safety -> _state.update { it.copy(phase = DivinationPhase.SAFETY, safetyMessage = source.message) }
+                is CastSource.Unavailable -> _state.update {
+                    it.copy(phase = DivinationPhase.COMPLETE, notice = source.notice, error = yearUnavailableMessage(source.notice))
+                }
+                is CastSource.Local -> Unit
+            }
+        }
+    }
+
+    private fun yearUnavailableMessage(notice: ReadingNotice) =
+        if (notice is ReadingNotice.Failed && notice.reason == FailureReason.NO_YEAR_HEXAGRAM) {
+            "ยังไม่พบกวาประจำปีของท่าน โปรดเสี่ยงทายกวาประจำปีก่อน แล้วจึงถามนักพรตเรื่องปีนี้"
+        } else {
+            "ติดต่อนักพรตไม่ได้ในตอนนี้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง"
+        }
+
+    /** Mirrors the server's order: Premium, then the day's free reading, then an ad credit, then a coin. */
+    private fun chargeFor(status: AccountStatus) = when {
+        status.premium -> "premium"
+        status.includedLeft > 0 -> "free"
+        status.adCreditsLeft > 0 -> "ad"
+        else -> "coin"
+    }
+
     // ---------- casting ----------
 
     fun onToss() {
@@ -219,7 +276,7 @@ class DivinationViewModel(
             val toss = when (source) {
                 is CastSource.Server -> CoinToss(source.event.coins.getOrNull(index) ?: facesFor(source.event.lines[index].value))
                 is CastSource.Local -> source.tosses[index]
-                is CastSource.Safety -> return@launch
+                is CastSource.Safety, is CastSource.Unavailable -> return@launch
             }
             _state.update { it.copy(currentToss = toss, tossKey = it.tossKey + 1, awaitingCast = false) }
             delay(TOSS_ANIMATION_MILLIS)
@@ -272,7 +329,7 @@ class DivinationViewModel(
             val lines = when (source) {
                 is CastSource.Server -> source.event.lines
                 is CastSource.Local -> source.tosses.map { it.line }
-                is CastSource.Safety -> return
+                is CastSource.Safety, is CastSource.Unavailable -> return
             }
             val cast = resolveCast(lines)
             _state.update {
@@ -320,7 +377,11 @@ class DivinationViewModel(
                 }
                 is DivinationEvent.Safety -> castSource.complete(CastSource.Safety(event.message))
                 is DivinationEvent.Failed -> {
-                    if (!sawCast) {
+                    if (!sawCast && year) {
+                        // There is no cast to fall back on: the year hexagram is the server's.
+                        val notice = if (event.reason == FailureReason.NETWORK) ReadingNotice.Offline else ReadingNotice.Failed(event.reason)
+                        castSource.complete(CastSource.Unavailable(notice))
+                    } else if (!sawCast) {
                         // Never reached the server's cast: divine on this device instead.
                         fallBackToLocalCast(if (event.reason == FailureReason.NETWORK) ReadingNotice.Offline else ReadingNotice.Failed(event.reason))
                     } else {
@@ -356,6 +417,9 @@ class DivinationViewModel(
             }
         }
         session.log("reading_completed", mapOf("source" to (_state.value.source?.name ?: "")))
+        if (year && result == StreamOutcome.Done) {
+            session.log("year_ai_done", mapOf("campaign_id" to session.status.value.campaign?.id.orEmpty(), "charge" to yearCharge))
+        }
         persist()
     }
 
@@ -365,6 +429,7 @@ class DivinationViewModel(
         if (_state.value.phase != DivinationPhase.COMPLETE || requestJob?.isActive == true) return
         streamText = StringBuilder()
         outcome = null
+        if (year) yearCharge = chargeFor(session.status.value)
         _state.update { it.copy(phase = DivinationPhase.INTERPRETING, interpretation = "", source = null, notice = null, message = null) }
         requestJob = viewModelScope.launch { consume(api.interpretAgain(id), fromCast = false) }
     }
@@ -541,6 +606,7 @@ class DivinationViewModel(
                 source = source,
                 serverId = serverId,
                 category = s.category,
+                yearOf = yearOf ?: savedBase?.yearOf,
                 followUps = s.followUps.filter { !it.streaming && it.answer.isNotBlank() }.map { FollowUpTurn(it.question, it.answer) },
             )
             val base = savedBase

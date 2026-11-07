@@ -119,6 +119,7 @@ val presentationModule = module {
             observeSettings = get(),
             resumeReadingId = params.values.filterIsInstance<Long>().firstOrNull(),
             getReading = get(),
+            year = params.values.filterIsInstance<Boolean>().firstOrNull() ?: false,
         )
     }
     viewModelOf(::LibraryViewModel)

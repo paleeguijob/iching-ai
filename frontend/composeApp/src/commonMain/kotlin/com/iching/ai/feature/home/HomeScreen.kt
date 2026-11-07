@@ -138,24 +138,7 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(32.dp))
-            OutlinedTextField(
-                value = question,
-                onValueChange = { if (it.length <= 300) question = it },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-                placeholder = {
-                    Text("พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...", color = ZenColors.InkFaint)
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ZenColors.BambooGreen,
-                    unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
-                    focusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.85f),
-                    unfocusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.6f),
-                    cursorColor = ZenColors.CinnabarRed,
-                ),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
-            )
+            QuestionField(question, onChange = { question = it })
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 QuestionCategory.entries.filter { it.pickable }.forEach { c ->
@@ -207,6 +190,29 @@ fun HomeScreen(
     }
 }
 
+/** The seeker's question box, shared by the home screen and the year question screen. */
+@Composable
+internal fun QuestionField(value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.length <= 300) onChange(it) },
+        modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+        placeholder = {
+            Text("พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...", color = ZenColors.InkFaint)
+        },
+        textStyle = MaterialTheme.typography.bodyLarge,
+        shape = RoundedCornerShape(20.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = ZenColors.BambooGreen,
+            unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
+            focusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.85f),
+            unfocusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.6f),
+            cursorColor = ZenColors.CinnabarRed,
+        ),
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
+    )
+}
+
 /** The Start button waits, with a word, while the status is checked before casting. */
 fun startButtonText(deciding: Boolean): String = if (deciding) "กำลังตั้งจิต..." else "เริ่มเสี่ยงทาย"
 
@@ -241,7 +247,7 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
 }
 
 @Composable
-private fun GuidanceQuotaBar(quota: GuidanceQuota) {
+internal fun GuidanceQuotaBar(quota: GuidanceQuota) {
     Row(
         Modifier
             .fillMaxWidth()

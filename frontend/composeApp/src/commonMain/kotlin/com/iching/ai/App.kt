@@ -55,6 +55,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.iching.ai.feature.daily.DailyScreen
 import com.iching.ai.feature.divination.DivinationScreen
+import com.iching.ai.feature.home.AskYearScreen
 import com.iching.ai.feature.home.HomeScreen
 import com.iching.ai.feature.journal.JournalEntryScreen
 import com.iching.ai.feature.journal.JournalScreen
@@ -71,6 +72,7 @@ import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.YearAskRoute
 import com.iching.ai.navigation.YearRoute
 import com.iching.ai.feature.share.ShareCardSheet
 import com.iching.ai.feature.share.yearShareContent
@@ -214,13 +216,12 @@ private fun MainNavigation() {
                     val yearViewModel: YearViewModel = koinViewModel()
                     val yearState by yearViewModel.state.collectAsState()
                     var sharing by remember { mutableStateOf(false) }
-                    // Ask the hermit stays hidden until it is wired (null callback).
                     YearHexagramScreen(
                         viewModel = yearViewModel,
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onShare = { sharing = true },
-                        onAskHermit = null,
+                        onAskHermit = { nav.navigate(YearAskRoute) },
                     )
                     val result = yearState as? YearUi.Result
                     if (sharing && result != null) {
@@ -240,11 +241,24 @@ private fun MainNavigation() {
                         )
                     }
                 }
+                screen<YearAskRoute> { entry ->
+                    AskYearScreen(
+                        viewModel = koinViewModel(),
+                        onBack = { nav.popFrom(entry) },
+                        onCast = { question ->
+                            // Replaces the question screen: back from the reading leads to the year hexagram.
+                            nav.navigate(DivinationRoute(question, QuestionCategory.NEWYEAR.wire, year = true)) {
+                                popUpTo<YearAskRoute> { inclusive = true }
+                            }
+                        },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
+                    )
+                }
                 screen<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
                         viewModel = koinViewModel {
-                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId).toTypedArray())
+                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId, route.year).toTypedArray())
                         },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },

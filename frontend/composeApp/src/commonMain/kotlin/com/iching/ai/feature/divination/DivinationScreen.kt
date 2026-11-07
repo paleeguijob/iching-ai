@@ -149,7 +149,11 @@ fun DivinationScreen(
                 modifier = Modifier.weight(1f),
             ) { phase ->
                 when (phase) {
-                    DivinationPhase.CASTING -> CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                    DivinationPhase.CASTING -> if (state.year) {
+                        YearWaitingStage()
+                    } else {
+                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                    }
                     DivinationPhase.SAFETY -> SafetyStage(state.safetyMessage.orEmpty(), onDone)
                     else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone)
                 }
@@ -170,6 +174,19 @@ fun DivinationScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             )
         }
+    }
+}
+
+/** Year readings have no toss: the year hexagram arrives from the server. */
+@Composable
+private fun YearWaitingStage() {
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        Text(
+            "กำลังเปิดกวาประจำปีของท่าน...",
+            style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
+            color = ZenColors.InkSoft,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
