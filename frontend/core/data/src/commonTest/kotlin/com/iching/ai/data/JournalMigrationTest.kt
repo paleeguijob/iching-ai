@@ -41,8 +41,9 @@ private class RecordingConnection : SQLiteConnection {
 
 class JournalMigrationTest {
 
+    // Data retention is verified on a device (Task 10) because the host JVM cannot load SQLite.
     @Test
-    fun migrationKeepsReadingsAndAddsYearOf() {
+    fun migration4To5AddsYearOfColumn() {
         val connection = RecordingConnection()
         MIGRATION_4_5.migrate(connection)
 
