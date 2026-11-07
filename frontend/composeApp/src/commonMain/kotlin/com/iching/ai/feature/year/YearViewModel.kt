@@ -45,6 +45,8 @@ sealed interface YearUi {
     /** [lines] are the six line values (6..9) as the server cast them. */
     data class Result(val hexagram: Hexagram, val lines: List<Int>, val firstTime: Boolean, val year: Int) : YearUi
     data object Offline : YearUi
+    /** The server asked the seeker to wait before casting again. */
+    data object RateLimited : YearUi
     data object Inactive : YearUi
 }
 
@@ -58,7 +60,7 @@ class YearViewModel(
     private val getHexagram: GetHexagramUseCase,
     observeSettings: ObserveSettingsUseCase,
     private val log: (String, Map<String, String>) -> Unit,
-    private val campaignId: () -> String,
+    private val campaignId: (year: Int) -> String,
     /** False when the server says the campaign is over; null while the status is unknown. */
     private val campaignActive: () -> Boolean?,
     /** Brings the Cinnabar Gold theme the server granted on the first cast. */
@@ -105,7 +107,11 @@ class YearViewModel(
                 throw e
             } catch (e: ApiException) {
                 failedOnFirstToss = cast == null
-                _state.value = if (e.reason == FailureReason.CAMPAIGN_INACTIVE) YearUi.Inactive else YearUi.Offline
+                _state.value = when (e.reason) {
+                    FailureReason.CAMPAIGN_INACTIVE -> YearUi.Inactive
+                    FailureReason.RATE_LIMITED -> YearUi.RateLimited
+                    else -> YearUi.Offline
+                }
             } catch (e: Exception) {
                 failedOnFirstToss = cast == null
                 _state.value = YearUi.Offline
@@ -136,7 +142,7 @@ class YearViewModel(
     private suspend fun castOnServer(): YearHexagram {
         val result = api.castYearHexagram()
         cast = result
-        log("year_cast", mapOf("campaign_id" to campaignId(), "hexagram_id" to result.primaryId.toString()))
+        log("year_cast", mapOf("campaign_id" to campaignId(result.year), "hexagram_id" to result.primaryId.toString()))
         // The server granted the theme with the cast; the streak sync is how it reaches this device.
         viewModelScope.launch { syncStreak() }
         return result
@@ -179,7 +185,7 @@ class YearViewModel(
 
     private suspend fun show(result: YearHexagram, firstTime: Boolean): YearUi.Result {
         val hexagram = getHexagram(result.primaryId)
-        log("year_view", mapOf("campaign_id" to campaignId()))
+        log("year_view", mapOf("campaign_id" to campaignId(result.year)))
         return YearUi.Result(hexagram, result.lines, firstTime, result.year)
     }
 }

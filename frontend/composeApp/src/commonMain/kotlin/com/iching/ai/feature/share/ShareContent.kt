@@ -51,12 +51,12 @@ fun readingShareContent(hexagram: Hexagram, summary: String?, newYear: Boolean =
 }
 
 /** The new-year card: the year hexagram's blessing. Pre-written, so no AI label, and no question. */
-fun yearShareContent(hexagram: Hexagram, yearTh: String) = ShareCardContent(
+fun yearShareContent(hexagram: Hexagram, yearLabel: String) = ShareCardContent(
     hexagram = hexagram,
     body = hexagram.yearMessage?.blessing.orEmpty(),
     judgment = null,
     aiLabel = false,
     source = "year",
     style = CardStyle.NEW_YEAR,
-    yearLabel = "กวาประจำปีมะแม $yearTh",
+    yearLabel = "กวาประจำปี$yearLabel",
 )

@@ -105,6 +105,7 @@ fun YearHexagramScreen(
                 is YearUi.Ritual -> RitualStage(ui, soundEnabled, sound::play, viewModel::onToss)
                 is YearUi.Result -> ResultStage(ui, onOpenHexagram, onShare, onAskHermit)
                 YearUi.Offline -> Message("ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อรับกวาประจำปี", retry = viewModel::retry)
+                YearUi.RateLimited -> Message("รอสักครู่แล้วลองโยนอีกครั้ง", retry = viewModel::retry)
                 YearUi.Inactive -> Message("ช่วงเสี่ยงทายกวาประจำปีสิ้นสุดแล้ว")
             }
         }

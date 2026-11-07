@@ -53,7 +53,7 @@ class ShareContentTest {
 
     @Test
     fun yearCardShowsTheBlessingWithoutAnAiLabelOrAQuestion() {
-        val card = yearShareContent(hexagram, "๒๕๗๐")
+        val card = yearShareContent(hexagram, "มะแม ๒๕๗๐")
         assertEquals("ขอให้ปีนี้ฟ้าเปิดทาง", card.body)
         assertNull(card.judgment)
         assertFalse(card.aiLabel)
@@ -63,7 +63,7 @@ class ShareContentTest {
 
     @Test
     fun yearCardSourceIsYear() {
-        assertEquals("year", yearShareContent(hexagram, "๒๕๗๐").source)
+        assertEquals("year", yearShareContent(hexagram, "มะแม ๒๕๗๐").source)
     }
 
     @Test

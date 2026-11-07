@@ -143,7 +143,9 @@ internal class FakeApi : OracleApi {
     var castYearResult: YearHexagram? = null
     var castYearFailure: FailureReason? = null
     var castYearCalls = 0
+    var yearHexagramCalls = 0
     override suspend fun yearHexagram(): YearHexagram? {
+        yearHexagramCalls++
         yearFailure?.let { throw ApiException(it, "failed") }
         return yearHexagramNow
     }

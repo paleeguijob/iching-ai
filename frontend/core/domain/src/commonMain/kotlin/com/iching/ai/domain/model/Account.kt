@@ -11,6 +11,9 @@ data class Account(
 /** A seasonal campaign as the server reports it. */
 data class CampaignStatus(val id: String, val year: Int, val active: Boolean, val endsAtMillis: Long)
 
+/** The campaign id analytics events carry: the server's, or the year's own when the server reports none. */
+fun campaignIdFor(campaign: CampaignStatus?, year: Int): String = campaign?.id ?: "cny-$year"
+
 /** The hexagram cast once per account for the year; [lines] hold values 6-9, [coins] the three coin values of each toss. */
 data class YearHexagram(val year: Int, val primaryId: Int, val lines: List<Int>, val coins: List<List<Int>>)
 

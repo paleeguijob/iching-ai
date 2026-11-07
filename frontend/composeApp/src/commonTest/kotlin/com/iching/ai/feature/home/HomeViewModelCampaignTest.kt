@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -69,10 +70,12 @@ class HomeViewModelCampaignTest {
     }
 
     /** Observes the card the way the screen does, logging each card as it is shown. */
-    private fun viewModel(): HomeViewModel {
-        api.statusNow = ACTIVE
+    private lateinit var session: AppSession
+
+    private fun viewModel(status: AccountStatus = ACTIVE): HomeViewModel {
+        api.statusNow = status
         val auth = FakeAuth()
-        val session = AppSession(
+        session = AppSession(
             NativeBridges(auth, FakePurchases(), FakeAds(), analytics, NoNotifications),
             FirebaseApiSession(auth),
             api,
@@ -115,5 +118,21 @@ class HomeViewModelCampaignTest {
         val vm = viewModel()
         assertEquals(CampaignCard.Hidden, vm.campaignCard.value)
         assertEquals(emptyList(), bannerStates())
+    }
+
+    @Test
+    fun noYearLookupWhileTheCampaignIsInactiveAndOneOnceItTurnsActive() {
+        val inactive = ACTIVE.copy(campaign = ACTIVE.campaign!!.copy(active = false))
+        api.yearHexagramNow = STORED
+        val vm = viewModel(inactive)
+        assertEquals(0, api.yearHexagramCalls)
+        assertEquals(CampaignCard.Hidden, vm.campaignCard.value)
+
+        api.statusNow = ACTIVE
+        vm.onResumed()
+        scope.launch { session.refreshStatus() }
+        scheduler.advanceUntilIdle()
+        assertEquals(1, api.yearHexagramCalls)
+        assertIs<CampaignCard.Cast>(vm.campaignCard.value)
     }
 }

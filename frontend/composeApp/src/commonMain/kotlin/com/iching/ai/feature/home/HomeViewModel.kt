@@ -8,6 +8,7 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StoreProduct
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.currentOn
 import com.iching.ai.domain.oracle.bangkokEpochDay
@@ -131,7 +132,7 @@ class HomeViewModel(
         viewModelScope.launch { session.refreshStatus() }
         // The year hexagram is only asked for once the server says there is a campaign.
         viewModelScope.launch {
-            session.status.map { it.campaign?.id }.distinctUntilChanged().collect { if (it != null) refreshYear() }
+            session.status.map { it.campaign?.active == true }.distinctUntilChanged().collect { if (it) refreshYear() }
         }
         viewModelScope.launch {
             session.status.collect { s ->
@@ -157,7 +158,7 @@ class HomeViewModel(
     fun onResumed() {
         castSent = false
         refreshDay()
-        if (session.status.value.campaign != null) refreshYear()
+        if (session.status.value.campaign?.active == true) refreshYear()
     }
 
     /** Keeps the last answer when the server cannot be reached. */
@@ -182,15 +183,22 @@ class HomeViewModel(
         val state = card.stateName() ?: return
         if (loggedBannerState == state) return
         loggedBannerState = state
-        session.log("campaign_banner_shown", mapOf("campaign_id" to campaignId(), "state" to state))
+        session.log("campaign_banner_shown", mapOf("campaign_id" to campaignId(card), "state" to state))
     }
 
     fun onCampaignCardTapped(card: CampaignCard) {
         val state = card.stateName() ?: return
-        session.log("campaign_banner_tap", mapOf("campaign_id" to campaignId(), "state" to state))
+        session.log("campaign_banner_tap", mapOf("campaign_id" to campaignId(card), "state" to state))
     }
 
-    private fun campaignId() = session.status.value.campaign?.id.orEmpty()
+    private fun campaignId(card: CampaignCard): String {
+        val year = when (card) {
+            is CampaignCard.New -> card.year
+            is CampaignCard.Cast -> card.year
+            CampaignCard.Hidden -> 0
+        }
+        return campaignIdFor(session.status.value.campaign, year)
+    }
 
     private fun CampaignCard.stateName(): String? = when (this) {
         CampaignCard.Hidden -> null

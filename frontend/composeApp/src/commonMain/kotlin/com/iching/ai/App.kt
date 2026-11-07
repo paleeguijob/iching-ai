@@ -85,6 +85,7 @@ import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.session.AppSession
@@ -224,7 +225,7 @@ private fun MainNavigation() {
                         onAskHermit = {
                             val year = (yearState as? YearUi.Result)?.year
                             if (year != null) {
-                                session.log("year_ai_tap", mapOf("campaign_id" to (session.status.value.campaign?.id ?: "cny-$year")))
+                                session.log("year_ai_tap", mapOf("campaign_id" to campaignIdFor(session.status.value.campaign, year)))
                                 nav.navigate(YearAskRoute(year))
                             }
                         },
@@ -232,14 +233,14 @@ private fun MainNavigation() {
                     val result = yearState as? YearUi.Result
                     if (sharing && result != null) {
                         ShareCardSheet(
-                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year).substringAfter(' ')),
+                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year)),
                             log = { name, params ->
                                 session.log(name, params)
                                 // The sheet reports a finished share once; the year campaign counts it as its own event.
                                 if (name == "share_card") {
                                     session.log(
                                         "year_share",
-                                        mapOf("campaign_id" to session.status.value.campaign?.id.orEmpty(), "target" to "image"),
+                                        mapOf("campaign_id" to campaignIdFor(session.status.value.campaign, result.year), "target" to "image"),
                                     )
                                 }
                             },

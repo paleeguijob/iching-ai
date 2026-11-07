@@ -132,7 +132,8 @@ internal fun limitReason(code: String) = when (code) {
 }
 
 internal fun failureReason(code: String) = when (code) {
-    "rate_limited", "bad_response", "empty", "auth" -> FailureReason.MODEL_BUSY
+    "rate_limited" -> FailureReason.RATE_LIMITED
+    "bad_response", "empty", "auth" -> FailureReason.MODEL_BUSY
     "blocked" -> FailureReason.BLOCKED
     "network" -> FailureReason.NETWORK
     "unauthenticated", "app_check_missing", "app_check_invalid" -> FailureReason.UNAUTHENTICATED

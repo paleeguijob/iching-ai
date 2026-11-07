@@ -296,7 +296,7 @@
 ### A. ก่อนส่งแอป
 
 1. ☐ อ่านและแก้ข้อความใน [`docs/content/year-messages.md`](content/year-messages.md) (Claude ร่าง ต้องให้คนตรวจ) · เกณฑ์: `overview` ≤ 200, `work`/`love`/`money` ≤ 80, `blessing` ≤ 60 ตัวอักษร · ไม่เอ่ยปีหรือนักษัตร · ไม่แนะนำการลงทุน กู้ยืม การรักษา หรือรับรองผล · ตรวจข้อความหน้ากวาประจำปีตอนแคมเปญปิด ("ช่วงเสี่ยงทายกวาประจำปีสิ้นสุดแล้ว") ด้วย
-2. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` ได้ `iching-ai-1.2.0-120.aab` (ที่ root ของ repo ตามแบบเดิม) แล้วอัปโหลดขึ้น Play Console (Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8)
+2. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` ไฟล์จะอยู่ที่ `frontend/androidApp/build/outputs/bundle/release/androidApp-release.aab` → คัดลอกและเปลี่ยนชื่อเป็น `iching-ai-1.2.0-120.aab` ที่ root ของ repo (`cp frontend/androidApp/build/outputs/bundle/release/*.aab iching-ai-1.2.0-120.aab`, ไม่ commit ไฟล์นี้) แล้วอัปโหลดขึ้น Play Console (Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8)
 3. ☐ Deploy (ทำเองเท่านั้น): รันใน `backend/` → `firebase deploy --only functions,hosting` · การ deploy ครั้งแรกจะสร้างงาน Cloud Scheduler `campaignPush` ให้เอง
 4. ☐ ตรวจใน Cloud Scheduler: `campaignPush` ตั้งเวลา `0 * * * *` เขต `Asia/Bangkok` และมีงานรวมแค่ 2 (`dailyPush`, `campaignPush`)
 
@@ -319,7 +319,7 @@
 ```
 
 5. ☐ ตั้งค่านี้ไว้ล่วงหน้าด้วย `enabled: false` (ไม่มีค่า หรือผิดรูปแบบ = ปิดเช่นกัน)
-6. ☐ **20 ม.ค. 2027:** เปลี่ยน `campaign.enabled` เป็น `true` (ไม่ต้องออกเวอร์ชันใหม่) แล้วเปิดแอปเช็กว่าการ์ดขึ้นบนหน้าแรก · แอปดูสถานะจาก `GET /status` (`campaign.active`) ไม่ใช้เวลาเครื่อง
+6. ☐ **ก่อน 20 ม.ค. 2027** (หลัง deploy และทดสอบผ่านแล้ว): เปลี่ยน `campaign.enabled` เป็น `true` ล่วงหน้า ไม่ต้องรอวันที่ 20 เพราะ `startsAt` เป็น 2027-01-20 00:00 +07:00 อยู่แล้ว แคมเปญจะเปิดเองเมื่อถึงเวลา (ไม่ต้องออกเวอร์ชันใหม่) · ก่อนถึงเวลาเปิดแอปจะไม่เห็นการ์ด · หลัง 20 ม.ค. 00:00 เปิดแอปเช็กว่าการ์ดขึ้นบนหน้าแรก · แอปดูสถานะจาก `GET /status` (`campaign.active`) ไม่ใช้เวลาเครื่อง · หมายเหตุ: `pushes` ส่งจริงเฉพาะ 2 รายการแรก (backend มีข้อความ push แค่ 2 ชุด) รายการที่ 3 ขึ้นไปจะไม่ถูกส่ง
 7. ☐ ปิดฉุกเฉินได้ทุกเมื่อด้วย `campaign.enabled = false` · กวาประจำปีที่ผู้ใช้ได้ไปแล้วยังเปิดดูได้
 8. ☐ Push: ส่ง `campaignPush` ตรงชั่วโมงใน `pushes` ไป topic `daily-hexagram-th` (เฉพาะคนที่เปิดแจ้งเตือน) · คืน 5 ก.พ. 19:00 และเช้า 6 ก.พ. 08:00 · log ที่ควรเห็น `campaign_push_sent` · กันซ้ำด้วยเอกสาร `campaignPushes/{id}-{index}` · push 07:00 เดิมยังส่งตามปกติ
 
@@ -327,12 +327,12 @@
 
 ชุดภาพและข้อความอยู่ที่ [`docs/store/cny/`](store/cny/README.md)
 
-9. ☐ ถ่าย screenshot 2 ภาพตาม `docs/store/cny/README.md` (หน้ากวาประจำปี, การ์ดแชร์ปีใหม่) แล้ววางเป็นภาพที่ 1–2
+9. ☐ ถ่าย screenshot 2 ภาพตาม `docs/store/cny/README.md` (การ์ดแคมเปญบนหน้าแรก, หน้ากวาประจำปี) แล้ววางเป็นภาพที่ 1–2
 10. ☐ อัปโหลด feature graphic `docs/store/cny/feature-graphic-1024x500.png`
-11. ☐ เปลี่ยนคำอธิบายสั้นเป็น "เสี่ยงทายกวาประจำปีมะแม ๒๕๗๐ ฟรี · คำทำนายอี้จิงจากนักพรต" และเพิ่มคำค้น: ดวงตรุษจีน, ดวงปีมะแม 2570, เสี่ยงทายปีใหม่, ดวงปีใหม่จีน
+11. ☐ เปลี่ยนคำอธิบายสั้นเป็น "เสี่ยงทายกวาประจำปีมะแม ๒๕๗๐ ฟรี · คำทำนายอี้จิงจากนักพรต" และสอดคำค้นเหล่านี้ลงในคำอธิบายเต็ม/คำอธิบายสั้น (Play Console ไม่มีช่องคำค้น): ดวงตรุษจีน, ดวงปีมะแม 2570, เสี่ยงทายปีใหม่, ดวงปีใหม่จีน
 12. ☐ Play Console → Promotional content (LiveOps) ถ้าบัญชีมีสิทธิ์ · ถ้าไม่มี ข้ามได้
 13. ☐ โพสต์การ์ดตัวอย่างลง TikTok / กลุ่มสายมูตามแผนเดิม เริ่ม 20 ม.ค.
-14. ☐ **หลัง 22 ก.พ. 2027:** คืน listing (ข้อความ คำค้น ภาพ) เป็นชุดเดิม · ตั้ง `campaign.enabled = false` ถ้ายังไม่ปิด
+14. ☐ **หลัง 22 ก.พ. 2027:** คืน listing (ข้อความ คำอธิบาย ภาพ) เป็นชุดเดิม · ตั้ง `campaign.enabled = false` ถ้ายังไม่ปิด
 
 ### D. ทดสอบบนเครื่องจริง (ยังไม่ได้ทำ — ไม่มีเครื่อง/emulator ตอนเตรียม build)
 

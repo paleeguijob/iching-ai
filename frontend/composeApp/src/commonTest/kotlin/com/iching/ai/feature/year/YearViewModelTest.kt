@@ -5,6 +5,7 @@ import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.YearHexagram
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.SettingsRepository
@@ -74,7 +75,7 @@ class YearViewModelTest {
             getHexagram = GetHexagramUseCase(Hexagrams),
             observeSettings = ObserveSettingsUseCase(Settings),
             log = { name, params -> events += name to params },
-            campaignId = { CAMPAIGN.id },
+            campaignId = { year -> campaignIdFor(CAMPAIGN, year) },
             campaignActive = { campaignActive },
             syncStreak = { streakSyncs++ },
         )
@@ -187,6 +188,20 @@ class YearViewModelTest {
         vm.retry()
         scheduler.advanceUntilIdle()
         assertEquals(2, api.castYearCalls)
+        assertEquals(1, assertIs<YearUi.Ritual>(vm.state.value).tossesDone)
+    }
+
+    @Test
+    fun rateLimitedCastAsksToWaitInsteadOfSayingOffline() {
+        api.castYearResult = SERVER_RESULT
+        api.castYearFailure = FailureReason.RATE_LIMITED
+        val vm = viewModel()
+        vm.toss()
+        assertEquals(YearUi.RateLimited, vm.state.value)
+
+        api.castYearFailure = null
+        vm.retry()
+        scheduler.advanceUntilIdle()
         assertEquals(1, assertIs<YearUi.Ritual>(vm.state.value).tossesDone)
     }
 

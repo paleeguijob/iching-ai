@@ -22,7 +22,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, RATE_LIMITED, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {

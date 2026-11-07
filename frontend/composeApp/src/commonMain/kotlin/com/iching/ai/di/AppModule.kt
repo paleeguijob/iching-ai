@@ -3,6 +3,7 @@ package com.iching.ai.di
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
@@ -102,7 +103,7 @@ val presentationModule = module {
             getHexagram = get(),
             observeSettings = get(),
             log = session::log,
-            campaignId = { session.status.value.campaign?.id.orEmpty() },
+            campaignId = { year -> campaignIdFor(session.status.value.campaign, year) },
             campaignActive = { session.status.value.campaign?.active },
             syncStreak = session::syncStreak,
         )

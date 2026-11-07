@@ -12,6 +12,7 @@ import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StoreProduct
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
 import com.iching.ai.domain.repository.DivinationEvent
 import com.iching.ai.domain.repository.FailureReason
@@ -415,7 +416,7 @@ class DivinationViewModel(
         }
         session.log("reading_completed", mapOf("source" to (_state.value.source?.name ?: "")))
         if (year && result == StreamOutcome.Done) {
-            session.log("year_ai_done", mapOf("campaign_id" to (session.status.value.campaign?.id ?: "cny-$yearOf"), "charge" to yearCharge))
+            session.log("year_ai_done", mapOf("campaign_id" to campaignIdFor(session.status.value.campaign, yearOf ?: 0), "charge" to yearCharge))
         }
         persist()
     }
