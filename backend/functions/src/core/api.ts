@@ -74,6 +74,8 @@ export interface StoredReading {
   id: string;
   question: string;
   category: Category | null;
+  /** Set when this reading interprets the account's year hexagram. */
+  yearOf: number | null;
   lines: LineValue[];
   coins: Coin[][];
   primaryId: number;
@@ -251,7 +253,12 @@ export function createApi(deps: Deps) {
       return;
     }
 
-    const prompt = buildReadingPrompt(reading.question, cast, reading.category);
+    const prompt = buildReadingPrompt(
+      reading.question,
+      cast,
+      reading.category,
+      reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
+    );
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -333,10 +340,19 @@ export function createApi(deps: Deps) {
         sse.end();
         return;
       }
-      cast = castHexagram(deps.scripture);
+      let yearOf: number | null = null;
+      if (b.mode === "year") {
+        const year = await deps.store.getYearHexagram(uid, cfg.campaign?.year ?? DEFAULT_CAMPAIGN.year);
+        if (!year) throw new HttpError(409, "no_year_hexagram");
+        cast = resolveLines(deps.scripture, year.lines, year.coins);
+        yearOf = year.year;
+      } else {
+        cast = castHexagram(deps.scripture);
+      }
       const data: Omit<StoredReading, "id"> = {
         question,
-        category: parseCategory(b.category),
+        category: yearOf !== null ? "newyear" : parseCategory(b.category),
+        yearOf,
         lines: cast.lines,
         coins: cast.coins,
         primaryId: cast.primary.id,
@@ -482,6 +498,7 @@ export function createApi(deps: Deps) {
     id: r.id,
     question: r.question,
     category: r.category,
+    yearOf: r.yearOf,
     lines: r.lines,
     primaryId: r.primaryId,
     relatingId: r.relatingId,

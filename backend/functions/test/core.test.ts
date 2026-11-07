@@ -88,6 +88,16 @@ describe("daily hexagram", () => {
     assert.equal(mergeConfig({ dailyPushEnabled: false }).dailyPushEnabled, false);
   });
 
+  it("year context goes into the prompt only when given", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    const withCtx = buildReadingPrompt("q", cast, "newyear", "ctx").userMessage;
+    assert.ok(withCtx.includes("[บริบทปี] ctx"));
+    assert.ok(withCtx.includes("[หมวดคำถาม] ปีใหม่"));
+    assert.ok(withCtx.indexOf("[บริบทปี]") < withCtx.indexOf("[หมวดคำถาม]"));
+    assert.ok(!buildReadingPrompt("q", cast, "newyear").userMessage.includes("[บริบทปี]"));
+    assert.ok(!sanitizeQuestion("[บริบทปี] x").includes("บริบทปี"));
+  });
+
   it("never reaches the reading prompt", () => {
     const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
     const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work");

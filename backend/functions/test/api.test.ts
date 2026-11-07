@@ -185,6 +185,7 @@ describe("api", () => {
   let now: number;
   let store: MemoryStore;
   let modelCalls: string[];
+  let modelPrompts: string[];
   let modelMode: "ok" | "fail" | "drop";
   let modelChunks: string[] | null;
   /** The response whose connection drops mid-stream when modelMode is "drop". */
@@ -198,6 +199,7 @@ describe("api", () => {
     now = Date.UTC(2026, 9, 31, 3, 0, 0);
     store = new MemoryStore(() => now);
     modelCalls = [];
+    modelPrompts = [];
     modelMode = "ok";
     modelChunks = null;
     droppingRes = null;
@@ -216,6 +218,7 @@ describe("api", () => {
       config: async () => cfg,
       streamModel: async function* (_p, model, signal): AsyncGenerator<string, Usage> {
         modelCalls.push(model);
+        modelPrompts.push(_p.userMessage);
         if (modelMode === "fail") throw new GeminiError("rate_limited", "busy");
         if (modelChunks) {
           yield* modelChunks;
@@ -270,6 +273,72 @@ describe("api", () => {
       const res = new FakeRes();
       await handle(req("POST", "/divine", { question: "ปีนี้เป็นอย่างไร" }), res);
       assert.deepEqual(res.events.map((e) => e.event), ["cast", "delta", "delta", "done"]);
+    });
+
+    describe("year mode", () => {
+      const castYear = async () => {
+        const res = new FakeRes();
+        await handle(req("POST", "/year-hexagram"), res);
+        return res.payload as YearHexagram;
+      };
+
+      it("interprets the year hexagram and charges like any reading", async () => {
+        const year = await castYear();
+        now += 60_000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        const ev = res.events;
+        assert.equal(ev[0].event, "cast");
+        assert.deepEqual(ev[0].data.lines, year.lines);
+        assert.equal(ev.at(-1)!.event, "done");
+        assert.equal((ev.at(-1)!.data.status as { readingsLeft: number }).readingsLeft, 0);
+        const saved = await store.getReading("u1", ev[0].data.readingId as string);
+        assert.equal(saved?.category, "newyear");
+        assert.equal(saved?.yearOf, 2027);
+        assert.equal(saved?.primaryId, year.primaryId);
+      });
+
+      it("is refused without a year hexagram and charges nothing", async () => {
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        assert.deepEqual([res.code, res.payload], [409, { error: "no_year_hexagram" }]);
+        assert.deepEqual(modelCalls, []);
+        const st = new FakeRes();
+        await handle(req("GET", "/status"), st);
+        assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
+      });
+
+      it("still works after the campaign ends", async () => {
+        const year = await castYear();
+        now = DEFAULT_CAMPAIGN.endsAt + 1000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        assert.deepEqual(res.events[0].data.lines, year.lines);
+        assert.equal(res.events.at(-1)!.event, "done");
+      });
+
+      it("gets the safety reply for a crisis question", async () => {
+        await castYear();
+        now += 60_000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ไม่อยากมีชีวิตอยู่แล้ว" }), res);
+        assert.deepEqual(res.events.map((e) => e.event), ["safety"]);
+        assert.equal(modelCalls.length, 0);
+      });
+
+      it("keeps the year context when a failed reading is retried by id", async () => {
+        await castYear();
+        now += 60_000;
+        modelMode = "fail";
+        const failed = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), failed);
+        modelMode = "ok";
+        const retry = new FakeRes();
+        await handle(req("POST", "/divine", { readingId: failed.events[0].data.readingId }), retry);
+        assert.equal(retry.events.at(-1)!.event, "done");
+        assert.equal(modelPrompts.length, 2);
+        for (const p of modelPrompts) assert.ok(p.includes("[บริบทปี] " + DEFAULT_CAMPAIGN.yearContext));
+      });
     });
 
     it("refuses a new cast outside the campaign but still returns an existing one", async () => {

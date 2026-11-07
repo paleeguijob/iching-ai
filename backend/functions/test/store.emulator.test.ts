@@ -76,7 +76,7 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
   });
 
   it("merges coins and readings into the destination and removes the source", async () => {
-    const reading = { question: "q", category: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]] as never, primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const reading = { question: "q", category: null, yearOf: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]] as never, primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
     await store.grantCoins("anon", "GPA.1", 10);
     await store.grantCoins("u1", "GPA.2", 10);
     const id = await store.createReading("anon", reading);
@@ -134,7 +134,7 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
   it("deletes the user's readings, reports and purchase markers, and nobody else's", async () => {
     await store.grantCoins("u1", "GPA.1", 10);
     await store.grantCoins("u2", "GPA.2", 10);
-    const base = { question: "q", category: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]], primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const base = { question: "q", category: null, yearOf: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]], primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
     const mine = await store.createReading("u1", base);
     const theirs = await store.createReading("u2", base);
     await store.addReport({ uid: "u1", readingId: mine, reason: "x", note: "", createdAt: 1 });

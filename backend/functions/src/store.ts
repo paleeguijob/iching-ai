@@ -40,6 +40,7 @@ export function firestoreStore(db: Firestore): Store {
     id,
     question: d.question ?? "",
     category: d.category ?? null,
+    yearOf: d.yearOf ?? null,
     lines: d.lines ?? [],
     coins: Array.isArray(d.coins) ? d.coins.map((t: { c: number[] } | number[]) => (Array.isArray(t) ? t : t.c) as Coin[]) : [],
     primaryId: d.primaryId,
