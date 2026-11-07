@@ -7,6 +7,7 @@
  *                         X-Device-Id: <stable per-install id>   (hashed before storage)
  */
 import { createHash } from "node:crypto";
+import { campaignActive, DEFAULT_CAMPAIGN } from "./campaign";
 import { Cast, castHexagram, Coin, LineValue, resolveLines } from "./cast";
 import { estimateCostThb, GeminiError, Usage } from "./gemini";
 import { Scripture } from "./hexagrams";
@@ -61,7 +62,7 @@ export interface HttpRes {
 }
 
 export class HttpError extends Error {
-  constructor(readonly status: number, readonly code: string, message = code) {
+  constructor(readonly status: number, readonly code: string, message = code, readonly extra: Record<string, unknown> = {}) {
     super(message);
   }
 }
@@ -91,6 +92,15 @@ export interface StoredReading {
   outcome: "yes" | "no" | "partly" | null;
   outcomeNote: string | null;
   createdAt: number;
+}
+
+/** The one hexagram an account keeps for a campaign year; cast once on the server, never recast. */
+export interface YearHexagram {
+  year: number;
+  primaryId: number;
+  lines: LineValue[];
+  coins: Coin[][];
+  castAt: number;
 }
 
 export interface QuotaTxResult<T> {
@@ -123,6 +133,9 @@ export interface Store {
   /** Moves coins, readings and the streak from [fromUid] to [toUid], then deletes [fromUid]'s data. Safe to repeat. */
   mergeUser(fromUid: string, toUid: string): Promise<void>;
   deleteUser(uid: string): Promise<void>;
+  getYearHexagram(uid: string, year: number): Promise<YearHexagram | null>;
+  /** Keeps the first claim: returns the stored hexagram when there is one, else saves [candidate]. Also unlocks the cinnabar_gold theme, in the same transaction. */
+  claimYearHexagram(uid: string, candidate: YearHexagram): Promise<YearHexagram>;
 }
 
 export interface Entitlements {
@@ -479,6 +492,24 @@ export function createApi(deps: Deps) {
     createdAt: r.createdAt,
   });
 
+  /** The year hexagram stays viewable after the campaign; only a new cast needs it to be active. */
+  async function castYearHexagram(uid: string, cfg: RuntimeConfig): Promise<YearHexagram> {
+    const year = cfg.campaign?.year ?? DEFAULT_CAMPAIGN.year;
+    const existing = await deps.store.getYearHexagram(uid, year);
+    if (existing) return existing;
+    if (!campaignActive(cfg.campaign, deps.now())) throw new HttpError(409, "campaign_inactive");
+    const wait = await deps.store.quotaTx<number | null>(uid, null, (user) => {
+      if (user.lastReadingAt === null) return { result: null };
+      const elapsed = (deps.now() - user.lastReadingAt) / 1000;
+      return { result: elapsed >= cfg.minSecondsBetweenReadings ? null : Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
+    });
+    if (wait !== null) throw new HttpError(429, "rate_limited", "rate_limited", { retryAfterSeconds: wait });
+    const cast = castHexagram(deps.scripture);
+    const kept = await deps.store.claimYearHexagram(uid, { year, primaryId: cast.primary.id, lines: cast.lines, coins: cast.coins, castAt: deps.now() });
+    await deps.store.quotaTx(uid, null, (user) => ({ user: { ...user, lastReadingAt: deps.now() }, result: null }));
+    return kept;
+  }
+
   /** Single entry point: routes by method + path. */
   return async function handle(req: HttpReq, res: HttpRes): Promise<void> {
     try {
@@ -552,6 +583,16 @@ export function createApi(deps: Deps) {
         res.status(200).json(await readStatus(uid, deviceHash, cfg));
         return;
       }
+      if (route === "GET /year-hexagram") {
+        const found = await deps.store.getYearHexagram(uid, cfg.campaign?.year ?? DEFAULT_CAMPAIGN.year);
+        if (!found) throw new HttpError(404, "year_hexagram_not_found");
+        res.status(200).json(found);
+        return;
+      }
+      if (route === "POST /year-hexagram") {
+        res.status(200).json(await castYearHexagram(uid, cfg));
+        return;
+      }
       if (route === "POST /account/merge") {
         if (typeof b.fromIdToken !== "string" || !b.fromIdToken) throw new HttpError(400, "bad_request");
         await mergeAnonymousAccount(uid, b.fromIdToken);
@@ -571,7 +612,7 @@ export function createApi(deps: Deps) {
       const err = e instanceof HttpError ? e : new HttpError(500, "internal");
       if (!(e instanceof HttpError)) deps.log.error("api_error", { detail: (e as Error)?.message, stack: (e as Error)?.stack });
       if (err.status === 401) deps.log.warn("request_rejected", { code: err.code, path: req.path });
-      if (!res.headersSent) res.status(err.status).json({ error: err.code });
+      if (!res.headersSent) res.status(err.status).json({ error: err.code, ...err.extra });
       else if (!res.writableEnded) {
         res.write(`event: error\ndata: ${JSON.stringify({ code: err.code })}\n\n`);
         res.end();

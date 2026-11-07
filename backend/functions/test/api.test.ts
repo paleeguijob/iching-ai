@@ -13,10 +13,12 @@ import {
   revenueCatClient,
   Store,
   StoredReading,
+  YearHexagram,
 } from "../src/core/api";
 import { GeminiError, Usage } from "../src/core/gemini";
 import { loadScripture } from "../src/core/hexagrams";
 import { EMPTY_STREAK, mergeStreaks, StreakDoc } from "../src/core/streak";
+import { DEFAULT_CAMPAIGN } from "../src/core/campaign";
 import { bangkokDay, DEFAULT_CONFIG, DeviceDoc, normalizeDevice, normalizeUser, RuntimeConfig, UserDoc } from "../src/core/quota";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
@@ -109,6 +111,17 @@ class MemoryStore implements Store {
     const left = this.streaks.get(from) ?? EMPTY_STREAK;
     await this.updateStreak(to, (stored) => mergeStreaks(stored, left));
     await this.deleteUser(from);
+  }
+  years = new Map<string, YearHexagram>();
+  async getYearHexagram(uid: string, year: number) {
+    return this.years.get(`${uid}/${year}`) ?? null;
+  }
+  async claimYearHexagram(uid: string, candidate: YearHexagram) {
+    const key = `${uid}/${candidate.year}`;
+    const kept = this.years.get(key) ?? candidate;
+    this.years.set(key, kept);
+    await this.updateStreak(uid, (s) => ({ ...s, unlocked: [...new Set([...s.unlocked, "cinnabar_gold"])] }));
+    return kept;
   }
   async deleteUser(uid: string) {
     this.users.delete(uid);
@@ -224,6 +237,70 @@ describe("api", () => {
       log: { info() {}, warn() {}, error() {} },
     };
     handle = createApi(deps);
+  });
+
+  describe("year hexagram", () => {
+    beforeEach(() => {
+      cfg = { ...cfg, campaign: { ...DEFAULT_CAMPAIGN, enabled: true }, minSecondsBetweenReadings: 8 };
+      now = DEFAULT_CAMPAIGN.startsAt + 3_600_000;
+    });
+
+    it("casts the year hexagram once and returns the same one after", async () => {
+      const first = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), first);
+      assert.equal(first.code, 200);
+      now += 60_000;
+      const second = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), second);
+      const a = first.payload as YearHexagram;
+      const b = second.payload as YearHexagram;
+      assert.equal(a.year, 2027);
+      assert.equal(a.lines.length, 6);
+      assert.equal(b.primaryId, a.primaryId);
+      assert.deepEqual(b.lines, a.lines);
+      assert.deepEqual(modelCalls, []);
+      const st = new FakeRes();
+      await handle(req("GET", "/status"), st);
+      assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
+      assert.ok(store.streaks.get("u1")!.unlocked.includes("cinnabar_gold"));
+    });
+
+    it("refuses a new cast outside the campaign but still returns an existing one", async () => {
+      const mine = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), mine);
+      now = DEFAULT_CAMPAIGN.endsAt + 1000;
+      const again = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), again);
+      assert.equal(again.code, 200);
+      assert.deepEqual(again.payload, mine.payload);
+      const get = new FakeRes();
+      await handle(req("GET", "/year-hexagram"), get);
+      assert.deepEqual(get.payload, mine.payload);
+      const fresh = new FakeRes();
+      await handle(req("POST", "/year-hexagram", {}, { authorization: "Bearer token-u2" }), fresh);
+      assert.deepEqual([fresh.code, fresh.payload], [409, { error: "campaign_inactive" }]);
+    });
+
+    it("refuses a new cast when there is no valid campaign", async () => {
+      cfg = { ...cfg, campaign: null };
+      const res = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [409, { error: "campaign_inactive" }]);
+    });
+
+    it("GET returns 404 before a cast", async () => {
+      const res = new FakeRes();
+      await handle(req("GET", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [404, { error: "year_hexagram_not_found" }]);
+    });
+
+    it("rate limits a new cast right after another reading", async () => {
+      store.users.set("u1", { ...normalizeUser(undefined, bangkokDay(now)), lastReadingAt: now - 3000 });
+      const res = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [429, { error: "rate_limited", retryAfterSeconds: 5 }]);
+      assert.equal(await store.getYearHexagram("u1", 2027), null);
+    });
   });
 
   it("rejects missing auth and App Check", async () => {

@@ -5,7 +5,7 @@
  */
 import { bangkokEpochDay } from "./daily";
 
-export const THEMES = ["ink_paper", "bamboo", "cinnabar_dawn", "ink_night"] as const;
+export const THEMES = ["ink_paper", "bamboo", "cinnabar_dawn", "ink_night", "cinnabar_gold"] as const;
 const MAX_DAYS = 100_000;
 
 export interface StreakDoc {

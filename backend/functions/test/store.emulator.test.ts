@@ -172,4 +172,35 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
       assert.equal((await write("config/runtime", { freeDailyReadings: { integerValue: "9999" } })).status, 403);
     });
   });
+
+  const year = (primaryId: number, castAt = 1) => ({ year: 2027, primaryId, lines: [7, 8, 9, 6, 7, 8] as (6 | 7 | 8 | 9)[], coins: [[2, 3, 3]] as (2 | 3)[][], castAt });
+
+  it("claimYearHexagram keeps the first of two concurrent claims", async () => {
+    const [a, b] = await Promise.all([store.claimYearHexagram("u1", year(1)), store.claimYearHexagram("u1", year(2))]);
+    assert.equal(a.primaryId, b.primaryId);
+    assert.deepEqual(a, b);
+    const stored = await db.collection("users/u1/meta").where("primaryId", ">", 0).get();
+    assert.equal(stored.size, 1);
+    assert.equal(stored.docs[0].data().primaryId, a.primaryId);
+    assert.deepEqual(await store.getYearHexagram("u1", 2027), a);
+    assert.ok(((await db.doc("users/u1/meta/streak").get()).data()?.unlocked as string[]).includes("cinnabar_gold"));
+  });
+
+  it("mergeUser moves a year hexagram only when the target has none", async () => {
+    await store.claimYearHexagram("anon", year(5));
+    await store.mergeUser("anon", "u1");
+    assert.equal((await store.getYearHexagram("u1", 2027))?.primaryId, 5);
+    assert.equal(await store.getYearHexagram("anon", 2027), null);
+    assert.ok(((await db.doc("users/u1/meta/streak").get()).data()?.unlocked as string[]).includes("cinnabar_gold"));
+
+    await store.claimYearHexagram("anon2", year(9));
+    await store.mergeUser("anon2", "u1");
+    assert.equal((await store.getYearHexagram("u1", 2027))?.primaryId, 5);
+  });
+
+  it("deleteUser removes year hexagrams", async () => {
+    await store.claimYearHexagram("u1", year(3));
+    await store.deleteUser("u1");
+    assert.equal(await store.getYearHexagram("u1", 2027), null);
+  });
 });
