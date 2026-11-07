@@ -265,6 +265,13 @@ describe("api", () => {
       assert.ok(store.streaks.get("u1")!.unlocked.includes("cinnabar_gold"));
     });
 
+    it("does not rate limit a reading made right after a year cast", async () => {
+      await handle(req("POST", "/year-hexagram"), new FakeRes());
+      const res = new FakeRes();
+      await handle(req("POST", "/divine", { question: "ปีนี้เป็นอย่างไร" }), res);
+      assert.deepEqual(res.events.map((e) => e.event), ["cast", "delta", "delta", "done"]);
+    });
+
     it("refuses a new cast outside the campaign but still returns an existing one", async () => {
       const mine = new FakeRes();
       await handle(req("POST", "/year-hexagram"), mine);

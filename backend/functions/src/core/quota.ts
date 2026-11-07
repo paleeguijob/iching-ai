@@ -200,11 +200,16 @@ const modelFor = (charge: Charge, cfg: RuntimeConfig) =>
 /** Free retries per charge after the connection dropped mid-reading; further drops pay again. */
 export const MAX_FREE_RESUMES = 2;
 
-const rateLimit = (user: UserDoc, cfg: RuntimeConfig, now: number): ChargeDecision | null => {
+/** Seconds until another reading is allowed, or null when it is allowed now. */
+export const retryAfterSeconds = (user: UserDoc, cfg: RuntimeConfig, now: number): number | null => {
   if (user.lastReadingAt === null) return null;
   const elapsed = (now - user.lastReadingAt) / 1000;
-  if (elapsed >= cfg.minSecondsBetweenReadings) return null;
-  return { ok: false, reason: "rate_limited", retryAfterSeconds: Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
+  return elapsed >= cfg.minSecondsBetweenReadings ? null : Math.ceil(cfg.minSecondsBetweenReadings - elapsed);
+};
+
+const rateLimit = (user: UserDoc, cfg: RuntimeConfig, now: number): ChargeDecision | null => {
+  const wait = retryAfterSeconds(user, cfg, now);
+  return wait === null ? null : { ok: false, reason: "rate_limited", retryAfterSeconds: wait };
 };
 
 /** Regenerates a reading whose [charge] was already taken: same limits and model, nothing charged. */

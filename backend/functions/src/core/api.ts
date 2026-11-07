@@ -30,6 +30,7 @@ import {
   MAX_FREE_RESUMES,
   QuotaStatus,
   refundReading,
+  retryAfterSeconds,
   resumeReading,
   RuntimeConfig,
   status,
@@ -498,16 +499,10 @@ export function createApi(deps: Deps) {
     const existing = await deps.store.getYearHexagram(uid, year);
     if (existing) return existing;
     if (!campaignActive(cfg.campaign, deps.now())) throw new HttpError(409, "campaign_inactive");
-    const wait = await deps.store.quotaTx<number | null>(uid, null, (user) => {
-      if (user.lastReadingAt === null) return { result: null };
-      const elapsed = (deps.now() - user.lastReadingAt) / 1000;
-      return { result: elapsed >= cfg.minSecondsBetweenReadings ? null : Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
-    });
+    const wait = await deps.store.quotaTx<number | null>(uid, null, (user) => ({ result: retryAfterSeconds(user, cfg, deps.now()) }));
     if (wait !== null) throw new HttpError(429, "rate_limited", "rate_limited", { retryAfterSeconds: wait });
     const cast = castHexagram(deps.scripture);
-    const kept = await deps.store.claimYearHexagram(uid, { year, primaryId: cast.primary.id, lines: cast.lines, coins: cast.coins, castAt: deps.now() });
-    await deps.store.quotaTx(uid, null, (user) => ({ user: { ...user, lastReadingAt: deps.now() }, result: null }));
-    return kept;
+    return deps.store.claimYearHexagram(uid, { year, primaryId: cast.primary.id, lines: cast.lines, coins: cast.coins, castAt: deps.now() });
   }
 
   /** Single entry point: routes by method + path. */
