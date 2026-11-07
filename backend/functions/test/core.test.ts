@@ -405,3 +405,18 @@ describe("streak merge", () => {
     assert.deepEqual(mergeStreaks(normalizeStreak(undefined), s(4, 5, 100)), s(4, 5, 100));
   });
 });
+
+describe("year messages", () => {
+  it("every hexagram has a year message within the length limits and without a year or zodiac", () => {
+    const limits = { overview: 200, work: 80, love: 80, money: 80, blessing: 60 } as const;
+    for (let id = 1; id <= 64; id++) {
+      const h = scripture.get(id);
+      assert.ok(h.yearMessage, `hexagram ${id} has a yearMessage`);
+      for (const [k, max] of Object.entries(limits)) {
+        const v = (h.yearMessage as unknown as Record<string, string>)[k];
+        assert.ok(v && [...v].length <= max, `hexagram ${id} ${k}`);
+        assert.doesNotMatch(v, /\d{4}|มะแม|มะเมีย|ปีชวด|ปีขาล|ปีกุน/);
+      }
+    }
+  });
+});

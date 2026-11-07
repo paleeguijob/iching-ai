@@ -19,6 +19,17 @@ export interface Hexagram {
   allLines?: string | null;
   /** Pre-written message for the daily hexagram and its push. Not part of the reading prompt. */
   dailyMessage: string;
+  /** Pre-written new-year reading for the Chinese New Year campaign. Not part of the reading prompt. */
+  yearMessage: YearMessage;
+}
+
+/** Year-ahead reflection for one hexagram. Limits: overview 200, work/love/money 80, blessing 60 characters. */
+export interface YearMessage {
+  overview: string;
+  work: string;
+  love: string;
+  money: string;
+  blessing: string;
 }
 
 export const TRIGRAMS: Record<string, { symbol: string; nameCn: string; natureTh: string }> = {

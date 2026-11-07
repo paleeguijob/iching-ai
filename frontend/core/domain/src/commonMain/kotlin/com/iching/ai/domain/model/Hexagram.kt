@@ -20,6 +20,8 @@ data class Hexagram(
     val allLines: String? = null,
     /** Pre-written reflection for the day this hexagram is the daily one (≤ 120 chars, also the push body). */
     val dailyMessage: String = "",
+    /** Pre-written new-year reading for the Chinese New Year campaign. */
+    val yearMessage: YearMessage? = null,
 ) {
     val lowerTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(0, 3))
     val upperTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(3, 6))
@@ -30,6 +32,15 @@ data class Hexagram(
     /** Meaning part of the Thai name, e.g. "ความตีบตัน, ถูกล้อม". */
     val meaningTh: String get() = nameTh.substringAfter("— ", nameTh).trim()
 }
+
+/** Year-ahead reflection for one hexagram (overview ≤ 200, work/love/money ≤ 80, blessing ≤ 60 characters). */
+data class YearMessage(
+    val overview: String,
+    val work: String,
+    val love: String,
+    val money: String,
+    val blessing: String,
+)
 
 /** Result of six tosses resolved against the scripture. */
 data class CastResult(
