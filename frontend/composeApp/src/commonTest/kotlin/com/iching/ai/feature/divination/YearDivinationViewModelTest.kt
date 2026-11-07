@@ -133,7 +133,7 @@ class YearDivinationViewModelTest {
             api = api,
             session = session,
             observeSettings = ObserveSettingsUseCase(NoSettings),
-            year = true,
+            yearOf = 2027,
         )
     }
 
@@ -195,6 +195,17 @@ class YearDivinationViewModelTest {
     }
 
     @Test
+    fun yearReadingKeepsItsYearWhenTheStatusHasNoCampaign() {
+        api.events = listOf(DivinationEvent.Cast("r1", YEAR_LINES, emptyList()), DivinationEvent.Done(null))
+        viewModel(status().copy(campaign = null))
+        scheduler.runCurrent()
+        advance(DivinationViewModel.REVEAL_MILLIS)
+
+        assertEquals(2027, journal.rows.values.single().yearOf)
+        assertEquals("cny-2027", analytics.events.single { it.first == "year_ai_done" }.second["campaign_id"])
+    }
+
+    @Test
     fun noYearHexagramShowsTheScriptureOnlyNoticeAndSavesNothing() {
         api.events = listOf(DivinationEvent.Failed(FailureReason.NO_YEAR_HEXAGRAM))
         val vm = viewModel()
@@ -209,7 +220,7 @@ class YearDivinationViewModelTest {
     }
 
     @Test
-    fun logsYearAiTapAndYearAiDoneWithTheCharge() {
+    fun logsYearAiDoneWithTheCharge() {
         api.events = listOf(
             DivinationEvent.Cast("r1", YEAR_LINES, emptyList()),
             DivinationEvent.Delta("ถ้อยคำ"),
@@ -217,10 +228,6 @@ class YearDivinationViewModelTest {
         )
         viewModel(status(includedLeft = 0, readingsLeft = 1, adCreditsLeft = 1))
         scheduler.runCurrent()
-        assertEquals(
-            listOf("year_ai_tap" to mapOf("campaign_id" to "cny-2027")),
-            analytics.events.filter { it.first == "year_ai_tap" },
-        )
         assertTrue(analytics.events.none { it.first == "year_ai_done" }, "not done before the reveal ends")
 
         advance(DivinationViewModel.REVEAL_MILLIS)

@@ -221,7 +221,13 @@ private fun MainNavigation() {
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onShare = { sharing = true },
-                        onAskHermit = { nav.navigate(YearAskRoute) },
+                        onAskHermit = {
+                            val year = (yearState as? YearUi.Result)?.year
+                            if (year != null) {
+                                session.log("year_ai_tap", mapOf("campaign_id" to (session.status.value.campaign?.id ?: "cny-$year")))
+                                nav.navigate(YearAskRoute(year))
+                            }
+                        },
                     )
                     val result = yearState as? YearUi.Result
                     if (sharing && result != null) {
@@ -242,12 +248,13 @@ private fun MainNavigation() {
                     }
                 }
                 screen<YearAskRoute> { entry ->
+                    val year = entry.toRoute<YearAskRoute>().year
                     AskYearScreen(
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onCast = { question ->
                             // Replaces the question screen: back from the reading leads to the year hexagram.
-                            nav.navigate(DivinationRoute(question, QuestionCategory.NEWYEAR.wire, year = true)) {
+                            nav.navigate(DivinationRoute(question, QuestionCategory.NEWYEAR.wire, yearOf = year)) {
                                 popUpTo<YearAskRoute> { inclusive = true }
                             }
                         },
@@ -258,7 +265,7 @@ private fun MainNavigation() {
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
                         viewModel = koinViewModel {
-                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId, route.year).toTypedArray())
+                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId, route.yearOf).toTypedArray())
                         },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },

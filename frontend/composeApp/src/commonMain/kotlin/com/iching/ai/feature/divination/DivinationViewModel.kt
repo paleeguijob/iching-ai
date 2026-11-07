@@ -142,8 +142,11 @@ class DivinationViewModel(
     observeSettings: ObserveSettingsUseCase,
     resumeReadingId: Long? = null,
     getReading: GetReadingUseCase? = null,
-    private val year: Boolean = false,
+    /** The year of the year hexagram to read; null for an ordinary reading. */
+    private val yearOf: Int? = null,
 ) : ViewModel() {
+
+    private val year = yearOf != null
 
     private val _state = MutableStateFlow(
         DivinationUiState(question = question.trim(), category = if (year) QuestionCategory.NEWYEAR else category, year = year),
@@ -159,9 +162,6 @@ class DivinationViewModel(
     private var outcome: StreamOutcome? = null
     private var upsellShown = false
     private var upsellPremiumTapped = false
-
-    /** The year of a year reading, saved with it so the journal can mark it. */
-    private var yearOf: Int? = null
 
     /** What the current year request is paid with, as the server will charge it: premium, free, ad or coin. */
     private var yearCharge = ""
@@ -222,10 +222,7 @@ class DivinationViewModel(
 
     /** No toss: the server answers with the year hexagram's cast, which is revealed straight away. */
     private fun startYear() {
-        val campaign = session.status.value.campaign
-        yearOf = campaign?.year
         session.log("reading_started", mapOf("category" to QuestionCategory.NEWYEAR.wire))
-        session.log("year_ai_tap", mapOf("campaign_id" to campaign?.id.orEmpty()))
         yearCharge = chargeFor(session.status.value)
         val question = _state.value.question
         requestJob = viewModelScope.launch { consume(api.divineYear(question), fromCast = true) }
@@ -418,7 +415,7 @@ class DivinationViewModel(
         }
         session.log("reading_completed", mapOf("source" to (_state.value.source?.name ?: "")))
         if (year && result == StreamOutcome.Done) {
-            session.log("year_ai_done", mapOf("campaign_id" to session.status.value.campaign?.id.orEmpty(), "charge" to yearCharge))
+            session.log("year_ai_done", mapOf("campaign_id" to (session.status.value.campaign?.id ?: "cny-$yearOf"), "charge" to yearCharge))
         }
         persist()
     }
