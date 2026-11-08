@@ -83,4 +83,16 @@ class GuidanceQuotaTest {
         GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null),
         guidanceQuota(premium.copy(includedLeft = 10, aiEnabled = false)),
     )
+
+    @Test
+    fun quotaLineAppendsThaiCount() = assertEquals(
+        "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก ๒ ครั้ง",
+        quotaLine(GuidanceQuota("ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก", 2, "x")),
+    )
+
+    @Test
+    fun quotaLineWithoutCountIsLabel() = assertEquals(
+        "นักพรตปลีกวิเวกชั่วคราว",
+        quotaLine(GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว", null, null)),
+    )
 }
