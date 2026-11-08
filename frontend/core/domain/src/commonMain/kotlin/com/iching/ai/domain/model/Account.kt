@@ -1,5 +1,7 @@
 package com.iching.ai.domain.model
 
+import com.iching.ai.domain.siamsi.SiamSiSetRef
+
 enum class SignInProvider { ANONYMOUS, APPLE, GOOGLE }
 
 data class Account(
@@ -17,6 +19,13 @@ fun campaignIdFor(campaign: CampaignStatus?, year: Int): String = campaign?.id ?
 /** The hexagram cast once per account for the year; [lines] hold values 6-9, [coins] the three coin values of each toss. */
 data class YearHexagram(val year: Int, val primaryId: Int, val lines: List<Int>, val coins: List<List<Int>>)
 
+/** Siam Si as the server offers it; off until the server says otherwise. [drawsPerDay] already reflects Premium. */
+data class SiamSiStatus(
+    val enabled: Boolean = false,
+    val sets: List<SiamSiSetRef> = emptyList(),
+    val drawsPerDay: Int = 1,
+)
+
 /** Quota and entitlements as reported by the server (GET /status). */
 data class AccountStatus(
     val premium: Boolean,
@@ -33,6 +42,7 @@ data class AccountStatus(
     val aiEnabled: Boolean,
     /** The Chinese New Year campaign; null when the server runs none. */
     val campaign: CampaignStatus? = null,
+    val siamsi: SiamSiStatus = SiamSiStatus(),
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)

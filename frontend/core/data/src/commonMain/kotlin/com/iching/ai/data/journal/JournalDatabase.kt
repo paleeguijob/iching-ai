@@ -19,6 +19,7 @@ import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
+import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.repository.JournalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -47,6 +48,9 @@ data class ReadingEntity(
     // ---- added in version 5 ----
     /** The year of a new-year reading. */
     val yearOf: Int? = null,
+    // ---- added in version 6 ----
+    val siamsiSet: String? = null,
+    val siamsiStick: Int? = null,
 )
 
 /** A server reading the seeker deleted here that the server has not confirmed deleting yet. */
@@ -102,7 +106,7 @@ interface ReadingDao {
     suspend fun clearUnsyncedOutcomes()
 }
 
-@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class, UnsyncedOutcomeEntity::class], version = 5)
+@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class, UnsyncedOutcomeEntity::class], version = 6)
 @ConstructedBy(JournalDatabaseConstructor::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun readingDao(): ReadingDao
@@ -140,6 +144,14 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/** v5 → v6: the slip of a Siam Si reading. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE readings ADD COLUMN siamsiSet TEXT")
+        connection.execSQL("ALTER TABLE readings ADD COLUMN siamsiStick INTEGER")
+    }
+}
+
 // Room generates the actual implementations for each platform.
 @Suppress("KotlinNoActualForExpect")
 expect object JournalDatabaseConstructor : RoomDatabaseConstructor<JournalDatabase> {
@@ -170,6 +182,7 @@ internal fun ReadingEntity.toDomain() = Reading(
         .orEmpty()
         .map { FollowUpTurn(it.q, it.a) },
     yearOf = yearOf,
+    siamsi = if (siamsiSet != null && siamsiStick != null) SiamSiPick(siamsiSet, siamsiStick) else null,
 )
 
 internal fun Reading.toEntity() = ReadingEntity(
@@ -187,6 +200,8 @@ internal fun Reading.toEntity() = ReadingEntity(
     outcomeNote = outcomeNote,
     followUpsJson = if (followUps.isEmpty()) null else json.encodeToString(turnsSerializer, followUps.map { TurnJson(it.question, it.answer) }),
     yearOf = yearOf,
+    siamsiSet = siamsi?.setId,
+    siamsiStick = siamsi?.number,
 )
 
 class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {

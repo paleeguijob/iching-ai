@@ -3,6 +3,7 @@ package com.iching.ai.data
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
 import com.iching.ai.data.journal.MIGRATION_4_5
+import com.iching.ai.data.journal.MIGRATION_5_6
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -51,5 +52,17 @@ class JournalMigrationTest {
         assertEquals(5, MIGRATION_4_5.endVersion)
         // Only an added nullable column: no table is dropped or rebuilt, so no reading is lost.
         assertEquals(listOf("ALTER TABLE readings ADD COLUMN yearOf INTEGER"), connection.executed)
+    }
+
+    @Test
+    fun migration5To6AddsSiamSiColumns() {
+        val connection = RecordingConnection()
+        MIGRATION_5_6.migrate(connection)
+        assertEquals(5, MIGRATION_5_6.startVersion)
+        assertEquals(6, MIGRATION_5_6.endVersion)
+        assertEquals(
+            listOf("ALTER TABLE readings ADD COLUMN siamsiSet TEXT", "ALTER TABLE readings ADD COLUMN siamsiStick INTEGER"),
+            connection.executed,
+        )
     }
 }

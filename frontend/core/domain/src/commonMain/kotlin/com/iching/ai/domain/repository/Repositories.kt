@@ -10,6 +10,7 @@ import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.model.YearHexagram
+import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiSetRef
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,9 @@ sealed interface DivinationEvent {
         val coins: List<List<CoinFace>>,
     ) : DivinationEvent
 
+    /** A Siam Si reading was stored on the server under [readingId]. */
+    data class Created(val readingId: String) : DivinationEvent
+
     data class Delta(val text: String) : DivinationEvent
     /** [shareSummary] is the one line for the share card; null when the model didn't write a usable one. */
     data class Done(val status: AccountStatus?, val shareSummary: String? = null) : DivinationEvent
@@ -55,6 +59,8 @@ interface OracleApi {
     /** Interprets an existing cast again (after an ad reward, a purchase or a failed attempt). */
     fun interpretAgain(readingId: String): Flow<DivinationEvent>
     fun followUp(readingId: String, message: String): Flow<DivinationEvent>
+    /** The hermit's interpretation of a Siam Si slip; [readingId] retries an earlier one without a new reading. */
+    fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String? = null): Flow<DivinationEvent>
     suspend fun status(): AccountStatus
     /** This account's hexagram for the year, or null when none was cast yet. */
     suspend fun yearHexagram(): YearHexagram?

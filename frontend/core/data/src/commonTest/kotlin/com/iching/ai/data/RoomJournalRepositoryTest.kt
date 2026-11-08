@@ -3,6 +3,7 @@ package com.iching.ai.data
 import com.iching.ai.data.journal.DeletedReadingEntity
 import com.iching.ai.data.journal.ReadingDao
 import com.iching.ai.data.journal.ReadingEntity
+import com.iching.ai.data.journal.toDomain
 import com.iching.ai.data.journal.RoomJournalRepository
 import com.iching.ai.data.journal.UnsyncedOutcomeEntity
 import com.iching.ai.data.journal.toDomain
@@ -14,6 +15,7 @@ import com.iching.ai.domain.model.Reading
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import com.iching.ai.domain.siamsi.SiamSiPick
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -123,5 +125,24 @@ class RoomJournalRepositoryTest {
         val back = reading.toEntity().toDomain()
         assertEquals(2027, back.yearOf)
         assertEquals(QuestionCategory.NEWYEAR, back.category)
+    }
+
+    @Test
+    fun siamsiReadingKeepsItsSlipThroughSaveAndLoad() = runTest {
+        val dao = FakeDao()
+        val repo = RoomJournalRepository(dao)
+        val slip = Reading(
+            question = "", createdAtMillis = 1, lines = emptyList(), primaryId = 0, relatingId = null,
+            interpretation = "", source = InterpretationSource.SCRIPTURE, siamsi = SiamSiPick("guanyin100", 17),
+        )
+        repo.save(slip)
+        repo.save(serverReading("x"))
+        // The fake DAO keeps rows as written (no generated ids), so read them back through the mapper.
+        val (savedSlip, savedCast) = dao.rows.map { it.toDomain() }
+        assertEquals("guanyin100", dao.rows[0].siamsiSet)
+        assertEquals(17, dao.rows[0].siamsiStick)
+        assertEquals(SiamSiPick("guanyin100", 17), savedSlip.siamsi)
+        assertEquals(emptyList(), savedSlip.lines)
+        assertEquals(null, savedCast.siamsi)
     }
 }

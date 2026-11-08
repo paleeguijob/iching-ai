@@ -2,6 +2,9 @@ package com.iching.ai.data.api
 
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
+import com.iching.ai.domain.model.SiamSiStatus
+import com.iching.ai.domain.siamsi.SiamSiPick
+import com.iching.ai.domain.siamsi.SiamSiSetRef
 import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.FollowUpTurn
@@ -77,14 +80,21 @@ internal data class StatusDto(
     val journalDays: Int? = null,
     val aiEnabled: Boolean = true,
     val campaign: CampaignDto? = null,
+    val siamsi: SiamSiStatusDto? = null,
 ) {
     fun toDomain() = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
         adCreditsLeft = adCreditsLeft, adsWatchableLeft = adsWatchableLeft, readingsLeft = readingsLeft,
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
         campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
+        siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version) }, s.drawsPerDay) } ?: SiamSiStatus(),
     )
 }
+
+@Serializable internal data class SiamSiSetRefDto(val id: String, val version: Int)
+@Serializable internal data class SiamSiStatusDto(val enabled: Boolean = false, val sets: List<SiamSiSetRefDto> = emptyList(), val drawsPerDay: Int = 1)
+@Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
+@Serializable internal data class CreatedDto(val readingId: String)
 
 @Serializable internal data class CampaignDto(val id: String, val year: Int, val active: Boolean, val endsAt: Long)
 
@@ -118,6 +128,7 @@ internal data class ReadingDto(
     val outcomeNote: String? = null,
     val createdAt: Long,
     val yearOf: Int? = null,
+    val siamsi: SiamSiPickDto? = null,
 )
 
 @Serializable internal data class ReadingsDto(val readings: List<ReadingDto>)
@@ -153,6 +164,7 @@ internal fun parseEvent(json: Json, event: String, data: String): DivinationEven
             coins = dto.coins.map { toss -> toss.map(::coinFace) },
         )
     }
+    "reading" -> DivinationEvent.Created(json.decodeFromString(CreatedDto.serializer(), data).readingId)
     "delta" -> DivinationEvent.Delta(json.decodeFromString(DeltaDto.serializer(), data).text)
     "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(), it.shareSummary) }
     "limited" -> json.decodeFromString(LimitedDto.serializer(), data).let {
@@ -184,6 +196,15 @@ class HttpOracleApi(
         stream("/follow-up", buildJsonObject {
             put("readingId", readingId)
             put("message", message)
+        })
+
+    override fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String?): Flow<DivinationEvent> =
+        stream("/siamsi/interpret", buildJsonObject {
+            put("set", pick.setId)
+            put("stick", pick.number)
+            put("question", question)
+            category?.let { put("category", it.wire) }
+            readingId?.let { put("readingId", it) }
         })
 
     override suspend fun status(): AccountStatus =
@@ -240,6 +261,7 @@ class HttpOracleApi(
                 outcomeNote = dto.outcomeNote,
                 followUps = dto.followUps.map { FollowUpTurn(it.q, it.a) },
                 yearOf = dto.yearOf,
+                siamsi = dto.siamsi?.let { SiamSiPick(it.set, it.stick) },
             )
         }
 

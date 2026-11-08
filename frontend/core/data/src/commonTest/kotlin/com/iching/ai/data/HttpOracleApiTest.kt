@@ -21,6 +21,9 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import com.iching.ai.domain.model.SiamSiStatus
+import com.iching.ai.domain.siamsi.SiamSiPick
+import com.iching.ai.domain.siamsi.SiamSiSetRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -310,5 +313,65 @@ class HttpOracleApiTest {
         )
         val merged = api.syncStreak(StreakState())
         assertTrue(AppTheme.CINNABAR_GOLD in merged.unlocked)
+    }
+
+    @Test
+    fun interpretSiamSiSendsTheSlipAndRelaysTheReadingId() = runTest {
+        var sentBody = ""
+        var path = ""
+        val engine = MockEngine { request ->
+            sentBody = (request.body as TextContent).text
+            path = request.url.encodedPath
+            respond(
+                "event: reading\ndata: {\"readingId\":\"r9\"}\n\n" +
+                    "event: delta\ndata: {\"text\":\"เมฆเปิด\"}\n\n" +
+                    "event: done\ndata: {\"model\":\"m\",\"status\":null}\n\n",
+                HttpStatusCode.OK,
+                sse,
+            )
+        }
+        val api = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api")
+        val events = api.interpretSiamSi(SiamSiPick("guanyin100", 17), "งานใหม่", QuestionCategory.WORK).toList()
+
+        assertEquals("/api/siamsi/interpret", path)
+        assertTrue(sentBody.contains("\"set\":\"guanyin100\""))
+        assertTrue(sentBody.contains("\"stick\":17"))
+        assertTrue(sentBody.contains("\"question\":\"งานใหม่\""))
+        assertTrue(sentBody.contains("\"category\":\"work\""))
+        assertTrue(!sentBody.contains("readingId"))
+        assertEquals(DivinationEvent.Created("r9"), events[0])
+        assertEquals(DivinationEvent.Delta("เมฆเปิด"), events[1])
+        assertIs<DivinationEvent.Done>(events[2])
+    }
+
+    @Test
+    fun interpretSiamSiRetriesByReadingId() = runTest {
+        var sentBody = ""
+        val engine = MockEngine { request ->
+            sentBody = (request.body as TextContent).text
+            respond("event: reading\ndata: {\"readingId\":\"r9\"}\n\n", HttpStatusCode.OK, sse)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api")
+            .interpretSiamSi(SiamSiPick("guanyin100", 17), "", null, readingId = "r9").toList()
+        assertTrue(sentBody.contains("\"readingId\":\"r9\""))
+    }
+
+    @Test
+    fun statusReadsSiamSiAndDefaultsToOff() = runTest {
+        val on = apiAnswering(HttpStatusCode.OK, """{"siamsi":{"enabled":true,"sets":[{"id":"guanyin100","version":2}],"drawsPerDay":10}}""").status()
+        assertEquals(SiamSiStatus(true, listOf(SiamSiSetRef("guanyin100", 2)), 10), on.siamsi)
+        val old = apiAnswering(HttpStatusCode.OK, """{"premium":false}""").status()
+        assertEquals(SiamSiStatus(), old.siamsi)
+        assertEquals(false, old.siamsi.enabled)
+    }
+
+    @Test
+    fun readingsCarryTheSiamSiSlip() = runTest {
+        val list = apiAnswering(HttpStatusCode.OK, 
+            """{"readings":[{"id":"r9","question":"q","lines":[],"primaryId":0,"aiText":"t","createdAt":5,"siamsi":{"set":"jiazi60","stick":3}},
+            {"id":"r1","lines":[7,7,7,7,7,7],"primaryId":1,"createdAt":4,"siamsi":null}]}""").readings()
+        assertEquals(SiamSiPick("jiazi60", 3), list[0].siamsi)
+        assertEquals(emptyList(), list[0].lines)
+        assertEquals(null, list[1].siamsi)
     }
 }

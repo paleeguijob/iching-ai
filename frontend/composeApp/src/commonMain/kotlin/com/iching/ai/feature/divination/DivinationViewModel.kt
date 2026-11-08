@@ -352,6 +352,8 @@ class DivinationViewModel(
         var sawCast = !fromCast
         events.collect { event ->
             when (event) {
+                // Only the Siam Si endpoint sends this; an I Ching reading learns its id from Cast.
+                is DivinationEvent.Created -> Unit
                 is DivinationEvent.Cast -> {
                     sawCast = true
                     if (castSource.complete(CastSource.Server(event)) && fromCast) saveCast(event)
@@ -517,6 +519,7 @@ class DivinationViewModel(
             }
             api.followUp(id, text).collect { event ->
                 when (event) {
+                    is DivinationEvent.Created -> Unit
                     is DivinationEvent.Delta -> {
                         answer.append(event.text)
                         setAnswer(answer.toString(), true)

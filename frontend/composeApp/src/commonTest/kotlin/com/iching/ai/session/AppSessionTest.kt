@@ -31,6 +31,8 @@ import com.iching.ai.platform.ResultCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import com.iching.ai.domain.siamsi.SiamSiPick
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -137,6 +139,13 @@ internal class FakeApi : OracleApi {
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
+    /** Events the next Siam Si interpretation streams, and the requests made. */
+    var siamsiEvents: List<DivinationEvent> = emptyList()
+    val siamsiCalls = mutableListOf<Pair<SiamSiPick, String?>>()
+    override fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String?): Flow<DivinationEvent> {
+        siamsiCalls += pick to readingId
+        return siamsiEvents.asFlow()
+    }
     var yearHexagramNow: YearHexagram? = null
     var yearFailure: FailureReason? = null
     /** What POST /year-hexagram answers; falls back to [yearHexagramNow]. */

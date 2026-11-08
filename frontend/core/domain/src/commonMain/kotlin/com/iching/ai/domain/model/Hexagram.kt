@@ -1,6 +1,7 @@
 package com.iching.ai.domain.model
 
 import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.siamsi.SiamSiUsage
 
 /**
@@ -82,6 +83,8 @@ data class Reading(
     val followUps: List<FollowUpTurn> = emptyList(),
     /** The year of a new-year reading; null for every other reading. */
     val yearOf: Int? = null,
+    /** The slip of a Siam Si reading, which has no cast: [lines] is empty and [primaryId] 0. */
+    val siamsi: SiamSiPick? = null,
 ) {
     val changingPositions: List<Int>
         get() = lines.mapIndexedNotNull { index, line -> if (line.isChanging) index + 1 else null }
