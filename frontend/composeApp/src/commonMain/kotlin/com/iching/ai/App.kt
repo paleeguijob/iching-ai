@@ -1,5 +1,11 @@
 package com.iching.ai
 
+import com.iching.ai.ui.theme.ZenSpacing
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -331,40 +337,38 @@ private fun MainNavigation() {
     }
 }
 
-/** Floating pill tab bar, like a strip of rice paper. */
+/** Flat full-width tab bar; the open tab is inked and marked with a small cinnabar dot. */
 @Composable
 private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit) {
+    val edge = ZenColors.current.outlineVariant
     Row(
         Modifier
+            .fillMaxWidth()
+            .background(ZenColors.PaperMid.copy(alpha = 0.92f))
+            .drawBehind { drawLine(edge, Offset.Zero, Offset(size.width, 0f), strokeWidth = 1.dp.toPx()) }
             .navigationBarsPadding()
-            .padding(bottom = 14.dp)
-            .shadow(16.dp, RoundedCornerShape(32.dp), ambientColor = ZenColors.InkBlack, spotColor = ZenColors.InkBlack)
-            .clip(RoundedCornerShape(32.dp))
-            .background(ZenColors.PaperCream)
-            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.06f), RoundedCornerShape(32.dp))
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .heightIn(min = ZenSpacing.tabBar)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         TABS.forEach { tab ->
             val isSelected = tab == selected
+            val tint = if (isSelected) ZenColors.InkBlack else ZenColors.InkFaint
             Column(
                 Modifier
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(if (isSelected) ZenColors.InkBlack else ZenColors.PaperCream)
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable { onSelect(tab) }
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    tab.icon,
-                    contentDescription = tab.label,
-                    tint = if (isSelected) ZenColors.PaperCream else ZenColors.InkSoft,
-                    modifier = Modifier.size(22.dp),
-                )
-                Text(
-                    tab.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) ZenColors.PaperCream else ZenColors.InkSoft,
+                Icon(tab.icon, contentDescription = tab.label, tint = tint, modifier = Modifier.size(20.dp))
+                Text(tab.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                Box(
+                    Modifier
+                        .padding(top = 3.dp)
+                        .size(4.dp)
+                        .background(if (isSelected) ZenColors.CinnabarRed else Color.Transparent, RoundedCornerShape(1.dp)),
                 )
             }
         }

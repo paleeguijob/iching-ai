@@ -10,4 +10,6 @@ object ZenSpacing {
     val lg = 20.dp
     val xl = 28.dp
     val screen = 20.dp
+    /** Tab bar height above the navigation-bar inset; tab screens pad their content by this. */
+    val tabBar = 60.dp
 }
