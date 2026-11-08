@@ -6,14 +6,14 @@ export type SafetyVerdict =
   | { kind: "ok"; sensitive: boolean }
   | { kind: "crisis"; topic: "self_harm" | "medical_emergency"; message: string };
 
-const SELF_HARM = [
+export const SELF_HARM = [
   "ฆ่าตัวตาย", "อยากตาย", "อยากหายไปจากโลก", "ไม่อยากมีชีวิต", "ไม่อยากอยู่แล้ว", "ไม่อยากตื่น",
   "จบชีวิต", "ปลิดชีพ", "ทำร้ายตัวเอง", "ทำร้ายตนเอง", "กรีดข้อมือ", "กรีดแขน", "กินยาตาย",
   "กินยาฆ่าตัว", "ผูกคอ", "โดดตึก", "กระโดดตึก", "โดดสะพาน", "ตายไปซะ", "อยู่ไปก็ไร้ค่า",
   "suicide", "killmyself", "endmylife", "selfharm", "wanttodie", "cutmyself",
 ];
 
-const MEDICAL_EMERGENCY = [
+export const MEDICAL_EMERGENCY = [
   "เจ็บหน้าอก", "แน่นหน้าอก", "หายใจไม่ออก", "หมดสติ", "ชักเกร็ง", "เลือดออกไม่หยุด",
   "กินยาเกินขนาด", "ยาเกินขนาด", "แพ้ยารุนแรง", "ปากเบี้ยว", "แขนขาอ่อนแรง", "โดนงูกัด",
   "overdose", "heartattack", "stroke", "cantbreathe",

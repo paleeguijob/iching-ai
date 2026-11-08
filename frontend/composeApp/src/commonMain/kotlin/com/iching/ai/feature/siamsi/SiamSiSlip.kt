@@ -1,5 +1,8 @@
 package com.iching.ai.feature.siamsi
 
+import com.iching.ai.domain.model.InterpretationSource
+import com.iching.ai.feature.reading.AiContentLabel
+import com.iching.ai.feature.divination.ReportDialog
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +71,7 @@ fun SiamSiSlipContent(
     onSendFollowUp: ((String) -> Unit)?,
     onOpenPaywall: () -> Unit,
     animateInterpretation: Boolean = true,
+    onReport: ((String) -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(ZenSpacing.md)) {
         if (question.isNotBlank()) {
@@ -89,7 +93,7 @@ fun SiamSiSlipContent(
             )
         }
         SlipCard(set, stick)
-        InterpretCard(interpret, onInterpret, animateInterpretation)
+        InterpretCard(interpret, onInterpret, animateInterpretation, onReport)
         if (interpret.done && onSendFollowUp != null) {
             FollowUpSection(
                 state = DivinationUiState(question = question, status = status, followUps = interpret.followUps, followUpBusy = interpret.followUpBusy),
@@ -195,8 +199,15 @@ private fun LevelBadge(stick: SiamSiStick) {
 }
 
 @Composable
-private fun InterpretCard(ui: InterpretUi, onInterpret: (() -> Unit)?, animate: Boolean) {
+private fun InterpretCard(ui: InterpretUi, onInterpret: (() -> Unit)?, animate: Boolean, onReport: ((String) -> Unit)?) {
     val uri = LocalUriHandler.current
+    var reporting by rememberSaveable { mutableStateOf(false) }
+    if (reporting && onReport != null) {
+        ReportDialog(onDismiss = { reporting = false }, onSubmit = {
+            reporting = false
+            onReport(it)
+        })
+    }
     when {
         ui.safety != null -> ZenCard {
             Text(ui.safety, style = MaterialTheme.typography.bodyLarge, color = ZenColors.InkBlack)
@@ -223,6 +234,14 @@ private fun InterpretCard(ui: InterpretUi, onInterpret: (() -> Unit)?, animate: 
                 Text("นักพรตกำลังพิจารณาใบของท่าน...", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkFaint)
             } else {
                 TypewriterText(text = ui.text, animate = animate, style = MaterialTheme.typography.bodyLarge)
+            }
+            if (ui.done) {
+                AiContentLabel(
+                    source = InterpretationSource.AI,
+                    onReport = onReport?.let { { reporting = true } },
+                    reported = ui.reported,
+                    label = SIAMSI_AI_LABEL,
+                )
             }
         }
         onInterpret != null -> ZenCard {
@@ -258,3 +277,6 @@ private fun TopicsCard(stick: SiamSiStick, category: QuestionCategory?) {
         }
     }
 }
+
+/** The AI label under an interpretation; the I Ching wording names the scripture, which a slip is not. */
+const val SIAMSI_AI_LABEL = "คำแปลสร้างโดย AI จากใบเซียมซี · เซียมซีเพื่อการไตร่ตรองและความบันเทิง โปรดใช้วิจารณญาณ ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"

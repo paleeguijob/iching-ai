@@ -56,14 +56,22 @@ class SiamSiDrawGate(
     private val lastAdDismissed = MutableStateFlow(false)
     private val mutex = Mutex()
 
-    val ui: Flow<DrawGateUi> = combine(settings.settings, status, online, lastAdUnavailable, lastAdDismissed) { s, st, on, unavailable, dismissed ->
-        val day = today()
-        val usage = s.siamsiUsage.on(day)
-        drawGateUi(st.premium, drawsLeft(usage, day, st.siamsi.drawsPerDay), usage.pendingDraw, unavailable || !on, dismissed)
+    /** Today, re-read when Home comes back ([refreshDay]): a process kept alive past midnight sees the new day. */
+    private val day = MutableStateFlow(today())
+    private val lastAd = combine(lastAdUnavailable, lastAdDismissed) { unavailable, dismissed -> unavailable to dismissed }
+
+    val ui: Flow<DrawGateUi> = combine(settings.settings, status, online, lastAd, day) { s, st, on, (unavailable, dismissed), d ->
+        val usage = s.siamsiUsage.on(d)
+        drawGateUi(st.premium, drawsLeft(usage, d, st.siamsi.drawsPerDay), usage.pendingDraw, unavailable || !on, dismissed)
+    }
+
+    fun refreshDay() {
+        day.value = today()
     }
 
     suspend fun requestDraw(): DrawOutcome = mutex.withLock {
-        val day = today()
+        refreshDay()
+        val day = day.value
         val usage = settings.settings.first().siamsiUsage.on(day)
         if (usage.pendingDraw) return DrawOutcome.Ready
         val st = status.value

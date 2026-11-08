@@ -261,6 +261,11 @@ export function createApi(deps: Deps) {
       return;
     }
 
+    // Marked as interrupted before the model starts: a retry that arrives while this stream still runs
+    // (the drop not noticed yet) resumes on this charge instead of paying again. Cleared on success or refund.
+    const inFlight = { charge: decision.charge, resumes: resuming ? resuming.resumes + 1 : 0 };
+    await deps.store.updateReading(uid, reading.id, { interrupted: inFlight });
+
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -303,16 +308,13 @@ export function createApi(deps: Deps) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
       if (sse.isClosed && text.trim().length > 0) {
-        await deps.store.updateReading(uid, reading.id, {
-          interrupted: { charge: decision.charge, resumes: resuming ? resuming.resumes + 1 : 0 },
-        });
-        return;
+        return; // [inFlight] stays: the next retry is free.
       }
       await deps.store.quotaTx(uid, deviceHash, (user, device) => {
         const back = refundReading(user, device, decision.charge);
         return { user: back.user, device: back.device, result: null };
       });
-      if (resuming) await deps.store.updateReading(uid, reading.id, { interrupted: null });
+      await deps.store.updateReading(uid, reading.id, { interrupted: null });
       const code = e instanceof GeminiError ? e.code : "internal";
       deps.log.warn("reading_failed", { uid, code, detail: (e as Error).message });
       sse.send("error", { code, refunded: true });

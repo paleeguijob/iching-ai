@@ -41,6 +41,7 @@ internal data class SiamSiStickDto(
 internal data class SiamSiSetDto(
     val id: String,
     val name: String,
+    val version: Int = 1,
     val count: Int,
     val source: SiamSiSourceDto,
     val sticks: List<SiamSiStickDto>,
@@ -58,7 +59,7 @@ internal object SiamSiParser {
         check(numbers.all { it in 1..dto.count }) { "${dto.id}: stick numbers must be 1..${dto.count}" }
         if (strict) check(numbers.size == dto.count) { "${dto.id}: needs ${dto.count} sticks, found ${numbers.size}" }
         val sticks = dto.sticks.map { it.toDomain(dto.id) }.sortedBy { it.number }
-        return SiamSiSet(dto.id, dto.name, dto.count, dto.source.title, dto.source.note, sticks)
+        return SiamSiSet(dto.id, dto.name, dto.count, dto.source.title, dto.source.note, sticks, dto.version)
     }
 
     private fun SiamSiStickDto.toDomain(setId: String): SiamSiStick {

@@ -175,7 +175,10 @@ internal class FakeApi : OracleApi {
     /** What POST /ad-reward answers: granted, and the status after it. */
     var adGrant: Pair<Boolean, AccountStatus> = false to AccountStatus.UNKNOWN_FREE
     override suspend fun claimAdReward() = adGrant
-    override suspend fun report(readingId: String, reason: String, note: String) = Unit
+    val reports = mutableListOf<Pair<String, String>>()
+    override suspend fun report(readingId: String, reason: String, note: String) {
+        reports += readingId to reason
+    }
     var saveOutcomeFailure: FailureReason? = null
     val outcomesSaved = mutableListOf<String>()
     override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) {

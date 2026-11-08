@@ -1,5 +1,6 @@
 package com.iching.ai.feature.journal
 
+import com.iching.ai.navigation.SiamSiRoute
 import com.iching.ai.ui.components.ZenCardRow
 import com.iching.ai.ui.theme.tabContentBottomPadding
 import com.iching.ai.ui.theme.LocalTabBarHeight
@@ -272,6 +273,7 @@ fun JournalEntryScreen(
     onBack: () -> Unit,
     onOpenHexagram: (Int) -> Unit,
     onAskHermit: (Reading) -> Unit,
+    onInterpretSiamSi: (SiamSiRoute) -> Unit,
 ) {
     val entry by viewModel.entry.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
@@ -289,7 +291,7 @@ fun JournalEntryScreen(
             val e = entry ?: return@Column
             val slip = e.siamsi
             if (slip != null) {
-                SiamSiJournalDetail(e.reading, slip, viewModel::setOutcome, viewModel::logEvent)
+                SiamSiJournalDetail(e.reading, slip, viewModel::setOutcome, viewModel::logEvent, onInterpretSiamSi)
                 return@Column
             }
             val primary = e.primary ?: return@Column
@@ -364,8 +366,10 @@ private fun SiamSiJournalDetail(
     slip: SiamSiJournal,
     onOutcome: (Outcome?, String?) -> Unit,
     log: (String, Map<String, String>) -> Unit,
+    onInterpret: (SiamSiRoute) -> Unit,
 ) {
     var sharing by remember { mutableStateOf(false) }
+    val interpretRoute = siamsiInterpretRoute(reading)
     val set = slip.set
     val stick = slip.stick
     Column(
@@ -391,7 +395,7 @@ private fun SiamSiJournalDetail(
                 category = reading.category,
                 interpret = InterpretUi(text = reading.interpretation),
                 status = AccountStatus.UNKNOWN_FREE,
-                onInterpret = null,
+                onInterpret = interpretRoute?.let { route -> { onInterpret(route) } },
                 onSendFollowUp = null,
                 onOpenPaywall = {},
                 animateInterpretation = false,

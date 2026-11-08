@@ -28,7 +28,8 @@ import {
   status,
 } from "../src/core/quota";
 import { campaignActive, dueCampaignPush, parseCampaign } from "../src/core/campaign";
-import { checkSafety } from "../src/core/safety";
+import { readFileSync } from "node:fs";
+import { checkSafety, MEDICAL_EMERGENCY, MEDICAL_MESSAGE, SELF_HARM, SELF_HARM_MESSAGE } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
 
@@ -200,6 +201,19 @@ describe("prompt", () => {
 });
 
 describe("safety", () => {
+  it("the app's copy of the crisis lists and replies matches this one", () => {
+    const kt = readFileSync(
+      resolve(__dirname, "../../../frontend/core/domain/src/commonMain/kotlin/com/iching/ai/domain/safety/Safety.kt"),
+      "utf8",
+    );
+    const list = (name: string) => [...kt.match(new RegExp(`val ${name} = listOf\\(([\\s\\S]*?)\\n\\)`))![1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+    const message = (name: string) => kt.match(new RegExp(`const val ${name} = """([\\s\\S]*?)"""`))![1];
+    assert.deepEqual(list("SELF_HARM"), SELF_HARM);
+    assert.deepEqual(list("MEDICAL_EMERGENCY"), MEDICAL_EMERGENCY);
+    assert.equal(message("SELF_HARM_MESSAGE"), SELF_HARM_MESSAGE);
+    assert.equal(message("MEDICAL_MESSAGE"), MEDICAL_MESSAGE);
+  });
+
   it("catches self-harm phrases even with spaces", () => {
     const v = checkSafety("ช่วงนี้ อยาก ตาย มาก");
     assert.equal(v.kind, "crisis");

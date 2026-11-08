@@ -121,14 +121,16 @@ class SiamSiViewModelTest {
         vararg random: Int,
         status: AccountStatus? = AccountStatus.UNKNOWN_FREE.copy(readingsLeft = 1, includedLeft = 1),
         usage: SiamSiUsage = SiamSiUsage(today, used = 1, pendingDraw = true),
+        route: SiamSiRoute = SiamSiRoute("guanyin100", "งานใหม่", QuestionCategory.WORK.wire),
+        keepSettings: Boolean = false,
     ): SiamSiViewModel {
         api.statusNow = status
-        settings = SlipSettings(AppSettings(siamsiUsage = usage))
+        if (!keepSettings) settings = SlipSettings(AppSettings(siamsiUsage = usage))
         val auth = FakeAuth()
         val session = AppSession(NativeBridges(auth, FakePurchases(), ads, LoggedAnalytics(), NoNotifications), FirebaseApiSession(auth), api, journal, NoSettings, scope)
         session.start()
         val vm = SiamSiViewModel(
-            route = SiamSiRoute("guanyin100", "งานใหม่", QuestionCategory.WORK.wire),
+            route = route,
             repository = OneSet,
             api = api,
             session = session,
@@ -281,5 +283,57 @@ class SiamSiViewModelTest {
         assertEquals("r1", api.siamsiCalls.last().second)
         assertNull(vm.interpret.value.message)
         assertTrue(vm.interpret.value.text.isNotEmpty())
+    }
+
+    @Test
+    fun aCrisisQuestionShowsTheHotlinesBeforeAnyShake() {
+        val vm = viewModel(usage = SiamSiUsage(today), route = SiamSiRoute("guanyin100", "ไม่อยากมีชีวิตอยู่แล้ว"))
+        assertEquals(SiamSiStage.Safety(com.iching.ai.domain.safety.SELF_HARM_MESSAGE), vm.stage.value)
+        vm.onShaken()
+        scheduler.advanceUntilIdle()
+        assertIs<SiamSiStage.Safety>(vm.stage.value)
+    }
+
+    @Test
+    fun twoScreensOnOnePaidDrawGiveOnlyOneSlip() {
+        val first = viewModel(1, SAK)
+        val second = viewModel(2, SAK, keepSettings = true)
+        first.reachSlip()
+        second.onShaken()
+        scheduler.advanceUntilIdle()
+        second.onTossPua()
+        scheduler.advanceUntilIdle()
+        assertEquals(SiamSiStage.Unpaid, second.stage.value)
+        assertEquals(1, journal.saves)
+    }
+
+    @Test
+    fun aSlipFromTheJournalOpensReadyToInterpretOnItsServerReading() {
+        journal.rows[7L] = Reading(
+            id = 7L, question = "งานใหม่", createdAtMillis = 1L, lines = emptyList(), primaryId = 0, relatingId = null,
+            interpretation = "", source = InterpretationSource.SCRIPTURE, category = QuestionCategory.WORK,
+            serverId = "r9", siamsi = SiamSiPick("guanyin100", 2),
+        )
+        val vm = viewModel(usage = SiamSiUsage(today), route = SiamSiRoute("guanyin100", "งานใหม่", QuestionCategory.WORK.wire, journalId = 7L))
+        assertEquals(SiamSiStage.Slip(stick(2), autoConfirmed = false), vm.stage.value)
+        api.siamsiEvents = listOf(DivinationEvent.Delta("ใบนี้"), DivinationEvent.Done(null))
+        vm.onInterpret()
+        scheduler.advanceUntilIdle()
+        assertEquals(SiamSiPick("guanyin100", 2) to "r9", api.siamsiCalls.single())
+        assertEquals("ใบนี้", journal.rows.getValue(7L).interpretation)
+        assertEquals(1, journal.saves)
+    }
+
+    @Test
+    fun anInterpretationCanBeReportedOnce() {
+        val vm = viewModel(1, SAK)
+        vm.reachSlip()
+        api.siamsiEvents = listOf(DivinationEvent.Created("r1"), DivinationEvent.Delta("ใบนี้"), DivinationEvent.Done(null))
+        vm.onInterpret()
+        scheduler.advanceUntilIdle()
+        vm.onReport("harmful")
+        scheduler.advanceUntilIdle()
+        assertEquals(listOf("r1" to "harmful"), api.reports)
+        assertTrue(vm.interpret.value.reported)
     }
 }

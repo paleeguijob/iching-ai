@@ -397,3 +397,8 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 3. ☐ เมื่อแอป 1.4.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
 4. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`)
 
+
+### D. แก้ข้อความใบเซียมซีหลังปล่อยแล้ว (ไม่ต้องออกแอปใหม่)
+1. ☐ แก้ไฟล์ชุดนั้น แล้วเพิ่ม `"version"` ในไฟล์ (เช่น `"version": 2`) วางไว้ที่ `backend/hosting/public/content/siamsi/{id}.json`
+2. ☐ Deploy **ทั้ง hosting และ functions** (`copy-data` คัดลอกไฟล์ให้ server ตอน build ถ้า deploy hosting อย่างเดียว นักพรตจะแปลจากข้อความเก่า)
+3. ☐ เพิ่ม version ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ แอปจะโหลดฉบับใหม่มาแทนฉบับที่ติดมากับแอป

@@ -44,6 +44,8 @@ data class SiamSiSet(
     val sourceTitle: String,
     val sourceNote: String,
     val sticks: List<SiamSiStick>,
+    /** The file's version; the server lists the current one, and a newer one replaces a bundled copy. */
+    val version: Int = 1,
 ) {
     fun stick(number: Int): SiamSiStick = sticks.first { it.number == number }
 }

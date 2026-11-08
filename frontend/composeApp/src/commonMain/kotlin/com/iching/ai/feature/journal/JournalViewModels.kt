@@ -17,6 +17,7 @@ import com.iching.ai.domain.usecase.GetHexagramsUseCase
 import com.iching.ai.domain.usecase.GetReadingUseCase
 import com.iching.ai.domain.usecase.ObserveJournalUseCase
 import com.iching.ai.domain.usecase.SaveOutcomeUseCase
+import com.iching.ai.navigation.SiamSiRoute
 import com.iching.ai.session.AppSession
 import com.iching.ai.ui.formatThaiMonth
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,16 @@ fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<Stri
     }
     val primary = hexagrams[reading.primaryId] ?: return null
     return JournalEntry(reading, primary, reading.relatingId?.let(hexagrams::get))
+}
+
+/**
+ * Where "แปลความหมาย" in the journal leads for a slip not interpreted yet: back to the slip, on its saved row
+ * (and server reading, so a stream cut off by leaving the screen resumes without paying again).
+ */
+fun siamsiInterpretRoute(reading: Reading): SiamSiRoute? {
+    val pick = reading.siamsi ?: return null
+    if (reading.interpretation.isNotBlank()) return null
+    return SiamSiRoute(pick.setId, reading.question, reading.category?.wire, journalId = reading.id)
 }
 
 /** The sets the journal's Siam Si readings come from, loaded once each; missing ones are left out. */

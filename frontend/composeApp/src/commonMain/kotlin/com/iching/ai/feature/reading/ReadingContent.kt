@@ -210,10 +210,10 @@ fun OracleSheet(
 
 /** Required by App Store / Google Play rules for generative AI: label the content and offer a report button. */
 @Composable
-fun AiContentLabel(source: InterpretationSource?, onReport: (() -> Unit)?, reported: Boolean = false) {
+fun AiContentLabel(source: InterpretationSource?, onReport: (() -> Unit)?, reported: Boolean = false, label: String? = null) {
     Column(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            if (source == InterpretationSource.AI) {
+            label ?: if (source == InterpretationSource.AI) {
                 "เนื้อหาคำทำนายสร้างโดย AI อ้างอิงคัมภีร์อี้จิง · เพื่อความบันเทิงและการสะท้อนคิด ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"
             } else {
                 "ตัวบทจากคัมภีร์อี้จิง · เพื่อความบันเทิงและการสะท้อนคิด ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"

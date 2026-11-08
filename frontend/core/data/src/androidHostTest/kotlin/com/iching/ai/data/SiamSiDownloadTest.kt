@@ -9,6 +9,10 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.runBlocking
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
@@ -19,7 +23,7 @@ import kotlin.test.assertNull
 
 class SiamSiDownloadTest {
     private val allTopics = """{"work":"w","money":"m","love":"l","health":"h","travel":"t","lost":"x","dealings":"d"}"""
-    private fun thai28(name: String) = """{"id":"thai28","name":"$name","count":1,"source":{"title":"ตำราไทย","note":"n"},"sticks":[
+    private fun thai28(name: String, version: Int? = null) = """{"id":"thai28","name":"$name",${version?.let { "\"version\":$it," } ?: ""}"count":1,"source":{"title":"ตำราไทย","note":"n"},"sticks":[
         {"number":1,"grade_orig":null,"level":"good","label_orig":null,"poem_orig":["ก","ข","ค","ง"],"poem_th":["ก","ข","ค","ง"],
         "story":"s","summary":"sum","topics":$allTopics,"keywords":[]}]}"""
 
@@ -28,16 +32,25 @@ class SiamSiDownloadTest {
     /** What Hosting answers next: a set file, or null for a broken one. */
     private var serve: String? = thai28("เซียมซีไทย")
 
-    private fun repository(): SiamSiSetRepository {
+    /** Downloads of these ids never answer. */
+    private val hanging = mutableSetOf<String>()
+
+    private fun repository(bundledThai28: String? = null, fetchTimeoutMillis: Long = 15_000): SiamSiSetRepository {
         val engine = MockEngine { request ->
             requests += request.url.toString()
+            if (hanging.any { request.url.encodedPath.endsWith("/$it.json") }) awaitCancellation()
             serve?.let { respond(it, HttpStatusCode.OK) } ?: respondError(HttpStatusCode.InternalServerError)
         }
         return SiamSiSetRepository(
-            bundled = BundledSiamSiRepository(bundled = emptyList(), loadRaw = { error("no bundled sets") }),
+            bundled = if (bundledThai28 == null) {
+                BundledSiamSiRepository(bundled = emptyList(), loadRaw = { error("no bundled sets") })
+            } else {
+                BundledSiamSiRepository(bundled = listOf("thai28"), loadRaw = { bundledThai28 })
+            },
             client = HttpClient(engine),
             baseUrl = "https://example.web.app",
             cache = FileSiamSiCache(dir, FileSystem.SYSTEM),
+            fetchTimeoutMillis = fetchTimeoutMillis,
         )
     }
 
@@ -88,6 +101,49 @@ class SiamSiDownloadTest {
     @Test
     fun anIdThatIsNotAPlainNameIsNeverFetched() {
         assertEquals(emptyList(), runBlocking { repository().available(listOf(SiamSiSetRef("../x", 1))) })
+        assertEquals(emptyList(), requests)
+    }
+
+    @Test
+    fun aBundledSetIsUsedWithoutAFetchWhileTheServerHasNoNewerVersion() {
+        assertEquals(listOf("ฉบับในแอป"), names(repository(bundledThai28 = thai28("ฉบับในแอป")), 1))
+        assertEquals(emptyList(), requests)
+    }
+
+    @Test
+    fun aNewerServerVersionReplacesTheBundledSet() = runBlocking {
+        val repo = repository(bundledThai28 = thai28("ฉบับในแอป"))
+        serve = thai28("ฉบับแก้แล้ว", version = 2)
+        assertEquals(listOf("ฉบับแก้แล้ว"), names(repo, 2))
+        assertEquals("ฉบับแก้แล้ว", repo.set("thai28")?.name)
+        // Offline later, a fresh start still draws from the corrected copy.
+        serve = null
+        assertEquals("ฉบับแก้แล้ว", repository(bundledThai28 = thai28("ฉบับในแอป")).set("thai28")?.name)
+    }
+
+    @Test
+    fun aHangingDownloadGivesUpAndFallsBackToTheBundledSet() {
+        hanging += "thai28"
+        assertEquals(listOf("ฉบับในแอป"), names(repository(bundledThai28 = thai28("ฉบับในแอป"), fetchTimeoutMillis = 50), 2))
+    }
+
+    @Test
+    fun aSlowDownloadDoesNotHoldUpTheJournal() = runBlocking {
+        names(repository(), 1)
+        val repo = repository()
+        hanging += "thai28"
+        val slow = launch { repo.available(listOf(SiamSiSetRef("thai28", 2))) }
+        yield()
+        assertEquals("เซียมซีไทย", withTimeout(2_000) { repo.set("thai28") }?.name)
+        slow.cancel()
+    }
+
+    @Test
+    fun localSetsNeedNoNetwork() = runBlocking {
+        names(repository(), 1)
+        requests.clear()
+        val repo = repository(bundledThai28 = null)
+        assertEquals(listOf("เซียมซีไทย"), repo.local(listOf(SiamSiSetRef("thai28", 2))).map { it.name })
         assertEquals(emptyList(), requests)
     }
 }

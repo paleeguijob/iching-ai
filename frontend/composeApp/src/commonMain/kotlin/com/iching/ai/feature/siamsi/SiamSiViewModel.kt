@@ -15,6 +15,7 @@ import com.iching.ai.domain.repository.LimitReason
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.repository.SettingsRepository
 import com.iching.ai.domain.repository.SiamSiRepository
+import com.iching.ai.domain.safety.crisisMessage
 import com.iching.ai.domain.siamsi.PuaProgress
 import com.iching.ai.domain.siamsi.PuaResult
 import com.iching.ai.domain.siamsi.PuaRound
@@ -65,6 +66,9 @@ sealed interface SiamSiStage {
     /** The last toss did not confirm its stick: shake again. */
     data class Pua(val progress: PuaProgress) : SiamSiStage
     data class Slip(val stick: SiamSiStick, val autoConfirmed: Boolean) : SiamSiStage
+
+    /** The question signals a crisis: the hotlines instead of a draw, with no ad and no quota. */
+    data class Safety(val message: String) : SiamSiStage
 }
 
 data class InterpretUi(
@@ -76,6 +80,8 @@ data class InterpretUi(
     val safety: String? = null,
     val followUps: List<FollowUpUi> = emptyList(),
     val followUpBusy: Boolean = false,
+    /** The interpretation was reported as unsuitable. */
+    val reported: Boolean = false,
 ) {
     val done: Boolean get() = text.isNotEmpty() && !streaming
 }
@@ -120,9 +126,17 @@ class SiamSiViewModel(
 
     init {
         viewModelScope.launch {
+            crisisMessage(route.question)?.let {
+                _stage.value = SiamSiStage.Safety(it)
+                return@launch
+            }
             val loaded = repository.set(route.setId)
-            val paid = settings.settings.first().siamsiUsage.on(today()).pendingDraw
             set = loaded
+            route.journalId?.let { id ->
+                _stage.value = reopen(id, loaded) ?: SiamSiStage.Unpaid
+                return@launch
+            }
+            val paid = settings.settings.first().siamsiUsage.on(today()).pendingDraw
             _stage.value = if (loaded != null && paid) SiamSiStage.Shaking else SiamSiStage.Unpaid
         }
         // Bought or restored on the paywall while the sheet waited: one tap now interprets.
@@ -138,6 +152,15 @@ class SiamSiViewModel(
                 }
             }
         }
+    }
+
+    /** A slip saved earlier, opened from the journal to be interpreted (resuming on its server reading). */
+    private suspend fun reopen(id: Long, loaded: SiamSiSet?): SiamSiStage.Slip? {
+        val reading = journal.get(id) ?: return null
+        val pick = reading.siamsi ?: return null
+        val stick = loaded?.sticks?.firstOrNull { it.number == pick.number } ?: return null
+        saved = reading
+        return SiamSiStage.Slip(stick, autoConfirmed = false)
     }
 
     // ---------- shake and pua ----------
@@ -173,13 +196,23 @@ class SiamSiViewModel(
             return
         }
         val stick = s.stick(confirmed)
-        _stage.value = SiamSiStage.Slip(stick, progress.autoConfirmed)
-        session.log(
-            "siamsi_slip_view",
-            mapOf("set" to s.id, "number" to confirmed.toString(), "level" to stick.level.wire, "auto_confirmed" to progress.autoConfirmed.toString()),
-        )
         viewModelScope.launch {
-            settings.update { it.copy(siamsiUsage = it.siamsiUsage.consumePending()) }
+            // Check and spend the paid draw in one step: a second screen on the same draw gets no slip.
+            var paid = false
+            settings.update {
+                val usage = it.siamsiUsage.on(today())
+                paid = usage.pendingDraw
+                if (paid) it.copy(siamsiUsage = usage.consumePending()) else it
+            }
+            if (!paid) {
+                _stage.value = SiamSiStage.Unpaid
+                return@launch
+            }
+            _stage.value = SiamSiStage.Slip(stick, progress.autoConfirmed)
+            session.log(
+                "siamsi_slip_view",
+                mapOf("set" to s.id, "number" to confirmed.toString(), "level" to stick.level.wire, "auto_confirmed" to progress.autoConfirmed.toString()),
+            )
             persist()
         }
     }
@@ -392,6 +425,19 @@ class SiamSiViewModel(
             persist { r ->
                 r.copy(followUps = _interpret.value.followUps.filter { it.answer.isNotBlank() }.map { FollowUpTurn(it.question, it.answer) })
             }
+        }
+    }
+
+    /** Reports the AI interpretation (store rules for generated content). */
+    fun onReport(reason: String) {
+        val id = saved?.serverId ?: return
+        if (_interpret.value.reported) return
+        viewModelScope.launch {
+            val ok = runCatching { api.report(id, reason, "") }.isSuccess
+            _interpret.update {
+                it.copy(reported = ok, message = if (ok) "ขอบคุณ เราได้รับรายงานแล้วและจะตรวจสอบ" else "ส่งรายงานไม่สำเร็จ โปรดลองใหม่")
+            }
+            if (ok) session.log("report_sent", mapOf("reason" to reason, "placement" to "siamsi"))
         }
     }
 

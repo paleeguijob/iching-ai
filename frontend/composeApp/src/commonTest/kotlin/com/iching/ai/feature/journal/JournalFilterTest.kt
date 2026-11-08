@@ -77,4 +77,12 @@ class JournalFilterTest {
         assertEquals(HEX, journalEntry(iching(1), mapOf(1 to HEX), emptyMap())?.primary)
         assertNull(journalEntry(iching(1), emptyMap(), emptyMap()))
     }
+
+    @Test
+    fun aSlipWithoutAnInterpretationCanBeInterpretedFromTheJournal() {
+        val route = assertNotNull(siamsiInterpretRoute(siamsi(4)))
+        assertEquals(com.iching.ai.navigation.SiamSiRoute("guanyin100", siamsi(4).question, siamsi(4).category?.wire, journalId = 4), route)
+        assertNull(siamsiInterpretRoute(siamsi(4, words = "แปลแล้ว")))
+        assertNull(siamsiInterpretRoute(iching(5)))
+    }
 }

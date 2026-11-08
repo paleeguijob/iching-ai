@@ -323,6 +323,9 @@ private fun MainNavigation() {
                         viewModel = koinViewModel { parametersOf(route.id) },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onInterpretSiamSi = { route ->
+                            nav.navigate(route) { popUpTo<JournalEntryRoute> { inclusive = true } }
+                        },
                         onAskHermit = { reading ->
                             // Replaces the entry: once the hermit has spoken, back leads to the refreshed journal.
                             nav.navigate(DivinationRoute(reading.question, reading.category?.wire, resumeId = reading.id)) {

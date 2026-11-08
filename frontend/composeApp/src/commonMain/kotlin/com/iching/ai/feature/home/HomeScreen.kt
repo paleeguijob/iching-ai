@@ -142,6 +142,7 @@ fun HomeScreen(
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
         viewModel.onResumed()
+        siamsi.onResumed()
         onPauseOrDispose { }
     }
     var question by rememberSaveable { mutableStateOf("") }
@@ -256,7 +257,7 @@ fun HomeScreen(
                 onClick = {
                     when {
                         !isSiamSi -> viewModel.onStart(question.trim(), QuestionCategory.fromWire(category))
-                        drawGate.button == DrawButton.PAYWALL -> onOpenPaywall()
+                        // The paywall tap goes through the gate too: it re-checks the day and the crisis words.
                         else -> siamsi.onSiamSiStart(question, QuestionCategory.fromWire(category))
                     }
                 },

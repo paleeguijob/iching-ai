@@ -65,7 +65,7 @@ class SiamSiHomeViewModelTest {
     private val scheduler = TestCoroutineScheduler()
     private val dispatcher = StandardTestDispatcher(scheduler)
     private val scope = CoroutineScope(dispatcher)
-    private val today = 20_400L
+    private var today = 20_400L
     private val events = mutableListOf<Pair<String, Map<String, String>>>()
     private val navigation = mutableListOf<SiamSiNav>()
     private lateinit var settings: HomeSettings
@@ -84,13 +84,14 @@ class SiamSiHomeViewModelTest {
         stored: AppSettings = AppSettings(),
         online: Boolean = true,
         ad: String = "rewarded",
+        repository: SiamSiRepository = Sets,
     ): SiamSiHomeViewModel {
         settings = HomeSettings(stored)
         val statusFlow = MutableStateFlow(status)
         val onlineFlow = MutableStateFlow(online)
         val log = { name: String, params: Map<String, String> -> events += name to params }
         val gate = SiamSiDrawGate(settings, AnswerAds(ad), statusFlow, onlineFlow, log, { today })
-        val vm = SiamSiHomeViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), Sets, gate, statusFlow, onlineFlow, log)
+        val vm = SiamSiHomeViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), repository, gate, statusFlow, onlineFlow, log)
         listOf(vm.mode, vm.siamsiSets, vm.selectedSet, vm.drawGate, vm.enabled).forEach { it.launchIn(scope) }
         vm.navigation.onEach { navigation += it }.launchIn(scope)
         scheduler.advanceUntilIdle()
@@ -176,5 +177,51 @@ class SiamSiHomeViewModelTest {
         assertEquals(true, settings.flow.value.siamsiLastEnabled)
         viewModel(status = statusWith(enabled = false), stored = AppSettings(siamsiLastEnabled = true))
         assertEquals(false, settings.flow.value.siamsiLastEnabled)
+    }
+
+    @Test
+    fun aCrisisQuestionGoesStraightToTheHotlinesWithoutAnAdOrADraw() {
+        val vm = viewModel()
+        vm.onSiamSiStart("อยากตาย", null)
+        scheduler.advanceUntilIdle()
+        assertEquals(listOf<SiamSiNav>(SiamSiNav.Draw(SiamSiRoute("guanyin100", "อยากตาย", null))), navigation)
+        assertEquals(0, settings.flow.value.siamsiUsage.used)
+        assertEquals(emptyList(), events.filter { it.first == "siamsi_ad_start" })
+    }
+
+    @Test
+    fun aNewDayRefreshesTheQuotaWhenHomeResumes() {
+        val vm = viewModel(stored = AppSettings(siamsiUsage = SiamSiUsage(today, used = 1)))
+        assertEquals(DrawButton.PAYWALL, vm.drawGate.value.button)
+        today += 1
+        vm.onResumed()
+        scheduler.advanceUntilIdle()
+        assertEquals(DrawButton.WATCH_AD, vm.drawGate.value.button)
+    }
+
+    @Test
+    fun aSecondTapBeforeHomeComesBackIsIgnored() {
+        val vm = viewModel(stored = AppSettings(siamsiUsage = SiamSiUsage(today, used = 1, pendingDraw = true)))
+        vm.onSiamSiStart("", null)
+        scheduler.advanceUntilIdle()
+        vm.onSiamSiStart("", null)
+        scheduler.advanceUntilIdle()
+        assertEquals(1, navigation.size)
+        vm.onResumed()
+        vm.onSiamSiStart("", null)
+        scheduler.advanceUntilIdle()
+        assertEquals(2, navigation.size)
+    }
+
+    @Test
+    fun theSetsOnTheDeviceShowWhileADownloadIsStillRunning() {
+        val slow = object : SiamSiRepository {
+            override suspend fun available(refs: List<SiamSiSetRef>): List<SiamSiSet> = kotlinx.coroutines.awaitCancellation()
+            override suspend fun local(refs: List<SiamSiSetRef>) = Sets.local(refs)
+            override suspend fun set(id: String) = Sets.set(id)
+        }
+        val vm = viewModel(repository = slow)
+        assertEquals(true, vm.enabled.value)
+        assertEquals(listOf("guanyin100", "jiazi60"), vm.siamsiSets.value.map { it.id })
     }
 }

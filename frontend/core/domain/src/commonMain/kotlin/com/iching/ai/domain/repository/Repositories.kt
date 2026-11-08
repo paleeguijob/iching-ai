@@ -105,6 +105,9 @@ interface JournalRepository {
 interface SiamSiRepository {
     /** The sets for [refs], in that order, skipping any that cannot be loaded. */
     suspend fun available(refs: List<SiamSiSetRef>): List<SiamSiSet>
+
+    /** The sets for [refs] already on the device (bundled or downloaded before), with no network call. */
+    suspend fun local(refs: List<SiamSiSetRef>): List<SiamSiSet> = available(refs)
     suspend fun set(id: String): SiamSiSet?
 }
 

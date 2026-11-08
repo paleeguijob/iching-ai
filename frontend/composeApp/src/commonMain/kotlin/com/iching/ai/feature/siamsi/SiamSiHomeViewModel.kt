@@ -8,6 +8,7 @@ import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.SiamSiStatus
 import com.iching.ai.domain.repository.SiamSiRepository
+import com.iching.ai.domain.safety.crisisMessage
 import com.iching.ai.domain.siamsi.DivinationMode
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiSetRef
@@ -22,7 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,7 +57,18 @@ class SiamSiHomeViewModel(
     }.distinctUntilChanged()
 
     val siamsiSets: StateFlow<List<SiamSiSet>> = siamsi.map { it.enabled to it.sets }.distinctUntilChanged()
-        .mapLatest { (enabled, refs) -> if (enabled) repository.available(refs) else emptyList() }
+        // The sets already on the device first, so a slow download never hides the switch; then the fresh list.
+        .flatMapLatest { (enabled, refs) ->
+            flow {
+                if (!enabled) {
+                    emit(emptyList())
+                    return@flow
+                }
+                emit(repository.local(refs))
+                emit(repository.available(refs))
+            }
+        }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** The switch shows only when the server allows Siam Si and at least one set is on the device. */
@@ -85,6 +98,12 @@ class SiamSiHomeViewModel(
         }
     }
 
+    /** Home is back on screen: a new day may have begun, and the screen a tap opened has closed. */
+    fun onResumed() {
+        gate.refreshDay()
+        starting = false
+    }
+
     fun onModeSelected(mode: DivinationMode) {
         viewModelScope.launch { updateSettings { it.copy(divinationMode = mode) } }
         log("siamsi_mode_selected", mapOf("mode" to mode.wire))
@@ -95,20 +114,32 @@ class SiamSiHomeViewModel(
         log("siamsi_set_selected", mapOf("set" to id))
     }
 
-    /** Pays for the draw (an ad for free users), then opens the shake; a second tap meanwhile is ignored. */
+    /**
+     * Pays for the draw (an ad for free users), then opens the shake. A crisis question opens the draw
+     * screen at once, where it shows the hotlines: no ad and no draw. Taps are ignored from the first one
+     * until Home comes back ([onResumed]), so one paid draw never opens two screens.
+     */
     fun onSiamSiStart(question: String, category: QuestionCategory?) {
         if (starting) return
         val set = selectedSet.value ?: return
         starting = true
+        val route = SiamSiRoute(set.id, question.trim(), category?.wire)
         viewModelScope.launch {
+            var left = false
             try {
+                if (crisisMessage(route.question) != null) {
+                    log("siamsi_safety_shown", emptyMap())
+                    nav.send(SiamSiNav.Draw(route))
+                    left = true
+                    return@launch
+                }
                 when (gate.requestDraw()) {
-                    DrawOutcome.Ready -> nav.send(SiamSiNav.Draw(SiamSiRoute(set.id, question.trim(), category?.wire)))
-                    DrawOutcome.LimitReached -> nav.send(SiamSiNav.Paywall)
+                    DrawOutcome.Ready -> nav.send(SiamSiNav.Draw(route)).also { left = true }
+                    DrawOutcome.LimitReached -> nav.send(SiamSiNav.Paywall).also { left = true }
                     DrawOutcome.Dismissed -> Unit
                 }
             } finally {
-                starting = false
+                if (!left) starting = false
             }
         }
     }

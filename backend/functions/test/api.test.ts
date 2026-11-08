@@ -188,7 +188,9 @@ describe("api", () => {
   let store: MemoryStore;
   let modelCalls: string[];
   let modelPrompts: string[];
-  let modelMode: "ok" | "fail" | "drop";
+  let modelMode: "ok" | "fail" | "drop" | "hold";
+  /** Lets a "hold" model call finish. */
+  let releaseHold: () => void;
   let modelChunks: string[] | null;
   /** The response whose connection drops mid-stream when modelMode is "drop". */
   let droppingRes: FakeRes | null;
@@ -228,6 +230,7 @@ describe("api", () => {
           return { tokensIn: 1500, tokensOut: 650 };
         }
         yield "ภูเขา";
+        if (modelMode === "hold") await new Promise<void>((done) => (releaseHold = done));
         if (modelMode === "drop") {
           droppingRes!.disconnect();
           await new Promise((_, reject) => signal.addEventListener("abort", () => reject(new GeminiError("network", "aborted"))));
@@ -549,6 +552,20 @@ describe("api", () => {
       const limited = await retry(id);
       assert.deepEqual(limited.events.map((e) => e.event), ["cast", "limited"]);
       assert.equal(limited.events[1].data.reason, "quota");
+    });
+
+    it("does not charge again when the retry arrives while the first stream still runs", async () => {
+      modelMode = "hold";
+      const first = new FakeRes();
+      const running = handle(req("POST", "/divine", { question: "a" }), first);
+      while (!first.events.some((e) => e.event === "delta")) await new Promise((r) => setImmediate(r));
+      modelMode = "ok";
+      now += 60_000;
+      const again = await retry(first.events[0].data.readingId);
+      releaseHold();
+      await running;
+      assert.equal(again.events.at(-1)!.event, "done");
+      assert.equal(freeUsed(), 1);
     });
 
     it("refunds a free retry that fails, so the next attempt pays once", async () => {

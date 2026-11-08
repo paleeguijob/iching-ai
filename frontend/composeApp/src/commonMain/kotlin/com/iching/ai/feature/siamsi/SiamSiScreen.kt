@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.siamsi.MAX_PUA_ROUNDS
 import com.iching.ai.domain.siamsi.PuaResult
+import com.iching.ai.feature.divination.SafetyStage
 import com.iching.ai.feature.home.PreCastSheet
 import com.iching.ai.feature.home.SIAMSI_PRECAST_COPY
 import com.iching.ai.platform.ShakeAccumulator
@@ -119,6 +120,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
             val set = viewModel.set
             when (val s = stage) {
                 SiamSiStage.Loading, SiamSiStage.Unpaid -> Unit
+                is SiamSiStage.Safety -> SafetyStage(s.message, onDone = onBack)
                 SiamSiStage.Shaking -> ShakeStage(viewModel, soundEnabled)
                 is SiamSiStage.Fallen -> PuaStep(
                     viewModel.question,
@@ -167,6 +169,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                             onInterpret = viewModel::onInterpret,
                             onSendFollowUp = viewModel::onSendFollowUp,
                             onOpenPaywall = onOpenPaywall,
+                            onReport = viewModel::onReport,
                         )
                         Spacer(Modifier.height(ZenSpacing.md))
                         ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
