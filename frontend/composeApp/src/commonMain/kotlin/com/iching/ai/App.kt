@@ -82,6 +82,8 @@ import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.feature.siamsi.SiamSiScreen
 import com.iching.ai.navigation.YearAskRoute
 import com.iching.ai.navigation.YearRoute
 import com.iching.ai.feature.share.ShareCardSheet
@@ -218,6 +220,14 @@ private fun MainNavigation() {
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         siamsi = koinViewModel(),
                         onSiamSiDraw = { nav.navigate(it) },
+                    )
+                }
+                screen<SiamSiRoute> { entry ->
+                    val route = entry.toRoute<SiamSiRoute>()
+                    SiamSiScreen(
+                        viewModel = koinViewModel { parametersOf(route) },
+                        onBack = { nav.popFrom(entry) },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
                 screen<DailyRoute> { entry ->

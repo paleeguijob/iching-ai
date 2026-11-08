@@ -42,6 +42,8 @@ import org.koin.core.module.Module
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.feature.siamsi.SiamSiDrawGate
 import com.iching.ai.feature.siamsi.SiamSiHomeViewModel
+import com.iching.ai.feature.siamsi.SiamSiViewModel
+import com.iching.ai.platform.secureRandom
 import kotlin.time.Clock
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
@@ -144,6 +146,18 @@ val presentationModule = module {
     }
     viewModelOf(::LibraryViewModel)
     viewModel { params -> HexagramDetailViewModel(params.get(), get()) }
+    viewModel { params ->
+        SiamSiViewModel(
+            route = params.get(),
+            repository = get(),
+            api = get(),
+            session = get(),
+            journal = get(),
+            settings = get(),
+            random = secureRandom(),
+            today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
+        )
+    }
     viewModelOf(::JournalViewModel)
     viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get()) }
     viewModelOf(::SettingsViewModel)

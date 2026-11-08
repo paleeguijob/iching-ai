@@ -29,7 +29,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -43,9 +42,6 @@ import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.toThaiNumerals
 import kotlin.math.sin
 
-private val Bamboo = Color(0xFFB98B4E)
-private val BambooDark = Color(0xFF7D5A2E)
-private val Stick = Color(0xFFE2C48E)
 private const val KNOCK_MILLIS = 180L
 
 /**
@@ -97,16 +93,16 @@ fun SiamSiCylinder(shaking: Boolean, fallenNumber: Int?, onHoldChange: (Boolean)
                 for (i in 0 until 9) {
                     val x = left + tubeW * (0.12f + i * 0.095f)
                     val rise = size.height * (0.12f + 0.06f * sin(i * 1.7f + tilt.value / 6f).let { it * it })
-                    drawRoundRect(Stick, Offset(x, top - rise), Size(5.dp.toPx(), tubeH * 0.5f + rise), CornerRadius(3f))
+                    drawRoundRect(palette.scrollEdge, Offset(x, top - rise), Size(5.dp.toPx(), tubeH * 0.5f + rise), CornerRadius(3f))
                     drawRoundRect(palette.cinnabarRed.copy(alpha = 0.85f), Offset(x, top - rise), Size(5.dp.toPx(), 7.dp.toPx()), CornerRadius(3f))
                 }
                 drawRoundRect(
-                    Brush.horizontalGradient(listOf(BambooDark, Bamboo, BambooDark), startX = left, endX = left + tubeW),
+                    Brush.horizontalGradient(listOf(palette.scrollRollerDark, palette.scrollWood, palette.scrollRollerDark), startX = left, endX = left + tubeW),
                     Offset(left, top), Size(tubeW, tubeH), CornerRadius(14.dp.toPx()),
                 )
                 // Bamboo nodes.
                 listOf(0.18f, 0.82f).forEach { f ->
-                    drawRect(BambooDark, Offset(left, top + tubeH * f), Size(tubeW, 2.dp.toPx()))
+                    drawRect(palette.scrollRollerDark, Offset(left, top + tubeH * f), Size(tubeW, 2.dp.toPx()))
                 }
             }
             Text(
@@ -132,7 +128,7 @@ private fun FallenStick(number: Int) {
                 .width(200.dp)
                 .height(16.dp)
                 .graphicsLayer { rotationZ = -6f }
-                .background(Stick, RoundedCornerShape(8.dp)),
+                .background(palette.scrollEdge, RoundedCornerShape(8.dp)),
         )
         Text(
             number.toThaiNumerals(),

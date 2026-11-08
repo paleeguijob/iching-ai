@@ -28,6 +28,19 @@ import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.toThaiNumerals
 
+/** The words that differ between an I Ching cast and a Siam Si interpretation. */
+data class PreCastCopy(
+    val adButton: String = "ชมโฆษณาสั้น แล้วเริ่มเสี่ยงทาย",
+    val withoutWords: String = "เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว",
+    val ready: String = "เริ่มเสี่ยงทาย",
+)
+
+val SIAMSI_PRECAST_COPY = PreCastCopy(
+    adButton = "ชมโฆษณาสั้น แล้วแปลความหมาย",
+    withoutWords = "อ่านใบเซียมซีอย่างเดียว",
+    ready = "แปลความหมาย",
+)
+
 /** The choice before casting when nothing pays for the hermit's words yet (spec 3.1–3.3). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +52,7 @@ fun PreCastSheet(
     onPremium: () -> Unit,
     onCastFromReady: () -> Unit,
     onDismiss: () -> Unit,
+    copy: PreCastCopy = PreCastCopy(),
 ) {
     val busy by rememberUpdatedState(ui.busy)
     // An ad or a purchase in progress must not be swiped away under the seeker's thumb.
@@ -62,9 +76,9 @@ fun PreCastSheet(
             )
             Spacer(Modifier.height(12.dp))
             when (ui.kind) {
-                PreCastSheetKind.AD -> AdChoice(ui, onWatchAd, onScriptureOnly, onPremium)
-                PreCastSheetKind.UPSELL -> UpsellChoice(ui, onPremium, onBuyCoins, onScriptureOnly)
-                PreCastSheetKind.READY -> ReadyChoice(onCastFromReady)
+                PreCastSheetKind.AD -> AdChoice(ui, copy, onWatchAd, onScriptureOnly, onPremium)
+                PreCastSheetKind.UPSELL -> UpsellChoice(ui, copy, onPremium, onBuyCoins, onScriptureOnly)
+                PreCastSheetKind.READY -> ReadyChoice(copy, onCastFromReady)
             }
             ui.message?.let {
                 Spacer(Modifier.height(12.dp))
@@ -85,24 +99,24 @@ private fun Heading(title: String, body: String?) {
 }
 
 @Composable
-private fun AdChoice(ui: PreCastSheetUi, onWatchAd: () -> Unit, onScriptureOnly: () -> Unit, onPremium: () -> Unit) {
+private fun AdChoice(ui: PreCastSheetUi, copy: PreCastCopy, onWatchAd: () -> Unit, onScriptureOnly: () -> Unit, onPremium: () -> Unit) {
     Heading("รับคำชี้แนะจากนักพรต", "ชมโฆษณาสั้น ๆ เพื่อรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้")
     ZenPrimaryButton(
-        text = if (ui.busy) "กำลังเปิดโฆษณา..." else "ชมโฆษณาสั้น แล้วเริ่มเสี่ยงทาย (เหลือ ${ui.adsLeft.toThaiNumerals()})",
+        text = if (ui.busy) "กำลังเปิดโฆษณา..." else "${copy.adButton} (เหลือ ${ui.adsLeft.toThaiNumerals()})",
         onClick = onWatchAd,
         enabled = !ui.busy,
         color = ZenColors.BambooDeep,
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(8.dp))
-    ZenSecondaryButton("เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว", onClick = onScriptureOnly, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
+    ZenSecondaryButton(copy.withoutWords, onClick = onScriptureOnly, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
     TextButton(onClick = onPremium, enabled = !ui.busy) {
         Text("Premium · วันละ ๑๐ คำทำนาย ไม่มีโฆษณา", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
     }
 }
 
 @Composable
-private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
+private fun UpsellChoice(ui: PreCastSheetUi, copy: PreCastCopy, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
     Heading("คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว", "ท่านยังรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้ได้")
     ZenPrimaryButton(
         text = "Premium · วันละ ๑๐ คำทำนาย" + (ui.premiumTrial?.let { " · $it" } ?: ""),
@@ -118,7 +132,7 @@ private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: 
         modifier = Modifier.fillMaxWidth(),
     )
     TextButton(onClick = onScriptureOnly, enabled = !ui.busy) {
-        Text("เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว", style = MaterialTheme.typography.labelMedium, color = ZenColors.InkSoft)
+        Text(copy.withoutWords, style = MaterialTheme.typography.labelMedium, color = ZenColors.InkSoft)
     }
     Text(
         "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ชมโฆษณาเริ่มนับใหม่ทุกวัน",
@@ -129,7 +143,7 @@ private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: 
 }
 
 @Composable
-private fun ReadyChoice(onCastFromReady: () -> Unit) {
+private fun ReadyChoice(copy: PreCastCopy, onCastFromReady: () -> Unit) {
     Heading("พร้อมรับคำชี้แนะแล้ว", null)
-    ZenPrimaryButton("เริ่มเสี่ยงทาย", onClick = onCastFromReady, modifier = Modifier.fillMaxWidth())
+    ZenPrimaryButton(copy.ready, onClick = onCastFromReady, modifier = Modifier.fillMaxWidth())
 }

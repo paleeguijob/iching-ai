@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
@@ -26,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.iching.ai.domain.siamsi.PuaResult
 import com.iching.ai.ui.theme.ZenColors
 
-private val Lacquer = Color(0xFFA8322B)
-private val LacquerDark = Color(0xFF6E1F1A)
 
 /** What each pua result looks like and says: which faces land up (flat = ventral side up). */
 private fun PuaResult.faces(): Pair<Boolean, Boolean> = when (this) {
@@ -75,11 +72,11 @@ fun PuaBlocks(result: PuaResult?, onToss: () -> Unit, modifier: Modifier = Modif
                 ) {
                     // A crescent: the round back, or the flat face when it lands face up.
                     if (flatUp) {
-                        drawArc(Lacquer, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
-                        drawLine(LacquerDark, Offset(0f, size.height), Offset(size.width, size.height), 3.dp.toPx())
+                        drawArc(palette.cinnabarRed, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
+                        drawLine(palette.cinnabarSoft, Offset(0f, size.height), Offset(size.width, size.height), 3.dp.toPx())
                     } else {
-                        drawArc(LacquerDark, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
-                        drawArc(Lacquer, 200f, 140f, false, Offset(6f, 6f), Size(size.width - 12f, size.height * 2 - 12f), style = Stroke(4.dp.toPx()))
+                        drawArc(palette.cinnabarSoft, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
+                        drawArc(palette.cinnabarRed, 200f, 140f, false, Offset(6f, 6f), Size(size.width - 12f, size.height * 2 - 12f), style = Stroke(4.dp.toPx()))
                     }
                 }
             }
