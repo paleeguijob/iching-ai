@@ -210,6 +210,7 @@
 - ☐ **ถอนสิทธิ์ Sign in with Apple ตอนลบบัญชี** — ตอนนี้ยังไม่มีโค้ด revoke และ Apple กำหนดให้ทำ
 - ☐ **Push กวาประจำวัน (v1.1)** — อัปโหลด APNs key ใน Firebase, เพิ่ม `FirebaseMessaging` ใน Xcode และทำ `IosNotifications` ใน `Bridges/IosAdsAndAnalytics.swift` ให้ทำงานจริง (ตอนนี้ `isSupported()` คืน `false` แอปจึงซ่อนสวิตช์) แล้วเรียก `PendingNavigation.requestDaily()` เมื่อแตะแจ้งเตือน
 - ☐ **สี status bar ของธีมมืด (v1.1)** — `SystemBars.ios.kt` ยังไม่ทำงาน ตัวอักษร status bar จะเป็นสีเข้มบนพื้นเข้มในธีมราตรีหมึก
+- ☐ **เขย่าเซียมซีด้วยเซ็นเซอร์ (v1.4)** — `ShakeDetector.ios.kt` ยังไม่ต่อ CoreMotion ตอนนี้บน iOS เขย่าได้ด้วยการกดค้างที่กระบอกเท่านั้น
 - ☐ แยก RevenueCat test key ของ debug ออกจาก release แบบเดียวกับ Android และตรวจว่า SDK เป็น 5.43.0 ขึ้นไป
 
 **Firebase**
@@ -374,3 +375,25 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 2. ☐ ภาพหน้าจอ store ชุดใหม่อยู่ที่ `docs/store/screenshots/01–05` (1080×2160, ธีมราตรีหมึก) → อัปโหลดแทนชุดเดิมใน Play Console → Main store listing
 3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp frontend/androidApp/build/outputs/bundle/release/*.aab iching-ai-1.3.0-130.aab` (ไม่ commit) → อัปโหลด Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8
 4. ☐ ถ้า v1.2 ยังไม่ขึ้น production ให้ปล่อย v1.2 ให้เสร็จก่อน (แคมเปญตรุษจีนมีกำหนดเวลา) แล้วค่อยส่ง v1.3
+
+## 14. ปล่อย v1.4 — เซียมซี
+
+เพิ่มโหมดเซียมซีคู่กับอี้จิง: ตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ (bundle ในแอป) · ดูโฆษณาก่อนเสี่ยง (ฟรี ๑ ครั้ง/วัน, Premium ๑๐ ครั้ง/วันไม่มีโฆษณา นับในเครื่อง แยกจากสิทธิ์โฆษณาของอี้จิง) · ไม้ปัวบังคับ · "แปลความหมาย" ใช้สิทธิ์คำทำนายเดิม ๑ ครั้งผ่าน `POST /siamsi/interpret` · บันทึกชะตามีตัวกรองและการ์ดแชร์ · ชุดใหม่ดาวน์โหลดจาก Hosting `/content/siamsi/{id}.json` ได้ภายหลัง · `versionCode` 140 / `versionName` 1.4.0 · Android ก่อน
+สเปก: [`docs/superpowers/specs/2026-11-08-siamsi-design.md`](superpowers/specs/2026-11-08-siamsi-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-v1.4-siamsi.md`](superpowers/plans/2026-11-08-v1.4-siamsi.md)
+
+### A. ก่อนส่งแอป (ต้องครบก่อน)
+1. ☐ **เนื้อหาครบ 160 ใบ** — ตอนนี้ไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` มีแค่ใบตัวอย่าง ๓ ใบต่อชุด (ข้อความ 〔ตัวอย่าง〕) ต้องเลือกฉบับตำรา ใส่กลอนต้นฉบับ เขียนคำแปลเอง บันทึกแหล่งใน `docs/content/siamsi/SOURCES.md` แล้วเปลี่ยน bundle เป็น `strict = true` (แผน Task 13)
+2. ☐ เจ้าของแอปตรวจทุกใบ และลงชื่อผู้ตรวจ/วันที่ใน `SOURCES.md`
+3. ☐ ไล่ดูบน emulator ทั้ง 5 ธีม (ตั้ง `siamsiEnabled = true` ใน Firestore emulator ก่อน): หน้าแรก + เลือกตำรา, ปุ่มเสี่ยง ๔ สถานะ (ดูโฆษณา / ปิดโฆษณากลางคัน / ไม่มีโฆษณา / ครบแล้ว), เขย่าด้วยเซ็นเซอร์และกดค้าง, ไม้ปัว ๓ รอบ, ใบจีน ๑๐๐/๖๐, แปลความหมาย (ทั้งมีสิทธิ์และต้องดูโฆษณา), ถามต่อ (Premium), บันทึก + ตัวกรอง, แชร์ (การ์ดต้องไม่มีคำถาม)
+4. ☐ `grep -rn "ขยายความ" frontend/composeApp/src frontend/core/*/src/commonMain/kotlin backend/functions/src` ต้องว่าง (`hexagrams.json` ของอี้จิงมีคำนี้ในเนื้อหาคัมภีร์เดิม ไม่เกี่ยวกับเซียมซี)
+
+### B. Store listing
+- คำอธิบายเพิ่มย่อหน้า: "เสี่ยงทายได้ทั้ง อี้จิง และเซียมซี จากตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ"
+- ☐ ภาพหน้าจอใบเซียมซี ๑ รูปใน `docs/store/screenshots/` — ห้ามมีเทวรูปหรือโลโก้วัด/ศาลเจ้า
+
+### C. ลำดับเปิดใช้
+1. ☐ Deploy functions + hosting (`siamsiEnabled` ยังเป็น `false` ตามค่าเริ่มต้น ผู้ใช้จึงยังไม่เห็นอะไร)
+2. ☐ Build `./gradlew :androidApp:bundleRelease` → อัปโหลด Closed testing → Production
+3. ☐ เมื่อแอป 1.4.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
+4. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`)
+
