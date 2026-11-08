@@ -1,5 +1,11 @@
 package com.iching.ai.feature.divination
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.background
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenTextButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -53,10 +59,11 @@ internal fun TossStage(
             .fillMaxSize()
             .clickable(interactionSource = noRipple, indication = null, enabled = canToss, onClick = onToss)
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = ZenSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(4.dp))
+        CastProgress(tosses.size)
+        Spacer(Modifier.height(ZenSpacing.md))
         Text(
             prompt,
             style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
@@ -74,12 +81,6 @@ internal fun TossStage(
             lineHeight = 14.dp,
             gap = 11.dp,
         )
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "เส้นที่ ${(tosses.size + if (tosses.size < 6) 1 else 0).coerceAtMost(6).toThaiNumerals()} จาก ๖",
-            style = MaterialTheme.typography.labelLarge,
-            color = ZenColors.BambooDeep,
-        )
         Spacer(Modifier.weight(0.5f))
         Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             val faces = currentToss?.faces
@@ -87,7 +88,8 @@ internal fun TossStage(
                 AncientCoin(
                     face = faces?.get(i),
                     tossKey = tossKey,
-                    delayMillis = i * 90,
+                    // The middle coin lands a beat later, so the three don't settle as one.
+                    delayMillis = i * 90 + if (i == 1) 80 else 0,
                     size = 78.dp,
                 )
             }
@@ -109,11 +111,26 @@ internal fun TossStage(
             modifier = Modifier.fillMaxWidth(),
         )
         if (onTossRemaining != null) {
-            TextButton(onClick = onTossRemaining, enabled = canToss) {
-                Text("โยนต่อเนื่องจนครบ", color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
-            }
+            ZenTextButton("โยนต่อเนื่องจนครบ", onClick = onTossRemaining, enabled = canToss)
         }
         Spacer(Modifier.height(12.dp))
+    }
+}
+
+/** "๔ / ๖" with a thin ink bar: how many of the six lines are cast. */
+@Composable
+private fun CastProgress(cast: Int) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            "${cast.toThaiNumerals()} / ๖",
+            style = MaterialTheme.typography.labelMedium,
+            color = ZenColors.InkFaint,
+            modifier = Modifier.align(Alignment.End),
+        )
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(ZenColors.current.outlineVariant)) {
+            Box(Modifier.fillMaxWidth(cast / 6f).fillMaxHeight().background(ZenColors.InkBlack))
+        }
     }
 }
 

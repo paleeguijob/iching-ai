@@ -197,8 +197,8 @@ fun ZenSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = M
 
 /** Quiet action under a primary button, e.g. "โยนต่อเนื่องจนครบ". */
 @Composable
-fun ZenTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    TextButton(onClick = onClick, modifier = modifier) {
+fun ZenTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    TextButton(onClick = onClick, modifier = modifier, enabled = enabled) {
         Text(text, style = MaterialTheme.typography.labelLarge, color = ZenColors.InkSoft, textAlign = TextAlign.Center)
     }
 }

@@ -1,5 +1,6 @@
 package com.iching.ai.ui.components
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -72,6 +73,17 @@ fun AncientCoin(
     Box(
         modifier
             .size(size)
+            // Ground shadow, outside the coin's layer so it stays on the floor and fades as the coin hops.
+            .drawBehind {
+                val l = lift.value
+                val w = this.size.width * 0.82f * (1f - l * 0.35f)
+                val h = this.size.height * 0.14f * (1f - l * 0.35f)
+                drawOval(
+                    Color.Black.copy(alpha = 0.22f * (1f - l * 0.6f)),
+                    topLeft = Offset((this.size.width - w) / 2, this.size.height * 0.94f - h / 2),
+                    size = androidx.compose.ui.geometry.Size(w, h),
+                )
+            }
             .graphicsLayer {
                 rotationX = rotation.value
                 cameraDistance = 14f * density
