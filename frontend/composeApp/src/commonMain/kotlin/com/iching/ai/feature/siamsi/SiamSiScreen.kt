@@ -44,6 +44,9 @@ import com.iching.ai.platform.rememberShakeDetector
 import com.iching.ai.platform.rememberSoundPlayer
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
+import com.iching.ai.ui.components.ZenSecondaryButton
+import com.iching.ai.feature.share.SiamSiShareSheet
+import com.iching.ai.feature.share.siamsiShareContent
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.toThaiNumerals
@@ -84,6 +87,8 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
             copy = SIAMSI_PRECAST_COPY,
         )
     }
+
+    var sharing by remember { mutableStateOf(false) }
 
     // A confirmed slip waits a moment under the landed blocks before it opens.
     var previous by remember { mutableStateOf<SiamSiStage?>(null) }
@@ -163,6 +168,11 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                             onSendFollowUp = viewModel::onSendFollowUp,
                             onOpenPaywall = onOpenPaywall,
                         )
+                        Spacer(Modifier.height(ZenSpacing.md))
+                        ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+                        if (sharing) {
+                            SiamSiShareSheet(siamsiShareContent(set, s.stick), log = viewModel::logEvent, onDismiss = { sharing = false })
+                        }
                     }
                 }
             }

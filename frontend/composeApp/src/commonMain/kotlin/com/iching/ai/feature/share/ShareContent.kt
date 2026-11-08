@@ -2,6 +2,10 @@ package com.iching.ai.feature.share
 
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.oracle.stripMarkup
+import com.iching.ai.domain.siamsi.SiamSiSet
+import com.iching.ai.domain.siamsi.SiamSiStick
+import com.iching.ai.feature.siamsi.NOT_ENDORSED
+import com.iching.ai.ui.toThaiNumerals
 
 const val SHARE_TEXT = "เสี่ยงทายกับคัมภีร์อี้จิงได้ที่ https://play.google.com/store/apps/details?id=com.iching.ai"
 
@@ -59,4 +63,28 @@ fun yearShareContent(hexagram: Hexagram, yearLabel: String) = ShareCardContent(
     source = "year",
     style = CardStyle.NEW_YEAR,
     yearLabel = "กวาประจำปี$yearLabel",
+)
+
+/** What goes on a Siam Si share card: the slip and where it comes from. Like every card, never the question. */
+data class SiamSiShareContent(
+    val setId: String,
+    val setName: String,
+    val number: String,
+    val level: String,
+    /** The original Chinese poem; empty for a Thai set, whose poem is [poemTh] alone. */
+    val poemOrig: List<String>,
+    val poemTh: List<String>,
+    val labelOrig: String?,
+    val source: String,
+)
+
+fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick) = SiamSiShareContent(
+    setId = set.id,
+    setName = set.name,
+    number = stick.number.toThaiNumerals(),
+    level = listOfNotNull(stick.level.labelTh, stick.gradeOrig).joinToString(" · "),
+    poemOrig = if (stick.poemOrig == stick.poemTh) emptyList() else stick.poemOrig,
+    poemTh = stick.poemTh,
+    labelOrig = stick.labelOrig,
+    source = "ตำรา ${set.sourceTitle} · $NOT_ENDORSED",
 )

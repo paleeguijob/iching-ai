@@ -47,7 +47,17 @@ private const val CARD_HEIGHT_PX = 1920f
 
 /** Full-screen preview of the card, with the button that opens the system share sheet. */
 @Composable
-fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) {
+fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) =
+    ShareImageSheet(onShared = { log("share_card", mapOf("source" to content.source)) }, onDismiss = onDismiss) { ShareCard(content) }
+
+/** The Siam Si card in the same preview; counted as `siamsi_share`. */
+@Composable
+fun SiamSiShareSheet(content: SiamSiShareContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) =
+    ShareImageSheet(onShared = { log("siamsi_share", mapOf("set" to content.setId)) }, onDismiss = onDismiss) { SiamSiShareCard(content) }
+
+/** Previews [card] at 1080×1920 px and shares exactly those pixels; [onShared] runs once the system took them. */
+@Composable
+private fun ShareImageSheet(onShared: () -> Unit, onDismiss: () -> Unit, card: @Composable () -> Unit) {
     val layer = rememberGraphicsLayer()
     val sharer = rememberImageSharer()
     val scope = rememberCoroutineScope()
@@ -81,7 +91,7 @@ fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>)
                                 drawLayer(layer)
                             },
                     ) {
-                        ShareCard(content)
+                        card()
                     }
                 }
             }
@@ -110,7 +120,7 @@ fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>)
                             } catch (e: Exception) {
                                 false
                             }
-                            if (shared) log("share_card", mapOf("source" to content.source))
+                            if (shared) onShared()
                             failed = !shared
                             sharing = false
                         }

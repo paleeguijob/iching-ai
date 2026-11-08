@@ -68,6 +68,15 @@ import com.iching.ai.feature.reading.OracleSheet
 import com.iching.ai.feature.reading.ScriptureSection
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
+import com.iching.ai.domain.model.AccountStatus
+import com.iching.ai.feature.siamsi.InterpretUi
+import com.iching.ai.feature.siamsi.SiamSiSlipContent
+import com.iching.ai.feature.share.SiamSiShareSheet
+import com.iching.ai.feature.share.siamsiShareContent
+import com.iching.ai.ui.components.ZenChip
+import com.iching.ai.ui.components.ZenSecondaryButton
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.graphicsLayer
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.formatThaiDate
@@ -82,13 +91,14 @@ fun JournalScreen(
     onOpenPaywall: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
     PaperBackground(showMountains = false) {
         when (val s = state) {
             JournalUiState.Loading -> Unit
-            is JournalUiState.Loaded -> if (s.isEmpty) {
+            is JournalUiState.Loaded -> if (s.isEmpty && filter == JournalFilter.ALL) {
                 EmptyJournal(onStartCasting)
             } else {
-                Timeline(s.months, s.entryCount, s.hiddenCount, s.journalDays, onOpenEntry, onOpenPaywall)
+                Timeline(s.months, s.entryCount, s.hiddenCount, s.journalDays, onOpenEntry, onOpenPaywall, s.hasSiamSi, filter, viewModel::onFilterSelected)
             }
         }
     }
@@ -102,6 +112,9 @@ private fun Timeline(
     journalDays: Int?,
     onOpenEntry: (Long) -> Unit,
     onOpenPaywall: () -> Unit,
+    hasSiamSi: Boolean,
+    filter: JournalFilter,
+    onFilter: (JournalFilter) -> Unit,
 ) {
     val bottom = tabContentBottomPadding(LocalTabBarHeight.current)
     LazyColumn(
@@ -116,6 +129,12 @@ private fun Timeline(
                 style = MaterialTheme.typography.bodyMedium,
                 color = ZenColors.InkSoft,
             )
+            if (hasSiamSi) {
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    JournalFilter.entries.forEach { f -> ZenChip(f.labelTh, f == filter, onClick = { onFilter(f) }) }
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
         if (hiddenCount > 0) {
@@ -178,7 +197,8 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                 Text(
                     buildString {
                         append("${formatThaiShortDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis).removeSuffix(" น.")}")
-                        if (reading.source == InterpretationSource.SCRIPTURE) append(" · ตัวบทคัมภีร์")
+                        if (reading.siamsi != null) append(" · เซียมซี")
+                        else if (reading.source == InterpretationSource.SCRIPTURE) append(" · ตัวบทคัมภีร์")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkFaint,
@@ -193,8 +213,8 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    buildString {
-                        append("${entry.primary.nameCn} ${entry.primary.shortNameTh}")
+                    entry.siamsi?.label ?: buildString {
+                        entry.primary?.let { append("${it.nameCn} ${it.shortNameTh}") }
                         entry.relating?.let { append(" → ${it.nameCn} ${it.shortNameTh}") }
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -208,13 +228,18 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                 }
             }
             Spacer(Modifier.width(12.dp))
-            HexagramFigure(
-                pattern = entry.primary.pattern,
-                lines = reading.lines,
-                lineWidth = 34.dp,
-                lineHeight = 5.dp,
-                gap = 3.dp,
-            )
+            val primary = entry.primary
+            if (primary != null) {
+                HexagramFigure(
+                    pattern = primary.pattern,
+                    lines = reading.lines,
+                    lineWidth = 34.dp,
+                    lineHeight = 5.dp,
+                    gap = 3.dp,
+                )
+            } else {
+                SiamSiStickIcon()
+            }
         }
     }
 }
@@ -262,6 +287,12 @@ fun JournalEntryScreen(
                 }
             }
             val e = entry ?: return@Column
+            val slip = e.siamsi
+            if (slip != null) {
+                SiamSiJournalDetail(e.reading, slip, viewModel::setOutcome, viewModel::logEvent)
+                return@Column
+            }
+            val primary = e.primary ?: return@Column
             Column(
                 Modifier
                     .fillMaxSize()
@@ -273,7 +304,7 @@ fun JournalEntryScreen(
                 CastSummary(
                     question = e.reading.question,
                     lines = e.reading.lines,
-                    primary = e.primary,
+                    primary = primary,
                     relating = e.relating,
                     createdAtMillis = e.reading.createdAtMillis,
                     onHexagramClick = onOpenHexagram,
@@ -304,7 +335,7 @@ fun JournalEntryScreen(
                 Spacer(Modifier.height(24.dp))
                 OutcomeSection(e.reading.outcome, e.reading.outcomeNote, viewModel::setOutcome)
                 Spacer(Modifier.height(24.dp))
-                ScriptureSection(e.primary, e.relating, e.reading.changingPositions)
+                ScriptureSection(primary, e.relating, e.reading.changingPositions)
                 Spacer(Modifier.height(40.dp))
             }
         }
@@ -322,6 +353,92 @@ fun JournalEntryScreen(
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก") } },
             containerColor = ZenColors.PaperCream,
+        )
+    }
+}
+
+/** A Siam Si entry: the slip read-only with its saved interpretation, or just its number when the set is gone. */
+@Composable
+private fun SiamSiJournalDetail(
+    reading: Reading,
+    slip: SiamSiJournal,
+    onOutcome: (Outcome?, String?) -> Unit,
+    log: (String, Map<String, String>) -> Unit,
+) {
+    var sharing by remember { mutableStateOf(false) }
+    val set = slip.set
+    val stick = slip.stick
+    Column(
+        Modifier
+            .fillMaxSize()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    ) {
+        Text(
+            "${formatThaiShortDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = ZenColors.InkFaint,
+        )
+        Spacer(Modifier.height(12.dp))
+        if (set != null && stick != null) {
+            SiamSiSlipContent(
+                set = set,
+                stick = stick,
+                autoConfirmed = false,
+                question = reading.question,
+                category = reading.category,
+                interpret = InterpretUi(text = reading.interpretation),
+                status = AccountStatus.UNKNOWN_FREE,
+                onInterpret = null,
+                onSendFollowUp = null,
+                onOpenPaywall = {},
+                animateInterpretation = false,
+            )
+            Spacer(Modifier.height(16.dp))
+            ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+            if (sharing) {
+                SiamSiShareSheet(siamsiShareContent(set, stick), log = log, onDismiss = { sharing = false })
+            }
+        } else {
+            Text(slip.label, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+            Text("ตำราชุดนี้ไม่มีในเครื่องแล้ว", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkFaint)
+            if (reading.interpretation.isNotBlank()) {
+                Spacer(Modifier.height(16.dp))
+                OracleSheet(text = reading.interpretation, isComplete = true, animate = false, source = reading.source)
+            }
+        }
+        if (reading.followUps.isNotEmpty()) {
+            Spacer(Modifier.height(20.dp))
+            SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
+            Spacer(Modifier.height(10.dp))
+            reading.followUps.forEach { turn ->
+                Text("“${turn.question}”", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                Spacer(Modifier.height(6.dp))
+                Text(turn.answer, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkBlack)
+                Spacer(Modifier.height(14.dp))
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+        OutcomeSection(reading.outcome, reading.outcomeNote, onOutcome)
+        Spacer(Modifier.height(40.dp))
+    }
+}
+
+/** A small Siam Si stick in place of the hexagram figure on a journal row. */
+@Composable
+private fun SiamSiStickIcon() {
+    Box(
+        Modifier.size(width = 34.dp, height = 40.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(width = 7.dp, height = 38.dp)
+                .graphicsLayer { rotationZ = 14f }
+                .clip(RoundedCornerShape(3.dp))
+                .background(ZenColors.current.scrollWood),
         )
     }
 }

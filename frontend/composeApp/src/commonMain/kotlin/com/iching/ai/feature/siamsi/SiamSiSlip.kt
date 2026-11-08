@@ -64,9 +64,10 @@ fun SiamSiSlipContent(
     category: QuestionCategory?,
     interpret: InterpretUi,
     status: AccountStatus,
-    onInterpret: () -> Unit,
-    onSendFollowUp: (String) -> Unit,
+    onInterpret: (() -> Unit)?,
+    onSendFollowUp: ((String) -> Unit)?,
     onOpenPaywall: () -> Unit,
+    animateInterpretation: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(ZenSpacing.md)) {
         if (question.isNotBlank()) {
@@ -88,8 +89,8 @@ fun SiamSiSlipContent(
             )
         }
         SlipCard(set, stick)
-        InterpretCard(interpret, onInterpret)
-        if (interpret.done) {
+        InterpretCard(interpret, onInterpret, animateInterpretation)
+        if (interpret.done && onSendFollowUp != null) {
             FollowUpSection(
                 state = DivinationUiState(question = question, status = status, followUps = interpret.followUps, followUpBusy = interpret.followUpBusy),
                 onSend = onSendFollowUp,
@@ -194,7 +195,7 @@ private fun LevelBadge(stick: SiamSiStick) {
 }
 
 @Composable
-private fun InterpretCard(ui: InterpretUi, onInterpret: () -> Unit) {
+private fun InterpretCard(ui: InterpretUi, onInterpret: (() -> Unit)?, animate: Boolean) {
     val uri = LocalUriHandler.current
     when {
         ui.safety != null -> ZenCard {
@@ -221,10 +222,10 @@ private fun InterpretCard(ui: InterpretUi, onInterpret: () -> Unit) {
             if (ui.text.isEmpty()) {
                 Text("นักพรตกำลังพิจารณาใบของท่าน...", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkFaint)
             } else {
-                TypewriterText(text = ui.text, animate = true, style = MaterialTheme.typography.bodyLarge)
+                TypewriterText(text = ui.text, animate = animate, style = MaterialTheme.typography.bodyLarge)
             }
         }
-        else -> ZenCard {
+        onInterpret != null -> ZenCard {
             Text("ให้นักพรตแปลความหมายตามคำถามของคุณ · ใช้ ๑ สิทธิ์", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
             Spacer(Modifier.height(ZenSpacing.sm))
             ZenPrimaryButton("แปลความหมาย", onClick = onInterpret, modifier = Modifier.fillMaxWidth())
