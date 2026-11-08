@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.iching.ai.data.settings.DataStoreSettingsRepository
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
+import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.domain.siamsi.SiamSiUsage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +40,23 @@ class SettingsPersistenceTest {
         } finally {
             scope.cancel()
         }
+    }
+
+    @Test
+    fun siamsiFieldsSurviveReloadAndDefaultWhenMissing() = withStore { file ->
+        val fresh = open(file) { it.settings.first() }
+        assertEquals(DivinationMode.ICHING, fresh.divinationMode)
+        assertEquals(null, fresh.siamsiSetId)
+        assertEquals(SiamSiUsage(), fresh.siamsiUsage)
+        val usage = SiamSiUsage(20_400L, used = 1, pendingDraw = true)
+        open(file) { repo ->
+            repo.update { it.copy(divinationMode = DivinationMode.SIAMSI, siamsiSetId = "jiazi60", siamsiUsage = usage) }
+        }
+        Thread.sleep(100)
+        val loaded = open(file) { it.settings.first() }
+        assertEquals(DivinationMode.SIAMSI, loaded.divinationMode)
+        assertEquals("jiazi60", loaded.siamsiSetId)
+        assertEquals(usage, loaded.siamsiUsage)
     }
 
     @Test

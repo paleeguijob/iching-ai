@@ -1,5 +1,8 @@
 package com.iching.ai.domain.model
 
+import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.domain.siamsi.SiamSiUsage
+
 /**
  * One of the 64 hexagrams with its classical text.
  * [pattern] has six characters read bottom to top (index 0 = line 1), '1' = yang, '0' = yin.
@@ -109,4 +112,8 @@ data class AppSettings(
     /** False while the FCM topic subscription still has to catch up with [dailyPushEnabled]. */
     val dailyPushSynced: Boolean = true,
     val pushPromptShown: Boolean = false,
+    val divinationMode: DivinationMode = DivinationMode.ICHING,
+    /** The Siam Si set last chosen on Home; null until one is picked. */
+    val siamsiSetId: String? = null,
+    val siamsiUsage: SiamSiUsage = SiamSiUsage(),
 )

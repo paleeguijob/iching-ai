@@ -12,6 +12,8 @@ import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.repository.SettingsRepository
+import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.domain.siamsi.SiamSiUsage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -32,6 +34,11 @@ class DataStoreSettingsRepository(
             prefs[DAILY_PUSH_ENABLED] = next.dailyPushEnabled
             prefs[DAILY_PUSH_SYNCED] = next.dailyPushSynced
             prefs[PUSH_PROMPT_SHOWN] = next.pushPromptShown
+            prefs[DIVINATION_MODE] = next.divinationMode.wire
+            next.siamsiSetId?.let { prefs[SIAMSI_SET] = it } ?: prefs.remove(SIAMSI_SET)
+            prefs[SIAMSI_DAY] = next.siamsiUsage.day
+            prefs[SIAMSI_USED] = next.siamsiUsage.used
+            prefs[SIAMSI_PENDING] = next.siamsiUsage.pendingDraw
             prefs.remove(LEGACY_API_KEY)
         }
     }
@@ -59,6 +66,13 @@ class DataStoreSettingsRepository(
         dailyPushEnabled = this[DAILY_PUSH_ENABLED] ?: false,
         dailyPushSynced = this[DAILY_PUSH_SYNCED] ?: true,
         pushPromptShown = this[PUSH_PROMPT_SHOWN] ?: false,
+        divinationMode = DivinationMode.fromWire(this[DIVINATION_MODE]) ?: DivinationMode.ICHING,
+        siamsiSetId = this[SIAMSI_SET],
+        siamsiUsage = SiamSiUsage(
+            day = this[SIAMSI_DAY] ?: 0L,
+            used = this[SIAMSI_USED] ?: 0,
+            pendingDraw = this[SIAMSI_PENDING] ?: false,
+        ),
     )
 
     private fun MutablePreferences.writeStreak(streak: StreakState) {
@@ -80,6 +94,11 @@ class DataStoreSettingsRepository(
         val DAILY_PUSH_ENABLED = booleanPreferencesKey("daily_push_enabled")
         val DAILY_PUSH_SYNCED = booleanPreferencesKey("daily_push_synced")
         val PUSH_PROMPT_SHOWN = booleanPreferencesKey("push_prompt_shown")
+        val DIVINATION_MODE = stringPreferencesKey("divination_mode")
+        val SIAMSI_SET = stringPreferencesKey("siamsi_set")
+        val SIAMSI_DAY = longPreferencesKey("siamsi_day")
+        val SIAMSI_USED = intPreferencesKey("siamsi_used")
+        val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
 
         // Left over from builds that called Gemini directly; dropped on the next settings write.
         val LEGACY_API_KEY = stringPreferencesKey("gemini_api_key")
