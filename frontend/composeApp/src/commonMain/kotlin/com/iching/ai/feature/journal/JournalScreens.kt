@@ -390,7 +390,6 @@ private fun SiamSiJournalDetail(
             SiamSiSlipContent(
                 set = set,
                 stick = stick,
-                autoConfirmed = false,
                 question = reading.question,
                 category = reading.category,
                 interpret = InterpretUi(text = reading.interpretation),
@@ -399,9 +398,13 @@ private fun SiamSiJournalDetail(
                 onSendFollowUp = null,
                 onOpenPaywall = {},
                 animateInterpretation = false,
+                onShare = { sharing = true },
+                showQuestion = true,
             )
-            Spacer(Modifier.height(16.dp))
-            ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+            if (reading.interpretation.isBlank()) {
+                Spacer(Modifier.height(16.dp))
+                ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+            }
             if (sharing) {
                 SiamSiShareSheet(siamsiShareContent(set, stick), log = log, onDismiss = { sharing = false })
             }

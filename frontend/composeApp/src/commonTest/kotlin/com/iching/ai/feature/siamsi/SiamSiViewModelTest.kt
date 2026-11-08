@@ -143,12 +143,16 @@ class SiamSiViewModelTest {
         return vm
     }
 
+    /** Shake, open the pua screen, toss; a confirmed stick is then opened, as the seeker's tap does. */
     private fun SiamSiViewModel.draw(stick: Int, pua: Int) {
         onShaken()
         scheduler.advanceUntilIdle()
         assertEquals(SiamSiStage.Fallen(stick), stage.value)
+        onStartPua()
+        assertIs<SiamSiStage.Tossing>(stage.value)
         onTossPua()
         scheduler.advanceUntilIdle()
+        if (stage.value is SiamSiStage.Confirmed) onOpenSlip()
     }
 
     private fun SiamSiViewModel.reachSlip(): SiamSiStage.Slip {
@@ -301,6 +305,7 @@ class SiamSiViewModelTest {
         first.reachSlip()
         second.onShaken()
         scheduler.advanceUntilIdle()
+        second.onStartPua()
         second.onTossPua()
         scheduler.advanceUntilIdle()
         assertEquals(SiamSiStage.Unpaid, second.stage.value)
@@ -335,5 +340,36 @@ class SiamSiViewModelTest {
         scheduler.advanceUntilIdle()
         assertEquals(listOf("r1" to "harmful"), api.reports)
         assertTrue(vm.interpret.value.reported)
+    }
+
+    @Test
+    fun aConfirmedStickWaitsOnThePuaScreenUntilTheSeekerOpensIt() {
+        val vm = viewModel(1, SAK)
+        vm.onShaken()
+        scheduler.advanceUntilIdle()
+        vm.onStartPua()
+        assertEquals(SiamSiStage.Tossing(1, emptyList()), vm.stage.value)
+        vm.onTossPua()
+        scheduler.advanceUntilIdle()
+        val confirmed = assertIs<SiamSiStage.Confirmed>(vm.stage.value)
+        assertEquals(stick(1), confirmed.stick)
+        assertEquals(com.iching.ai.domain.siamsi.PuaResult.SAK, confirmed.progress.rounds.last().result)
+        // Already spent and saved: leaving now keeps the slip in the journal.
+        assertEquals(false, settings.flow.value.siamsiUsage.pendingDraw)
+        assertEquals(1, journal.saves)
+        vm.onOpenSlip()
+        assertEquals(SiamSiStage.Slip(stick(1), autoConfirmed = false), vm.stage.value)
+    }
+
+    @Test
+    fun theDotsOfEarlierRoundsCarryIntoTheNextToss() {
+        val vm = viewModel(1, NO, 2, SAK)
+        vm.draw(1, NO)
+        vm.onReshake()
+        vm.onShaken()
+        scheduler.advanceUntilIdle()
+        vm.onStartPua()
+        val tossing = assertIs<SiamSiStage.Tossing>(vm.stage.value)
+        assertEquals(listOf(com.iching.ai.domain.siamsi.PuaResult.NO), tossing.results)
     }
 }

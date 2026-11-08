@@ -63,8 +63,14 @@ sealed interface SiamSiStage {
     /** A stick has fallen; the pua toss decides whether it stands. */
     data class Fallen(val number: Int) : SiamSiStage
 
+    /** The pua screen before the toss; [results] are the earlier rounds, for the round dots. */
+    data class Tossing(val number: Int, val results: List<PuaResult>) : SiamSiStage
+
     /** The last toss did not confirm its stick: shake again. */
     data class Pua(val progress: PuaProgress) : SiamSiStage
+
+    /** The stick stands (already spent and saved); the slip opens when the seeker taps "เปิดใบเซียมซี". */
+    data class Confirmed(val stick: SiamSiStick, val autoConfirmed: Boolean, val progress: PuaProgress) : SiamSiStage
     data class Slip(val stick: SiamSiStick, val autoConfirmed: Boolean) : SiamSiStage
 
     /** The question signals a crisis: the hotlines instead of a draw, with no ad and no quota. */
@@ -183,11 +189,17 @@ class SiamSiViewModel(
     private fun pickStick(s: SiamSiSet): Int =
         if (s.sticks.size == s.count) drawStick(s.count, random) else s.sticks[random.nextInt(s.sticks.size)].number
 
+    /** From the fallen stick to the pua screen. */
+    fun onStartPua() {
+        val fallen = _stage.value as? SiamSiStage.Fallen ?: return
+        _stage.value = SiamSiStage.Tossing(fallen.number, rounds.dropLast(1).mapNotNull { it.result })
+    }
+
     fun onTossPua() {
         val s = set ?: return
-        val fallen = _stage.value as? SiamSiStage.Fallen ?: return
+        val tossing = _stage.value as? SiamSiStage.Tossing ?: return
         val result = tossPua(random)
-        rounds = rounds.dropLast(1) + PuaRound(fallen.number, result)
+        rounds = rounds.dropLast(1) + PuaRound(tossing.number, result)
         val progress = PuaProgress(rounds)
         session.log("siamsi_pua", mapOf("result" to result.name.lowercase(), "round" to rounds.size.toString()))
         val confirmed = progress.confirmedStick
@@ -208,13 +220,18 @@ class SiamSiViewModel(
                 _stage.value = SiamSiStage.Unpaid
                 return@launch
             }
-            _stage.value = SiamSiStage.Slip(stick, progress.autoConfirmed)
+            _stage.value = SiamSiStage.Confirmed(stick, progress.autoConfirmed, progress)
             session.log(
                 "siamsi_slip_view",
                 mapOf("set" to s.id, "number" to confirmed.toString(), "level" to stick.level.wire, "auto_confirmed" to progress.autoConfirmed.toString()),
             )
             persist()
         }
+    }
+
+    fun onOpenSlip() {
+        val c = _stage.value as? SiamSiStage.Confirmed ?: return
+        _stage.value = SiamSiStage.Slip(c.stick, c.autoConfirmed)
     }
 
     /** A failed pua: shake again, with no new ad and no new draw. */
@@ -447,7 +464,11 @@ class SiamSiViewModel(
 
     /** The slip goes into the journal once, the moment it is confirmed; later changes update that row. */
     private suspend fun persist(change: (Reading) -> Reading = { it }) = saveLock.withLock {
-        val slip = _stage.value as? SiamSiStage.Slip ?: return@withLock
+        val stick = when (val st = _stage.value) {
+            is SiamSiStage.Slip -> st.stick
+            is SiamSiStage.Confirmed -> st.stick
+            else -> return@withLock
+        }
         val base = saved ?: Reading(
             question = route.question,
             createdAtMillis = Clock.System.now().toEpochMilliseconds(),
@@ -457,7 +478,7 @@ class SiamSiViewModel(
             interpretation = "",
             source = InterpretationSource.SCRIPTURE,
             category = category,
-            siamsi = SiamSiPick(route.setId, slip.stick.number),
+            siamsi = SiamSiPick(route.setId, stick.number),
         )
         val next = change(base)
         if (saved != null && next == saved) return@withLock

@@ -1,13 +1,21 @@
 package com.iching.ai.feature.siamsi
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,20 +23,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.iching.ai.domain.siamsi.MAX_PUA_ROUNDS
 import com.iching.ai.domain.siamsi.PuaResult
+import com.iching.ai.ui.components.ZenCard
 import com.iching.ai.ui.theme.ZenColors
+import com.iching.ai.ui.theme.ZenSpacing
 
-
-/** What each pua result looks like and says: which faces land up (flat = ventral side up). */
+/** Which faces land up for each result: true = หงาย (flat face up). */
 private fun PuaResult.faces(): Pair<Boolean, Boolean> = when (this) {
-    PuaResult.SAK -> false to true
+    PuaResult.SAK -> true to false
     PuaResult.LAUGH -> true to true
     PuaResult.NO -> false to false
 }
@@ -39,54 +53,116 @@ fun PuaResult.labelTh(): String = when (this) {
     PuaResult.NO -> "ไม่ — คว่ำทั้งคู่ เขย่าใหม่อีกครั้ง"
 }
 
+/** The result card's headline and the two lines under it. */
+fun puaHeadline(result: PuaResult, autoConfirmed: Boolean): Pair<String, String> = when {
+    autoConfirmed -> "ครบสามรอบ · รับใบนี้" to "ไม้ปัวยังไม่ได้ศักดิ์ แต่ครบสามรอบแล้ว\nฟ้าให้ใบสุดท้ายนี้แก่คุณ"
+    result == PuaResult.SAK -> "ศักดิ์ · ใช่ใบนี้" to "ไม้ปัวคว่ำหนึ่ง หงายหนึ่ง\nฟ้ารับคำอธิษฐานของคุณแล้ว"
+    result == PuaResult.LAUGH -> "หัวเราะ · ยังไม่ใช่" to "ไม้ปัวหงายทั้งคู่\nเขย่าใหม่อีกครั้ง ไม่เสียสิทธิ์"
+    else -> "ไม่ · ไม่ใช่ใบนี้" to "ไม้ปัวคว่ำทั้งคู่\nเขย่าใหม่อีกครั้ง ไม่เสียสิทธิ์"
+}
+
 /**
- * The pair of crescent pua blocks. A new [result] replays a short toss before the blocks settle on their faces;
- * null shows them resting. Tapping the blocks tosses them ([onToss]), as does the screen's main button.
+ * The two crescent blocks with หงาย / คว่ำ under each. A new [result] replays a short toss before they settle;
+ * null shows them resting, unlabelled. Tapping them tosses ([onToss], null once tossed).
  */
 @Composable
-fun PuaBlocks(result: PuaResult?, onToss: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = ZenColors.current
+fun PuaBlocks(result: PuaResult?, onToss: (() -> Unit)?, modifier: Modifier = Modifier) {
     val hop = remember { Animatable(0f) }
     LaunchedEffect(result) {
         if (result == null) return@LaunchedEffect
         hop.snapTo(1f)
-        hop.animateTo(0f, tween(650))
+        hop.animateTo(0f, tween(700, easing = FastOutSlowInEasing))
     }
-    val (leftUp, rightUp) = result?.faces() ?: (false to true)
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(18.dp),
-            modifier = Modifier
-                .clickable(onClickLabel = "เสี่ยงไม้ปัว", onClick = onToss)
-                .semantics { contentDescription = result?.labelTh() ?: "ไม้ปัวสองอัน" },
-        ) {
-            listOf(leftUp to false, rightUp to true).forEach { (flatUp, mirror) ->
-                Canvas(
+    val (leftUp, rightUp) = result?.faces() ?: (true to false)
+    Row(
+        modifier
+            .then(
+                if (onToss != null) {
+                    Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClickLabel = "โยนไม้ปัว", onClick = onToss)
+                } else {
                     Modifier
-                        .size(width = 76.dp, height = 44.dp)
-                        .graphicsLayer {
-                            translationY = -60f * hop.value
-                            rotationZ = (if (mirror) 1 else -1) * 200f * hop.value
-                            scaleX = if (mirror) -1f else 1f
-                        },
-                ) {
-                    // A crescent: the round back, or the flat face when it lands face up.
-                    if (flatUp) {
-                        drawArc(palette.cinnabarRed, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
-                        drawLine(palette.cinnabarSoft, Offset(0f, size.height), Offset(size.width, size.height), 3.dp.toPx())
-                    } else {
-                        drawArc(palette.cinnabarSoft, 180f, 180f, true, Offset.Zero, Size(size.width, size.height * 2))
-                        drawArc(palette.cinnabarRed, 200f, 140f, false, Offset(6f, 6f), Size(size.width - 12f, size.height * 2 - 12f), style = Stroke(4.dp.toPx()))
-                    }
-                }
-            }
-        }
-        if (result != null) {
-            Text(
-                result.labelTh(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (result == PuaResult.SAK) palette.cinnabarRed else palette.inkSoft,
+                },
             )
+            .semantics { contentDescription = result?.labelTh() ?: "ไม้ปัวสองอัน แตะเพื่อโยน" },
+        horizontalArrangement = Arrangement.spacedBy(34.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Block(up = leftUp, lean = -6f, spin = -1, hop = hop.value, label = if (result != null) leftUp else null)
+        Block(up = rightUp, lean = 9f, spin = 1, hop = hop.value, label = if (result != null) rightUp else null)
+    }
+}
+
+@Composable
+private fun Block(up: Boolean, lean: Float, spin: Int, hop: Float, label: Boolean?) {
+    val p = ZenColors.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Canvas(
+            Modifier
+                .size(width = 96.dp, height = 52.dp)
+                .graphicsLayer {
+                    rotationZ = lean + spin * 320f * hop
+                    translationY = -110f * hop
+                },
+        ) {
+            // A half-moon: dome up when it lands หงาย, dome down when คว่ำ.
+            val dome = Path().apply {
+                if (up) {
+                    moveTo(0f, size.height)
+                    cubicTo(0f, -size.height * 0.25f, size.width, -size.height * 0.25f, size.width, size.height)
+                } else {
+                    moveTo(0f, 0f)
+                    cubicTo(0f, size.height * 1.25f, size.width, size.height * 1.25f, size.width, 0f)
+                }
+                close()
+            }
+            val colors = if (up) listOf(p.puaLight, p.puaDeep) else listOf(p.puaDeep.copy(alpha = 0.95f), p.puaDeep)
+            drawPath(dome, Brush.verticalGradient(colors))
+            drawRect(p.puaDeep, Offset(0f, if (up) size.height - 3.dp.toPx() else 0f), Size(size.width, 3.dp.toPx()))
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            when (label) {
+                true -> "หงาย"
+                false -> "คว่ำ"
+                null -> " "
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = ZenColors.InkSoft,
+        )
+    }
+}
+
+/** The outcome of the last toss, with one dot per round: cinnabar = ศักดิ์, grey = not, empty = still to come. */
+@Composable
+fun PuaResultCard(results: List<PuaResult>, autoConfirmed: Boolean, modifier: Modifier = Modifier) {
+    val last = results.lastOrNull() ?: return
+    val (headline, detail) = puaHeadline(last, autoConfirmed)
+    ZenCard(modifier.fillMaxWidth()) {
+        Text(
+            headline,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = ZenColors.CinnabarRed,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(ZenSpacing.xs))
+        Text(detail, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(ZenSpacing.md))
+        RoundDots(results, Modifier.align(Alignment.CenterHorizontally))
+    }
+}
+
+@Composable
+fun RoundDots(results: List<PuaResult>, modifier: Modifier = Modifier) {
+    val p = ZenColors.current
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        repeat(MAX_PUA_ROUNDS) { i ->
+            val color = when (results.getOrNull(i)) {
+                PuaResult.SAK -> p.cinnabarRed
+                null -> p.outlineVariant
+                else -> p.inkFaint
+            }
+            Box(Modifier.size(9.dp).clip(CircleShape).background(color))
         }
     }
 }

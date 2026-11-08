@@ -28,6 +28,17 @@ data class ZenPalette(
     val card: Color,
     val cardShadow: Color,
     val isDark: Boolean = false,
+    /** Siam Si cylinder and sticks: lacquered wood and pale bamboo, readable on light and dark paper. */
+    val wood: Color = Color(0xFFB88A57),
+    val woodDeep: Color = Color(0xFF8A6238),
+    val woodLight: Color = Color(0xFFD2A874),
+    val stickLight: Color = Color(0xFFE7C99C),
+    val stickDeep: Color = Color(0xFFC79A63),
+    /** The 籤 carved on the cylinder. */
+    val woodLabel: Color = Color(0xFFFFF8EC),
+    /** The pua blocks: red lacquer, the light and the shaded side. */
+    val puaLight: Color = Color(0xFFD4683F),
+    val puaDeep: Color = Color(0xFF9C4221),
 )
 
 /** Palette from the spec: Zen minimalist ink on paper. Share cards always use this one. */
@@ -130,6 +141,11 @@ private val InkNightPalette = ZenPalette(
     card = Color(0xFF222833),
     cardShadow = Color(0x59000000),
     isDark = true,
+    wood = Color(0xFF9C7448),
+    woodDeep = Color(0xFF6E4E2D),
+    woodLight = Color(0xFFB88A57),
+    puaLight = Color(0xFFB8502C),
+    puaDeep = Color(0xFF7A3218),
 )
 
 /** Deep cinnabar red with pale gold ink; dark, so the status bar icons turn light like ink night. */
