@@ -1,5 +1,20 @@
 package com.iching.ai.feature.library
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenChip
+import com.iching.ai.ui.components.ZenCardDivider
+import com.iching.ai.ui.components.ZenCard
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,27 +75,22 @@ import com.iching.ai.ui.toThaiNumerals
 @Composable
 fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val visible = state.visible
+    val bottom = ZenSpacing.tabBar + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + ZenSpacing.lg
     PaperBackground(showMountains = false) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
+        LazyColumn(
             modifier = Modifier.fillMaxSize().statusBarsPadding().imePadding(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 120.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.md, bottom = bottom),
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            item(contentType = "header") {
                 Column {
-                    Text("คัมภีร์ ๖๔ กวา", style = MaterialTheme.typography.headlineLarge, color = ZenColors.InkBlack)
-                    Text(
-                        "สารานุกรมแห่งความเปลี่ยนแปลง สำหรับผู้ใคร่ศึกษาด้วยตนเอง",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = ZenColors.InkSoft,
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
+                    Text("คัมภีร์ ๖๔ กวา", style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
+                    Text("สารานุกรมแห่งความเปลี่ยนแปลง", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                    Spacer(Modifier.height(ZenSpacing.lg))
+                    TextField(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = ZenColors.InkFaint) },
                         trailingIcon = {
@@ -91,28 +101,45 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
                             }
                         },
                         placeholder = { Text("ค้นหาด้วยชื่อ เลข หรือความหมาย", color = ZenColors.InkFaint) },
-                        shape = RoundedCornerShape(28.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ZenColors.BambooGreen,
-                            unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.12f),
-                            focusedContainerColor = ZenColors.PaperCream,
-                            unfocusedContainerColor = ZenColors.PaperCream,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = ZenColors.Card,
+                            unfocusedContainerColor = ZenColors.Card,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = ZenColors.InkBlack,
+                            unfocusedTextColor = ZenColors.InkBlack,
+                            cursorColor = ZenColors.CinnabarRed,
                         ),
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(ZenSpacing.md))
                 }
             }
-            items(state.hexagrams, key = { it.id }, contentType = { "hexagram" }) { hexagram ->
-                HexagramTile(hexagram, onClick = { onOpenHexagram(hexagram.id) })
+            item(contentType = "filter") {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(ZenSpacing.sm)) {
+                    item { ZenChip("ทั้งหมด", state.trigram == null, onClick = { viewModel.onTrigramChange(null) }) }
+                    items(Trigram.entries) { t ->
+                        ZenChip("${t.symbol} ${t.natureTh}", state.trigram == t, onClick = { viewModel.onTrigramChange(t) })
+                    }
+                }
+                Spacer(Modifier.height(ZenSpacing.md))
             }
-            if (!state.isLoading && state.hexagrams.isEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
+            itemsIndexed(visible, key = { _, h -> h.id }, contentType = { _, _ -> "hexagram" }) { index, hexagram ->
+                HexagramRow(
+                    hexagram,
+                    first = index == 0,
+                    last = index == visible.lastIndex,
+                    onClick = { onOpenHexagram(hexagram.id) },
+                )
+            }
+            if (!state.isLoading && visible.isEmpty()) {
+                item(contentType = "empty") {
                     Text(
-                        "ไม่พบกวาที่ตรงกับ “${state.query}”",
+                        if (state.query.isBlank()) "ไม่พบกวาที่ตรงกับการค้นหา" else "ไม่พบกวาที่ตรงกับ “${state.query}”",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = ZenColors.InkFaint,
+                        color = ZenColors.InkSoft,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(32.dp),
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
                     )
                 }
             }
@@ -120,40 +147,41 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
     }
 }
 
+/** One row of the list; consecutive rows read as a single card (rounded only at the ends). */
 @Composable
-private fun HexagramTile(hexagram: Hexagram, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(ZenColors.PaperCream.copy(alpha = 0.9f))
-            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.07f), RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(Modifier.fillMaxWidth()) {
-            Text(hexagram.id.toThaiNumerals(), style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
-            Spacer(Modifier.weight(1f))
+private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onClick: () -> Unit) {
+    val corner = 16.dp
+    val shape = RoundedCornerShape(
+        topStart = if (first) corner else 0.dp,
+        topEnd = if (first) corner else 0.dp,
+        bottomStart = if (last) corner else 0.dp,
+        bottomEnd = if (last) corner else 0.dp,
+    )
+    Column(Modifier.fillMaxWidth().clip(shape).background(ZenColors.Card)) {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                "${hexagram.upperTrigram.symbol}${hexagram.lowerTrigram.symbol}",
+                hexagram.id.toThaiNumerals(),
                 style = MaterialTheme.typography.labelMedium,
-                color = ZenColors.InkFaint,
+                color = ZenColors.CinnabarRed,
+                modifier = Modifier.width(24.dp),
             )
+            HexagramFigure(hexagram.pattern, lineWidth = 30.dp, lineHeight = 4.dp, gap = 3.dp)
+            Spacer(Modifier.width(ZenSpacing.md))
+            Column(Modifier.weight(1f)) {
+                Text("${hexagram.nameCn} ${hexagram.shortNameTh}", style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
+                Text(
+                    hexagram.meaningTh,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ZenColors.InkSoft,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Spacer(Modifier.height(6.dp))
-        HexagramFigure(hexagram.pattern, lineWidth = 56.dp, lineHeight = 7.dp, gap = 5.dp)
-        Spacer(Modifier.height(10.dp))
-        Text(hexagram.nameCn, style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
-        Text(hexagram.shortNameTh, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
-        Text(
-            hexagram.meaningTh,
-            style = MaterialTheme.typography.bodySmall,
-            color = ZenColors.InkSoft,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.height(42.dp),
-        )
+        if (!last) ZenCardDivider()
     }
 }
 
@@ -171,7 +199,7 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = ZenSpacing.screen),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("กวาที่ ${h.id.toThaiNumerals()}", style = MaterialTheme.typography.labelLarge, color = ZenColors.CinnabarRed)
@@ -201,9 +229,8 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                         textAlign = TextAlign.Center,
                     )
                 }
-                Spacer(Modifier.height(24.dp))
-                InkDivider()
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(ZenSpacing.lg))
+                ZenCard(contentPadding = PaddingValues(20.dp)) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     ScriptureBlock("คำตัดสิน", h.judgment, ZenColors.CinnabarRed)
                     ScriptureBlock("ภาพลักษณ์", h.image)
@@ -213,6 +240,7 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                         LineRow(position, h.pattern[position - 1] == '1', h.lines[position - 1])
                     }
                     h.allLines?.let { ScriptureBlock("เมื่อเส้นทั้งหกแปร", it, ZenColors.CinnabarRed) }
+                }
                 }
                 Spacer(Modifier.height(48.dp))
             }
@@ -224,8 +252,8 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
 private fun TrigramChip(label: String, trigram: Trigram) {
     Row(
         Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(ZenColors.BambooGreen.copy(alpha = 0.12f))
+            .clip(RoundedCornerShape(12.dp))
+            .background(ZenColors.Card)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
