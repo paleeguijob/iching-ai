@@ -1,5 +1,15 @@
 package com.iching.ai.feature.settings
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenTextButton
+import com.iching.ai.ui.components.ZenPrimaryButton
+import com.iching.ai.ui.components.ZenCardDivider
+import com.iching.ai.ui.components.ZenCard
+import com.iching.ai.ui.components.CinnabarSeal
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -110,8 +120,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(horizontal = ZenSpacing.screen),
+                verticalArrangement = Arrangement.spacedBy(ZenSpacing.md),
             ) {
                 message?.let {
                     Text(
@@ -125,6 +135,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                 SectionLabel("สมาชิก")
                 Card {
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        CinnabarSeal(text = "易", size = 36.dp, tilt = 0f)
+                        Spacer(Modifier.width(ZenSpacing.md))
                         Column(Modifier.weight(1f)) {
                             Text(if (status.premium) "Premium" else "ผู้ใช้ทั่วไป", style = MaterialTheme.typography.titleSmall)
                             Text(
@@ -137,8 +149,15 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                                 color = ZenColors.InkFaint,
                             )
                         }
-                        TextButton(onClick = onOpenPaywall) {
-                            Text(if (status.premium) "รายละเอียด" else "อัปเกรด", color = ZenColors.CinnabarRed)
+                        if (status.premium) {
+                            ZenTextButton("รายละเอียด", onClick = onOpenPaywall)
+                        } else {
+                            ZenPrimaryButton(
+                                "อัปเกรด",
+                                onClick = onOpenPaywall,
+                                showSeal = false,
+                                modifier = Modifier.heightIn(max = 40.dp),
+                            )
                         }
                     }
                     Divider()
@@ -202,7 +221,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                         Switch(
                             checked = current.soundEnabled,
                             onCheckedChange = viewModel::setSound,
-                            colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
+                            colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.InkBlack, checkedThumbColor = ZenColors.PaperCream),
                         )
                     }
                 }
@@ -220,7 +239,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                             Switch(
                                 checked = current.dailyPushEnabled && notificationsGranted,
                                 onCheckedChange = viewModel::setDailyPush,
-                                colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
+                                colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.InkBlack, checkedThumbColor = ZenColors.PaperCream),
                             )
                         }
                     }
@@ -240,16 +259,13 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                         color = ZenColors.InkSoft,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     )
-                    AppTheme.entries.forEach { theme ->
-                        Divider()
-                        ThemeRow(
-                            theme = theme,
-                            selected = theme == current.selectedTheme,
-                            unlocked = theme in current.streak.unlocked,
-                            lockedHint = lockedThemeHint(theme, status.campaign?.active == true),
-                            onSelect = { viewModel.selectTheme(theme) },
-                        )
-                    }
+                    Divider()
+                    ThemePicker(
+                        selected = current.selectedTheme,
+                        unlocked = current.streak.unlocked,
+                        hintFor = { lockedThemeHint(it, status.campaign?.active == true) },
+                        onSelect = viewModel::selectTheme,
+                    )
                 }
 
                 SectionLabel("ว่าด้วยแอปนี้")
@@ -301,60 +317,72 @@ internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String =
     else -> "ธีมพิเศษตรุษจีน"
 }
 
+/**
+ * One row of theme dots. The selected dot gets an ink ring; locked dots carry a small lock, and tapping
+ * one says how to unlock it underneath instead of switching.
+ */
 @Composable
-private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, lockedHint: String, onSelect: () -> Unit) {
-    val swatch = paletteFor(theme)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = unlocked, onClick = onSelect)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .size(26.dp)
-                .clip(CircleShape)
-                .background(swatch.paperCream)
-                .border(5.dp, swatch.inkBlack, CircleShape),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                theme.labelTh,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (unlocked) ZenColors.InkBlack else ZenColors.InkFaint,
-            )
-            if (!unlocked) {
-                Text(
-                    lockedHint,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = ZenColors.InkFaint,
-                )
+private fun ThemePicker(
+    selected: AppTheme,
+    unlocked: Set<AppTheme>,
+    hintFor: (AppTheme) -> String,
+    onSelect: (AppTheme) -> Unit,
+) {
+    var hinted by remember { mutableStateOf<AppTheme?>(null) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            AppTheme.entries.forEach { theme ->
+                val isUnlocked = theme in unlocked
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .clickable(onClickLabel = theme.labelTh) {
+                            if (isUnlocked) {
+                                hinted = null
+                                onSelect(theme)
+                            } else {
+                                hinted = theme
+                            }
+                        }
+                        .semantics { contentDescription = theme.labelTh + if (!isUnlocked) " (ยังล็อกอยู่)" else "" },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .size(30.dp)
+                            .then(if (theme == selected) Modifier.border(2.dp, ZenColors.InkBlack, CircleShape) else Modifier)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(paletteFor(theme).paperCream)
+                            .border(1.dp, ZenColors.current.outline, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!isUnlocked) {
+                            Icon(Icons.Outlined.Lock, null, tint = paletteFor(theme).inkFaint, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
             }
         }
-        when {
-            selected -> Icon(Icons.Outlined.Check, contentDescription = "ใช้อยู่", tint = ZenColors.BambooDeep)
-            !unlocked -> Icon(Icons.Outlined.Lock, contentDescription = "ยังล็อกอยู่", tint = ZenColors.InkFaint)
-        }
+        Spacer(Modifier.height(6.dp))
+        val h = hinted
+        Text(
+            if (h != null) "${h.labelTh} · ${hintFor(h)}" else selected.labelTh,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (h != null) ZenColors.InkSoft else ZenColors.InkFaint,
+        )
     }
 }
 
 @Composable
 private fun Card(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(ZenColors.PaperCream)
-            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.07f), RoundedCornerShape(18.dp)),
-        content = content,
-    )
+    ZenCard(contentPadding = PaddingValues(0.dp), content = content)
 }
 
 @Composable
 private fun Divider() {
-    Spacer(Modifier.fillMaxWidth().height(1.dp).background(ZenColors.InkBlack.copy(alpha = 0.06f)))
+    ZenCardDivider()
 }
 
 @Composable
