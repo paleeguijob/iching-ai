@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,7 +29,7 @@ import com.iching.ai.ui.theme.ZenColors
 
 /**
  * Draws a hexagram from a bottom-to-top pattern ("111111").
- * Optional [lines] marks changing lines with a cinnabar dot (old yang) or cross (old yin).
+ * Optional [lines] marks changing lines (old yang / old yin) with a cinnabar ring around the line.
  * Positions beyond [revealed] are drawn as faint placeholders while a cast is in progress; lines
  * ink in as they are revealed only with [animateReveal]. Without it the figure is one Canvas instead
  * of a tree per line, which is what keeps lists of them cheap to scroll.
@@ -90,7 +91,7 @@ private fun StaticHexagram(
     showChangeMarks: Boolean,
     modifier: Modifier,
 ) {
-    val markWidth = lineHeight * 1.6f
+    val markWidth = lineHeight * 0.5f
     Canvas(modifier.size(lineWidth + markWidth * 2, lineHeight * 6 + gap * 5)) {
         val w = lineWidth.toPx()
         val h = lineHeight.toPx()
@@ -101,7 +102,7 @@ private fun StaticHexagram(
             if (isRevealed) {
                 drawInkLine(isYangAt(position, pattern, lines), color, progress = 1f, left = markW, top = y, width = w, height = h)
                 val change = lines?.getOrNull(position)?.takeIf { it.isChanging && showChangeMarks }
-                if (change != null) drawChangeMark(change, Offset(markW + w + markW * 0.65f, y + h / 2), h)
+                if (change != null) drawChangeRing(left = markW, top = y, width = w, height = h)
             } else {
                 drawPlaceholder(alpha = 1f, left = markW, top = y, width = w, height = h)
             }
@@ -120,33 +121,35 @@ private fun HexagramLine(
 ) {
     val progress by animateFloatAsState(if (visible) 1f else 0f, tween(700), label = "line")
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(height * 1.6f))
+        Box(Modifier.width(height * 0.5f))
         Box(Modifier.width(width).height(height)) {
             Canvas(Modifier.fillMaxWidth().height(height)) {
                 drawPlaceholder(alpha = 1f - progress)
                 drawInkLine(isYang = isYang, color = color, progress = progress)
+                if (change != null && visible) drawChangeRing(alpha = progress)
             }
         }
-        if (change != null && visible) {
-            Canvas(Modifier.width(height * 1.6f).height(height)) {
-                drawChangeMark(change, Offset(size.width * 0.65f, size.height / 2), size.height)
-            }
-        } else {
-            // Keep both sides symmetric whether or not a mark is shown.
-            Box(Modifier.width(height * 1.6f))
-        }
+        Box(Modifier.width(height * 0.5f))
     }
 }
 
-private fun DrawScope.drawChangeMark(change: LineType, c: Offset, height: Float) {
-    val r = height * 0.42f
-    if (change == LineType.OLD_YANG) {
-        drawCircle(ZenColors.CinnabarRed, r, c, style = Stroke(width = height * 0.16f))
-    } else {
-        val s = height * 0.16f
-        drawLine(ZenColors.CinnabarRed, c + Offset(-r, -r), c + Offset(r, r), s)
-        drawLine(ZenColors.CinnabarRed, c + Offset(-r, r), c + Offset(r, -r), s)
-    }
+/** Cinnabar ring around a changing line; drawn past the line's bounds into the gap around it. */
+private fun DrawScope.drawChangeRing(
+    alpha: Float = 1f,
+    left: Float = 0f,
+    top: Float = 0f,
+    width: Float = size.width,
+    height: Float = size.height,
+) {
+    if (alpha <= 0.01f) return
+    val inset = height * 0.3f
+    drawRoundRect(
+        color = ZenColors.CinnabarSoft.copy(alpha = alpha),
+        topLeft = Offset(left - inset, top - inset),
+        size = Size(width + inset * 2, height + inset * 2),
+        cornerRadius = CornerRadius(height * 0.65f),
+        style = Stroke(width = height * 0.18f),
+    )
 }
 
 private fun DrawScope.drawPlaceholder(
@@ -157,11 +160,13 @@ private fun DrawScope.drawPlaceholder(
     height: Float = size.height,
 ) {
     if (alpha <= 0.01f) return
+    // A dashed outline: the line that has not been cast yet.
     drawRoundRect(
-        color = ZenColors.InkFaint.copy(alpha = 0.22f * alpha),
+        color = ZenColors.current.outline.copy(alpha = alpha),
         topLeft = Offset(left, top),
         size = Size(width, height),
         cornerRadius = CornerRadius(height / 2),
+        style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(height, height * 0.8f))),
     )
 }
 
