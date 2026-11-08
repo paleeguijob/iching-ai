@@ -162,11 +162,12 @@ private fun DrawScope.drawPlaceholder(
     if (alpha <= 0.01f) return
     // A dashed outline: the line that has not been cast yet.
     drawRoundRect(
-        color = ZenColors.current.outline.copy(alpha = alpha),
+        color = ZenColors.current.outline.copy(alpha = 0.7f * alpha),
         topLeft = Offset(left, top),
         size = Size(width, height),
         cornerRadius = CornerRadius(height / 2),
-        style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(height, height * 0.8f))),
+        // Long, sparse dashes read as "not yet"; short ones turned the six outlines into noise.
+        style = Stroke(width = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(height * 2.4f, height * 1.2f))),
     )
 }
 

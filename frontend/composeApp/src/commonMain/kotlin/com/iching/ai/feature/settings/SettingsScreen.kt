@@ -355,7 +355,8 @@ private fun ThemePicker(
                             .padding(4.dp)
                             .clip(CircleShape)
                             .background(paletteFor(theme).paperCream)
-                            .border(1.dp, ZenColors.current.outline, CircleShape),
+                            // The theme's own ink as a rim, so similar papers (ink paper, bamboo) stay tellable apart.
+                            .border(4.dp, paletteFor(theme).inkBlack, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (!isUnlocked) {

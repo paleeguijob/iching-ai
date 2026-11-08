@@ -135,6 +135,7 @@ private fun Timeline(
                             color = ZenColors.InkSoft,
                         )
                     }
+                    Spacer(Modifier.width(ZenSpacing.md))
                     Text("ดูแพ็กเกจ", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
                 }
             }

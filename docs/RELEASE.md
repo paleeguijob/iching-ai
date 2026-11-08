@@ -1,4 +1,4 @@
-# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11) และ v1.2 (หัวข้อ 12)
+# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12) และ v1.3 (หัวข้อ 13)
 
 **ลำดับการปล่อย: Android ก่อน** · iOS ทำภายหลังเมื่อสมัคร Apple Developer แล้ว (รวมไว้ที่หัวข้อ 9)
 
@@ -364,3 +364,13 @@
 | ค่า API ÷ รายได้สุทธิ | < 50% | ตามเดิม |
 
 Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`state` = `new` \| `cast`), `year_cast`, `year_view`, `year_share` (`target`), `year_ai_tap`, `year_ai_done` (`charge`), `push_open` (เพิ่ม `type = campaign`) · ทุก event มี `campaign_id`
+
+## 13. ปล่อย v1.3 — ปรับ UI แบบ Quiet Ink
+
+ปรับหน้าตาทั้งแอปตามแนว Quiet Ink (ยัง Zen หมึกบนกระดาษเหมือนเดิม): การ์ดพื้นผิวใหม่ทุกธีม, แถบเมนูล่างแบบเรียบ, ปุ่มเริ่มเสี่ยงทายตรึงเหนือเมนู, แถบความคืบหน้าตอนโยนเหรียญ, คำทำนายเป็นแผ่นกระดาษขอบชาด, คัมภีร์เป็นรายการกระชับ + ตัวกรองตรีกรม, บันทึกชะตาเป็นการ์ดรายเดือน, ตั้งค่าเลือกธีมด้วยจุดสี · ไม่มีการเปลี่ยน backend · `versionCode` 130 / `versionName` 1.3.0 · Android เท่านั้น
+สเปก: [`docs/superpowers/specs/2026-11-08-quiet-ink-ui-redesign-design.md`](superpowers/specs/2026-11-08-quiet-ink-ui-redesign-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-quiet-ink-ui-redesign.md`](superpowers/plans/2026-11-08-quiet-ink-ui-redesign.md)
+
+1. ☐ ไล่ดูบนเครื่องจริงทั้ง 5 ธีม: หน้าแรก (พิมพ์คำถามตอนคีย์บอร์ดเปิด ปุ่มต้องลอยเหนือคีย์บอร์ด), โยนเหรียญ, คำทำนาย (ทั้งแบบ AI และตัวบทคัมภีร์ — แบบตัวบทต้องไม่มีป้าย AI), คัมภีร์ + ตัวกรอง, บันทึก, ตั้งค่า, paywall · ลองขนาดตัวอักษรระบบ 1.3 เท่าด้วย
+2. ☐ ภาพหน้าจอ store ชุดใหม่อยู่ที่ `docs/store/screenshots/01–05` (1080×2160, ธีมราตรีหมึก) → อัปโหลดแทนชุดเดิมใน Play Console → Main store listing
+3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp frontend/androidApp/build/outputs/bundle/release/*.aab iching-ai-1.3.0-130.aab` (ไม่ commit) → อัปโหลด Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8
+4. ☐ ถ้า v1.2 ยังไม่ขึ้น production ให้ปล่อย v1.2 ให้เสร็จก่อน (แคมเปญตรุษจีนมีกำหนดเวลา) แล้วค่อยส่ง v1.3
