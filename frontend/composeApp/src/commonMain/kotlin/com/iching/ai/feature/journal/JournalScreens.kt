@@ -1,5 +1,12 @@
 package com.iching.ai.feature.journal
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.formatThaiShortDate
+import com.iching.ai.ui.components.ZenCardDivider
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -93,12 +100,13 @@ private fun Timeline(
     onOpenEntry: (Long) -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
+    val bottom = ZenSpacing.tabBar + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + ZenSpacing.lg
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 120.dp),
+        contentPadding = PaddingValues(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.md, bottom = bottom),
     ) {
         item {
-            Text("บันทึกชะตา", style = MaterialTheme.typography.headlineLarge, color = ZenColors.InkBlack)
+            Text("บันทึกชะตา", style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
             Text(
                 if (journalDays == null) "ย้อนมองเส้นทางที่ผ่านมา $entryCount ครั้งแห่งการถามไถ่"
                 else "${journalDays} วันล่าสุด · $entryCount ครั้งแห่งการถามไถ่",
@@ -113,8 +121,8 @@ private fun Timeline(
                     Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(ZenColors.CinnabarRed.copy(alpha = 0.06f))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(ZenColors.Card)
                         .clickable(onClick = onOpenPaywall)
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -133,15 +141,15 @@ private fun Timeline(
         }
         months.forEach { month ->
             item(key = "month-${month.label}", contentType = "month") {
-                Text(
-                    month.label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = ZenColors.CinnabarRed,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp, start = 2.dp),
-                )
+                SectionLabel(month.label, modifier = Modifier.padding(top = ZenSpacing.md, bottom = ZenSpacing.sm, start = 2.dp))
             }
-            items(month.entries, key = { it.reading.id }, contentType = { "reading" }) { entry ->
-                TimelineItem(entry, isLast = entry === month.entries.last(), onClick = { onOpenEntry(entry.reading.id) })
+            itemsIndexed(month.entries, key = { _, e -> e.reading.id }, contentType = { _, _ -> "reading" }) { index, entry ->
+                TimelineItem(
+                    entry,
+                    first = index == 0,
+                    last = index == month.entries.lastIndex,
+                    onClick = { onOpenEntry(entry.reading.id) },
+                )
             }
         }
     }
@@ -150,40 +158,32 @@ private fun Timeline(
 /** Marks a reading of the year hexagram in the journal. */
 internal const val YEAR_READING_LABEL = "กวาประจำปี"
 
+/** A reading row; the rows of one month read as a single card, rounded only at its ends. */
 @Composable
-private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Unit) {
+private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onClick: () -> Unit) {
     val reading = entry.reading
-    // The spine is drawn behind the row rather than sized by an intrinsic measurement, which would
-    // measure every text in the card twice each time a row scrolls into view.
-    Row(
-        Modifier.fillMaxWidth().drawBehind {
-            val x = 11.dp.toPx()
-            drawLine(
-                ZenColors.InkBlack.copy(alpha = 0.12f),
-                Offset(x, 0f),
-                Offset(x, if (isLast) size.height * 0.3f else size.height),
-                strokeWidth = 2.dp.toPx(),
-            )
-            drawCircle(ZenColors.BambooGreen, 5.dp.toPx(), Offset(x, 30.dp.toPx()))
-            drawCircle(ZenColors.PaperCream, 2.dp.toPx(), Offset(x, 30.dp.toPx()))
-        }
-    ) {
-        Spacer(Modifier.width(32.dp))
+    val corner = 16.dp
+    val shape = RoundedCornerShape(
+        topStart = if (first) corner else 0.dp,
+        topEnd = if (first) corner else 0.dp,
+        bottomStart = if (last) corner else 0.dp,
+        bottomEnd = if (last) corner else 0.dp,
+    )
+    Column(Modifier.fillMaxWidth().clip(shape).background(ZenColors.Card)) {
         Row(
             Modifier
-                .weight(1f)
-                .padding(bottom = 12.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(ZenColors.PaperCream.copy(alpha = 0.92f))
-                .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.07f), RoundedCornerShape(18.dp))
+                .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(14.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${formatThaiDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis)}",
-                    style = MaterialTheme.typography.labelSmall,
+                    buildString {
+                        append("${formatThaiShortDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis).removeSuffix(" น.")}")
+                        if (reading.source == InterpretationSource.SCRIPTURE) append(" · ตัวบทคัมภีร์")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkFaint,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -198,16 +198,13 @@ private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Un
                 Text(
                     buildString {
                         append("${entry.primary.nameCn} ${entry.primary.shortNameTh}")
-                        entry.relating?.let { append("  →  ${it.nameCn} ${it.shortNameTh}") }
+                        entry.relating?.let { append(" → ${it.nameCn} ${it.shortNameTh}") }
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.BambooDeep,
                 )
                 if (reading.yearOf != null) {
                     Text(YEAR_READING_LABEL, style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
-                }
-                if (reading.source == InterpretationSource.SCRIPTURE) {
-                    Text("ตัวบทจากคัมภีร์", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 }
                 reading.outcome?.let {
                     Text("✓ ${outcomeLabel(it)}", style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
@@ -222,6 +219,7 @@ private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Un
                 gap = 3.dp,
             )
         }
+        if (!last) ZenCardDivider()
     }
 }
 

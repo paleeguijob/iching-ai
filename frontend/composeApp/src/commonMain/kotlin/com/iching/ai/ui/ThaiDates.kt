@@ -15,6 +15,17 @@ fun formatThaiDate(epochMillis: Long): String {
     return "${dt.day} ${THAI_MONTHS[dt.month.ordinal]} ${dt.year + 543}"
 }
 
+private val THAI_MONTHS_SHORT = listOf(
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+)
+
+/** e.g. "๖ พ.ย." — day in Thai numerals and the short month, for compact journal rows. */
+fun formatThaiShortDate(epochMillis: Long): String {
+    val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${dt.day.toThaiNumerals()} ${THAI_MONTHS_SHORT[dt.month.ordinal]}"
+}
+
 /** e.g. "14:05 น." */
 fun formatThaiTime(epochMillis: Long): String {
     val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
