@@ -1,5 +1,8 @@
 package com.iching.ai.feature.library
 
+import com.iching.ai.ui.components.ZenCardRow
+import com.iching.ai.ui.theme.tabContentBottomPadding
+import com.iching.ai.ui.theme.LocalTabBarHeight
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenChip
 import com.iching.ai.ui.components.ZenCardDivider
@@ -74,7 +77,7 @@ import com.iching.ai.ui.toThaiNumerals
 fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val visible = state.visible
-    val bottom = ZenSpacing.tabBar + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + ZenSpacing.lg
+    val bottom = tabContentBottomPadding(LocalTabBarHeight.current)
     PaperBackground(showMountains = false) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().statusBarsPadding().imePadding(),
@@ -148,14 +151,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
 /** One row of the list; consecutive rows read as a single card (rounded only at the ends). */
 @Composable
 private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onClick: () -> Unit) {
-    val corner = 16.dp
-    val shape = RoundedCornerShape(
-        topStart = if (first) corner else 0.dp,
-        topEnd = if (first) corner else 0.dp,
-        bottomStart = if (last) corner else 0.dp,
-        bottomEnd = if (last) corner else 0.dp,
-    )
-    Column(Modifier.fillMaxWidth().clip(shape).background(ZenColors.Card)) {
+    ZenCardRow(first, last) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -179,7 +175,6 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
                 )
             }
         }
-        if (!last) ZenCardDivider()
     }
 }
 

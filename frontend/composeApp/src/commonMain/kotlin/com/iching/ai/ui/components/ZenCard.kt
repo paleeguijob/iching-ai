@@ -57,3 +57,36 @@ fun ZenCard(
 fun ZenCardDivider(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(ZenColors.current.outlineVariant))
 }
+
+/**
+ * One row of a card that spans several lazy-list items: the rows of a group read as a single [ZenCard],
+ * rounded only at its ends. The last row draws the card's hairline bottom edge, which is what keeps the
+ * group visible on dark themes where the card colour is close to the page.
+ */
+@Composable
+fun ZenCardRow(first: Boolean, last: Boolean, content: @Composable ColumnScope.() -> Unit) {
+    val corner = 16.dp
+    val shape = RoundedCornerShape(
+        topStart = if (first) corner else 0.dp,
+        topEnd = if (first) corner else 0.dp,
+        bottomStart = if (last) corner else 0.dp,
+        bottomEnd = if (last) corner else 0.dp,
+    )
+    val edge = ZenColors.current.outlineVariant
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(ZenColors.Card)
+            .drawWithContent {
+                drawContent()
+                if (last) {
+                    val y = size.height - 0.5.dp.toPx()
+                    drawLine(edge, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+                }
+            },
+    ) {
+        content()
+        if (!last) ZenCardDivider()
+    }
+}

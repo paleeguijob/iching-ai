@@ -1,5 +1,8 @@
 package com.iching.ai.feature.journal
 
+import com.iching.ai.ui.components.ZenCardRow
+import com.iching.ai.ui.theme.tabContentBottomPadding
+import com.iching.ai.ui.theme.LocalTabBarHeight
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.formatThaiShortDate
 import com.iching.ai.ui.components.ZenCardDivider
@@ -100,7 +103,7 @@ private fun Timeline(
     onOpenEntry: (Long) -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
-    val bottom = ZenSpacing.tabBar + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + ZenSpacing.lg
+    val bottom = tabContentBottomPadding(LocalTabBarHeight.current)
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
         contentPadding = PaddingValues(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.md, bottom = bottom),
@@ -163,14 +166,7 @@ internal const val YEAR_READING_LABEL = "กวาประจำปี"
 @Composable
 private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onClick: () -> Unit) {
     val reading = entry.reading
-    val corner = 16.dp
-    val shape = RoundedCornerShape(
-        topStart = if (first) corner else 0.dp,
-        topEnd = if (first) corner else 0.dp,
-        bottomStart = if (last) corner else 0.dp,
-        bottomEnd = if (last) corner else 0.dp,
-    )
-    Column(Modifier.fillMaxWidth().clip(shape).background(ZenColors.Card)) {
+    ZenCardRow(first, last) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -220,7 +216,6 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                 gap = 3.dp,
             )
         }
-        if (!last) ZenCardDivider()
     }
 }
 

@@ -1,5 +1,8 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.theme.ctaBottomPadding
+import com.iching.ai.ui.theme.LocalTabBarHeight
+import androidx.compose.foundation.layout.ime
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.components.ZenChip
@@ -8,8 +11,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextField
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.PaddingValues
@@ -120,7 +121,7 @@ fun HomeScreen(
 
     val pickable = QuestionCategory.entries.filter { it.pickable }
     PaperBackground(showMountains = true) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Column(
                 Modifier
                     .weight(1f)
@@ -180,12 +181,12 @@ fun HomeScreen(
                 GuidanceQuotaBar(guidanceQuota(status))
                 Spacer(Modifier.height(ZenSpacing.md))
             }
-            // Pinned outside the scroll so it is never hidden behind the tab bar; while typing it rides the keyboard.
-            val bottom = if (WindowInsets.isImeVisible) {
-                ZenSpacing.md
-            } else {
-                ZenSpacing.tabBar + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + ZenSpacing.md
-            }
+            // Pinned outside the scroll, a gap above the tab bar or the keyboard, whichever is taller; the
+            // max() keeps it from dipping behind the bar while the keyboard animates in or out.
+            val bottom = ctaBottomPadding(
+                imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding(),
+                tabBarHeight = LocalTabBarHeight.current,
+            )
             ZenPrimaryButton(
                 text = startButtonText(deciding),
                 onClick = { viewModel.onStart(question.trim(), QuestionCategory.fromWire(category)) },

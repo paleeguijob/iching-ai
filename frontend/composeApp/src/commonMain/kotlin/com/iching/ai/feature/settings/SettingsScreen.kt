@@ -1,5 +1,6 @@
 package com.iching.ai.feature.settings
 
+import androidx.compose.ui.semantics.selected
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenTextButton
 import com.iching.ai.ui.components.ZenPrimaryButton
@@ -156,7 +157,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                                 "อัปเกรด",
                                 onClick = onOpenPaywall,
                                 showSeal = false,
-                                modifier = Modifier.heightIn(max = 40.dp),
+                                compact = true,
                             )
                         }
                     }
@@ -345,7 +346,10 @@ private fun ThemePicker(
                                 hinted = theme
                             }
                         }
-                        .semantics { contentDescription = theme.labelTh + if (!isUnlocked) " (ยังล็อกอยู่)" else "" },
+                        .semantics {
+                            contentDescription = theme.labelTh + if (!isUnlocked) " (ยังล็อกอยู่)" else ""
+                            this.selected = theme == selected
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(

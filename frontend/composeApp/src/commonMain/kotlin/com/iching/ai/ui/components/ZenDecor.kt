@@ -159,11 +159,13 @@ fun ZenPrimaryButton(
     enabled: Boolean = true,
     color: Color = ZenColors.InkBlack,
     showSeal: Boolean = true,
+    /** Small inline variant (e.g. "อัปเกรด" in a card row): shorter, smaller text; still grows with font scale. */
+    compact: Boolean = false,
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 50.dp),
+        modifier = modifier.heightIn(min = if (compact) 36.dp else 50.dp),
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = color,
@@ -171,13 +173,17 @@ fun ZenPrimaryButton(
             disabledContainerColor = color.copy(alpha = 0.25f),
             disabledContentColor = ZenColors.PaperCream,
         ),
-        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 8.dp),
+        contentPadding = if (compact) PaddingValues(horizontal = 16.dp, vertical = 6.dp) else PaddingValues(horizontal = 28.dp, vertical = 8.dp),
     ) {
         if (showSeal) {
             Box(Modifier.size(8.dp).background(ZenColors.CinnabarSoft, RoundedCornerShape(2.dp)))
             Spacer(Modifier.width(10.dp))
         }
-        Text(text, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(
+            text,
+            style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

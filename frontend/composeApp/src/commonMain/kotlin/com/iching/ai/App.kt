@@ -1,5 +1,9 @@
 package com.iching.ai
 
+import com.iching.ai.ui.theme.LocalTabBarHeight
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.CompositionLocalProvider
 import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -184,12 +188,15 @@ private fun MainNavigation() {
 
         // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
         // and a scroll cancels the gesture, so neither reaches this.
+        val density = LocalDensity.current
+        var tabBarHeight by remember { mutableStateOf(ZenSpacing.tabBar) }
         Box(
             Modifier
                 .fillMaxSize()
                 .background(ZenColors.PaperCream)
                 .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } },
         ) {
+            CompositionLocalProvider(LocalTabBarHeight provides tabBarHeight) {
             NavHost(
                 nav,
                 startDestination = HomeRoute,
@@ -325,13 +332,18 @@ private fun MainNavigation() {
                 }
             }
 
+            }
             AnimatedVisibility(
                 visible = currentTab != null,
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = fadeOut() + slideOutVertically { it / 2 },
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                ZenTabBar(selected = currentTab, onSelect = ::openTab)
+                ZenTabBar(
+                    selected = currentTab,
+                    onSelect = ::openTab,
+                    modifier = Modifier.onSizeChanged { tabBarHeight = with(density) { it.height.toDp() } },
+                )
             }
         }
     }
@@ -339,10 +351,10 @@ private fun MainNavigation() {
 
 /** Flat full-width tab bar; the open tab is inked and marked with a small cinnabar dot. */
 @Composable
-private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit) {
+private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit, modifier: Modifier = Modifier) {
     val edge = ZenColors.current.outlineVariant
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .background(ZenColors.PaperMid.copy(alpha = 0.92f))
             .drawBehind { drawLine(edge, Offset.Zero, Offset(size.width, 0f), strokeWidth = 1.dp.toPx()) }
