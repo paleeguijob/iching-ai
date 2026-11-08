@@ -14,8 +14,10 @@ import com.iching.ai.data.journal.MIGRATION_3_4
 import com.iching.ai.data.journal.MIGRATION_4_5
 import com.iching.ai.data.journal.RoomJournalRepository
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
+import com.iching.ai.data.siamsi.BundledSiamSiRepository
 import com.iching.ai.data.settings.DataStoreSettingsRepository
 import com.iching.ai.domain.repository.HexagramRepository
+import com.iching.ai.domain.repository.SiamSiRepository
 import com.iching.ai.domain.repository.JournalRepository
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.repository.SettingsRepository
@@ -55,6 +57,7 @@ internal fun buildDatabase(builder: RoomDatabase.Builder<JournalDatabase>): Jour
 val dataModule: Module = module {
     includes(platformDataModule())
     single<HexagramRepository> { ScriptureHexagramRepository() }
+    single<SiamSiRepository> { BundledSiamSiRepository() }
     single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }
     single<SettingsRepository> { DataStoreSettingsRepository(get()) }

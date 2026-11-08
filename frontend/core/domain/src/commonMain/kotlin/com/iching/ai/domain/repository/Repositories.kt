@@ -10,6 +10,8 @@ import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.model.YearHexagram
+import com.iching.ai.domain.siamsi.SiamSiSet
+import com.iching.ai.domain.siamsi.SiamSiSetRef
 import kotlinx.coroutines.flow.Flow
 
 interface HexagramRepository {
@@ -91,6 +93,13 @@ interface JournalRepository {
     /** Inserts server readings that are not on this device yet (matched by serverId), skipping deleted ones. */
     suspend fun mergeFromServer(readings: List<Reading>): Int
     suspend fun clear()
+}
+
+/** Siam Si sets: bundled ones, plus (later) ones downloaded when the server switches them on. */
+interface SiamSiRepository {
+    /** The sets for [refs], in that order, skipping any that cannot be loaded. */
+    suspend fun available(refs: List<SiamSiSetRef>): List<SiamSiSet>
+    suspend fun set(id: String): SiamSiSet?
 }
 
 interface SettingsRepository {
