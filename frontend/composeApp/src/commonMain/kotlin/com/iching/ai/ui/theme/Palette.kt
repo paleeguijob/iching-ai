@@ -24,6 +24,9 @@ data class ZenPalette(
     val surfaceLow: Color,
     val outline: Color,
     val outlineVariant: Color,
+    /** Raised surface for ZenCard. */
+    val card: Color,
+    val cardShadow: Color,
     val isDark: Boolean = false,
 )
 
@@ -49,6 +52,8 @@ val InkPaperPalette = ZenPalette(
     surfaceLow = Color(0xFFF6F4EE),
     outline = Color(0xFFCFC8B8),
     outlineVariant = Color(0xFFE3DDCF),
+    card = Color(0xFFFFFFFF),
+    cardShadow = Color(0x122D3748),
 )
 
 private val BambooPalette = ZenPalette(
@@ -72,6 +77,8 @@ private val BambooPalette = ZenPalette(
     surfaceLow = Color(0xFFF1F5EA),
     outline = Color(0xFFC3CFB4),
     outlineVariant = Color(0xFFDBE3CE),
+    card = Color(0xFFFBFDF7),
+    cardShadow = Color(0x1226352B),
 )
 
 private val CinnabarDawnPalette = ZenPalette(
@@ -95,6 +102,8 @@ private val CinnabarDawnPalette = ZenPalette(
     surfaceLow = Color(0xFFFAF0E8),
     outline = Color(0xFFD9C4B2),
     outlineVariant = Color(0xFFEBDCCD),
+    card = Color(0xFFFFFBF7),
+    cardShadow = Color(0x123A2A26),
 )
 
 private val InkNightPalette = ZenPalette(
@@ -118,6 +127,8 @@ private val InkNightPalette = ZenPalette(
     surfaceLow = Color(0xFF1B2028),
     outline = Color(0xFF454C58),
     outlineVariant = Color(0xFF323843),
+    card = Color(0xFF222833),
+    cardShadow = Color(0x59000000),
     isDark = true,
 )
 
@@ -143,6 +154,8 @@ private val CinnabarGoldPalette = ZenPalette(
     surfaceLow = Color(0xFF53130F),
     outline = Color(0xFF8A4B33),
     outlineVariant = Color(0xFF6B2E22),
+    card = Color(0xFF5E1813),
+    cardShadow = Color(0x59000000),
     isDark = true,
 )
 

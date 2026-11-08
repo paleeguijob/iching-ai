@@ -36,6 +36,26 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun cardTextIsReadableOnEveryTheme() = AppTheme.entries.forEach { theme ->
+        val p = paletteFor(theme)
+        listOf(
+            Triple("ink/card", p.inkBlack to p.card, 4.5f),
+            Triple("soft/card", p.inkSoft to p.card, 4.5f),
+            Triple("bamboo/card", p.bambooDeep to p.card, 3f),
+        ).forEach { (name, pair, min) ->
+            val ratio = contrast(pair.first, pair.second)
+            assertTrue(ratio >= min, "$theme $name is only $ratio:1")
+        }
+    }
+
+    @Test
+    fun cardColoursMatchSpec() {
+        assertEquals(Color(0xFFFFFFFF), paletteFor(AppTheme.INK_PAPER).card)
+        assertEquals(Color(0xFF222833), paletteFor(AppTheme.INK_NIGHT).card)
+        assertEquals(Color(0xFF5E1813), paletteFor(AppTheme.CINNABAR_GOLD).card)
+    }
+
+    @Test
     fun defaultThemeKeepsCurrentColors() {
         assertEquals(Color(0xFFFAF9F6), InkPaperPalette.paperCream)
         assertEquals(Color(0xFF2D3748), InkPaperPalette.inkBlack)
