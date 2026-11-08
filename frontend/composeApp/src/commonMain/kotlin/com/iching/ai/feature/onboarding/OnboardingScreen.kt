@@ -43,7 +43,7 @@ private val POINTS = listOf(
 @Composable
 fun OnboardingScreen(onAccept: () -> Unit) {
     val uri = LocalUriHandler.current
-    PaperBackground {
+    PaperBackground(showMountains = true) {
         Column(
             Modifier
                 .fillMaxSize()

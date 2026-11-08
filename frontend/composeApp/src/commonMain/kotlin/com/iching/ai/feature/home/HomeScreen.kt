@@ -107,7 +107,7 @@ fun HomeScreen(
     var question by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf<String?>(null) }
 
-    PaperBackground {
+    PaperBackground(showMountains = true) {
         Column(
             Modifier
                 .fillMaxSize()

@@ -22,6 +22,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,11 +47,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.theme.ZenColors
 
-/** Cream paper with faint ink-wash mountains along the bottom and an ensō in the corner. */
+/** Cream paper with a faint ensō in the corner; [showMountains] adds ink-wash hills along the bottom. */
 @Composable
 fun PaperBackground(
     modifier: Modifier = Modifier,
-    showMountains: Boolean = true,
+    showMountains: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(modifier.fillMaxSize()) {
@@ -64,10 +65,10 @@ fun PaperBackground(
                     val paper = Brush.verticalGradient(listOf(ZenColors.PaperCream, ZenColors.PaperMid, ZenColors.PaperShade))
                     // Ensō — the Zen circle, left slightly open.
                     val r = size.minDimension * 0.34f
-                    val ensoColor = ZenColors.InkBlack.copy(alpha = 0.035f)
+                    val ensoColor = ZenColors.InkBlack.copy(alpha = 0.018f)
                     val ensoStroke = Stroke(width = r * 0.16f, cap = StrokeCap.Round)
-                    val back = mountains(0.80f, 0.055f, ZenColors.BambooGreen)
-                    val front = mountains(0.87f, 0.075f, ZenColors.InkBlack)
+                    val back = mountains(0.80f, 0.028f, ZenColors.BambooGreen)
+                    val front = mountains(0.87f, 0.038f, ZenColors.InkBlack)
                     onDrawBehind {
                         drawRect(paper)
                         drawArc(
@@ -157,20 +158,25 @@ fun ZenPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     color: Color = ZenColors.InkBlack,
+    showSeal: Boolean = true,
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 54.dp),
-        shape = RoundedCornerShape(28.dp),
+        modifier = modifier.heightIn(min = 50.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = color,
             contentColor = ZenColors.PaperCream,
             disabledContainerColor = color.copy(alpha = 0.25f),
             disabledContentColor = ZenColors.PaperCream,
         ),
-        contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 8.dp),
     ) {
+        if (showSeal) {
+            Box(Modifier.size(8.dp).background(ZenColors.CinnabarSoft, RoundedCornerShape(2.dp)))
+            Spacer(Modifier.width(10.dp))
+        }
         Text(text, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
     }
 }
@@ -180,25 +186,27 @@ fun ZenSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = M
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
-        shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, ZenColors.InkBlack.copy(alpha = 0.35f)),
+        modifier = modifier.heightIn(min = 46.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, ZenColors.current.outline),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = ZenColors.InkBlack),
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
-/** Small caps-like label with a brush stroke on either side. */
+/** Quiet action under a primary button, e.g. "โยนต่อเนื่องจนครบ". */
+@Composable
+fun ZenTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    TextButton(onClick = onClick, modifier = modifier) {
+        Text(text, style = MaterialTheme.typography.labelLarge, color = ZenColors.InkSoft, textAlign = TextAlign.Center)
+    }
+}
+
+/** Small spaced label above a group, e.g. "กวาหลัก". */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = ZenColors.BambooDeep) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(18.dp).height(1.5.dp).background(color.copy(alpha = 0.6f)))
-        Spacer(Modifier.width(10.dp))
-        Text(text, style = MaterialTheme.typography.labelMedium, color = color)
-        Spacer(Modifier.width(10.dp))
-        Box(Modifier.width(18.dp).height(1.5.dp).background(color.copy(alpha = 0.6f)))
-    }
+    Text(text, style = MaterialTheme.typography.labelSmall, color = color, modifier = modifier)
 }
 
 /** Thin ink divider that fades at both ends. */
