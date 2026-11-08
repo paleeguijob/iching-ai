@@ -1,6 +1,10 @@
 package com.iching.ai.data.di
 
 import android.content.Context
+import com.iching.ai.data.siamsi.FileSiamSiCache
+import com.iching.ai.data.siamsi.SiamSiCache
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import androidx.room.Room
 import com.iching.ai.data.journal.JournalDatabase
 import io.ktor.client.HttpClient
@@ -22,5 +26,9 @@ internal actual fun platformDataModule(): Module = module {
     single {
         val context: Context = get()
         createDataStore(context.filesDir.resolve(SETTINGS_FILE).absolutePath)
+    }
+    single<SiamSiCache> {
+        val context: Context = get()
+        FileSiamSiCache(context.filesDir.resolve(SIAMSI_DIR).absolutePath.toPath(), FileSystem.SYSTEM)
     }
 }

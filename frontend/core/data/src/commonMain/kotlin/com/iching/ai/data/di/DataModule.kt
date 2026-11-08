@@ -16,6 +16,7 @@ import com.iching.ai.data.journal.MIGRATION_5_6
 import com.iching.ai.data.journal.RoomJournalRepository
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
 import com.iching.ai.data.siamsi.BundledSiamSiRepository
+import com.iching.ai.data.siamsi.SiamSiSetRepository
 import com.iching.ai.data.settings.DataStoreSettingsRepository
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.SiamSiRepository
@@ -32,8 +33,9 @@ import org.koin.dsl.module
 
 internal const val DATABASE_FILE = "iching_journal.db"
 internal const val SETTINGS_FILE = "iching_settings.preferences_pb"
+internal const val SIAMSI_DIR = "siamsi_sets"
 
-/** Platform pieces: HTTP engine, database builder and a writable directory. */
+/** Platform pieces: HTTP engine, database builder, settings store and the Siam Si download cache. */
 internal expect fun platformDataModule(): Module
 
 internal fun createDataStore(path: String): DataStore<Preferences> =
@@ -58,7 +60,7 @@ internal fun buildDatabase(builder: RoomDatabase.Builder<JournalDatabase>): Jour
 val dataModule: Module = module {
     includes(platformDataModule())
     single<HexagramRepository> { ScriptureHexagramRepository() }
-    single<SiamSiRepository> { BundledSiamSiRepository() }
+    single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get()) }
     single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }
     single<SettingsRepository> { DataStoreSettingsRepository(get()) }
