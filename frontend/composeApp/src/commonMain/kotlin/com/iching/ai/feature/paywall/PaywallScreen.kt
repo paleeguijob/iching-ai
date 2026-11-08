@@ -1,5 +1,6 @@
 package com.iching.ai.feature.paywall
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,7 +78,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = ZenSpacing.screen),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CinnabarSeal(text = "道", size = 56.dp)
@@ -145,8 +146,9 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(ZenColors.Card)
+                                    .border(1.dp, ZenColors.current.outlineVariant, RoundedCornerShape(16.dp))
                                     .clickable(enabled = !state.busy) { viewModel.buy(coins) }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -203,13 +205,13 @@ private fun renewalTerms(product: StoreProduct): String {
 
 @Composable
 private fun PlanCard(product: StoreProduct, selected: Boolean, onClick: () -> Unit) {
-    val border = if (selected) ZenColors.CinnabarRed else ZenColors.InkBlack.copy(alpha = 0.12f)
+    val border = if (selected) ZenColors.InkBlack else ZenColors.current.outlineVariant
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(if (selected) ZenColors.CinnabarRed.copy(alpha = 0.05f) else ZenColors.PaperCream)
-            .border(if (selected) 2.dp else 1.dp, border, RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(ZenColors.Card)
+            .border(if (selected) 2.dp else 1.dp, border, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,

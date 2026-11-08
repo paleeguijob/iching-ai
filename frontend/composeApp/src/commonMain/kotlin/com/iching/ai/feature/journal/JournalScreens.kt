@@ -366,10 +366,12 @@ private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("จดบันทึกส่วนตัว: สิ่งที่เกิดขึ้น สิ่งที่ได้เรียนรู้...", color = ZenColors.InkFaint) },
             textStyle = MaterialTheme.typography.bodyMedium,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ZenColors.BambooGreen,
-                unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.12f),
+                focusedBorderColor = ZenColors.current.outline,
+                unfocusedBorderColor = ZenColors.current.outlineVariant,
+                focusedContainerColor = ZenColors.Card,
+                unfocusedContainerColor = ZenColors.Card,
             ),
         )
         if (draft != note.orEmpty()) {

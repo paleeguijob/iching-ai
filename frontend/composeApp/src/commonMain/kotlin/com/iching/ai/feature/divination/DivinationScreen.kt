@@ -169,7 +169,7 @@ fun DivinationScreen(
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(20.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(ZenColors.InkBlack.copy(alpha = 0.9f))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             )

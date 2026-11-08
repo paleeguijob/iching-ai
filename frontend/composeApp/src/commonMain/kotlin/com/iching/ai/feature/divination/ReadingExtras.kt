@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenTextButton
 import com.iching.ai.ui.components.ZenCard
 import androidx.compose.foundation.background
@@ -283,7 +284,7 @@ fun SafetyStage(message: String, onDone: () -> Unit) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = ZenSpacing.screen, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

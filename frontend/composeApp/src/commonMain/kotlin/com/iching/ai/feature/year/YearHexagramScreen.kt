@@ -1,5 +1,6 @@
 package com.iching.ai.feature.year
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -119,7 +120,7 @@ fun YearHexagramScreen(
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(20.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(ZenColors.InkBlack.copy(alpha = 0.9f))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             )
@@ -186,7 +187,7 @@ private fun ResultStage(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+            .padding(horizontal = ZenSpacing.screen, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 1. Header

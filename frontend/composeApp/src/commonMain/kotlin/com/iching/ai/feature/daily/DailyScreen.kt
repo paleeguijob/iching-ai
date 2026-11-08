@@ -1,5 +1,7 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenCard
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,7 +67,7 @@ fun DailyScreen(viewModel: DailyViewModel, onBack: () -> Unit, onOpenHexagram: (
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = ZenSpacing.screen, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 HexagramFigure(hexagram.pattern, lineWidth = 96.dp, lineHeight = 11.dp, gap = 8.dp)
@@ -88,14 +90,14 @@ fun DailyScreen(viewModel: DailyViewModel, onBack: () -> Unit, onOpenHexagram: (
                 Text(
                     "เส้นทางเต๋า · เปิดดูต่อเนื่อง ${state.streak.current.toThaiNumerals()} วัน",
                     style = MaterialTheme.typography.labelMedium,
-                    color = ZenColors.CinnabarRed,
+                    color = ZenColors.BambooDeep,
                 )
-                Spacer(Modifier.height(22.dp))
-                InkDivider()
-                Spacer(Modifier.height(22.dp))
-                SectionLabel("คำตัดสิน", Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                Text(hexagram.judgment, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(ZenSpacing.lg))
+                ZenCard {
+                    SectionLabel("คำตัดสิน", Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    Text(hexagram.judgment, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkBlack, modifier = Modifier.fillMaxWidth())
+                }
                 Spacer(Modifier.height(24.dp))
                 ZenPrimaryButton("แชร์การ์ดวันนี้", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))

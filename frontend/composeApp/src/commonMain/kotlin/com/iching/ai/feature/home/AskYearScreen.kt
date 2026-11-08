@@ -1,5 +1,7 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -77,20 +79,11 @@ fun AskYearScreen(
                 }
                 Text("ถามนักพรตเรื่องปีนี้", style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
             }
-            Column(Modifier.padding(horizontal = 24.dp)) {
+            Column(Modifier.padding(horizontal = ZenSpacing.screen)) {
                 Spacer(Modifier.height(24.dp))
                 QuestionField(question, onChange = { question = it })
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    QuestionCategory.NEWYEAR.labelTh,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ZenColors.PaperCream,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(ZenColors.BambooDeep)
-                        .border(1.dp, ZenColors.BambooGreen.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                )
+                ZenChip(QuestionCategory.NEWYEAR.labelTh, selected = true, onClick = {})
                 Spacer(Modifier.height(24.dp))
                 GuidanceQuotaBar(guidanceQuota(status))
                 Spacer(Modifier.height(12.dp))

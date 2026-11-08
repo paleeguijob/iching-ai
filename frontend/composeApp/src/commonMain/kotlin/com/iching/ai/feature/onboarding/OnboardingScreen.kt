@@ -1,5 +1,6 @@
 package com.iching.ai.feature.onboarding
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,7 +51,7 @@ fun OnboardingScreen(onAccept: () -> Unit) {
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 28.dp),
+                .padding(horizontal = ZenSpacing.screen),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(40.dp))

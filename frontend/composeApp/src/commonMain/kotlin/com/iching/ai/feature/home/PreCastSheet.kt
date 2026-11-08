@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,7 +49,7 @@ fun PreCastSheet(
     )
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = ZenColors.PaperCream) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 20.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = ZenSpacing.screen).padding(bottom = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
