@@ -20,6 +20,7 @@ import {
   parseCategory,
   Prompt,
   sanitizeQuestion,
+  scriptureContext,
 } from "./prompt";
 import {
   Charge,
@@ -409,7 +410,7 @@ export function createApi(deps: Deps) {
       return;
     }
     const model = cfg.forceModel ?? cfg.freeModel;
-    const prompt = buildFollowUpPrompt(reading.question, castFromStored(deps.scripture, reading), reading.aiText, reading.followUps, message);
+    const prompt = buildFollowUpPrompt(reading.question, scriptureContext(castFromStored(deps.scripture, reading)), reading.aiText, reading.followUps, message);
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";

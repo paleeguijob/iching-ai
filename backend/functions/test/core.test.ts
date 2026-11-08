@@ -5,7 +5,17 @@ import { castHexagram, changingPositions, Coin, resolveLines } from "../src/core
 import { estimateCostThb, GeminiError, PRICES_USD_PER_M, streamGemini } from "../src/core/gemini";
 import { bangkokEpochDay, buildDailyPush, dailyHexagramId } from "../src/core/daily";
 import { loadScripture, shortNameTh } from "../src/core/hexagrams";
-import { buildFollowUpPrompt, buildReadingPrompt, PERSONA, sanitizeQuestion } from "../src/core/prompt";
+import {
+  buildFollowUpPrompt,
+  buildReadingPrompt,
+  buildSiamSiPrompt,
+  PERSONA,
+  sanitizeQuestion,
+  scriptureContext,
+  SIAMSI_RULES,
+  siamsiContext,
+} from "../src/core/prompt";
+import { findStick, loadSiamSiSets } from "../src/core/siamsi";
 import {
   bangkokDay,
   chargeReading,
@@ -177,7 +187,7 @@ describe("prompt", () => {
 
   it("follow-up prompt summarises instead of sending the whole history", () => {
     const long = "ก".repeat(5000);
-    const p = buildFollowUpPrompt("q", cast, long, [{ q: "x", a: long }], "แล้วควรเริ่มเมื่อไร");
+    const p = buildFollowUpPrompt("q", scriptureContext(cast), long, [{ q: "x", a: long }], "แล้วควรเริ่มเมื่อไร");
     assert.ok(p.userMessage.length < 4000);
     assert.ok(p.systemInstruction.includes("ถามต่อเนื่อง"));
   });
@@ -471,5 +481,68 @@ describe("campaign", () => {
     assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T20:00:00+07:00")), null);
     assert.equal(dueCampaignPush(c, Date.parse("2027-02-06T08:10:00+07:00"))!.title, "ซินเจียยู่อี่ ซินนี้ฮวดไช้");
     assert.equal(dueCampaignPush({ ...c, enabled: false }, c.pushes[0]), null);
+  });
+});
+
+describe("siamsi", () => {
+  const sets = loadSiamSiSets(resolve(__dirname, "../data/siamsi"));
+  const found = findStick(sets, "guanyin100", 17)!;
+
+  it("loads the copied set files", () => {
+    assert.ok(sets.has("guanyin100"));
+    assert.ok(sets.has("jiazi60"));
+    assert.equal(found.set.count, 100);
+    assert.equal(found.stick.number, 17);
+    assert.equal(findStick(sets, "guanyin100", 99), null);
+    assert.equal(findStick(sets, "nope", 1), null);
+  });
+
+  it("config defaults keep Siam Si off with one free draw a day", () => {
+    const c = mergeConfig(undefined);
+    assert.equal(c.siamsiEnabled, false);
+    assert.deepEqual(c.siamsiSets, [{ id: "guanyin100", version: 1 }, { id: "jiazi60", version: 1 }]);
+    assert.equal(c.siamsiAdDrawsPerDay, 1);
+    assert.equal(c.siamsiPremiumPerDay, 10);
+  });
+
+  it("config rejects malformed set lists and wrong types", () => {
+    assert.deepEqual(mergeConfig({ siamsiSets: [{ id: "x" }] }).siamsiSets, DEFAULT_CONFIG.siamsiSets);
+    assert.deepEqual(mergeConfig({ siamsiSets: "guanyin100" }).siamsiSets, DEFAULT_CONFIG.siamsiSets);
+    assert.deepEqual(mergeConfig({ siamsiSets: [{ id: "thai28", version: 2 }] }).siamsiSets, [{ id: "thai28", version: 2 }]);
+    assert.equal(mergeConfig({ siamsiEnabled: "yes" }).siamsiEnabled, false);
+    assert.equal(mergeConfig({ siamsiAdDrawsPerDay: 3 }).siamsiAdDrawsPerDay, 3);
+  });
+
+  it("status gives one draw a day to free accounts and ten to Premium", () => {
+    const now = Date.UTC(2026, 10, 8);
+    const day = bangkokDay(now);
+    const cfg = mergeConfig({ siamsiEnabled: true });
+    const free = status(normalizeUser({}, day), null, cfg, now);
+    assert.deepEqual(free.siamsi, { enabled: true, sets: cfg.siamsiSets, drawsPerDay: 1 });
+    const premium = status(normalizeUser({ premiumUntil: now + 86_400_000 }, day), null, cfg, now);
+    assert.equal(premium.siamsi.drawsPerDay, 10);
+  });
+
+  it("prompt carries the slip, the question and the Siam Si rules", () => {
+    const p = buildSiamSiPrompt("งานใหม่ดีไหม", found.set, found.stick, "work");
+    for (const line of found.stick.poem_orig) assert.ok(p.userMessage.includes(line));
+    for (const line of found.stick.poem_th) assert.ok(p.userMessage.includes(line));
+    assert.ok(p.userMessage.includes(found.stick.story));
+    assert.ok(p.userMessage.includes("งานใหม่ดีไหม"));
+    assert.ok(p.userMessage.includes("[หมวดคำถาม] การงาน"));
+    assert.ok(p.userMessage.includes("[สรุป"));
+    assert.ok(p.systemInstruction.startsWith(PERSONA));
+    assert.ok(p.systemInstruction.includes(SIAMSI_RULES));
+    assert.ok(!p.userMessage.includes("ขยายความ"));
+  });
+
+  it("an empty question still asks for guidance", () => {
+    const p = buildSiamSiPrompt("", found.set, found.stick, null);
+    assert.ok(p.userMessage.includes("ตั้งจิตอธิษฐาน"));
+  });
+
+  it("follow-up prompt takes the Siam Si context", () => {
+    const p = buildFollowUpPrompt("q", siamsiContext(found.set, found.stick), "คำแปล", [], "แล้วควรเริ่มเมื่อไร");
+    assert.ok(p.userMessage.includes(found.stick.poem_orig[0]));
   });
 });

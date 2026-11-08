@@ -1,5 +1,6 @@
 import { Cast, changingPositions } from "./cast";
 import { Hexagram, lowerTrigram, upperTrigram } from "./hexagrams";
+import { LEVEL_TH, SiamSiSet, SiamSiStick, TOPIC_TH } from "./siamsi";
 import { SUMMARY_MARKER } from "./summary";
 
 export interface Prompt {
@@ -140,13 +141,13 @@ const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n)}…
  */
 export function buildFollowUpPrompt(
   question: string,
-  cast: Pick<Cast, "lines" | "primary" | "relating">,
+  context: string,
   firstReading: string,
   previous: FollowUpTurn[],
   message: string,
 ): Prompt {
   const user = [
-    scriptureContext(cast),
+    context,
     "",
     "[คำถามแรกของผู้แสวงหา]",
     question.trim() || "(อธิษฐานในใจ)",
@@ -161,4 +162,44 @@ export function buildFollowUpPrompt(
     message.trim(),
   ].join("\n");
   return { systemInstruction: `${PERSONA}\n\n${FOLLOW_UP_RULES}`, userMessage: user };
+}
+
+export const SIAMSI_RULES = `
+[กฎเพิ่มเติมสำหรับเซียมซี]
+- แปลความหมายจากกลอนและเรื่องในตำนานของใบนี้เข้ากับคำถาม
+- ห้ามขัดระดับของใบ
+- ห้ามแต่งกลอนใหม่หรืออ้างว่าเป็นคำของวัดหรือศาลเจ้า
+- ห้ามทำนายเรื่องความตายหรือโรคร้าย
+`.trim();
+
+export function siamsiContext(set: SiamSiSet, stick: SiamSiStick): string {
+  const grade = stick.grade_orig ? ` (${stick.grade_orig})` : "";
+  const label = stick.label_orig ? ` ${stick.label_orig}` : "";
+  return [
+    "[Context Data — ใบเซียมซีที่เสี่ยงได้]",
+    `ตำรา: ${set.name} (${set.source.title}) · ใบที่ ${stick.number}${label} จาก ${set.count} ใบ`,
+    `ระดับ: ${LEVEL_TH[stick.level]}${grade}`,
+    "กลอนต้นฉบับ:",
+    ...stick.poem_orig.map((l) => `  ${l}`),
+    ...(stick.poem_th.join() !== stick.poem_orig.join() ? ["คำแปล:", ...stick.poem_th.map((l) => `  ${l}`)] : []),
+    `เรื่องในตำนาน: ${stick.story}`,
+    `ความหมายรวม: ${stick.summary}`,
+    "คำทำนายรายเรื่อง:",
+    ...TOPIC_TH.filter(([k]) => stick.topics[k]).map(([k, th]) => `- ${th}: ${stick.topics[k]}`),
+  ].join("\n");
+}
+
+export function buildSiamSiPrompt(question: string, set: SiamSiSet, stick: SiamSiStick, category: Category | null = null): Prompt {
+  const user = [
+    siamsiContext(set, stick),
+    "",
+    category ? `[หมวดคำถาม] ${CATEGORY_TH[category]}` : null,
+    "[คำถามของผู้แสวงหา]",
+    question.trim() || "ผู้แสวงหามิได้เอ่ยคำถาม เพียงตั้งจิตอธิษฐานขอคำชี้แนะในวิถีชีวิตยามนี้",
+    "",
+    "จงแปลความหมายของใบเซียมซีข้างต้นให้เข้ากับคำถามนี้ ตามกฎการตอบอย่างเคร่งครัด",
+  ]
+    .filter((x) => x !== null)
+    .join("\n");
+  return { systemInstruction: `${PERSONA}\n\n${SIAMSI_RULES}`, userMessage: `${user}\n\n${SUMMARY_RULE}` };
 }

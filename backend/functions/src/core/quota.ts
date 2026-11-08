@@ -29,6 +29,18 @@ export interface RuntimeConfig {
   dailyPushEnabled: boolean;
   /** Chinese New Year campaign window; null when the stored config is malformed (= no campaign). */
   campaign: Campaign | null;
+  /** Feature switch for Siam Si; off until the sets are reviewed. */
+  siamsiEnabled: boolean;
+  /** Sets the app may offer, with the version of each file (bumped to make apps download it again). */
+  siamsiSets: SiamSiSetRef[];
+  /** Siam Si draws a free account gets per day, one rewarded ad each. Counted by the app. */
+  siamsiAdDrawsPerDay: number;
+  siamsiPremiumPerDay: number;
+}
+
+export interface SiamSiSetRef {
+  id: string;
+  version: number;
 }
 
 export const DEFAULT_CONFIG: RuntimeConfig = {
@@ -47,7 +59,19 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   enforceAppCheck: true,
   dailyPushEnabled: true,
   campaign: DEFAULT_CAMPAIGN,
+  siamsiEnabled: false,
+  siamsiSets: [
+    { id: "guanyin100", version: 1 },
+    { id: "jiazi60", version: 1 },
+  ],
+  siamsiAdDrawsPerDay: 1,
+  siamsiPremiumPerDay: 10,
 };
+
+const isSetRef = (v: unknown): v is SiamSiSetRef =>
+  typeof v === "object" && v !== null &&
+  typeof (v as SiamSiSetRef).id === "string" && (v as SiamSiSetRef).id.length > 0 &&
+  typeof (v as SiamSiSetRef).version === "number";
 
 /** Merges the Firestore config/runtime doc over the defaults, ignoring fields of the wrong type. */
 export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeConfig {
@@ -58,6 +82,8 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
     const def = DEFAULT_CONFIG[key];
     if (key === "campaign") {
       if (v !== undefined) out.campaign = parseCampaign(v);
+    } else if (key === "siamsiSets") {
+      if (Array.isArray(v) && v.every(isSetRef)) out.siamsiSets = v.map((r) => ({ id: r.id, version: r.version }));
     } else if (key === "forceModel") {
       if (v === null || (typeof v === "string" && v.length > 0)) out.forceModel = v as string | null;
     } else if (v !== undefined && typeof v === typeof def) {
@@ -123,6 +149,7 @@ export interface QuotaStatus {
   journalDays: number | null;
   aiEnabled: boolean;
   campaign: { id: string; year: number; active: boolean; endsAt: number } | null;
+  siamsi: { enabled: boolean; sets: SiamSiSetRef[]; drawsPerDay: number };
 }
 
 export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number): QuotaStatus {
@@ -151,6 +178,11 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
       year: cfg.campaign.year,
       active: campaignActive(cfg.campaign, now),
       endsAt: cfg.campaign.endsAt,
+    },
+    siamsi: {
+      enabled: cfg.siamsiEnabled,
+      sets: cfg.siamsiSets,
+      drawsPerDay: premium ? cfg.siamsiPremiumPerDay : cfg.siamsiAdDrawsPerDay,
     },
   };
 }
