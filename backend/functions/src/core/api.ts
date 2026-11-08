@@ -14,6 +14,7 @@ import { Scripture } from "./hexagrams";
 import {
   buildFollowUpPrompt,
   buildReadingPrompt,
+  buildSiamSiPrompt,
   Category,
   FollowUpTurn,
   MAX_FOLLOW_UP_CHARS,
@@ -21,7 +22,9 @@ import {
   Prompt,
   sanitizeQuestion,
   scriptureContext,
+  siamsiContext,
 } from "./prompt";
+import { findStick, SiamSiSet } from "./siamsi";
 import {
   Charge,
   ChargeDecision,
@@ -96,6 +99,8 @@ export interface StoredReading {
   outcome: "yes" | "no" | "partly" | null;
   outcomeNote: string | null;
   createdAt: number;
+  /** Set on a Siam Si reading, which has no cast (lines/coins empty, primaryId 0). */
+  siamsi?: { set: string; stick: number } | null;
 }
 
 /** The one hexagram an account keeps for a campaign year; cast once on the server, never recast. */
@@ -153,6 +158,8 @@ export interface Deps {
   verifyAppCheck(token: string): Promise<void>;
   store: Store;
   scripture: Scripture;
+  /** Siam Si sets by id (data/siamsi/). */
+  siamsi: Map<string, SiamSiSet>;
   config(): Promise<RuntimeConfig>;
   streamModel(prompt: Prompt, model: string, signal: AbortSignal): AsyncGenerator<string, Usage>;
   /** RevenueCat lookup; null when RevenueCat is not configured. */
@@ -239,7 +246,7 @@ export function createApi(deps: Deps) {
     deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now()) }));
 
   /** Streams an AI reading for an existing cast, charging quota first and refunding on failure. */
-  async function interpret(sse: Sse, uid: string, deviceHash: string | null, cfg: RuntimeConfig, reading: StoredReading, cast: Cast) {
+  async function interpret(sse: Sse, uid: string, deviceHash: string | null, cfg: RuntimeConfig, reading: StoredReading, prompt: Prompt) {
     const resuming = reading.interrupted && reading.interrupted.resumes < MAX_FREE_RESUMES ? reading.interrupted : null;
     const decision = await deps.store.quotaTx<ChargeDecision>(uid, deviceHash, (user, device) => {
       const d = resuming ? resumeReading(user, resuming.charge, cfg, deps.now()) : chargeReading(user, device, cfg, deps.now());
@@ -254,12 +261,6 @@ export function createApi(deps: Deps) {
       return;
     }
 
-    const prompt = buildReadingPrompt(
-      reading.question,
-      cast,
-      reading.category,
-      reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
-    );
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -329,6 +330,7 @@ export function createApi(deps: Deps) {
     if (existingId) {
       const found = await deps.store.getReading(uid, existingId);
       if (!found) throw new HttpError(404, "reading_not_found");
+      if (found.siamsi) throw new HttpError(409, "wrong_method");
       reading = found;
       cast = castFromStored(deps.scripture, found);
     } else {
@@ -381,7 +383,78 @@ export function createApi(deps: Deps) {
       sse.send("delta", { text: reading.aiText });
       sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
     } else {
-      await interpret(sse, uid, deviceHash, cfg, reading, cast);
+      const prompt = buildReadingPrompt(
+        reading.question,
+        cast,
+        reading.category,
+        reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
+      );
+      await interpret(sse, uid, deviceHash, cfg, reading, prompt);
+    }
+    sse.end();
+  }
+
+  /** The hermit's interpretation of a Siam Si slip the app drew; the slip text always comes from the server's own file. */
+  async function siamsiInterpret(req: HttpReq, res: HttpRes, uid: string, deviceHash: string | null, cfg: RuntimeConfig) {
+    if (!cfg.siamsiEnabled) throw new HttpError(503, "siamsi_disabled");
+    if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
+    const b = body(req);
+    const existingId = typeof b.readingId === "string" ? b.readingId : null;
+    let reading: StoredReading;
+
+    if (existingId) {
+      const found = await deps.store.getReading(uid, existingId);
+      if (!found || !found.siamsi) throw new HttpError(404, "reading_not_found");
+      reading = found;
+    } else {
+      const setId = typeof b.set === "string" ? b.set : "";
+      const stick = typeof b.stick === "number" && Number.isInteger(b.stick) ? b.stick : -1;
+      if (!cfg.siamsiSets.some((r) => r.id === setId) || !findStick(deps.siamsi, setId, stick)) {
+        throw new HttpError(400, "bad_stick");
+      }
+      const question = sanitizeQuestion(b.question);
+      const safety = checkSafety(question);
+      if (safety.kind === "crisis") {
+        const sse = new Sse(res);
+        deps.log.info("safety_redirect", { uid, topic: safety.topic });
+        sse.send("safety", { topic: safety.topic, message: safety.message });
+        sse.end();
+        return;
+      }
+      const data: Omit<StoredReading, "id"> = {
+        question,
+        category: parseCategory(b.category),
+        yearOf: null,
+        lines: [],
+        coins: [],
+        primaryId: 0,
+        relatingId: null,
+        aiText: null,
+        source: "scripture",
+        model: null,
+        tokensIn: 0,
+        tokensOut: 0,
+        charge: null,
+        interrupted: null,
+        followUps: [],
+        followUpCount: 0,
+        outcome: null,
+        outcomeNote: null,
+        createdAt: deps.now(),
+        siamsi: { set: setId, stick },
+      };
+      reading = { id: await deps.store.createReading(uid, data), ...data };
+    }
+
+    const sse = new Sse(res);
+    sse.send("reading", { readingId: reading.id });
+    if (reading.aiText) {
+      sse.send("delta", { text: reading.aiText });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
+    } else {
+      const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick);
+      if (!slip) throw new HttpError(404, "reading_not_found");
+      await interpret(sse, uid, deviceHash, cfg, reading, buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category));
     }
     sse.end();
   }
@@ -410,7 +483,7 @@ export function createApi(deps: Deps) {
       return;
     }
     const model = cfg.forceModel ?? cfg.freeModel;
-    const prompt = buildFollowUpPrompt(reading.question, scriptureContext(castFromStored(deps.scripture, reading)), reading.aiText, reading.followUps, message);
+    const prompt = buildFollowUpPrompt(reading.question, followUpContext(reading), reading.aiText, reading.followUps, message);
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -495,6 +568,13 @@ export function createApi(deps: Deps) {
     deps.log.info("account_merged", { from: from.uid, to: uid });
   }
 
+  function followUpContext(reading: StoredReading): string {
+    if (!reading.siamsi) return scriptureContext(castFromStored(deps.scripture, reading));
+    const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick);
+    if (!slip) throw new HttpError(404, "reading_not_found");
+    return siamsiContext(slip.set, slip.stick);
+  }
+
   const toClientReading = (r: StoredReading) => ({
     id: r.id,
     question: r.question,
@@ -509,6 +589,7 @@ export function createApi(deps: Deps) {
     outcome: r.outcome,
     outcomeNote: r.outcomeNote,
     createdAt: r.createdAt,
+    siamsi: r.siamsi ?? null,
   });
 
   /** The year hexagram stays viewable after the campaign; only a new cast needs it to be active. */
@@ -536,6 +617,7 @@ export function createApi(deps: Deps) {
 
       if (route === "POST /divine") return await divine(req, res, uid, deviceHash, cfg);
       if (route === "POST /follow-up") return await followUp(req, res, uid, deviceHash, cfg);
+      if (route === "POST /siamsi/interpret") return await siamsiInterpret(req, res, uid, deviceHash, cfg);
 
       if (route === "GET /status") {
         res.status(200).json(await readStatus(uid, deviceHash, cfg));

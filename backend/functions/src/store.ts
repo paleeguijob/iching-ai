@@ -57,6 +57,7 @@ export function firestoreStore(db: Firestore): Store {
     outcome: d.outcome ?? null,
     outcomeNote: d.outcomeNote ?? null,
     createdAt: d.createdAt ?? 0,
+    siamsi: d.siamsi ?? null,
   });
 
   // Firestore cannot store nested arrays, so each toss is wrapped as {c: [3, 2, 3]}.

@@ -12,6 +12,7 @@ import { dueCampaignPush } from "./core/campaign";
 import { buildDailyPush } from "./core/daily";
 import { streamGemini } from "./core/gemini";
 import { loadScripture } from "./core/hexagrams";
+import { loadSiamSiSets } from "./core/siamsi";
 import { mergeConfig, RuntimeConfig } from "./core/quota";
 import { firestoreStore } from "./store";
 
@@ -45,6 +46,7 @@ function deps(): Deps {
     },
     store: firestoreStore(db),
     scripture: loadScripture(),
+    siamsi: loadSiamSiSets(),
     config: runtimeConfig,
     // 2048 rather than the spec's 1024: thinking tokens count against this cap and a long Thai
     // reading was getting cut off. Billing is by tokens actually produced, so the cap costs nothing.

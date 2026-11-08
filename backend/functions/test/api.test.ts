@@ -17,11 +17,13 @@ import {
 } from "../src/core/api";
 import { GeminiError, Usage } from "../src/core/gemini";
 import { loadScripture } from "../src/core/hexagrams";
+import { loadSiamSiSets } from "../src/core/siamsi";
 import { EMPTY_STREAK, mergeStreaks, StreakDoc } from "../src/core/streak";
 import { DEFAULT_CAMPAIGN } from "../src/core/campaign";
 import { bangkokDay, DEFAULT_CONFIG, DeviceDoc, normalizeDevice, normalizeUser, RuntimeConfig, UserDoc } from "../src/core/quota";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
+const siamsi = loadSiamSiSets(resolve(__dirname, "../data/siamsi"));
 
 class MemoryStore implements Store {
   users = new Map<string, UserDoc>();
@@ -215,6 +217,7 @@ describe("api", () => {
       },
       store,
       scripture,
+      siamsi,
       config: async () => cfg,
       streamModel: async function* (_p, model, signal): AsyncGenerator<string, Usage> {
         modelCalls.push(model);
@@ -1201,6 +1204,112 @@ describe("api", () => {
         const e = parseEntitlements({ subscriber: { non_subscriptions: { iching_coins_10: [{}, { id: "rc1" }] } } }, now);
         assert.deepEqual(e.coinPurchases, [{ transactionId: "rc1", productId: "iching_coins_10" }]);
       });
+    });
+  });
+  describe("siamsi interpret", () => {
+    beforeEach(() => {
+      cfg = { ...cfg, siamsiEnabled: true };
+    });
+    const ask = async (body: Record<string, unknown>) => {
+      const res = new FakeRes();
+      await handle(req("POST", "/siamsi/interpret", body), res);
+      return res;
+    };
+    const readingsLeft = async () => {
+      const st = new FakeRes();
+      await handle(req("GET", "/status"), st);
+      return (st.payload as { readingsLeft: number }).readingsLeft;
+    };
+
+    it("is refused while switched off, charging nothing", async () => {
+      cfg = { ...cfg, siamsiEnabled: false };
+      const res = await ask({ set: "guanyin100", stick: 17 });
+      assert.deepEqual([res.code, res.payload], [503, { error: "siamsi_disabled" }]);
+      cfg = { ...cfg, siamsiEnabled: true, aiEnabled: false };
+      const off = await ask({ set: "guanyin100", stick: 17 });
+      assert.deepEqual([off.code, off.payload], [503, { error: "ai_disabled" }]);
+      assert.deepEqual(modelCalls, []);
+      assert.equal(await readingsLeft(), 1);
+    });
+
+    it("rejects unknown sets and sticks", async () => {
+      for (const body of [
+        { set: "thai28", stick: 1 },
+        { set: "guanyin100", stick: 0 },
+        { set: "guanyin100", stick: 101 },
+        { set: "guanyin100", stick: 1.5 },
+        { set: "guanyin100", stick: "17" },
+      ]) {
+        const res = await ask(body);
+        assert.deepEqual([res.code, res.payload], [400, { error: "bad_stick" }], JSON.stringify(body));
+      }
+      cfg = { ...cfg, siamsiSets: [{ id: "jiazi60", version: 1 }] };
+      const disabledSet = await ask({ set: "guanyin100", stick: 17 });
+      assert.equal(disabledSet.code, 400);
+      assert.deepEqual(modelCalls, []);
+    });
+
+    it("interprets a slip from the server's own file and charges once", async () => {
+      const res = await ask({ set: "guanyin100", stick: 17, question: "งานใหม่ดีไหม", category: "work", poem: ["ข้อความปลอม"] });
+      const ev = res.events;
+      assert.deepEqual(ev.map((e) => e.event), ["reading", "delta", "delta", "done"]);
+      const saved = await store.getReading("u1", ev[0].data.readingId as string);
+      assert.deepEqual(saved?.siamsi, { set: "guanyin100", stick: 17 });
+      assert.equal(saved?.aiText, "ภูเขาตั้งมั่น");
+      assert.equal(saved?.source, "ai");
+      assert.equal(saved?.category, "work");
+      assert.deepEqual(saved?.lines, []);
+      assert.equal(modelPrompts.length, 1);
+      assert.ok(modelPrompts[0].includes(siamsi.get("guanyin100")!.sticks.find((s) => s.number === 17)!.poem_orig[0]));
+      assert.ok(!modelPrompts[0].includes("ข้อความปลอม"));
+      assert.equal(await readingsLeft(), 0);
+    });
+
+    it("refunds when the model fails", async () => {
+      modelMode = "fail";
+      const res = await ask({ set: "jiazi60", stick: 3 });
+      assert.deepEqual(res.events.at(-1), { event: "error", data: { code: "rate_limited", refunded: true } });
+      assert.equal(await readingsLeft(), 1);
+    });
+
+    it("answers crisis questions with hotlines, no reading and no charge", async () => {
+      const res = await ask({ set: "guanyin100", stick: 17, question: "ไม่อยากมีชีวิตอยู่แล้ว" });
+      assert.deepEqual(res.events.map((e) => e.event), ["safety"]);
+      assert.equal(modelCalls.length, 0);
+      assert.equal(store.readings.size, 0);
+      assert.equal(await readingsLeft(), 1);
+    });
+
+    it("replays a finished reading without charging again", async () => {
+      const first = await ask({ set: "guanyin100", stick: 17 });
+      const id = first.events[0].data.readingId as string;
+      now += 60_000;
+      const again = await ask({ set: "guanyin100", stick: 17, readingId: id });
+      assert.deepEqual(again.events.map((e) => e.event), ["reading", "delta", "done"]);
+      assert.equal(modelCalls.length, 1);
+    });
+
+    it("lists Siam Si readings with their slip and answers follow-ups from it", async () => {
+      entitlements = { premiumUntil: now + 86_400_000, coinPurchases: [] };
+      await handle(req("POST", "/purchases/sync"), new FakeRes());
+      const first = await ask({ set: "guanyin100", stick: 17, question: "งานใหม่ดีไหม" });
+      const id = first.events[0].data.readingId as string;
+      const list = new FakeRes();
+      await handle(req("GET", "/readings"), list);
+      const row = (list.payload as { readings: { id: string; siamsi: unknown }[] }).readings.find((r) => r.id === id);
+      assert.deepEqual(row?.siamsi, { set: "guanyin100", stick: 17 });
+      now += 60_000;
+      const fu = new FakeRes();
+      await handle(req("POST", "/follow-up", { readingId: id, message: "แล้วควรเริ่มเมื่อไร" }), fu);
+      assert.equal(fu.events.at(-1)!.event, "done");
+      assert.ok(modelPrompts.at(-1)!.includes("ใบเซียมซี"));
+    });
+
+    it("refuses to re-interpret a Siam Si reading as an I Ching cast", async () => {
+      const first = await ask({ set: "guanyin100", stick: 17 });
+      const res = new FakeRes();
+      await handle(req("POST", "/divine", { readingId: first.events[0].data.readingId }), res);
+      assert.deepEqual([res.code, res.payload], [409, { error: "wrong_method" }]);
     });
   });
 });

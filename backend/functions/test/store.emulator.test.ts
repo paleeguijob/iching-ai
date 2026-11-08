@@ -92,6 +92,14 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     assert.equal((await db.collection("reports").where("uid", "==", "u1").get()).size, 1);
   });
 
+  it("keeps the slip of a Siam Si reading, and none on an I Ching one", async () => {
+    const base = { question: "q", category: null, yearOf: null, lines: [], coins: [], primaryId: 0, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const slip = await store.createReading("u1", { ...base, siamsi: { set: "guanyin100", stick: 17 } });
+    assert.deepEqual((await store.getReading("u1", slip))?.siamsi, { set: "guanyin100", stick: 17 });
+    const cast = await store.createReading("u1", { ...base, lines: [7, 7, 7, 7, 7, 7], primaryId: 1 });
+    assert.equal((await store.getReading("u1", cast))?.siamsi, null);
+  });
+
   it("never spends more coins than there are, under concurrent readings", async () => {
     await seed("u1", 3);
     const charges = await Promise.all(Array.from({ length: 10 }, () => spendOne("u1")));
