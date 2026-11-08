@@ -30,3 +30,6 @@ frontend/androidApp/google-services.json
 GoogleService-Info.plist
 firebase-debug*.log
 backend/.firebase/
+
+# Brainstorming mockups
+.superpowers/
