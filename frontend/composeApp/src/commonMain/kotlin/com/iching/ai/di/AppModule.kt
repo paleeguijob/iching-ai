@@ -39,6 +39,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import com.iching.ai.domain.oracle.bangkokEpochDay
+import com.iching.ai.feature.siamsi.SiamSiDrawGate
+import kotlin.time.Clock
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -78,6 +81,17 @@ fun platformModule(bridges: NativeBridges): Module = module {
             journal = get(),
             settings = get(),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+        )
+    }
+    single {
+        val session = get<AppSession>()
+        SiamSiDrawGate(
+            settings = get(),
+            ads = get<NativeBridges>().ads,
+            status = session.status,
+            online = session.online,
+            log = session::log,
+            today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
         )
     }
 }
