@@ -41,6 +41,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.feature.siamsi.SiamSiDrawGate
+import com.iching.ai.feature.siamsi.SiamSiHomeViewModel
 import kotlin.time.Clock
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
@@ -98,6 +99,10 @@ fun platformModule(bridges: NativeBridges): Module = module {
 
 val presentationModule = module {
     viewModelOf(::HomeViewModel)
+    viewModel {
+        val session = get<AppSession>()
+        SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log)
+    }
     viewModel {
         val session = get<AppSession>()
         DailyViewModel(

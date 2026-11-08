@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class DivinationRoute(val question: String, val category: String? = null, val resumeId: Long? = null, val yearOf: Int? = null)
 /** The question screen for asking the hermit about the year hexagram. */
 @Serializable data class YearAskRoute(val year: Int)
+/** A paid-for Siam Si draw from [setId]; [question] may be empty. */
+@Serializable data class SiamSiRoute(val setId: String, val question: String, val category: String? = null)
 @Serializable data object DailyRoute
 @Serializable data object YearRoute
 @Serializable data object LibraryRoute

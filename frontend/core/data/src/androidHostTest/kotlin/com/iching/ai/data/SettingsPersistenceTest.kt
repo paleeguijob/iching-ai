@@ -48,15 +48,17 @@ class SettingsPersistenceTest {
         assertEquals(DivinationMode.ICHING, fresh.divinationMode)
         assertEquals(null, fresh.siamsiSetId)
         assertEquals(SiamSiUsage(), fresh.siamsiUsage)
+        assertEquals(false, fresh.siamsiLastEnabled)
         val usage = SiamSiUsage(20_400L, used = 1, pendingDraw = true)
         open(file) { repo ->
-            repo.update { it.copy(divinationMode = DivinationMode.SIAMSI, siamsiSetId = "jiazi60", siamsiUsage = usage) }
+            repo.update { it.copy(divinationMode = DivinationMode.SIAMSI, siamsiSetId = "jiazi60", siamsiUsage = usage, siamsiLastEnabled = true) }
         }
         Thread.sleep(100)
         val loaded = open(file) { it.settings.first() }
         assertEquals(DivinationMode.SIAMSI, loaded.divinationMode)
         assertEquals("jiazi60", loaded.siamsiSetId)
         assertEquals(usage, loaded.siamsiUsage)
+        assertEquals(true, loaded.siamsiLastEnabled)
     }
 
     @Test

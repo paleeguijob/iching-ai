@@ -119,4 +119,6 @@ data class AppSettings(
     /** The Siam Si set last chosen on Home; null until one is picked. */
     val siamsiSetId: String? = null,
     val siamsiUsage: SiamSiUsage = SiamSiUsage(),
+    /** Whether the server last said Siam Si is on, so an offline launch can still offer it. */
+    val siamsiLastEnabled: Boolean = false,
 )

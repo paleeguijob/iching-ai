@@ -77,6 +77,14 @@ import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.ui.theme.ZenColors
+import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.feature.siamsi.DrawButton
+import com.iching.ai.feature.siamsi.SiamSiHomeViewModel
+import com.iching.ai.feature.siamsi.SiamSiNav
+import com.iching.ai.feature.siamsi.SiamSiSetSheet
+import com.iching.ai.feature.siamsi.shortLabel
+import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.ui.components.ZenSegmented
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -88,8 +96,28 @@ fun HomeScreen(
     onOpenYear: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPaywall: () -> Unit,
+    siamsi: SiamSiHomeViewModel,
+    onSiamSiDraw: (SiamSiRoute) -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
+    val mode by siamsi.mode.collectAsStateWithLifecycle()
+    val siamsiEnabled by siamsi.enabled.collectAsStateWithLifecycle()
+    val siamsiSets by siamsi.siamsiSets.collectAsStateWithLifecycle()
+    val selectedSet by siamsi.selectedSet.collectAsStateWithLifecycle()
+    val drawGate by siamsi.drawGate.collectAsStateWithLifecycle()
+    var setSheetOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(siamsi) {
+        siamsi.navigation.collect {
+            when (it) {
+                is SiamSiNav.Draw -> onSiamSiDraw(it.route)
+                SiamSiNav.Paywall -> onOpenPaywall()
+            }
+        }
+    }
+    if (setSheetOpen && siamsiSets.isNotEmpty()) {
+        SiamSiSetSheet(siamsiSets, selectedSet?.id, onSelect = siamsi::onSetSelected, onDismiss = { setSheetOpen = false })
+    }
+    val isSiamSi = mode == DivinationMode.SIAMSI
     val sheet by viewModel.sheet.collectAsStateWithLifecycle()
     val deciding by viewModel.deciding.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
@@ -153,16 +181,42 @@ fun HomeScreen(
                     Spacer(Modifier.height(ZenSpacing.md))
                 }
 
+                if (siamsiEnabled) {
+                    ZenSegmented(
+                        options = listOf("อี้จิง", "เซียมซี"),
+                        selected = if (isSiamSi) 1 else 0,
+                        onSelect = { siamsi.onModeSelected(if (it == 1) DivinationMode.SIAMSI else DivinationMode.ICHING) },
+                    )
+                    Spacer(Modifier.height(ZenSpacing.md))
+                }
+                if (isSiamSi) {
+                    selectedSet?.let { set -> SetRow(set.shortLabel(), onClick = { setSheetOpen = true }) }
+                }
+
                 Spacer(Modifier.height(ZenSpacing.lg))
-                Text("ถามทางแห่งเต๋า", style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
                 Text(
-                    "สงบจิต ตั้งคำถามด้วยใจที่เปิดกว้าง",
+                    if (isSiamSi) "อธิษฐานแล้วเสี่ยงเซียมซี" else "ถามทางแห่งเต๋า",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = ZenColors.InkBlack,
+                )
+                Text(
+                    if (isSiamSi) "ตั้งจิตถึงสิ่งที่อยากรู้ แล้วเขย่าเบา ๆ" else "สงบจิต ตั้งคำถามด้วยใจที่เปิดกว้าง",
                     style = MaterialTheme.typography.bodyMedium,
                     color = ZenColors.InkSoft,
                 )
 
                 Spacer(Modifier.height(ZenSpacing.lg))
-                QuestionField(question, onChange = { question = it })
+                if (isSiamSi) {
+                    QuestionField(question, onChange = { question = it }, placeholder = "เรื่องที่อยากถาม…")
+                    Text(
+                        "ไม่บังคับ — เว้นว่างได้",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ZenColors.InkFaint,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                    )
+                } else {
+                    QuestionField(question, onChange = { question = it })
+                }
                 Spacer(Modifier.height(ZenSpacing.md))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     pickable.forEach { c ->
@@ -178,7 +232,17 @@ fun HomeScreen(
                     }
                 }
                 Spacer(Modifier.height(ZenSpacing.lg))
-                GuidanceQuotaBar(guidanceQuota(status))
+                if (isSiamSi) {
+                    Text(
+                        drawGate.line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (drawGate.button == DrawButton.PAYWALL || drawGate.button == DrawButton.DISABLED) ZenColors.CinnabarRed else ZenColors.InkSoft,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    GuidanceQuotaBar(guidanceQuota(status))
+                }
                 Spacer(Modifier.height(ZenSpacing.md))
             }
             // Pinned outside the scroll, a gap above the tab bar or the keyboard, whichever is taller; the
@@ -188,9 +252,15 @@ fun HomeScreen(
                 tabBarHeight = LocalTabBarHeight.current,
             )
             ZenPrimaryButton(
-                text = startButtonText(deciding),
-                onClick = { viewModel.onStart(question.trim(), QuestionCategory.fromWire(category)) },
-                enabled = !deciding,
+                text = if (isSiamSi) siamsiButtonText(drawGate.button) else startButtonText(deciding),
+                onClick = {
+                    when {
+                        !isSiamSi -> viewModel.onStart(question.trim(), QuestionCategory.fromWire(category))
+                        drawGate.button == DrawButton.PAYWALL -> onOpenPaywall()
+                        else -> siamsi.onSiamSiStart(question, QuestionCategory.fromWire(category))
+                    }
+                },
+                enabled = if (isSiamSi) drawGate.button != DrawButton.DISABLED else !deciding,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.sm, bottom = bottom),
@@ -201,14 +271,18 @@ fun HomeScreen(
 
 /** The seeker's question box, shared by the home screen and the year question screen. */
 @Composable
-internal fun QuestionField(value: String, onChange: (String) -> Unit) {
+internal fun QuestionField(
+    value: String,
+    onChange: (String) -> Unit,
+    placeholder: String = "พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...",
+) {
     ZenCard(contentPadding = PaddingValues(4.dp)) {
         TextField(
             value = value,
             onValueChange = { if (it.length <= 300) onChange(it) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
             placeholder = {
-                Text("พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...", color = ZenColors.InkFaint)
+                Text(placeholder, color = ZenColors.InkFaint)
             },
             textStyle = MaterialTheme.typography.bodyLarge,
             colors = TextFieldDefaults.colors(
@@ -222,6 +296,26 @@ internal fun QuestionField(value: String, onChange: (String) -> Unit) {
             ),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
         )
+    }
+}
+
+/** The main button in Siam Si mode, per spec table 2.2. */
+fun siamsiButtonText(button: DrawButton): String = when (button) {
+    DrawButton.WATCH_AD -> "▶ ดูโฆษณาแล้วเขย่าเซียมซี"
+    DrawButton.SHAKE, DrawButton.DISABLED -> "เขย่าเซียมซี"
+    DrawButton.PAYWALL -> "สมัคร Premium เสี่ยงได้ ๑๐ ครั้ง/วัน ไม่มีโฆษณา"
+}
+
+/** "ชุด · เจ้าแม่กวนอิม · ๑๐๐ ใบ ›": opens the set sheet. */
+@Composable
+private fun SetRow(label: String, onClick: () -> Unit) {
+    ZenCard(onClick = onClick, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionLabel("ชุด")
+            Spacer(Modifier.width(ZenSpacing.sm))
+            Text(label, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f))
+            Text("›", style = MaterialTheme.typography.titleLarge, color = ZenColors.InkFaint)
+        }
     }
 }
 

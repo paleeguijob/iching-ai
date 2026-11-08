@@ -216,6 +216,8 @@ private fun MainNavigation() {
                         onOpenYear = { nav.navigate(YearRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
+                        siamsi = koinViewModel(),
+                        onSiamSiDraw = { nav.navigate(it) },
                     )
                 }
                 screen<DailyRoute> { entry ->

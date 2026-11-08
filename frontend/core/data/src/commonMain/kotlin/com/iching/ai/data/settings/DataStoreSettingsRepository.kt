@@ -39,6 +39,7 @@ class DataStoreSettingsRepository(
             prefs[SIAMSI_DAY] = next.siamsiUsage.day
             prefs[SIAMSI_USED] = next.siamsiUsage.used
             prefs[SIAMSI_PENDING] = next.siamsiUsage.pendingDraw
+            prefs[SIAMSI_LAST_ENABLED] = next.siamsiLastEnabled
             prefs.remove(LEGACY_API_KEY)
         }
     }
@@ -73,6 +74,7 @@ class DataStoreSettingsRepository(
             used = this[SIAMSI_USED] ?: 0,
             pendingDraw = this[SIAMSI_PENDING] ?: false,
         ),
+        siamsiLastEnabled = this[SIAMSI_LAST_ENABLED] ?: false,
     )
 
     private fun MutablePreferences.writeStreak(streak: StreakState) {
@@ -99,6 +101,7 @@ class DataStoreSettingsRepository(
         val SIAMSI_DAY = longPreferencesKey("siamsi_day")
         val SIAMSI_USED = intPreferencesKey("siamsi_used")
         val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
+        val SIAMSI_LAST_ENABLED = booleanPreferencesKey("siamsi_last_enabled")
 
         // Left over from builds that called Gemini directly; dropped on the next settings write.
         val LEGACY_API_KEY = stringPreferencesKey("gemini_api_key")
