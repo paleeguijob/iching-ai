@@ -1,5 +1,9 @@
 package com.iching.ai.feature.reading
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenCard
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -81,18 +85,20 @@ fun CastSummary(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 12.dp),
         )
-        Spacer(Modifier.height(24.dp))
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
-            HexagramCard(primary, lines, label = "กวาหลัก", onClick = onHexagramClick)
-            if (relating != null) {
-                Icon(
-                    Icons.AutoMirrored.Outlined.ArrowForward,
-                    contentDescription = "เปลี่ยนเป็น",
-                    tint = ZenColors.CinnabarRed.copy(alpha = 0.7f),
-                    // Level with the middle of the hexagram figures.
-                    modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 64.dp).size(22.dp),
-                )
-                HexagramCard(relating, null, label = "กวาแปร", onClick = onHexagramClick)
+        Spacer(Modifier.height(ZenSpacing.lg))
+        ZenCard(contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
+                HexagramCard(primary, lines, label = "กวาหลัก", onClick = onHexagramClick)
+                if (relating != null) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = "เปลี่ยนเป็น",
+                        tint = ZenColors.CinnabarRed.copy(alpha = 0.7f),
+                        // Level with the middle of the hexagram figures.
+                        modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 64.dp).size(20.dp),
+                    )
+                    HexagramCard(relating, null, label = "กวาแปร", onClick = onHexagramClick)
+                }
             }
         }
     }
@@ -102,8 +108,8 @@ fun CastSummary(
 private fun HexagramCard(hexagram: Hexagram, lines: List<LineType>?, label: String, onClick: ((Int) -> Unit)?) {
     Column(
         Modifier
-            .width(150.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .width(140.dp)
+            .clip(RoundedCornerShape(12.dp))
             .then(if (onClick != null) Modifier.clickable { onClick(hexagram.id) } else Modifier)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -134,12 +140,19 @@ private fun HexagramCard(hexagram: Hexagram, lines: List<LineType>?, label: Stri
     }
 }
 
+internal data class SheetHeader(val label: String, val showAiBadge: Boolean)
+
+/** Scripture-only readings are the book's own words; everything else is the hermit's and is marked AI. */
+internal fun sheetHeader(source: InterpretationSource?): SheetHeader =
+    if (source == InterpretationSource.SCRIPTURE) SheetHeader("ตัวบทจากคัมภีร์", showAiBadge = false)
+    else SheetHeader("คำชี้แนะจากนักพรต", showAiBadge = true)
+
 /**
- * The hermit's words on a paper scroll with wooden rollers.
+ * The hermit's words on a plain paper sheet with a cinnabar rule along the top.
  * [animate] types the text out; the seal appears once [isComplete].
  */
 @Composable
-fun OracleScroll(
+fun OracleSheet(
     text: String,
     isComplete: Boolean,
     animate: Boolean,
@@ -149,66 +162,50 @@ fun OracleScroll(
     var revealed by rememberSaveable { mutableStateOf(!animate) }
     // Asking the hermit again clears the text: the seal waits for the new words too.
     if (text.isEmpty() && animate) revealed = false
-    Column(modifier.fillMaxWidth()) {
-        ScrollRoller()
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp)
-                .shadow(6.dp, RoundedCornerShape(2.dp), ambientColor = ZenColors.ScrollWood, spotColor = ZenColors.ScrollWood)
-                .background(
-                    Brush.verticalGradient(listOf(ZenColors.ScrollEdge, ZenColors.Scroll, ZenColors.ScrollEdge))
-                )
-                .padding(horizontal = 24.dp, vertical = 28.dp)
-                .animateContentSize(tween(300)),
-        ) {
-            Column {
+    val header = sheetHeader(source)
+    ZenCard(
+        modifier = modifier.animateContentSize(tween(300)),
+        accentTop = true,
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SectionLabel(header.label, color = ZenColors.CinnabarRed, modifier = Modifier.weight(1f))
+            if (header.showAiBadge) {
                 Text(
-                    if (source == InterpretationSource.SCRIPTURE) "ตัวบทจากคัมภีร์" else "คำชี้แนะจากนักพรต · สร้างโดย AI",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ZenColors.CinnabarRed,
+                    "AI",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ZenColors.InkFaint,
+                    modifier = Modifier
+                        .border(1.dp, ZenColors.current.outlineVariant, RoundedCornerShape(50))
+                        .padding(horizontal = 8.dp, vertical = 1.dp),
                 )
-                Spacer(Modifier.height(14.dp))
-                if (text.isEmpty()) {
-                    Text(
-                        "นักพรตกำลังพินิจคัมภีร์...",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
-                        color = ZenColors.InkFaint,
-                    )
-                } else {
-                    TypewriterText(
-                        text = text,
-                        animate = animate,
-                        style = MaterialTheme.typography.bodyLarge,
-                        onRevealed = { if (isComplete) revealed = true },
-                    )
-                }
-                AnimatedVisibility(
-                    visible = isComplete && revealed,
-                    enter = fadeIn(tween(900)) + scaleIn(tween(500), initialScale = 1.6f),
-                    modifier = Modifier.align(Alignment.End),
-                ) {
-                    Row(Modifier.padding(top = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        CinnabarSeal(text = "武當", size = 50.dp)
-                    }
-                }
             }
         }
-        ScrollRoller()
-    }
-}
-
-@Composable
-private fun ScrollRoller() {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(14.dp)
-            .clip(RoundedCornerShape(7.dp))
-            .background(
-                Brush.verticalGradient(listOf(ZenColors.ScrollRollerLight, ZenColors.ScrollWood, ZenColors.ScrollRollerDark))
+        Spacer(Modifier.height(ZenSpacing.md))
+        if (text.isEmpty()) {
+            Text(
+                "นักพรตกำลังพินิจคัมภีร์...",
+                style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                color = ZenColors.InkFaint,
             )
-    )
+        } else {
+            TypewriterText(
+                text = text,
+                animate = animate,
+                style = MaterialTheme.typography.bodyLarge,
+                onRevealed = { if (isComplete) revealed = true },
+            )
+        }
+        AnimatedVisibility(
+            visible = isComplete && revealed,
+            enter = fadeIn(tween(900)) + scaleIn(tween(500), initialScale = 1.6f),
+            modifier = Modifier.align(Alignment.End),
+        ) {
+            Row(Modifier.padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                CinnabarSeal(text = "武當", size = 44.dp)
+            }
+        }
+    }
 }
 
 /** Required by App Store / Google Play rules for generative AI: label the content and offer a report button. */
@@ -243,8 +240,7 @@ fun AiContentLabel(source: InterpretationSource?, onReport: (() -> Unit)?, repor
 @Composable
 fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: List<Int>) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth()) {
-        InkDivider()
+    ZenCard(contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp)) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -252,11 +248,11 @@ fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: 
                 .padding(vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("ตัวบทคัมภีร์ดั้งเดิม", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text("ตัวบทคัมภีร์ดั้งเดิม", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null, tint = ZenColors.InkSoft)
         }
         AnimatedVisibility(expanded) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(bottom = 16.dp)) {
                 ScriptureBlock("คำตัดสิน", primary.judgment)
                 ScriptureBlock("ภาพลักษณ์", primary.image)
                 changingPositions.forEach { position ->
@@ -266,7 +262,6 @@ fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: 
                 relating?.let { ScriptureBlock("กวาแปร · ${it.shortNameTh}", it.judgment, ZenColors.BambooDeep) }
             }
         }
-        InkDivider()
     }
 }
 

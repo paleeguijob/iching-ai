@@ -55,7 +55,7 @@ import com.iching.ai.feature.reading.CastSummary
 import com.iching.ai.feature.share.ShareCardSheet
 import com.iching.ai.feature.share.readingShareContent
 import com.iching.ai.feature.reading.AiContentLabel
-import com.iching.ai.feature.reading.OracleScroll
+import com.iching.ai.feature.reading.OracleSheet
 import com.iching.ai.feature.reading.ScriptureSection
 import com.iching.ai.platform.ZenSound
 import com.iching.ai.platform.rememberSoundPlayer
@@ -259,7 +259,7 @@ private fun ReadingStage(
                     Spacer(Modifier.height(16.dp))
                 }
             }
-            OracleScroll(
+            OracleSheet(
                 text = state.interpretation,
                 isComplete = state.phase == DivinationPhase.COMPLETE,
                 animate = true,

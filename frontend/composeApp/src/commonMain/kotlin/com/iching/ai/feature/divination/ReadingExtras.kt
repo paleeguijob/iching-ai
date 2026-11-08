@@ -1,5 +1,7 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.components.ZenTextButton
+import com.iching.ai.ui.components.ZenCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -98,7 +100,7 @@ fun ReadingNoticeCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(ZenColors.CinnabarRed.copy(alpha = 0.07f))
             .padding(16.dp),
     ) {
@@ -152,7 +154,7 @@ fun ReadingNoticeCard(
                 }
                 ZenSecondaryButton("Premium · วันละ ๑๐ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
             }
-            canRetry && retryable -> TextButton(onClick = onRetry) { Text("ถามนักพรตอีกครั้ง", color = ZenColors.CinnabarRed) }
+            canRetry && retryable -> ZenTextButton("ถามนักพรตอีกครั้ง", onClick = onRetry)
         }
     }
 }
@@ -168,15 +170,8 @@ fun FollowUpSection(
         SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
         Spacer(Modifier.height(12.dp))
         if (!state.status.premium) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
-                    .clickable(onClick = onOpenPaywall)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            ZenCard(onClick = onOpenPaywall) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Lock, null, tint = ZenColors.BambooDeep)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -184,6 +179,7 @@ fun FollowUpSection(
                     Text("สิทธิ์ของสมาชิก Premium", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 }
                 Text("ดูแพ็กเกจ", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+            }
             }
         } else {
             FollowUpThread(state, onSend)
@@ -209,8 +205,8 @@ private fun FollowUpThread(state: DivinationUiState, onSend: (String) -> Unit) {
                 color = if (turn.answer.isEmpty()) ZenColors.InkFaint else ZenColors.InkBlack,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(ZenColors.Scroll)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ZenColors.Card)
                     .padding(14.dp),
             )
             Spacer(Modifier.height(14.dp))
@@ -232,10 +228,12 @@ private fun FollowUpThread(state: DivinationUiState, onSend: (String) -> Unit) {
                         }
                     }
                 },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ZenColors.BambooGreen,
-                    unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
+                    focusedBorderColor = ZenColors.current.outline,
+                    unfocusedBorderColor = ZenColors.current.outlineVariant,
+                    focusedContainerColor = ZenColors.Card,
+                    unfocusedContainerColor = ZenColors.Card,
                 ),
             )
         } else {

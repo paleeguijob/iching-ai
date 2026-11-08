@@ -54,7 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.feature.reading.CastSummary
-import com.iching.ai.feature.reading.OracleScroll
+import com.iching.ai.feature.reading.OracleSheet
 import com.iching.ai.feature.reading.ScriptureSection
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
@@ -285,7 +285,7 @@ fun JournalEntryScreen(
                     onHexagramClick = onOpenHexagram,
                 )
                 Spacer(Modifier.height(24.dp))
-                OracleScroll(
+                OracleSheet(
                     text = e.reading.interpretation,
                     isComplete = true,
                     animate = false,
