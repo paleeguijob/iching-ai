@@ -106,10 +106,21 @@ fun HomeScreen(
     val selectedSet by siamsi.selectedSet.collectAsStateWithLifecycle()
     val drawGate by siamsi.drawGate.collectAsStateWithLifecycle()
     var setSheetOpen by rememberSaveable { mutableStateOf(false) }
+    var question by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf<String?>(null) }
+    // Once a reading opens, its question is asked: home comes back empty for the next one. The paywall and a
+    // skipped ad keep it, since nothing was asked yet.
+    val clearQuestion = {
+        question = ""
+        category = null
+    }
     LaunchedEffect(siamsi) {
         siamsi.navigation.collect {
             when (it) {
-                is SiamSiNav.Draw -> onSiamSiDraw(it.route)
+                is SiamSiNav.Draw -> {
+                    onSiamSiDraw(it.route)
+                    clearQuestion()
+                }
                 SiamSiNav.Paywall -> onOpenPaywall()
             }
         }
@@ -121,7 +132,10 @@ fun HomeScreen(
     val sheet by viewModel.sheet.collectAsStateWithLifecycle()
     val deciding by viewModel.deciding.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
-        viewModel.castRequests.collect { onCast(it.question, it.category) }
+        viewModel.castRequests.collect {
+            onCast(it.question, it.category)
+            clearQuestion()
+        }
     }
     sheet?.let { ui ->
         PreCastSheet(
@@ -145,8 +159,6 @@ fun HomeScreen(
         siamsi.onResumed()
         onPauseOrDispose { }
     }
-    var question by rememberSaveable { mutableStateOf("") }
-    var category by rememberSaveable { mutableStateOf<String?>(null) }
 
     val pickable = QuestionCategory.entries.filter { it.pickable }
     PaperBackground(showMountains = true) {
