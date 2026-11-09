@@ -94,27 +94,34 @@ fun TypewriterText(
     val revealedLine by remember {
         derivedStateOf { laidOut?.let { it.getLineForOffset((shown - 1).coerceIn(0, it.layoutInput.text.length)) } ?: 0 }
     }
+    // The layout read in measure can be the one before the latest text, so its lines would cut the height short
+    // while the whole text draws. Once everything is revealed the full measured height is the right one.
+    val fullyShown by remember { derivedStateOf { shown >= latest.length } }
     Text(
         text,
         modifier = modifier
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
-                val bottom = laidOut?.getLineBottom(revealedLine)?.let(::ceil)?.toInt() ?: placeable.height
+                val bottom = if (fullyShown) placeable.height
+                else laidOut?.getLineBottom(revealedLine)?.let(::ceil)?.toInt() ?: placeable.height
                 layout(placeable.width, bottom.coerceIn(constraints.minHeight, placeable.height)) { placeable.place(0, 0) }
             }
             .drawWithContent {
                 val result = laidOut ?: return@drawWithContent
                 val end = shown.coerceAtMost(result.layoutInput.text.length)
                 if (end == 0) return@drawWithContent
-                if (end == result.layoutInput.text.length) {
-                    drawContent()
-                    return@drawWithContent
+                // Never paint below the height this text reported, or it runs over whatever sits under it.
+                clipRect(bottom = size.height) {
+                    if (end == result.layoutInput.text.length) {
+                        this@drawWithContent.drawContent()
+                        return@clipRect
+                    }
+                    val line = result.getLineForOffset(end - 1)
+                    val top = if (line == 0) 0f else result.inkBottom(line - 1)
+                    if (line > 0) clipRect(bottom = top) { this@drawWithContent.drawContent() }
+                    val right = if (end >= result.getLineEnd(line)) size.width else result.getHorizontalPosition(end, usePrimaryDirection = true)
+                    clipRect(top = top, bottom = result.inkBottom(line), right = right) { this@drawWithContent.drawContent() }
                 }
-                val line = result.getLineForOffset(end - 1)
-                val top = if (line == 0) 0f else result.inkBottom(line - 1)
-                if (line > 0) clipRect(bottom = top) { this@drawWithContent.drawContent() }
-                val right = if (end >= result.getLineEnd(line)) size.width else result.getHorizontalPosition(end, usePrimaryDirection = true)
-                clipRect(top = top, bottom = result.inkBottom(line), right = right) { this@drawWithContent.drawContent() }
             },
         style = style,
         onTextLayout = { laidOut = it },
