@@ -18,6 +18,7 @@ import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
+import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.GetReadingUseCase
@@ -152,6 +153,14 @@ class GetReadingTest {
         val blank = fakeReading(1, "s1").copy(interpretation = "", source = InterpretationSource.SCRIPTURE)
         val text = useCase(FakeJournal(blank))(1)?.interpretation.orEmpty()
         assertTrue("judgment-64" in text, text)
+    }
+
+    @Test
+    fun aSiamSiSlipWithoutInterpretationOpensAsItIs() = runTest {
+        val slip = fakeReading(1, null).copy(
+            lines = emptyList(), primaryId = 0, interpretation = "", siamsi = SiamSiPick("guanyin100", 62),
+        )
+        assertEquals(slip, useCase(FakeJournal(slip))(1))
     }
 
     @Test

@@ -74,9 +74,12 @@ class ObserveJournalUseCase(private val journal: JournalRepository) {
 }
 
 class GetReadingUseCase(private val journal: JournalRepository, private val resolveCast: ResolveCastUseCase) {
-    /** A reading fetched from the server without AI text has nothing of its own to show, so it reads as scripture. */
+    /**
+     * A reading fetched from the server without AI text has nothing of its own to show, so it reads as scripture.
+     * A Siam Si slip has no cast to read from; it shows its own slip, so it comes back as it is.
+     */
     suspend operator fun invoke(id: Long): Reading? = journal.get(id)?.let { reading ->
-        if (reading.interpretation.isNotBlank()) reading
+        if (reading.interpretation.isNotBlank() || reading.siamsi != null) reading
         else reading.copy(interpretation = ScriptureReadingComposer.compose(resolveCast(reading.lines)))
     }
 }
