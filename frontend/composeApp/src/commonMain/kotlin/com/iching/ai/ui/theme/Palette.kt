@@ -39,6 +39,9 @@ data class ZenPalette(
     /** The pua blocks: red lacquer, the light and the shaded side. */
     val puaLight: Color = Color(0xFFD4683F),
     val puaDeep: Color = Color(0xFF9C4221),
+    /** The face-down block: a darker lacquer, top and bottom. */
+    val puaShade: Color = Color(0xFFB8502C),
+    val puaDark: Color = Color(0xFF7A3218),
 )
 
 /** Palette from the spec: Zen minimalist ink on paper. Share cards always use this one. */
@@ -144,8 +147,6 @@ private val InkNightPalette = ZenPalette(
     wood = Color(0xFF9C7448),
     woodDeep = Color(0xFF6E4E2D),
     woodLight = Color(0xFFB88A57),
-    puaLight = Color(0xFFB8502C),
-    puaDeep = Color(0xFF7A3218),
 )
 
 /** Deep cinnabar red with pale gold ink; dark, so the status bar icons turn light like ink night. */

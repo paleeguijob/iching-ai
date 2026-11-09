@@ -3,7 +3,6 @@ package com.iching.ai.feature.siamsi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,10 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -87,39 +85,39 @@ fun PuaBlocks(result: PuaResult?, onToss: (() -> Unit)?, modifier: Modifier = Mo
         horizontalArrangement = Arrangement.spacedBy(34.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Block(up = leftUp, lean = -6f, spin = -1, hop = hop.value, label = if (result != null) leftUp else null)
-        Block(up = rightUp, lean = 9f, spin = 1, hop = hop.value, label = if (result != null) rightUp else null)
+        Block(up = leftUp, spin = -1, hop = hop.value, label = if (result != null) leftUp else null)
+        Block(up = rightUp, spin = 1, hop = hop.value, label = if (result != null) rightUp else null)
     }
 }
 
+/** Block size from the design (74×40 at 300 wide), scaled up for a phone. */
+private val BLOCK_W = 96.dp
+private val BLOCK_H = 52.dp
+
 @Composable
-private fun Block(up: Boolean, lean: Float, spin: Int, hop: Float, label: Boolean?) {
+private fun Block(up: Boolean, spin: Int, hop: Float, label: Boolean?) {
     val p = ZenColors.current
+    // As in the design: a rounded slab, domed on top when it lands หงาย and flipped when คว่ำ,
+    // the หงาย one leaning left and the คว่ำ one right.
+    val shape = if (up) {
+        RoundedCornerShape(topStart = 42.dp, topEnd = 42.dp, bottomEnd = 10.dp, bottomStart = 10.dp)
+    } else {
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomEnd = 42.dp, bottomStart = 42.dp)
+    }
+    val lean = if (up) -6f else 9f
+    val colors = if (up) listOf(p.puaLight, p.puaDeep) else listOf(p.puaShade, p.puaDark)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Canvas(
+        Box(
             Modifier
-                .size(width = 96.dp, height = 52.dp)
+                .size(BLOCK_W, BLOCK_H)
                 .graphicsLayer {
                     rotationZ = lean + spin * 320f * hop
                     translationY = -110f * hop
-                },
-        ) {
-            // A half-moon: dome up when it lands หงาย, dome down when คว่ำ.
-            val dome = Path().apply {
-                if (up) {
-                    moveTo(0f, size.height)
-                    cubicTo(0f, -size.height * 0.25f, size.width, -size.height * 0.25f, size.width, size.height)
-                } else {
-                    moveTo(0f, 0f)
-                    cubicTo(0f, size.height * 1.25f, size.width, size.height * 1.25f, size.width, 0f)
                 }
-                close()
-            }
-            val colors = if (up) listOf(p.puaLight, p.puaDeep) else listOf(p.puaDeep.copy(alpha = 0.95f), p.puaDeep)
-            drawPath(dome, Brush.verticalGradient(colors))
-            drawRect(p.puaDeep, Offset(0f, if (up) size.height - 3.dp.toPx() else 0f), Size(size.width, 3.dp.toPx()))
-        }
-        Spacer(Modifier.height(10.dp))
+                .shadow(10.dp, shape, ambientColor = p.cardShadow, spotColor = p.cardShadow)
+                .background(Brush.verticalGradient(colors), shape),
+        )
+        Spacer(Modifier.height(14.dp))
         Text(
             when (label) {
                 true -> "หงาย"
