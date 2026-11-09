@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** Validates the bundled scripture file itself: 64 hexagrams, 384 lines, King Wen order. */
@@ -38,6 +39,15 @@ class ScriptureDataTest {
         val all = repo.all()
         assertTrue(all.all { it.dailyMessage.isNotBlank() && it.dailyMessage.length <= 120 })
         assertEquals(64, all.map { it.dailyMessage }.toSet().size)
+    }
+
+    @Test
+    fun everyHexagramParsesAYearMessage() = runTest {
+        repo.all().forEach { h ->
+            val m = assertNotNull(h.yearMessage, "hexagram ${h.id}")
+            assertTrue(m.overview.length in 1..200 && m.work.length in 1..80 && m.love.length in 1..80, "hexagram ${h.id}")
+            assertTrue(m.money.length in 1..80 && m.blessing.length in 1..60, "hexagram ${h.id}")
+        }
     }
 
     @Test

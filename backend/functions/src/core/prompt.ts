@@ -10,7 +10,7 @@ export interface Prompt {
 export const MAX_QUESTION_CHARS = 300;
 export const MAX_FOLLOW_UP_CHARS = 300;
 
-export const CATEGORIES = ["work", "love", "money", "mind", "health", "decision", "other"] as const;
+export const CATEGORIES = ["work", "love", "money", "mind", "health", "decision", "other", "newyear"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 const CATEGORY_TH: Record<Category, string> = {
@@ -21,6 +21,7 @@ const CATEGORY_TH: Record<Category, string> = {
   health: "สุขภาพ",
   decision: "การตัดสินใจ",
   other: "ทั่วไป",
+  newyear: "ปีใหม่",
 };
 
 const LINE_NAMES = ["หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก"];
@@ -96,7 +97,7 @@ export function sanitizeQuestion(raw: unknown, max = MAX_QUESTION_CHARS): string
   // Strip control characters and fake section markers a user might use to steer the prompt.
   return raw
     .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ")
-    .replace(/\[(context data|คำถาม|system|สรุป)[^\]]*\]/gi, " ")
+    .replace(/\[(context data|คำถาม|system|สรุป|บริบทปี)[^\]]*\]/gi, " ")
     .trim()
     .slice(0, max);
 }
@@ -109,10 +110,12 @@ export function buildReadingPrompt(
   question: string,
   cast: Pick<Cast, "lines" | "primary" | "relating">,
   category: Category | null = null,
+  yearContext?: string,
 ): Prompt {
   const user = [
     scriptureContext(cast),
     "",
+    yearContext ? `[บริบทปี] ${yearContext}` : null,
     category ? `[หมวดคำถาม] ${CATEGORY_TH[category]}` : null,
     "[คำถามของผู้แสวงหา]",
     question.trim() || "ผู้แสวงหามิได้เอ่ยคำถาม เพียงตั้งจิตอธิษฐานขอคำชี้แนะในวิถีชีวิตยามนี้",

@@ -6,6 +6,8 @@
  * v1.1: free users pay with an ad or a coin) → rewarded-ad credits → coins. A failed model call refunds exactly what was charged.
  */
 
+import { Campaign, campaignActive, DEFAULT_CAMPAIGN, parseCampaign } from "./campaign";
+
 export interface RuntimeConfig {
   /** Global kill-switch: false → every reading comes back as raw scripture. */
   aiEnabled: boolean;
@@ -25,6 +27,8 @@ export interface RuntimeConfig {
   enforceAppCheck: boolean;
   /** Kill-switch for the 07:00 daily hexagram push. */
   dailyPushEnabled: boolean;
+  /** Chinese New Year campaign window; null when the stored config is malformed (= no campaign). */
+  campaign: Campaign | null;
 }
 
 export const DEFAULT_CONFIG: RuntimeConfig = {
@@ -42,6 +46,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   freeJournalDays: 7,
   enforceAppCheck: true,
   dailyPushEnabled: true,
+  campaign: DEFAULT_CAMPAIGN,
 };
 
 /** Merges the Firestore config/runtime doc over the defaults, ignoring fields of the wrong type. */
@@ -51,7 +56,9 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
   for (const key of Object.keys(DEFAULT_CONFIG) as (keyof RuntimeConfig)[]) {
     const v = raw[key];
     const def = DEFAULT_CONFIG[key];
-    if (key === "forceModel") {
+    if (key === "campaign") {
+      if (v !== undefined) out.campaign = parseCampaign(v);
+    } else if (key === "forceModel") {
       if (v === null || (typeof v === "string" && v.length > 0)) out.forceModel = v as string | null;
     } else if (v !== undefined && typeof v === typeof def) {
       (out as unknown as Record<string, unknown>)[key] = v;
@@ -115,6 +122,7 @@ export interface QuotaStatus {
   followUpsPerReading: number;
   journalDays: number | null;
   aiEnabled: boolean;
+  campaign: { id: string; year: number; active: boolean; endsAt: number } | null;
 }
 
 export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number): QuotaStatus {
@@ -138,6 +146,12 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
     followUpsPerReading: premium ? cfg.followUpsPerReading : 0,
     journalDays: premium ? null : cfg.freeJournalDays,
     aiEnabled: cfg.aiEnabled,
+    campaign: cfg.campaign && {
+      id: cfg.campaign.id,
+      year: cfg.campaign.year,
+      active: campaignActive(cfg.campaign, now),
+      endsAt: cfg.campaign.endsAt,
+    },
   };
 }
 
@@ -186,11 +200,16 @@ const modelFor = (charge: Charge, cfg: RuntimeConfig) =>
 /** Free retries per charge after the connection dropped mid-reading; further drops pay again. */
 export const MAX_FREE_RESUMES = 2;
 
-const rateLimit = (user: UserDoc, cfg: RuntimeConfig, now: number): ChargeDecision | null => {
+/** Seconds until another reading is allowed, or null when it is allowed now. */
+export const retryAfterSeconds = (user: UserDoc, cfg: RuntimeConfig, now: number): number | null => {
   if (user.lastReadingAt === null) return null;
   const elapsed = (now - user.lastReadingAt) / 1000;
-  if (elapsed >= cfg.minSecondsBetweenReadings) return null;
-  return { ok: false, reason: "rate_limited", retryAfterSeconds: Math.ceil(cfg.minSecondsBetweenReadings - elapsed) };
+  return elapsed >= cfg.minSecondsBetweenReadings ? null : Math.ceil(cfg.minSecondsBetweenReadings - elapsed);
+};
+
+const rateLimit = (user: UserDoc, cfg: RuntimeConfig, now: number): ChargeDecision | null => {
+  const wait = retryAfterSeconds(user, cfg, now);
+  return wait === null ? null : { ok: false, reason: "rate_limited", retryAfterSeconds: wait };
 };
 
 /** Regenerates a reading whose [charge] was already taken: same limits and model, nothing charged. */

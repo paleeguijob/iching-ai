@@ -9,6 +9,7 @@ import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
+import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.paywall.restoreMessage
@@ -28,6 +29,7 @@ class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val updateSettings: UpdateSettingsUseCase,
     private val session: AppSession,
+    private val api: OracleApi,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings?> = observeSettings()
@@ -44,8 +46,14 @@ class SettingsViewModel(
     val supportsGoogle: Boolean get() = session.supportsGoogle
     val manageSubscriptionsUrl: String get() = session.manageSubscriptionsUrl
 
+    private val _yearResult = MutableStateFlow<Int?>(null)
+
+    /** The campaign year the account cast a year hexagram for, or null while there is none. */
+    val yearResult: StateFlow<Int?> = _yearResult.asStateFlow()
+
     init {
         viewModelScope.launch { session.refreshStatus() }
+        viewModelScope.launch { _yearResult.value = runCatching { api.yearHexagram() }.getOrNull()?.year }
     }
 
     fun setSound(enabled: Boolean) {

@@ -1,6 +1,8 @@
 package com.iching.ai.data.api
 
 import com.iching.ai.domain.model.AccountStatus
+import com.iching.ai.domain.model.CampaignStatus
+import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.FollowUpTurn
 import com.iching.ai.domain.model.InterpretationSource
@@ -74,12 +76,21 @@ internal data class StatusDto(
     val followUpsPerReading: Int = 0,
     val journalDays: Int? = null,
     val aiEnabled: Boolean = true,
+    val campaign: CampaignDto? = null,
 ) {
     fun toDomain() = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
         adCreditsLeft = adCreditsLeft, adsWatchableLeft = adsWatchableLeft, readingsLeft = readingsLeft,
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
+        campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
     )
+}
+
+@Serializable internal data class CampaignDto(val id: String, val year: Int, val active: Boolean, val endsAt: Long)
+
+@Serializable
+internal data class YearHexagramDto(val year: Int, val primaryId: Int, val lines: List<Int>, val coins: List<List<Int>> = emptyList()) {
+    fun toDomain() = YearHexagram(year, primaryId, lines, coins)
 }
 
 @Serializable internal data class CastDto(val readingId: String, val lines: List<Int>, val coins: List<List<Int>> = emptyList())
@@ -106,6 +117,7 @@ internal data class ReadingDto(
     val outcome: String? = null,
     val outcomeNote: String? = null,
     val createdAt: Long,
+    val yearOf: Int? = null,
 )
 
 @Serializable internal data class ReadingsDto(val readings: List<ReadingDto>)
@@ -120,12 +132,15 @@ internal fun limitReason(code: String) = when (code) {
 }
 
 internal fun failureReason(code: String) = when (code) {
-    "rate_limited", "bad_response", "empty", "auth" -> FailureReason.MODEL_BUSY
+    "rate_limited" -> FailureReason.RATE_LIMITED
+    "bad_response", "empty", "auth" -> FailureReason.MODEL_BUSY
     "blocked" -> FailureReason.BLOCKED
     "network" -> FailureReason.NETWORK
     "unauthenticated", "app_check_missing", "app_check_invalid" -> FailureReason.UNAUTHENTICATED
     "premium_required" -> FailureReason.PREMIUM_REQUIRED
-    "reading_not_found" -> FailureReason.NOT_FOUND
+    "reading_not_found", "year_hexagram_not_found" -> FailureReason.NOT_FOUND
+    "campaign_inactive" -> FailureReason.CAMPAIGN_INACTIVE
+    "no_year_hexagram" -> FailureReason.NO_YEAR_HEXAGRAM
     else -> FailureReason.UNKNOWN
 }
 
@@ -174,6 +189,22 @@ class HttpOracleApi(
     override suspend fun status(): AccountStatus =
         json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Get, "/status")).toDomain()
 
+    override suspend fun yearHexagram(): YearHexagram? =
+        try {
+            json.decodeFromString(YearHexagramDto.serializer(), call(HttpMethod.Get, "/year-hexagram")).toDomain()
+        } catch (e: ApiException) {
+            if (e.reason == FailureReason.NOT_FOUND) null else throw e
+        }
+
+    override suspend fun castYearHexagram(): YearHexagram =
+        json.decodeFromString(YearHexagramDto.serializer(), call(HttpMethod.Post, "/year-hexagram", JsonObject(emptyMap()))).toDomain()
+
+    override fun divineYear(question: String): Flow<DivinationEvent> =
+        stream("/divine", buildJsonObject {
+            put("mode", "year")
+            put("question", question)
+        })
+
     override suspend fun claimAdReward(): Pair<Boolean, AccountStatus> =
         json.decodeFromString(AdRewardDto.serializer(), call(HttpMethod.Post, "/ad-reward", JsonObject(emptyMap())))
             .let { it.granted to it.status.toDomain() }
@@ -208,6 +239,7 @@ class HttpOracleApi(
                 outcome = dto.outcome?.let { o -> Outcome.entries.firstOrNull { it.name.equals(o, ignoreCase = true) } },
                 outcomeNote = dto.outcomeNote,
                 followUps = dto.followUps.map { FollowUpTurn(it.q, it.a) },
+                yearOf = dto.yearOf,
             )
         }
 

@@ -63,10 +63,11 @@ import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit) {
+fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit, onOpenYear: () -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
+    val yearResult by viewModel.yearResult.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val uri = LocalUriHandler.current
@@ -225,6 +226,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                     }
                 }
 
+                yearResult?.let { year ->
+                    Card {
+                        LinkRow("กวาประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
+                    }
+                }
+
                 SectionLabel("ธีม")
                 Card {
                     Text(
@@ -239,6 +246,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                             theme = theme,
                             selected = theme == current.selectedTheme,
                             unlocked = theme in current.streak.unlocked,
+                            lockedHint = lockedThemeHint(theme, status.campaign?.active == true),
                             onSelect = { viewModel.selectTheme(theme) },
                         )
                     }
@@ -286,8 +294,15 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
     }
 }
 
+/** Why a theme is still locked: days in a row for streak themes, the year hexagram for the campaign one. */
+internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String = when {
+    theme.unlockDays >= 0 -> "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง"
+    campaignActive -> "รับได้จากการเสี่ยงทายกวาประจำปี"
+    else -> "ธีมพิเศษตรุษจีน"
+}
+
 @Composable
-private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, onSelect: () -> Unit) {
+private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, lockedHint: String, onSelect: () -> Unit) {
     val swatch = paletteFor(theme)
     Row(
         Modifier
@@ -312,7 +327,7 @@ private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, onSe
             )
             if (!unlocked) {
                 Text(
-                    "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง",
+                    lockedHint,
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkFaint,
                 )

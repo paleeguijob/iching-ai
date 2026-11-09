@@ -12,6 +12,7 @@ import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.repository.ApiException
@@ -136,6 +137,26 @@ internal class FakeApi : OracleApi {
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
+    var yearHexagramNow: YearHexagram? = null
+    var yearFailure: FailureReason? = null
+    /** What POST /year-hexagram answers; falls back to [yearHexagramNow]. */
+    var castYearResult: YearHexagram? = null
+    var castYearFailure: FailureReason? = null
+    var castYearCalls = 0
+    var yearHexagramCalls = 0
+    override suspend fun yearHexagram(): YearHexagram? {
+        yearHexagramCalls++
+        yearFailure?.let { throw ApiException(it, "failed") }
+        return yearHexagramNow
+    }
+    override suspend fun castYearHexagram(): YearHexagram {
+        castYearCalls++
+        castYearFailure?.let { throw ApiException(it, "failed") }
+        val result = castYearResult ?: yearHexagramNow ?: throw ApiException(FailureReason.CAMPAIGN_INACTIVE, "inactive")
+        yearHexagramNow = result
+        return result
+    }
+    override fun divineYear(question: String): Flow<DivinationEvent> = emptyFlow()
     /** How long GET /status takes to answer. */
     var statusDelayMillis = 0L
     override suspend fun status(): AccountStatus {

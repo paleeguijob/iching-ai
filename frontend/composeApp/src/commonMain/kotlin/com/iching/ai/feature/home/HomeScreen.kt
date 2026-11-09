@@ -63,6 +63,7 @@ import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
+import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.ui.theme.ZenColors
 import kotlin.math.roundToInt
 
@@ -72,6 +73,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onCast: (String, QuestionCategory?) -> Unit,
     onOpenDaily: () -> Unit,
+    onOpenYear: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
@@ -95,6 +97,7 @@ fun HomeScreen(
             onDismiss = viewModel::onSheetDismissed,
         )
     }
+    val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     val streakDays by viewModel.streakDays.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
@@ -135,27 +138,10 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(32.dp))
-            OutlinedTextField(
-                value = question,
-                onValueChange = { if (it.length <= 300) question = it },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-                placeholder = {
-                    Text("พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...", color = ZenColors.InkFaint)
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ZenColors.BambooGreen,
-                    unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
-                    focusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.85f),
-                    unfocusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.6f),
-                    cursorColor = ZenColors.CinnabarRed,
-                ),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
-            )
+            QuestionField(question, onChange = { question = it })
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuestionCategory.entries.forEach { c ->
+                QuestionCategory.entries.filter { it.pickable }.forEach { c ->
                     val selected = category == c.wire
                     Text(
                         c.labelTh,
@@ -170,7 +156,7 @@ fun HomeScreen(
                                     category = null
                                 } else {
                                     category = c.wire
-                                    if (question.isBlank() || QuestionCategory.entries.any { it.sampleTh == question }) question = c.sampleTh
+                                    if (question.isBlank() || QuestionCategory.entries.filter { it.pickable }.any { it.sampleTh == question }) question = c.sampleTh
                                 }
                             }
                             .padding(horizontal = 14.dp, vertical = 6.dp),
@@ -189,10 +175,42 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(36.dp))
+            val card = campaign
+            if (card != CampaignCard.Hidden) {
+                LaunchedEffect(card::class) { viewModel.onCampaignCardShown(card) }
+                CampaignHomeCard(card, onClick = {
+                    viewModel.onCampaignCardTapped(card)
+                    onOpenYear()
+                })
+                Spacer(Modifier.height(16.dp))
+            }
             daily?.let { DailyHexagramCard(it, streakDays, onClick = onOpenDaily) }
             Spacer(Modifier.height(120.dp))
         }
     }
+}
+
+/** The seeker's question box, shared by the home screen and the year question screen. */
+@Composable
+internal fun QuestionField(value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.length <= 300) onChange(it) },
+        modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+        placeholder = {
+            Text("พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...", color = ZenColors.InkFaint)
+        },
+        textStyle = MaterialTheme.typography.bodyLarge,
+        shape = RoundedCornerShape(20.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = ZenColors.BambooGreen,
+            unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
+            focusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.85f),
+            unfocusedContainerColor = ZenColors.PaperCream.copy(alpha = 0.6f),
+            cursorColor = ZenColors.CinnabarRed,
+        ),
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
+    )
 }
 
 /** The Start button waits, with a word, while the status is checked before casting. */
@@ -229,7 +247,7 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
 }
 
 @Composable
-private fun GuidanceQuotaBar(quota: GuidanceQuota) {
+internal fun GuidanceQuotaBar(quota: GuidanceQuota) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -293,6 +311,39 @@ private fun BreathingTitle() {
             color = ZenColors.InkBlack,
             modifier = Modifier.graphicsLayer { this.alpha = steppedAlpha },
         )
+    }
+}
+
+@Composable
+private fun CampaignHomeCard(card: CampaignCard, onClick: () -> Unit) {
+    val (title, subtitle, button) = when (card) {
+        is CampaignCard.New -> Triple(
+            "เสี่ยงทายกวาประจำปี${campaignYearLabel(card.year)}",
+            "ตั้งจิตรับปีใหม่ ฟ้าประทานหนึ่งกวาให้ท่านทั้งปี",
+            "เสี่ยงทายรับปีใหม่",
+        )
+        is CampaignCard.Cast -> Triple(
+            "กวาประจำปีของท่าน: ${card.hexagram.shortNameTh}",
+            card.hexagram.yearMessage?.blessing.orEmpty(),
+            "ดูกวาประจำปี",
+        )
+        CampaignCard.Hidden -> return
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ZenColors.PaperCream.copy(alpha = 0.75f))
+            .border(1.dp, ZenColors.CinnabarRed.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+            .padding(20.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+        if (subtitle.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+        }
+        Spacer(Modifier.height(14.dp))
+        ZenPrimaryButton(text = button, onClick = onClick, modifier = Modifier.fillMaxWidth())
     }
 }
 

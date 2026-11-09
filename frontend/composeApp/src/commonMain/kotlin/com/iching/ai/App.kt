@@ -30,8 +30,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +55,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.iching.ai.feature.daily.DailyScreen
 import com.iching.ai.feature.divination.DivinationScreen
+import com.iching.ai.feature.home.AskYearScreen
 import com.iching.ai.feature.home.HomeScreen
 import com.iching.ai.feature.journal.JournalEntryScreen
 import com.iching.ai.feature.journal.JournalScreen
@@ -69,11 +72,20 @@ import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.YearAskRoute
+import com.iching.ai.navigation.YearRoute
+import com.iching.ai.feature.share.ShareCardSheet
+import com.iching.ai.feature.share.yearShareContent
+import com.iching.ai.feature.year.YearHexagramScreen
+import com.iching.ai.feature.year.YearUi
+import com.iching.ai.feature.year.YearViewModel
+import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.session.AppSession
@@ -154,6 +166,14 @@ private fun MainNavigation() {
             }
         }
 
+        val pendingYear by PendingNavigation.year.collectAsState()
+        LaunchedEffect(pendingYear) {
+            if (pendingYear) {
+                nav.navigate(YearRoute) { launchSingleTop = true }
+                PendingNavigation.consumeYear()
+            }
+        }
+
         val focusManager = LocalFocusManager.current
 
         // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
@@ -180,6 +200,7 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenDaily = { nav.navigate(DailyRoute) },
+                        onOpenYear = { nav.navigate(YearRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
@@ -191,11 +212,61 @@ private fun MainNavigation() {
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                     )
                 }
+                screen<YearRoute> { entry ->
+                    val session = koinInject<AppSession>()
+                    val yearViewModel: YearViewModel = koinViewModel()
+                    val yearState by yearViewModel.state.collectAsState()
+                    var sharing by remember { mutableStateOf(false) }
+                    YearHexagramScreen(
+                        viewModel = yearViewModel,
+                        onBack = { nav.popFrom(entry) },
+                        onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onShare = { sharing = true },
+                        onAskHermit = {
+                            val year = (yearState as? YearUi.Result)?.year
+                            if (year != null) {
+                                session.log("year_ai_tap", mapOf("campaign_id" to campaignIdFor(session.status.value.campaign, year)))
+                                nav.navigate(YearAskRoute(year))
+                            }
+                        },
+                    )
+                    val result = yearState as? YearUi.Result
+                    if (sharing && result != null) {
+                        ShareCardSheet(
+                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year)),
+                            log = { name, params ->
+                                session.log(name, params)
+                                // The sheet reports a finished share once; the year campaign counts it as its own event.
+                                if (name == "share_card") {
+                                    session.log(
+                                        "year_share",
+                                        mapOf("campaign_id" to campaignIdFor(session.status.value.campaign, result.year), "target" to "image"),
+                                    )
+                                }
+                            },
+                            onDismiss = { sharing = false },
+                        )
+                    }
+                }
+                screen<YearAskRoute> { entry ->
+                    val year = entry.toRoute<YearAskRoute>().year
+                    AskYearScreen(
+                        viewModel = koinViewModel(),
+                        onBack = { nav.popFrom(entry) },
+                        onCast = { question ->
+                            // Replaces the question screen: back from the reading leads to the year hexagram.
+                            nav.navigate(DivinationRoute(question, QuestionCategory.NEWYEAR.wire, yearOf = year)) {
+                                popUpTo<YearAskRoute> { inclusive = true }
+                            }
+                        },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
+                    )
+                }
                 screen<DivinationRoute> { entry ->
                     val route = entry.toRoute<DivinationRoute>()
                     DivinationScreen(
                         viewModel = koinViewModel {
-                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId).toTypedArray())
+                            parametersOf(*listOfNotNull<Any>(route.question, QuestionCategory.fromWire(route.category), route.resumeId, route.yearOf).toTypedArray())
                         },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
@@ -240,6 +311,7 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
+                        onOpenYear = { nav.navigate(YearRoute) },
                     )
                 }
                 screen<PaywallRoute> { entry ->

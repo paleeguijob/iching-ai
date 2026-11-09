@@ -76,7 +76,7 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
   });
 
   it("merges coins and readings into the destination and removes the source", async () => {
-    const reading = { question: "q", category: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]] as never, primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const reading = { question: "q", category: null, yearOf: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]] as never, primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
     await store.grantCoins("anon", "GPA.1", 10);
     await store.grantCoins("u1", "GPA.2", 10);
     const id = await store.createReading("anon", reading);
@@ -134,7 +134,7 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
   it("deletes the user's readings, reports and purchase markers, and nobody else's", async () => {
     await store.grantCoins("u1", "GPA.1", 10);
     await store.grantCoins("u2", "GPA.2", 10);
-    const base = { question: "q", category: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]], primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const base = { question: "q", category: null, yearOf: null, lines: [7, 7, 7, 7, 7, 7], coins: [[3, 2, 2]], primaryId: 1, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
     const mine = await store.createReading("u1", base);
     const theirs = await store.createReading("u2", base);
     await store.addReport({ uid: "u1", readingId: mine, reason: "x", note: "", createdAt: 1 });
@@ -171,5 +171,36 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     it("a client cannot change the runtime config", async () => {
       assert.equal((await write("config/runtime", { freeDailyReadings: { integerValue: "9999" } })).status, 403);
     });
+  });
+
+  const year = (primaryId: number, castAt = 1) => ({ year: 2027, primaryId, lines: [7, 8, 9, 6, 7, 8] as (6 | 7 | 8 | 9)[], coins: [[2, 3, 3]] as (2 | 3)[][], castAt });
+
+  it("claimYearHexagram keeps the first of two concurrent claims", async () => {
+    const [a, b] = await Promise.all([store.claimYearHexagram("u1", year(1)), store.claimYearHexagram("u1", year(2))]);
+    assert.equal(a.primaryId, b.primaryId);
+    assert.deepEqual(a, b);
+    const stored = await db.collection("users/u1/meta").where("primaryId", ">", 0).get();
+    assert.equal(stored.size, 1);
+    assert.equal(stored.docs[0].data().primaryId, a.primaryId);
+    assert.deepEqual(await store.getYearHexagram("u1", 2027), a);
+    assert.ok(((await db.doc("users/u1/meta/streak").get()).data()?.unlocked as string[]).includes("cinnabar_gold"));
+  });
+
+  it("mergeUser moves a year hexagram only when the target has none", async () => {
+    await store.claimYearHexagram("anon", year(5));
+    await store.mergeUser("anon", "u1");
+    assert.equal((await store.getYearHexagram("u1", 2027))?.primaryId, 5);
+    assert.equal(await store.getYearHexagram("anon", 2027), null);
+    assert.ok(((await db.doc("users/u1/meta/streak").get()).data()?.unlocked as string[]).includes("cinnabar_gold"));
+
+    await store.claimYearHexagram("anon2", year(9));
+    await store.mergeUser("anon2", "u1");
+    assert.equal((await store.getYearHexagram("u1", 2027))?.primaryId, 5);
+  });
+
+  it("deleteUser removes year hexagrams", async () => {
+    await store.claimYearHexagram("u1", year(3));
+    await store.deleteUser("u1");
+    assert.equal(await store.getYearHexagram("u1", 2027), null);
   });
 });

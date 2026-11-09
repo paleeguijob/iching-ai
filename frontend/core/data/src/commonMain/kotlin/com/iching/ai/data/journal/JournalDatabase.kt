@@ -44,6 +44,9 @@ data class ReadingEntity(
     val outcomeNote: String? = null,
     /** JSON array of {q, a}. */
     val followUpsJson: String? = null,
+    // ---- added in version 5 ----
+    /** The year of a new-year reading. */
+    val yearOf: Int? = null,
 )
 
 /** A server reading the seeker deleted here that the server has not confirmed deleting yet. */
@@ -99,7 +102,7 @@ interface ReadingDao {
     suspend fun clearUnsyncedOutcomes()
 }
 
-@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class, UnsyncedOutcomeEntity::class], version = 4)
+@Database(entities = [ReadingEntity::class, DeletedReadingEntity::class, UnsyncedOutcomeEntity::class], version = 5)
 @ConstructedBy(JournalDatabaseConstructor::class)
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun readingDao(): ReadingDao
@@ -127,6 +130,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `unsynced_outcomes` (`serverId` TEXT NOT NULL, PRIMARY KEY(`serverId`))")
+    }
+}
+
+/** v4 → v5: the year of a new-year reading. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE readings ADD COLUMN yearOf INTEGER")
     }
 }
 
@@ -159,6 +169,7 @@ internal fun ReadingEntity.toDomain() = Reading(
         ?.let { runCatching { json.decodeFromString(turnsSerializer, it) }.getOrNull() }
         .orEmpty()
         .map { FollowUpTurn(it.q, it.a) },
+    yearOf = yearOf,
 )
 
 internal fun Reading.toEntity() = ReadingEntity(
@@ -175,6 +186,7 @@ internal fun Reading.toEntity() = ReadingEntity(
     outcome = outcome?.name,
     outcomeNote = outcomeNote,
     followUpsJson = if (followUps.isEmpty()) null else json.encodeToString(turnsSerializer, followUps.map { TurnJson(it.question, it.answer) }),
+    yearOf = yearOf,
 )
 
 class RoomJournalRepository(private val dao: ReadingDao) : JournalRepository {

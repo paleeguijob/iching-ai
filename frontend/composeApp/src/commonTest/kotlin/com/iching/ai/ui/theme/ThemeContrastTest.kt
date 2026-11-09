@@ -44,8 +44,8 @@ class ThemeContrastTest {
     }
 
     @Test
-    fun onlyInkNightIsDark() {
-        assertEquals(listOf(AppTheme.INK_NIGHT), AppTheme.entries.filter { paletteFor(it).isDark })
+    fun onlyInkNightAndCinnabarGoldAreDark() {
+        assertEquals(listOf(AppTheme.INK_NIGHT, AppTheme.CINNABAR_GOLD), AppTheme.entries.filter { paletteFor(it).isDark })
         assertFalse(InkPaperPalette.isDark)
     }
 

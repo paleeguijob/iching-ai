@@ -2,6 +2,7 @@ package com.iching.ai.data.scripture
 
 import com.iching.ai.data.resources.Res
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.domain.model.YearMessage
 import com.iching.ai.domain.repository.HexagramRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -24,12 +25,25 @@ internal data class HexagramDto(
     val lines: List<String>,
     val allLines: String? = null,
     val dailyMessage: String = "",
+    val yearMessage: YearMessageDto? = null,
 ) {
     fun toDomain() = Hexagram(
         id = id, nameCn = nameCn, pinyin = pinyin, nameTh = nameTh, pattern = pattern,
         keywords = keywords, judgment = judgment, image = image, description = description,
         lines = lines, allLines = allLines, dailyMessage = dailyMessage,
+        yearMessage = yearMessage?.toDomain(),
     )
+}
+
+@Serializable
+internal data class YearMessageDto(
+    val overview: String,
+    val work: String,
+    val love: String,
+    val money: String,
+    val blessing: String,
+) {
+    fun toDomain() = YearMessage(overview, work, love, money, blessing)
 }
 
 internal object ScriptureParser {

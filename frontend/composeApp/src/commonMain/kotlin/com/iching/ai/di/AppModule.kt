@@ -3,6 +3,7 @@ package com.iching.ai.di
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
@@ -29,6 +30,7 @@ import com.iching.ai.feature.library.HexagramDetailViewModel
 import com.iching.ai.feature.library.LibraryViewModel
 import com.iching.ai.feature.paywall.PaywallViewModel
 import com.iching.ai.feature.settings.SettingsViewModel
+import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.FirebaseApiSession
@@ -94,6 +96,18 @@ val presentationModule = module {
             syncStreak = session::syncStreak,
         )
     }
+    viewModel {
+        val session = get<AppSession>()
+        YearViewModel(
+            api = get(),
+            getHexagram = get(),
+            observeSettings = get(),
+            log = session::log,
+            campaignId = { year -> campaignIdFor(session.status.value.campaign, year) },
+            campaignActive = { session.status.value.campaign?.active },
+            syncStreak = session::syncStreak,
+        )
+    }
     viewModel { params ->
         DivinationViewModel(
             question = params.values.filterIsInstance<String>().first(),
@@ -106,6 +120,7 @@ val presentationModule = module {
             observeSettings = get(),
             resumeReadingId = params.values.filterIsInstance<Long>().firstOrNull(),
             getReading = get(),
+            yearOf = params.values.filterIsInstance<Int>().firstOrNull(),
         )
     }
     viewModelOf(::LibraryViewModel)

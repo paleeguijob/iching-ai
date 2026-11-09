@@ -11,6 +11,7 @@ import com.iching.ai.data.journal.JournalDatabase
 import com.iching.ai.data.journal.MIGRATION_1_2
 import com.iching.ai.data.journal.MIGRATION_2_3
 import com.iching.ai.data.journal.MIGRATION_3_4
+import com.iching.ai.data.journal.MIGRATION_4_5
 import com.iching.ai.data.journal.RoomJournalRepository
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
 import com.iching.ai.data.settings.DataStoreSettingsRepository
@@ -45,7 +46,7 @@ internal fun HttpClient.configured(): HttpClient = config {
 
 internal fun buildDatabase(builder: RoomDatabase.Builder<JournalDatabase>): JournalDatabase =
     builder
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

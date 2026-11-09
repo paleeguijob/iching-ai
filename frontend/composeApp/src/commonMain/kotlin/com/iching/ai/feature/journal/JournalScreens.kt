@@ -147,6 +147,9 @@ private fun Timeline(
     }
 }
 
+/** Marks a reading of the year hexagram in the journal. */
+internal const val YEAR_READING_LABEL = "กวาประจำปี"
+
 @Composable
 private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Unit) {
     val reading = entry.reading
@@ -200,6 +203,9 @@ private fun TimelineItem(entry: JournalEntry, isLast: Boolean, onClick: () -> Un
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.BambooDeep,
                 )
+                if (reading.yearOf != null) {
+                    Text(YEAR_READING_LABEL, style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
+                }
                 if (reading.source == InterpretationSource.SCRIPTURE) {
                     Text("ตัวบทจากคัมภีร์", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 }

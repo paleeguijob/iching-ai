@@ -3,19 +3,25 @@ package com.iching.ai.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.AccountStatus
+import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StoreProduct
+import com.iching.ai.domain.model.campaignIdFor
+import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.currentOn
 import com.iching.ai.domain.oracle.bangkokEpochDay
+import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
+import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +29,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
@@ -46,6 +54,20 @@ data class PreCastSheetUi(
     val message: String? = null,
 )
 
+/** The campaign card above the daily one. */
+sealed interface CampaignCard {
+    data object Hidden : CampaignCard
+    data class New(val year: Int) : CampaignCard
+    data class Cast(val year: Int, val hexagram: Hexagram) : CampaignCard
+}
+
+/** Shown only while the server says the campaign is active; [hexagram] is the year hexagram once cast. */
+fun campaignCard(campaign: CampaignStatus?, year: YearHexagram?, hexagram: Hexagram?): CampaignCard = when {
+    campaign == null || !campaign.active -> CampaignCard.Hidden
+    year != null && hexagram != null -> CampaignCard.Cast(campaign.year, hexagram)
+    else -> CampaignCard.New(campaign.year)
+}
+
 private const val STATUS_WAIT_MILLIS = 1_500L
 private const val PRODUCTS_FAILED_MESSAGE = "ยังโหลดแพ็กเกจจากร้านค้าไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
 
@@ -53,6 +75,8 @@ class HomeViewModel(
     private val getDaily: GetDailyHexagramUseCase,
     observeSettings: ObserveSettingsUseCase,
     private val session: AppSession,
+    private val api: OracleApi,
+    private val getHexagram: GetHexagramUseCase,
 ) : ViewModel() {
 
     private val _dailyHexagram = MutableStateFlow<Hexagram?>(null)
@@ -65,6 +89,22 @@ class HomeViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val status: StateFlow<AccountStatus> = session.status
+
+    private val yearResult = MutableStateFlow<YearHexagram?>(null)
+    private val yearHexagram = MutableStateFlow<Hexagram?>(null)
+
+    /**
+     * True once a year lookup has answered. Until then the card stays hidden: showing "new" first would
+     * flash the wrong card (and log it) for someone who already has a hexagram. A failed lookup never
+     * sets it, so offline the card stays hidden rather than guessing.
+     */
+    private val yearLookupAnswered = MutableStateFlow(false)
+
+    val campaignCard: StateFlow<CampaignCard> = combine(session.status, yearResult, yearHexagram, yearLookupAnswered) { s, year, hexagram, answered ->
+        if (answered) campaignCard(s.campaign, year, hexagram) else CampaignCard.Hidden
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CampaignCard.Hidden)
+
+    private var loggedBannerState: String? = null
 
     private val _sheet = MutableStateFlow<PreCastSheetUi?>(null)
 
@@ -90,6 +130,10 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch { session.refreshStatus() }
+        // The year hexagram is only asked for once the server says there is a campaign.
+        viewModelScope.launch {
+            session.status.map { it.campaign?.active == true }.distinctUntilChanged().collect { if (it) refreshYear() }
+        }
         viewModelScope.launch {
             session.status.collect { s ->
                 if (premiumTapped && s.premium) {
@@ -114,6 +158,52 @@ class HomeViewModel(
     fun onResumed() {
         castSent = false
         refreshDay()
+        if (session.status.value.campaign?.active == true) refreshYear()
+    }
+
+    /** Keeps the last answer when the server cannot be reached. */
+    private fun refreshYear() {
+        viewModelScope.launch {
+            val result = try {
+                api.yearHexagram()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return@launch
+            }
+            val hexagram = result?.let { runCatching { getHexagram(it.primaryId) }.getOrNull() ?: return@launch }
+            yearHexagram.value = hexagram
+            yearResult.value = result
+            yearLookupAnswered.value = true
+        }
+    }
+
+    /** The card is on screen; counted once per kind of card, not on every redraw. */
+    fun onCampaignCardShown(card: CampaignCard) {
+        val state = card.stateName() ?: return
+        if (loggedBannerState == state) return
+        loggedBannerState = state
+        session.log("campaign_banner_shown", mapOf("campaign_id" to campaignId(card), "state" to state))
+    }
+
+    fun onCampaignCardTapped(card: CampaignCard) {
+        val state = card.stateName() ?: return
+        session.log("campaign_banner_tap", mapOf("campaign_id" to campaignId(card), "state" to state))
+    }
+
+    private fun campaignId(card: CampaignCard): String {
+        val year = when (card) {
+            is CampaignCard.New -> card.year
+            is CampaignCard.Cast -> card.year
+            CampaignCard.Hidden -> 0
+        }
+        return campaignIdFor(session.status.value.campaign, year)
+    }
+
+    private fun CampaignCard.stateName(): String? = when (this) {
+        CampaignCard.Hidden -> null
+        is CampaignCard.New -> "new"
+        is CampaignCard.Cast -> "cast"
     }
 
     fun onStart(question: String, category: QuestionCategory?) {

@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * A screen native code asked to open (tapping the daily push). It stays pending until the navigation
+ * A screen native code asked to open (tapping the daily or the campaign push). It stays pending until the navigation
  * graph exists, which is after a cold start and after the disclaimer has been accepted.
  */
 object PendingNavigation {
@@ -18,5 +18,16 @@ object PendingNavigation {
 
     fun consumeDaily() {
         _daily.value = false
+    }
+
+    private val _year = MutableStateFlow(false)
+    val year: StateFlow<Boolean> = _year.asStateFlow()
+
+    fun requestYear() {
+        _year.value = true
+    }
+
+    fun consumeYear() {
+        _year.value = false
     }
 }

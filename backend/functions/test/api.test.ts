@@ -13,10 +13,12 @@ import {
   revenueCatClient,
   Store,
   StoredReading,
+  YearHexagram,
 } from "../src/core/api";
 import { GeminiError, Usage } from "../src/core/gemini";
 import { loadScripture } from "../src/core/hexagrams";
 import { EMPTY_STREAK, mergeStreaks, StreakDoc } from "../src/core/streak";
+import { DEFAULT_CAMPAIGN } from "../src/core/campaign";
 import { bangkokDay, DEFAULT_CONFIG, DeviceDoc, normalizeDevice, normalizeUser, RuntimeConfig, UserDoc } from "../src/core/quota";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
@@ -110,6 +112,17 @@ class MemoryStore implements Store {
     await this.updateStreak(to, (stored) => mergeStreaks(stored, left));
     await this.deleteUser(from);
   }
+  years = new Map<string, YearHexagram>();
+  async getYearHexagram(uid: string, year: number) {
+    return this.years.get(`${uid}/${year}`) ?? null;
+  }
+  async claimYearHexagram(uid: string, candidate: YearHexagram) {
+    const key = `${uid}/${candidate.year}`;
+    const kept = this.years.get(key) ?? candidate;
+    this.years.set(key, kept);
+    await this.updateStreak(uid, (s) => ({ ...s, unlocked: [...new Set([...s.unlocked, "cinnabar_gold"])] }));
+    return kept;
+  }
   async deleteUser(uid: string) {
     this.users.delete(uid);
     this.streaks.delete(uid);
@@ -172,6 +185,7 @@ describe("api", () => {
   let now: number;
   let store: MemoryStore;
   let modelCalls: string[];
+  let modelPrompts: string[];
   let modelMode: "ok" | "fail" | "drop";
   let modelChunks: string[] | null;
   /** The response whose connection drops mid-stream when modelMode is "drop". */
@@ -185,6 +199,7 @@ describe("api", () => {
     now = Date.UTC(2026, 9, 31, 3, 0, 0);
     store = new MemoryStore(() => now);
     modelCalls = [];
+    modelPrompts = [];
     modelMode = "ok";
     modelChunks = null;
     droppingRes = null;
@@ -203,6 +218,7 @@ describe("api", () => {
       config: async () => cfg,
       streamModel: async function* (_p, model, signal): AsyncGenerator<string, Usage> {
         modelCalls.push(model);
+        modelPrompts.push(_p.userMessage);
         if (modelMode === "fail") throw new GeminiError("rate_limited", "busy");
         if (modelChunks) {
           yield* modelChunks;
@@ -224,6 +240,143 @@ describe("api", () => {
       log: { info() {}, warn() {}, error() {} },
     };
     handle = createApi(deps);
+  });
+
+  describe("year hexagram", () => {
+    beforeEach(() => {
+      cfg = { ...cfg, campaign: { ...DEFAULT_CAMPAIGN, enabled: true }, minSecondsBetweenReadings: 8 };
+      now = DEFAULT_CAMPAIGN.startsAt + 3_600_000;
+    });
+
+    it("casts the year hexagram once and returns the same one after", async () => {
+      const first = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), first);
+      assert.equal(first.code, 200);
+      now += 60_000;
+      const second = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), second);
+      const a = first.payload as YearHexagram;
+      const b = second.payload as YearHexagram;
+      assert.equal(a.year, 2027);
+      assert.equal(a.lines.length, 6);
+      assert.equal(b.primaryId, a.primaryId);
+      assert.deepEqual(b.lines, a.lines);
+      assert.deepEqual(modelCalls, []);
+      const st = new FakeRes();
+      await handle(req("GET", "/status"), st);
+      assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
+      assert.ok(store.streaks.get("u1")!.unlocked.includes("cinnabar_gold"));
+    });
+
+    it("does not rate limit a reading made right after a year cast", async () => {
+      await handle(req("POST", "/year-hexagram"), new FakeRes());
+      const res = new FakeRes();
+      await handle(req("POST", "/divine", { question: "ปีนี้เป็นอย่างไร" }), res);
+      assert.deepEqual(res.events.map((e) => e.event), ["cast", "delta", "delta", "done"]);
+    });
+
+    describe("year mode", () => {
+      const castYear = async () => {
+        const res = new FakeRes();
+        await handle(req("POST", "/year-hexagram"), res);
+        return res.payload as YearHexagram;
+      };
+
+      it("interprets the year hexagram and charges like any reading", async () => {
+        const year = await castYear();
+        now += 60_000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        const ev = res.events;
+        assert.equal(ev[0].event, "cast");
+        assert.deepEqual(ev[0].data.lines, year.lines);
+        assert.equal(ev.at(-1)!.event, "done");
+        assert.equal((ev.at(-1)!.data.status as { readingsLeft: number }).readingsLeft, 0);
+        const saved = await store.getReading("u1", ev[0].data.readingId as string);
+        assert.equal(saved?.category, "newyear");
+        assert.equal(saved?.yearOf, 2027);
+        assert.equal(saved?.primaryId, year.primaryId);
+      });
+
+      it("is refused without a year hexagram and charges nothing", async () => {
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        assert.deepEqual([res.code, res.payload], [409, { error: "no_year_hexagram" }]);
+        assert.deepEqual(modelCalls, []);
+        const st = new FakeRes();
+        await handle(req("GET", "/status"), st);
+        assert.equal((st.payload as { readingsLeft: number }).readingsLeft, 1);
+      });
+
+      it("still works after the campaign ends", async () => {
+        const year = await castYear();
+        now = DEFAULT_CAMPAIGN.endsAt + 1000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), res);
+        assert.deepEqual(res.events[0].data.lines, year.lines);
+        assert.equal(res.events.at(-1)!.event, "done");
+      });
+
+      it("gets the safety reply for a crisis question", async () => {
+        await castYear();
+        now += 60_000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ไม่อยากมีชีวิตอยู่แล้ว" }), res);
+        assert.deepEqual(res.events.map((e) => e.event), ["safety"]);
+        assert.equal(modelCalls.length, 0);
+      });
+
+      it("keeps the year context when a failed reading is retried by id", async () => {
+        await castYear();
+        now += 60_000;
+        modelMode = "fail";
+        const failed = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "ปีนี้งานเป็นอย่างไร" }), failed);
+        modelMode = "ok";
+        const retry = new FakeRes();
+        await handle(req("POST", "/divine", { readingId: failed.events[0].data.readingId }), retry);
+        assert.equal(retry.events.at(-1)!.event, "done");
+        assert.equal(modelPrompts.length, 2);
+        for (const p of modelPrompts) assert.ok(p.includes("[บริบทปี] " + DEFAULT_CAMPAIGN.yearContext));
+      });
+    });
+
+    it("refuses a new cast outside the campaign but still returns an existing one", async () => {
+      const mine = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), mine);
+      now = DEFAULT_CAMPAIGN.endsAt + 1000;
+      const again = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), again);
+      assert.equal(again.code, 200);
+      assert.deepEqual(again.payload, mine.payload);
+      const get = new FakeRes();
+      await handle(req("GET", "/year-hexagram"), get);
+      assert.deepEqual(get.payload, mine.payload);
+      const fresh = new FakeRes();
+      await handle(req("POST", "/year-hexagram", {}, { authorization: "Bearer token-u2" }), fresh);
+      assert.deepEqual([fresh.code, fresh.payload], [409, { error: "campaign_inactive" }]);
+    });
+
+    it("refuses a new cast when there is no valid campaign", async () => {
+      cfg = { ...cfg, campaign: null };
+      const res = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [409, { error: "campaign_inactive" }]);
+    });
+
+    it("GET returns 404 before a cast", async () => {
+      const res = new FakeRes();
+      await handle(req("GET", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [404, { error: "year_hexagram_not_found" }]);
+    });
+
+    it("rate limits a new cast right after another reading", async () => {
+      store.users.set("u1", { ...normalizeUser(undefined, bangkokDay(now)), lastReadingAt: now - 3000 });
+      const res = new FakeRes();
+      await handle(req("POST", "/year-hexagram"), res);
+      assert.deepEqual([res.code, res.payload], [429, { error: "rate_limited", retryAfterSeconds: 5 }]);
+      assert.equal(await store.getYearHexagram("u1", 2027), null);
+    });
   });
 
   it("rejects missing auth and App Check", async () => {

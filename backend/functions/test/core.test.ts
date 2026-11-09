@@ -17,6 +17,7 @@ import {
   refundReading,
   status,
 } from "../src/core/quota";
+import { campaignActive, dueCampaignPush, parseCampaign } from "../src/core/campaign";
 import { checkSafety } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
@@ -85,6 +86,16 @@ describe("daily hexagram", () => {
   it("the kill-switch defaults on and can be turned off", () => {
     assert.equal(mergeConfig(undefined).dailyPushEnabled, true);
     assert.equal(mergeConfig({ dailyPushEnabled: false }).dailyPushEnabled, false);
+  });
+
+  it("year context goes into the prompt only when given", () => {
+    const cast = resolveLines(scripture, [9, 7, 8, 7, 8, 7]);
+    const withCtx = buildReadingPrompt("q", cast, "newyear", "ctx").userMessage;
+    assert.ok(withCtx.includes("[บริบทปี] ctx"));
+    assert.ok(withCtx.includes("[หมวดคำถาม] ปีใหม่"));
+    assert.ok(withCtx.indexOf("[บริบทปี]") < withCtx.indexOf("[หมวดคำถาม]"));
+    assert.ok(!buildReadingPrompt("q", cast, "newyear").userMessage.includes("[บริบทปี]"));
+    assert.ok(!sanitizeQuestion("[บริบทปี] x").includes("บริบทปี"));
   });
 
   it("never reaches the reading prompt", () => {
@@ -403,5 +414,62 @@ describe("streak merge", () => {
 
   it("an empty stored streak takes what the app sent", () => {
     assert.deepEqual(mergeStreaks(normalizeStreak(undefined), s(4, 5, 100)), s(4, 5, 100));
+  });
+});
+
+describe("year messages", () => {
+  it("every hexagram has a year message within the length limits and without a year or zodiac", () => {
+    const limits = { overview: 200, work: 80, love: 80, money: 80, blessing: 60 } as const;
+    for (let id = 1; id <= 64; id++) {
+      const h = scripture.get(id);
+      assert.ok(h.yearMessage, `hexagram ${id} has a yearMessage`);
+      for (const [k, max] of Object.entries(limits)) {
+        const v = (h.yearMessage as unknown as Record<string, string>)[k];
+        assert.ok(v && [...v].length <= max, `hexagram ${id} ${k}`);
+        assert.doesNotMatch(v, /\d{4}|มะแม|มะเมีย|ปีชวด|ปีขาล|ปีกุน/);
+      }
+    }
+  });
+});
+
+const raw = {
+  id: "cny-2027",
+  year: 2027,
+  startsAt: "2027-01-20T00:00:00+07:00",
+  endsAt: "2027-02-22T00:00:00+07:00",
+  pushes: ["2027-02-05T19:00:00+07:00"],
+  enabled: true,
+  yearContext: "x",
+};
+
+describe("campaign", () => {
+  it("is active only while enabled and inside the window", () => {
+    const c = parseCampaign(raw)!;
+    assert.equal(campaignActive(c, Date.parse("2027-01-19T23:59:59+07:00")), false);
+    assert.equal(campaignActive(c, Date.parse("2027-01-20T00:00:00+07:00")), true);
+    assert.equal(campaignActive(c, Date.parse("2027-02-22T00:00:00+07:00")), false);
+    assert.equal(campaignActive({ ...c, enabled: false }, c.startsAt), false);
+    assert.equal(campaignActive(null, c.startsAt), false);
+  });
+  it("treats a malformed config as no campaign", () => {
+    for (const bad of [null, {}, { ...raw, startsAt: "soon" }, { ...raw, endsAt: raw.startsAt }, { ...raw, id: "" }, { ...raw, pushes: "x" }])
+      assert.equal(parseCampaign(bad), null);
+    assert.equal(mergeConfig({ campaign: { ...raw, year: "2027" } }).campaign, null);
+  });
+  it("is off by default and reported in status", () => {
+    assert.equal(DEFAULT_CONFIG.campaign!.enabled, false);
+    assert.equal(mergeConfig({}).campaign, DEFAULT_CONFIG.campaign);
+    const cfg = mergeConfig({ campaign: raw });
+    const s = status(normalizeUser(undefined, "2027-02-01"), null, cfg, Date.parse("2027-02-01T12:00:00+07:00"));
+    assert.deepEqual(s.campaign, { id: "cny-2027", year: 2027, active: true, endsAt: Date.parse(raw.endsAt) });
+  });
+  it("campaign push is due only during its hour and only while enabled", () => {
+    const c = { ...parseCampaign(raw)!, pushes: [Date.parse("2027-02-05T19:00:00+07:00"), Date.parse("2027-02-06T08:00:00+07:00")] };
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T18:59:00+07:00")), null);
+    const eve = dueCampaignPush(c, Date.parse("2027-02-05T19:00:30+07:00"))!;
+    assert.deepEqual([eve.key, eve.title, eve.topic, eve.data.type], ["cny-2027-0", "คืนส่งท้ายปีมะเมีย", "daily-hexagram-th", "campaign"]);
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T20:00:00+07:00")), null);
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-06T08:10:00+07:00"))!.title, "ซินเจียยู่อี่ ซินนี้ฮวดไช้");
+    assert.equal(dueCampaignPush({ ...c, enabled: false }, c.pushes[0]), null);
   });
 });

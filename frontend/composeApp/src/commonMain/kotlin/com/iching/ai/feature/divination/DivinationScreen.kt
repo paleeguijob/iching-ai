@@ -149,7 +149,11 @@ fun DivinationScreen(
                 modifier = Modifier.weight(1f),
             ) { phase ->
                 when (phase) {
-                    DivinationPhase.CASTING -> CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                    DivinationPhase.CASTING -> if (state.year) {
+                        YearWaitingStage()
+                    } else {
+                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                    }
                     DivinationPhase.SAFETY -> SafetyStage(state.safetyMessage.orEmpty(), onDone)
                     else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone)
                 }
@@ -173,81 +177,32 @@ fun DivinationScreen(
     }
 }
 
+/** Year readings have no toss: the year hexagram arrives from the server. */
 @Composable
-private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit) {
-    val noRipple = remember { MutableInteractionSource() }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .clickable(interactionSource = noRipple, indication = null, enabled = state.canToss, onClick = onToss)
-            .navigationBarsPadding()
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(4.dp))
+private fun YearWaitingStage() {
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(
-            if (state.question.isBlank()) "ตั้งจิตให้สงบ แล้วโยนเหรียญ" else "“${state.question}”",
+            "กำลังเปิดกวาประจำปีของท่าน...",
             style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
             color = ZenColors.InkSoft,
             textAlign = TextAlign.Center,
-            maxLines = 3,
         )
-        Spacer(Modifier.weight(0.6f))
-        HexagramFigure(
-            pattern = null,
-            lines = state.tosses.map { it.line } + List(6 - state.tosses.size) { LineType.YOUNG_YANG },
-            revealed = state.tosses.size,
-            animateReveal = true,
-            lineWidth = 150.dp,
-            lineHeight = 14.dp,
-            gap = 11.dp,
-        )
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "เส้นที่ ${(state.tossesDone + if (state.tossesDone < 6) 1 else 0).coerceAtMost(6).toThaiNumerals()} จาก ๖",
-            style = MaterialTheme.typography.labelLarge,
-            color = ZenColors.BambooDeep,
-        )
-        Spacer(Modifier.weight(0.5f))
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            val faces = state.currentToss?.faces
-            repeat(3) { i ->
-                AncientCoin(
-                    face = faces?.get(i),
-                    tossKey = state.tossKey,
-                    delayMillis = i * 90,
-                    size = 78.dp,
-                )
-            }
-        }
-        Spacer(Modifier.height(18.dp))
-        Box(Modifier.height(28.dp), contentAlignment = Alignment.Center) {
-            val last = state.tosses.lastOrNull()
-            if (state.awaitingCast) {
-                Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
-            } else if (!state.isTossing && last != null) {
-                Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
-            }
-        }
-        Spacer(Modifier.weight(0.4f))
-        ZenPrimaryButton(
-            text = if (state.tossesDone == 0) "โยนเหรียญ" else "โยนครั้งต่อไป",
-            onClick = onToss,
-            enabled = state.canToss,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        TextButton(onClick = onTossRemaining, enabled = state.canToss) {
-            Text("โยนต่อเนื่องจนครบ", color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
-        }
-        Spacer(Modifier.height(12.dp))
     }
 }
 
-private fun lineLabel(line: LineType): String = when (line) {
-    LineType.OLD_YIN -> "หยินแก่ (๖) — เส้นแปร"
-    LineType.YOUNG_YANG -> "หยางอ่อน (๗)"
-    LineType.YOUNG_YIN -> "หยินอ่อน (๘)"
-    LineType.OLD_YANG -> "หยางแก่ (๙) — เส้นแปร"
+@Composable
+private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit) {
+    TossStage(
+        prompt = if (state.question.isBlank()) "ตั้งจิตให้สงบ แล้วโยนเหรียญ" else "“${state.question}”",
+        tosses = state.tosses,
+        currentToss = state.currentToss,
+        tossKey = state.tossKey,
+        isTossing = state.isTossing,
+        awaitingCast = state.awaitingCast,
+        canToss = state.canToss,
+        onToss = onToss,
+        onTossRemaining = onTossRemaining,
+    )
 }
 
 @Composable
@@ -330,7 +285,11 @@ private fun ReadingStage(
                 ZenSecondaryButton("แชร์การ์ดคำทำนาย", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 if (sharing) {
                     ShareCardSheet(
-                        content = readingShareContent(cast.primary, state.shareSummary.takeIf { state.isAiReading }),
+                        content = readingShareContent(
+                            cast.primary,
+                            state.shareSummary.takeIf { state.isAiReading },
+                            newYear = state.status.campaign?.active == true,
+                        ),
                         log = viewModel::logEvent,
                         onDismiss = { sharing = false },
                     )

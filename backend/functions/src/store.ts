@@ -1,14 +1,15 @@
 import { DocumentData, FieldValue, Firestore } from "firebase-admin/firestore";
-import { QuotaTxResult, Store, StoredReading } from "./core/api";
+import { QuotaTxResult, Store, StoredReading, YearHexagram } from "./core/api";
 import type { Coin } from "./core/cast";
 import { bangkokDay, DeviceDoc, normalizeDevice, normalizeUser, UserDoc } from "./core/quota";
-import { mergeStreaks, normalizeStreak } from "./core/streak";
+import { mergeStreaks, normalizeStreak, THEMES } from "./core/streak";
 
 /**
  * Firestore layout
  *   users/{uid}                      premiumUntil, coins, usage{day,...}, lastReadingAt
  *   users/{uid}/readings/{id}        one divination (the spec's `readings` table)
  *   users/{uid}/meta/streak          daily-hexagram streak and unlocked themes (core/streak.ts)
+ *   users/{uid}/meta/year-{year}     the one year hexagram the account cast in a campaign (lines, coins as {c}, castAt)
  *   coinGrants/{txId}                coins, at, revokedAt: one per store transaction, across accounts and
  *                                    kept after account deletion (no uid), so a pack is never credited twice
  *   users/{uid}/coinGrants/{txId}    the same marker as written before it moved; still honoured
@@ -21,6 +22,14 @@ export function firestoreStore(db: Firestore): Store {
   const users = db.collection("users");
   const readings = (uid: string) => users.doc(uid).collection("readings");
   const streakRef = (uid: string) => users.doc(uid).collection("meta").doc("streak");
+  const yearRef = (uid: string, year: number) => users.doc(uid).collection("meta").doc(`year-${year}`);
+  const toYear = (year: number, d: DocumentData): YearHexagram => ({
+    year,
+    primaryId: d.primaryId,
+    lines: d.lines ?? [],
+    coins: Array.isArray(d.coins) ? d.coins.map((t: { c: number[] }) => t.c as Coin[]) : [],
+    castAt: d.castAt ?? 0,
+  });
   const safeId = (id: string) => id.replace(/[/.#$\[\]]/g, "_").slice(0, 200) || "unknown";
   const grantRefs = (uid: string, transactionId: string) => ({
     grantRef: db.collection("coinGrants").doc(safeId(transactionId)),
@@ -31,6 +40,7 @@ export function firestoreStore(db: Firestore): Store {
     id,
     question: d.question ?? "",
     category: d.category ?? null,
+    yearOf: d.yearOf ?? null,
     lines: d.lines ?? [],
     coins: Array.isArray(d.coins) ? d.coins.map((t: { c: number[] } | number[]) => (Array.isArray(t) ? t : t.c) as Coin[]) : [],
     primaryId: d.primaryId,
@@ -177,6 +187,25 @@ export function firestoreStore(db: Firestore): Store {
       });
     },
 
+    async getYearHexagram(uid, year) {
+      const snap = await yearRef(uid, year).get();
+      return snap.exists ? toYear(year, snap.data()!) : null;
+    },
+
+    async claimYearHexagram(uid, candidate) {
+      return db.runTransaction(async (tx) => {
+        const ref = yearRef(uid, candidate.year);
+        const existing = await tx.get(ref);
+        const streak = normalizeStreak((await tx.get(streakRef(uid))).data());
+        const kept = existing.exists ? toYear(candidate.year, existing.data()!) : candidate;
+        if (!existing.exists) tx.set(ref, { primaryId: kept.primaryId, lines: kept.lines, coins: kept.coins.map((c) => ({ c })), castAt: kept.castAt });
+        if (!streak.unlocked.includes("cinnabar_gold")) {
+          tx.set(streakRef(uid), { ...streak, unlocked: THEMES.filter((t) => t === "cinnabar_gold" || streak.unlocked.includes(t)) });
+        }
+        return kept;
+      });
+    },
+
     async mergeUser(fromUid, toUid) {
       const left = normalizeStreak((await streakRef(fromUid).get()).data());
       await this.updateStreak(toUid, (stored) => mergeStreaks(stored, left));
@@ -188,6 +217,10 @@ export function firestoreStore(db: Firestore): Store {
         tx.set(users.doc(fromUid), { coins: 0 }, { merge: true });
       });
       const writer = db.bulkWriter();
+      const toMeta = users.doc(toUid).collection("meta");
+      for (const doc of (await users.doc(fromUid).collection("meta").get()).docs) {
+        if (doc.id.startsWith("year-") && !(await toMeta.doc(doc.id).get()).exists) writer.set(toMeta.doc(doc.id), doc.data());
+      }
       for (const doc of (await readings(fromUid).get()).docs) writer.set(readings(toUid).doc(doc.id), doc.data());
       for (const doc of (await db.collection("reports").where("uid", "==", fromUid).get()).docs) writer.update(doc.ref, { uid: toUid });
       await writer.close();

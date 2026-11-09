@@ -14,4 +14,13 @@ class PendingNavigationTest {
         PendingNavigation.consumeDaily()
         assertFalse(PendingNavigation.daily.value)
     }
+
+    @Test
+    fun campaignPushOpensTheYearScreen() {
+        PendingNavigation.requestYear()
+        assertTrue(PendingNavigation.year.value)
+        assertFalse(PendingNavigation.daily.value)
+        PendingNavigation.consumeYear()
+        assertFalse(PendingNavigation.year.value)
+    }
 }
