@@ -22,7 +22,7 @@ class SiamSiShareContentTest {
         assertEquals("ปานกลาง · 中吉", card.level)
         assertEquals(listOf("一", "二", "三", "四"), card.poemOrig)
         assertEquals(listOf("ก", "ข", "ค", "ง"), card.poemTh)
-        assertEquals("ตำรา 觀音靈籤 · ไม่ได้รับการรับรองจากวัดหรือศาลเจ้าใด", card.source)
+        assertEquals("ตำรา 觀音靈籤", card.source)
         assertEquals("guanyin100", card.setId)
     }
 

@@ -4,7 +4,6 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.oracle.stripMarkup
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiStick
-import com.iching.ai.feature.siamsi.NOT_ENDORSED
 import com.iching.ai.ui.toThaiNumerals
 
 const val SHARE_TEXT = "เสี่ยงทายกับคัมภีร์อี้จิงได้ที่ https://play.google.com/store/apps/details?id=com.iching.ai"
@@ -86,5 +85,5 @@ fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick) = SiamSiShareContent(
     poemOrig = if (stick.poemOrig == stick.poemTh) emptyList() else stick.poemOrig,
     poemTh = stick.poemTh,
     labelOrig = stick.labelOrig,
-    source = "ตำรา ${set.sourceTitle} · $NOT_ENDORSED",
+    source = "ตำรา ${set.sourceTitle}",
 )
