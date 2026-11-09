@@ -91,12 +91,36 @@ class SiamSiDataTest {
         assertNull(repo.set("broken"))
     }
 
+    private fun bundledRaw(id: String) = java.io.File("src/commonMain/composeResources/files/siamsi/$id.json").readText()
+
     @Test
-    fun bundledSetsParse() {
+    fun bundledSetsAreComplete() {
         for (id in com.iching.ai.data.siamsi.BUNDLED_SIAMSI_SETS) {
-            val raw = java.io.File("src/commonMain/composeResources/files/siamsi/$id.json").readText()
-            assertEquals(id, SiamSiParser.parse(raw, strict = false).id)
+            val set = SiamSiParser.parse(bundledRaw(id), strict = true)
+            assertEquals(id, set.id)
+            for (stick in set.sticks) {
+                val text = (stick.poemOrig + stick.poemTh + stick.summary + stick.topics.values).joinToString()
+                assertTrue("〔" !in text, "$id #${stick.number} still has placeholder text")
+                assertTrue(stick.poemOrig.all { it.length == 7 }, "$id #${stick.number}: original lines are seven characters")
+            }
         }
+    }
+
+    @Test
+    fun jiaziSticksCarryEverySexagenaryPairOnce() {
+        val labels = SiamSiParser.parse(bundledRaw("jiazi60")).sticks.map { it.labelOrig }
+        assertEquals(60, labels.filterNotNull().toSet().size)
+    }
+
+    @Test
+    fun bundledSetsNeverSayKhayaiKhwam() {
+        for (id in com.iching.ai.data.siamsi.BUNDLED_SIAMSI_SETS) assertTrue("ขยายความ" !in bundledRaw(id), id)
+    }
+
+    @Test
+    fun bundledRepositoryIsStrict() = runBlocking {
+        val repo = BundledSiamSiRepository(loadRaw = { bundledRaw(it).replace("\"count\": 100", "\"count\": 101") })
+        assertNull(repo.set("guanyin100"))
     }
 
     @Test

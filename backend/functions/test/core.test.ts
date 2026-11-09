@@ -507,7 +507,9 @@ describe("siamsi", () => {
     assert.ok(sets.has("jiazi60"));
     assert.equal(found.set.count, 100);
     assert.equal(found.stick.number, 17);
-    assert.equal(findStick(sets, "guanyin100", 99), null);
+    assert.equal(sets.get("guanyin100")!.sticks.length, 100);
+    assert.equal(sets.get("jiazi60")!.sticks.length, 60);
+    assert.equal(findStick(sets, "guanyin100", 101), null);
     assert.equal(findStick(sets, "nope", 1), null);
   });
 

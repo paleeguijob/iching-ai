@@ -86,7 +86,7 @@ fun resolveSelectedSet(selected: String?, available: List<SiamSiSet>): SiamSiSet
 class BundledSiamSiRepository(
     private val bundled: Collection<String> = BUNDLED_SIAMSI_SETS,
     private val loadRaw: suspend (String) -> String = { Res.readBytes("files/siamsi/$it.json").decodeToString() },
-    private val strict: Boolean = false,
+    private val strict: Boolean = true,
 ) : SiamSiRepository {
 
     private val mutex = Mutex()
