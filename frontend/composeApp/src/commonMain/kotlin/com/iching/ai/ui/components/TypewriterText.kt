@@ -4,10 +4,8 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,6 +16,8 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import kotlin.math.ceil
 import kotlinx.coroutines.delay
 
@@ -90,27 +90,19 @@ fun TypewriterText(
         Text(text, modifier = modifier, style = style)
         return
     }
-    var laidOut by remember { mutableStateOf<TextLayoutResult?>(null) }
-    val revealedLine by remember {
-        derivedStateOf { laidOut?.let { it.getLineForOffset((shown - 1).coerceIn(0, it.layoutInput.text.length)) } ?: 0 }
-    }
-    // The layout read in measure can be the one before the latest text, so its lines would cut the height short
-    // while the whole text draws. Once everything is revealed the full measured height is the right one.
-    val fullyShown by remember { derivedStateOf { shown >= latest.length } }
+    // Measured inside the same layout pass that sizes the text, so the height and the reveal always come from the
+    // same lines. (A layout handed back through onTextLayout can be a pass behind: the text then reported the
+    // height of an earlier chunk while drawing more, and ran over whatever sat below it.)
+    val measurer = rememberTextMeasurer()
+    val measured = remember { arrayOfNulls<TextLayoutResult>(1) }
     Text(
         text,
         modifier = modifier
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                val bottom = if (fullyShown) placeable.height
-                else laidOut?.getLineBottom(revealedLine)?.let(::ceil)?.toInt() ?: placeable.height
-                layout(placeable.width, bottom.coerceIn(constraints.minHeight, placeable.height)) { placeable.place(0, 0) }
-            }
+            // Outside the layout below, so this scope has the reported size and the clip holds back anything past it.
             .drawWithContent {
-                val result = laidOut ?: return@drawWithContent
+                val result = measured[0] ?: return@drawWithContent
                 val end = shown.coerceAtMost(result.layoutInput.text.length)
                 if (end == 0) return@drawWithContent
-                // Never paint below the height this text reported, or it runs over whatever sits under it.
                 clipRect(bottom = size.height) {
                     if (end == result.layoutInput.text.length) {
                         this@drawWithContent.drawContent()
@@ -122,8 +114,19 @@ fun TypewriterText(
                     val right = if (end >= result.getLineEnd(line)) size.width else result.getHorizontalPosition(end, usePrimaryDirection = true)
                     clipRect(top = top, bottom = result.inkBottom(line), right = right) { this@drawWithContent.drawContent() }
                 }
+            }
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                // The measurer caches by text and width, so a new cluster on the same line costs a lookup, not a layout.
+                val result = measurer.measure(text, style, constraints = Constraints(maxWidth = placeable.width))
+                measured[0] = result
+                val end = shown.coerceAtMost(result.layoutInput.text.length)
+                val bottom = when {
+                    end >= result.layoutInput.text.length -> placeable.height
+                    else -> ceil(result.getLineBottom(result.getLineForOffset((end - 1).coerceAtLeast(0)))).toInt()
+                }
+                layout(placeable.width, bottom.coerceIn(constraints.minHeight, placeable.height)) { placeable.place(0, 0) }
             },
         style = style,
-        onTextLayout = { laidOut = it },
     )
 }
