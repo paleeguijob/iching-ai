@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,33 +40,41 @@ fun SiamSiShareCard(content: SiamSiShareContent, modifier: Modifier = Modifier) 
             .padding(5.dp)
             .border(0.75.dp, p.outline, RoundedCornerShape(7.dp)),
     ) {
+        // Grouped so only the blocks are spaced, not every line: eight poem lines each 10 dp apart ran the
+        // translation, source and seal off the bottom of the fixed 640 dp card.
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 26.dp),
+            Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(content.setName, style = MaterialTheme.typography.titleMedium, color = p.inkBlack)
-            Text("ใบที่", style = MaterialTheme.typography.labelMedium, color = p.inkSoft)
-            Text(content.number, fontSize = 72.sp, lineHeight = 80.sp, color = p.cinnabarRed)
-            content.labelOrig?.let { Text(it, fontFamily = FontFamily.Serif, fontSize = 18.sp, color = p.inkSoft) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(content.setName, style = MaterialTheme.typography.titleMedium, color = p.inkBlack)
+                Text("ใบที่", style = MaterialTheme.typography.labelMedium, color = p.inkSoft)
+                Text(content.number, fontSize = 64.sp, lineHeight = 70.sp, color = p.cinnabarRed)
+                content.labelOrig?.let { Text(it, fontFamily = FontFamily.Serif, fontSize = 18.sp, color = p.inkSoft) }
+            }
             Text(
                 content.level,
                 style = MaterialTheme.typography.labelLarge,
                 color = p.inkBlack,
                 modifier = Modifier.background(p.secondaryContainer, RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 4.dp),
             )
-            Spacer(Modifier.height(10.dp))
-            content.poemOrig.forEach {
-                Text(it, fontFamily = FontFamily.Serif, fontSize = 22.sp, color = p.inkBlack, textAlign = TextAlign.Center)
+            if (content.poemOrig.isNotEmpty()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    content.poemOrig.forEach {
+                        Text(it, fontFamily = FontFamily.Serif, fontSize = 21.sp, lineHeight = 30.sp, color = p.inkBlack, textAlign = TextAlign.Center)
+                    }
+                }
             }
-            if (content.poemOrig.isNotEmpty()) Spacer(Modifier.height(6.dp))
-            content.poemTh.forEach {
-                Text(
-                    it,
-                    style = if (content.poemOrig.isEmpty()) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-                    color = if (content.poemOrig.isEmpty()) p.inkBlack else p.inkSoft,
-                    textAlign = TextAlign.Center,
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                content.poemTh.forEach {
+                    Text(
+                        it,
+                        style = if (content.poemOrig.isEmpty()) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+                        color = if (content.poemOrig.isEmpty()) p.inkBlack else p.inkSoft,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
             Spacer(Modifier.weight(1f))
             Text(content.source, style = MaterialTheme.typography.labelSmall, color = p.inkFaint, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
