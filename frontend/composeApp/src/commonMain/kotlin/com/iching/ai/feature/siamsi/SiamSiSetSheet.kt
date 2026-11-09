@@ -36,8 +36,6 @@ import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.toThaiNumerals
 
-const val NOT_ENDORSED = "ไม่ได้รับการรับรองจากวัดหรือศาลเจ้าใด"
-
 /** "เจ้าแม่กวนอิม · ๑๐๐ ใบ": the set row on Home. */
 fun SiamSiSet.shortLabel(): String = "${name.removePrefix("เซียมซี")} · ${count.toThaiNumerals()} ใบ"
 
@@ -63,14 +61,6 @@ fun SiamSiSetSheet(sets: List<SiamSiSet>, selectedId: String?, onSelect: (String
                     }
                 }
             }
-            Spacer(Modifier.height(ZenSpacing.md))
-            Text(
-                NOT_ENDORSED,
-                style = MaterialTheme.typography.bodySmall,
-                color = ZenColors.InkFaint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }

@@ -137,7 +137,7 @@ fun SiamSiSlipContent(
         }
         TopicsCard(stick, category)
         Text(
-            "ตำรา ${set.sourceTitle} · คำแปลโดยทีมอี้จิง AI · $NOT_ENDORSED\n$SIAMSI_REFLECTION",
+            "ตำรา ${set.sourceTitle} · คำแปลโดยทีมอี้จิง AI\n$SIAMSI_REFLECTION",
             style = MaterialTheme.typography.labelSmall,
             color = ZenColors.InkFaint,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = ZenSpacing.xs),
