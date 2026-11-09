@@ -209,6 +209,17 @@ class SiamSiViewModelTest {
     }
 
     @Test
+    fun theServerReadingMarksTheInterpretationResumable() {
+        val vm = viewModel(1, SAK)
+        vm.reachSlip()
+        assertEquals(false, vm.interpret.value.onServer)
+        api.siamsiEvents = listOf(DivinationEvent.Created("r1"), DivinationEvent.Delta("ใบนี้"), DivinationEvent.Done(null))
+        vm.onInterpret()
+        scheduler.advanceUntilIdle()
+        assertEquals(true, vm.interpret.value.onServer)
+    }
+
+    @Test
     fun withoutAPaidDrawThereIsNothingToShake() {
         val vm = viewModel(usage = SiamSiUsage(today, used = 1, pendingDraw = false))
         assertEquals(SiamSiStage.Unpaid, vm.stage.value)

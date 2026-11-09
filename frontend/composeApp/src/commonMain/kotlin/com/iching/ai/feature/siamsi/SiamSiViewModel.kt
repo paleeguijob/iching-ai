@@ -88,8 +88,29 @@ data class InterpretUi(
     val followUpBusy: Boolean = false,
     /** The interpretation was reported as unsuitable. */
     val reported: Boolean = false,
+    /** The server holds this reading, so the journal can take the interpretation up again without a new credit. */
+    val onServer: Boolean = false,
 ) {
     val done: Boolean get() = text.isNotEmpty() && !streaming
+}
+
+/** What leaving the draw screen now would cost, worth a question first; null when nothing is lost. */
+enum class SiamSiLeaveWarning {
+    /** A stick is in hand: the paid draw stays, but this stick and its pua tosses go. */
+    DRAW,
+
+    /** The hermit has begun, before the server kept the reading. */
+    INTERPRETING,
+
+    /** The hermit has begun and the server keeps the reading: the journal resumes it. */
+    INTERPRETING_RESUMABLE,
+}
+
+fun siamsiLeaveWarning(stage: SiamSiStage, interpret: InterpretUi): SiamSiLeaveWarning? = when {
+    stage is SiamSiStage.Fallen || stage is SiamSiStage.Tossing || stage is SiamSiStage.Pua -> SiamSiLeaveWarning.DRAW
+    stage is SiamSiStage.Slip && interpret.streaming ->
+        if (interpret.onServer) SiamSiLeaveWarning.INTERPRETING_RESUMABLE else SiamSiLeaveWarning.INTERPRETING
+    else -> null
 }
 
 const val OFFLINE_INTERPRET_MESSAGE = "ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อแปลความหมาย"
@@ -286,7 +307,10 @@ class SiamSiViewModel(
 
     private suspend fun onEvent(event: DivinationEvent, text: StringBuilder) {
         when (event) {
-            is DivinationEvent.Created -> persist { it.copy(serverId = event.readingId) }
+            is DivinationEvent.Created -> {
+                persist { it.copy(serverId = event.readingId) }
+                _interpret.update { it.copy(onServer = true) }
+            }
             is DivinationEvent.Delta -> {
                 text.append(event.text)
                 _interpret.update { it.copy(text = text.toString()) }

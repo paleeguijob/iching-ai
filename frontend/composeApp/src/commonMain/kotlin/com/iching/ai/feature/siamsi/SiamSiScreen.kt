@@ -1,5 +1,8 @@
 package com.iching.ai.feature.siamsi
 
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -26,10 +29,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -102,6 +107,26 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
         )
     }
 
+    // Ask before leaving only when something would be lost, as the I Ching cast does.
+    val leaveWarning = siamsiLeaveWarning(stage, interpret)
+    var confirmLeave by remember { mutableStateOf<SiamSiLeaveWarning?>(null) }
+    val requestBack = { if (leaveWarning != null) confirmLeave = leaveWarning else onBack() }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = leaveWarning != null,
+        onBackCompleted = { confirmLeave = leaveWarning },
+    )
+    confirmLeave?.let { warning ->
+        LeaveDrawDialog(
+            warning = warning,
+            onStay = { confirmLeave = null },
+            onLeave = {
+                confirmLeave = null
+                onBack()
+            },
+        )
+    }
+
     var sharing by remember { mutableStateOf(false) }
     val set = viewModel.set
     val slip = stage as? SiamSiStage.Slip
@@ -123,7 +148,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                     puaNumber != null -> "เสี่ยงไม้ปัว"
                     else -> "เซียมซี"
                 },
-                onBack = onBack,
+                onBack = requestBack,
                 trailing = {
                     when {
                         slip != null && set != null -> IconButton(onClick = { sharing = true }) {
@@ -197,6 +222,25 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
             }
         }
     }
+}
+
+@Composable
+private fun LeaveDrawDialog(warning: SiamSiLeaveWarning, onStay: () -> Unit, onLeave: () -> Unit) {
+    val (title, body) = when (warning) {
+        SiamSiLeaveWarning.DRAW -> "ยังเสี่ยงไม่จบ ออกตอนนี้?" to
+            "ไม้ที่เสี่ยงได้และผลไม้ปัวจะไม่ถูกเก็บไว้ สิทธิ์เสี่ยงครั้งนี้ยังอยู่ แต่เมื่อกลับมาจะต้องเขย่าใหม่และได้ไม้ใหม่"
+        SiamSiLeaveWarning.INTERPRETING -> "นักพรตยังแปลไม่จบ ออกตอนนี้?" to
+            "ใบเซียมซีนี้บันทึกในบันทึกชะตาแล้ว แต่คำแปลครั้งนี้จะไม่ถูกเก็บไว้"
+        SiamSiLeaveWarning.INTERPRETING_RESUMABLE -> "นักพรตยังแปลไม่จบ ออกตอนนี้?" to
+            "ใบเซียมซีนี้บันทึกในบันทึกชะตาแล้ว ท่านกลับมารับคำแปลจากนักพรตต่อได้ที่บันทึกชะตา โดยไม่เสียสิทธิ์ซ้ำ"
+    }
+    AlertDialog(
+        onDismissRequest = onStay,
+        title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        text = { Text(body, style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = { TextButton(onClick = onStay) { Text("อยู่ต่อ", color = ZenColors.BambooDeep) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text("ออก", color = ZenColors.InkSoft) } },
+    )
 }
 
 @Composable
