@@ -3,7 +3,9 @@ package com.iching.ai.feature.home
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.Hexagram
-import com.iching.ai.domain.model.PromoStatus
+import com.iching.ai.domain.model.PosterCardText
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.domain.model.PosterStatus
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.SettingsRepository
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
@@ -61,7 +63,7 @@ private class PromoSettings : SettingsRepository {
 
 private const val ENDS_AT = 1795194000000L
 private val WITH_PROMO = AccountStatus.UNKNOWN_FREE.copy(
-    promo = PromoStatus("1111-2026", "โปรพิเศษ", "Premium รายปี ลด ๔๐%", "ดูโปร", ENDS_AT, showEndDate = true),
+    poster = PosterStatus("1111-2026", "https://w/content/posters/a.webp", "โปร", true, PosterLink.PAYWALL, PosterCardText("โปรพิเศษ", "Premium รายปี ลด ๔๐%", "ดูโปร", true), ENDS_AT),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -119,7 +121,7 @@ class HomeViewModelPromoTest {
         val seen = mutableListOf<PromoCard?>()
         vm.promoCard.onEach { seen += it }.launchIn(scope)
         scheduler.advanceUntilIdle()
-        stored.value = AppSettings(dismissedPromoIds = listOf("1111-2026"))
+        stored.value = AppSettings(dismissedPosterCardIds = listOf("1111-2026"))
         scheduler.advanceUntilIdle()
         assertEquals(emptyList(), seen.filterNotNull())
     }
@@ -135,7 +137,7 @@ class HomeViewModelPromoTest {
         vm.onPromoDismissed("1111-2026")
         scheduler.advanceUntilIdle()
         assertNull(vm.promoCard.value)
-        assertEquals(listOf("1111-2026"), settings.flow.value.dismissedPromoIds)
+        assertEquals(listOf("1111-2026"), settings.flow.value.dismissedPosterCardIds)
         assertEquals(listOf(mapOf("promo_id" to "1111-2026")), logged("promo_dismissed"))
     }
 

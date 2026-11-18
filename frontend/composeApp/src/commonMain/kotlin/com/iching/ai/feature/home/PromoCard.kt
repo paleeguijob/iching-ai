@@ -14,9 +14,10 @@ private val BANGKOK = TimeZone.of("Asia/Bangkok")
  * a fresh Premium purchase, or this device's clock passing the end while home stays open.
  */
 fun promoCard(status: AccountStatus, dismissed: List<String>, nowMillis: Long): PromoCard? {
-    val promo = status.promo ?: return null
-    if (status.premium || nowMillis >= promo.endsAtMillis || promo.id in dismissed) return null
-    // The end is exclusive, so a promo ending at midnight shows the day before as its last.
-    val label = if (promo.showEndDate) "${promo.label} · ถึง ${formatThaiShortDate(promo.endsAtMillis - 1, BANGKOK)}" else promo.label
-    return PromoCard(promo.id, label, promo.title, "${promo.cta} ›")
+    val poster = status.poster ?: return null
+    val card = poster.card ?: return null
+    if ((poster.freeOnly && status.premium) || nowMillis >= poster.endsAtMillis || poster.id in dismissed) return null
+    // The end is exclusive, so a poster ending at midnight shows the day before as its last.
+    val label = if (card.showEndDate) "${card.label} · ถึง ${formatThaiShortDate(poster.endsAtMillis - 1, BANGKOK)}" else card.label
+    return PromoCard(poster.id, label, card.title, "${card.cta} ›")
 }

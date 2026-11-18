@@ -17,7 +17,7 @@ import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
-import com.iching.ai.domain.model.withPromoDismissed
+import com.iching.ai.domain.model.withPosterCardDismissed
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AdResult
@@ -102,7 +102,7 @@ class HomeViewModel(
     val promoCard: StateFlow<PromoCard?> = combine(
         session.status,
         // No card until settings load: an empty default would flash a promo closed in an earlier launch.
-        observeSettings().map { it.dismissedPromoIds },
+        observeSettings().map { it.dismissedPosterCardIds },
         now,
     ) { status, dismissed, millis -> promoCard(status, dismissed, millis) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -119,7 +119,7 @@ class HomeViewModel(
 
     fun onPromoDismissed(id: String) {
         session.log("promo_dismissed", mapOf("promo_id" to id))
-        viewModelScope.launch { updateSettings { it.withPromoDismissed(id) } }
+        viewModelScope.launch { updateSettings { it.withPosterCardDismissed(id) } }
     }
 
     private val yearResult = MutableStateFlow<YearHexagram?>(null)

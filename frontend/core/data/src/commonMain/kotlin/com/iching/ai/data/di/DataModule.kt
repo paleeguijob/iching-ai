@@ -61,7 +61,7 @@ val dataModule: Module = module {
     includes(platformDataModule())
     single<HexagramRepository> { ScriptureHexagramRepository() }
     single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get()) }
-    single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL) }
+    single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL, BuildConfig.WEB_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }
     single<SettingsRepository> { DataStoreSettingsRepository(get()) }
 }

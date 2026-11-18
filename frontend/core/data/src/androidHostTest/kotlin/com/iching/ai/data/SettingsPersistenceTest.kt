@@ -43,11 +43,19 @@ class SettingsPersistenceTest {
     }
 
     @Test
-    fun dismissedPromosSurviveReloadInOrder() = withStore { file ->
-        assertEquals(emptyList(), open(file) { it.settings.first() }.dismissedPromoIds)
-        open(file) { repo -> repo.update { it.copy(dismissedPromoIds = listOf("a", "b")) } }
+    fun posterIdsAndFirstOpenSurviveReload() = withStore { file ->
+        val fresh = open(file) { it.settings.first() }
+        assertEquals(emptyList(), fresh.seenPosterIds)
+        assertEquals(emptyList(), fresh.dismissedPosterCardIds)
+        assertEquals(null, fresh.firstOpenEpochDay)
+        open(file) { repo ->
+            repo.update { it.copy(seenPosterIds = listOf("a", "b"), dismissedPosterCardIds = listOf("c"), firstOpenEpochDay = 20_400L) }
+        }
         Thread.sleep(100)
-        assertEquals(listOf("a", "b"), open(file) { it.settings.first() }.dismissedPromoIds)
+        val loaded = open(file) { it.settings.first() }
+        assertEquals(listOf("a", "b"), loaded.seenPosterIds)
+        assertEquals(listOf("c"), loaded.dismissedPosterCardIds)
+        assertEquals(20_400L, loaded.firstOpenEpochDay)
     }
 
     @Test

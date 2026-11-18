@@ -2,7 +2,9 @@ package com.iching.ai.data.api
 
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
-import com.iching.ai.domain.model.PromoStatus
+import com.iching.ai.domain.model.PosterCardText
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.domain.model.PosterStatus
 import com.iching.ai.domain.model.SiamSiStatus
 import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.siamsi.SiamSiSetRef
@@ -82,15 +84,15 @@ internal data class StatusDto(
     val aiEnabled: Boolean = true,
     val campaign: CampaignDto? = null,
     val siamsi: SiamSiStatusDto? = null,
-    val promo: PromoDto? = null,
+    val poster: PosterDto? = null,
 ) {
-    fun toDomain() = AccountStatus(
+    fun toDomain(webBaseUrl: String) = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
         adCreditsLeft = adCreditsLeft, adsWatchableLeft = adsWatchableLeft, readingsLeft = readingsLeft,
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
         campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
         siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version) }, s.drawsPerDay) } ?: SiamSiStatus(),
-        promo = promo?.let { PromoStatus(it.id, it.label, it.title, it.cta, it.endsAt, it.showEndDate) },
+        poster = poster?.toDomain(webBaseUrl),
     )
 }
 
@@ -99,15 +101,40 @@ internal data class StatusDto(
 @Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
 @Serializable internal data class CreatedDto(val readingId: String)
 
+// Every field is optional, so a poster shape from a newer server drops just the poster, not the whole status.
 @Serializable
-internal data class PromoDto(
-    val id: String,
-    val label: String,
-    val title: String,
-    val cta: String,
-    val endsAt: Long,
-    val showEndDate: Boolean = false,
-)
+internal data class PosterDto(
+    val id: String? = null,
+    val image: String? = null,
+    val alt: String? = null,
+    val audience: String? = null,
+    val link: String? = null,
+    val card: PosterCardDto? = null,
+    val endsAt: Long? = null,
+) {
+    /** Null when anything is missing or unknown; the server checks the same, this guards an older or newer one. */
+    fun toDomain(webBaseUrl: String): PosterStatus? {
+        if (id.isNullOrEmpty() || alt.isNullOrEmpty() || endsAt == null) return null
+        if (image == null || !POSTER_IMAGE.matches(image)) return null
+        val freeOnly = when (audience) {
+            "free" -> true
+            "all" -> false
+            else -> return null
+        }
+        val target = link?.let { PosterLink.fromWire(it) ?: return null }
+        val words = card?.let { c ->
+            if (c.label.isNullOrEmpty() || c.title.isNullOrEmpty() || c.cta.isNullOrEmpty() || target == null) return null
+            PosterCardText(c.label, c.title, c.cta, c.showEndDate)
+        }
+        return PosterStatus(id, "${webBaseUrl.trimEnd('/')}/content/posters/$image", alt, freeOnly, target, words, endsAt)
+    }
+}
+
+@Serializable
+internal data class PosterCardDto(val label: String? = null, val title: String? = null, val cta: String? = null, val showEndDate: Boolean = false)
+
+/** A bare file name, as the server enforces: nothing that could point outside content/posters/. */
+private val POSTER_IMAGE = Regex("^[A-Za-z0-9][A-Za-z0-9._-]*\\.(webp|png|jpg|jpeg)$")
 
 @Serializable internal data class CampaignDto(val id: String, val year: Int, val active: Boolean, val endsAt: Long)
 
@@ -169,7 +196,7 @@ internal fun failureReason(code: String) = when (code) {
 }
 
 /** Parses one server-sent event into a domain event; unknown events are ignored. */
-internal fun parseEvent(json: Json, event: String, data: String): DivinationEvent? = when (event) {
+internal fun parseEvent(json: Json, event: String, data: String, webBaseUrl: String): DivinationEvent? = when (event) {
     "cast" -> json.decodeFromString(CastDto.serializer(), data).let { dto ->
         DivinationEvent.Cast(
             readingId = dto.readingId,
@@ -179,9 +206,9 @@ internal fun parseEvent(json: Json, event: String, data: String): DivinationEven
     }
     "reading" -> DivinationEvent.Created(json.decodeFromString(CreatedDto.serializer(), data).readingId)
     "delta" -> DivinationEvent.Delta(json.decodeFromString(DeltaDto.serializer(), data).text)
-    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(), it.shareSummary) }
+    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(webBaseUrl), it.shareSummary) }
     "limited" -> json.decodeFromString(LimitedDto.serializer(), data).let {
-        DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain())
+        DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain(webBaseUrl))
     }
     "safety" -> DivinationEvent.Safety(json.decodeFromString(SafetyDto.serializer(), data).message)
     "error" -> DivinationEvent.Failed(failureReason(json.decodeFromString(ErrorDto.serializer(), data).code))
@@ -192,6 +219,8 @@ class HttpOracleApi(
     private val client: HttpClient,
     private val session: ApiSession,
     private val baseUrl: String,
+    /** Hosting root; poster images live under its content/posters/. */
+    private val webBaseUrl: String,
 ) : OracleApi {
 
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
@@ -221,7 +250,7 @@ class HttpOracleApi(
         })
 
     override suspend fun status(): AccountStatus =
-        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Get, "/status")).toDomain()
+        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Get, "/status")).toDomain(webBaseUrl)
 
     override suspend fun yearHexagram(): YearHexagram? =
         try {
@@ -241,7 +270,7 @@ class HttpOracleApi(
 
     override suspend fun claimAdReward(): Pair<Boolean, AccountStatus> =
         json.decodeFromString(AdRewardDto.serializer(), call(HttpMethod.Post, "/ad-reward", JsonObject(emptyMap())))
-            .let { it.granted to it.status.toDomain() }
+            .let { it.granted to it.status.toDomain(webBaseUrl) }
 
     override suspend fun report(readingId: String, reason: String, note: String) {
         call(HttpMethod.Post, "/report", buildJsonObject {
@@ -283,13 +312,13 @@ class HttpOracleApi(
     }
 
     override suspend fun syncPurchases(): AccountStatus =
-        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain()
+        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain(webBaseUrl)
 
     override suspend fun mergeAccount(fromIdToken: String): AccountStatus =
         json.decodeFromString(
             StatusDto.serializer(),
             call(HttpMethod.Post, "/account/merge", buildJsonObject { put("fromIdToken", fromIdToken) }),
-        ).toDomain()
+        ).toDomain(webBaseUrl)
 
     override suspend fun deleteAccount() {
         call(HttpMethod.Delete, "/account")
@@ -413,7 +442,7 @@ class HttpOracleApi(
             val line = channel.readUTF8Line() ?: break
             when {
                 line.startsWith("event:") -> event = line.removePrefix("event:").trim()
-                line.startsWith("data:") -> parseEvent(json, event, line.removePrefix("data:").trim())?.let { send(it) }
+                line.startsWith("data:") -> parseEvent(json, event, line.removePrefix("data:").trim(), webBaseUrl)?.let { send(it) }
                 line.isBlank() -> event = "message"
             }
         }

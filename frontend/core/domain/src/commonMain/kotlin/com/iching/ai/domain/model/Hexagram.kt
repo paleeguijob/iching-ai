@@ -121,13 +121,24 @@ data class AppSettings(
     val siamsiUsage: SiamSiUsage = SiamSiUsage(),
     /** Whether the server last said Siam Si is on, so an offline launch can still offer it. */
     val siamsiLastEnabled: Boolean = false,
-    /** Home promos the seeker closed, oldest first; at most [MAX_DISMISSED_PROMOS]. */
-    val dismissedPromoIds: List<String> = emptyList(),
+    /** Posters whose popup already showed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */
+    val seenPosterIds: List<String> = emptyList(),
+    /** Posters whose daily-page card the seeker closed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */
+    val dismissedPosterCardIds: List<String> = emptyList(),
+    /** The Bangkok epoch day this install first opened; no poster pops on that day. Null until recorded. */
+    val firstOpenEpochDay: Long? = null,
 )
 
-const val MAX_DISMISSED_PROMOS = 20
+const val MAX_REMEMBERED_POSTERS = 20
 
-/** Remembers a closed promo so it never shows again; the oldest ids fall off past [MAX_DISMISSED_PROMOS]. */
-fun AppSettings.withPromoDismissed(id: String): AppSettings =
-    if (id in dismissedPromoIds) this
-    else copy(dismissedPromoIds = (dismissedPromoIds + id).takeLast(MAX_DISMISSED_PROMOS))
+private fun List<String>.remember(id: String) = if (id in this) this else (this + id).takeLast(MAX_REMEMBERED_POSTERS)
+
+/** Remembers a popup that showed so it never pops again. */
+fun AppSettings.withPosterSeen(id: String): AppSettings = copy(seenPosterIds = seenPosterIds.remember(id))
+
+/** Remembers a closed card so it never shows again. */
+fun AppSettings.withPosterCardDismissed(id: String): AppSettings =
+    copy(dismissedPosterCardIds = dismissedPosterCardIds.remember(id))
+
+/** Records the first day the app opened; later calls keep the first. */
+fun AppSettings.withFirstOpen(day: Long): AppSettings = if (firstOpenEpochDay != null) this else copy(firstOpenEpochDay = day)

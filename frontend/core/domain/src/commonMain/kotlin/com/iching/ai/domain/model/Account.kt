@@ -10,17 +10,32 @@ data class Account(
     val email: String? = null,
 )
 
-/** A seasonal campaign as the server reports it. */
-/** A time-boxed promotion for the home card; [endsAtMillis] is exclusive. */
-data class PromoStatus(
+/** Where tapping a poster goes; only screens the app knows. A link this version does not know means no poster. */
+enum class PosterLink {
+    PAYWALL, DAILY, YEAR, LIBRARY, JOURNAL;
+
+    companion object {
+        fun fromWire(s: String): PosterLink? = entries.firstOrNull { it.name.lowercase() == s }
+    }
+}
+
+/** The small card's words, shown at the end of the daily hexagram page. */
+data class PosterCardText(val label: String, val title: String, val cta: String, val showEndDate: Boolean)
+
+/** The one poster the server runs: an artwork popup on home, optionally with a card; [endsAtMillis] is exclusive. */
+data class PosterStatus(
     val id: String,
-    val label: String,
-    val title: String,
-    val cta: String,
+    val imageUrl: String,
+    /** Read aloud by TalkBack in place of the artwork. */
+    val alt: String,
+    /** Hidden from Premium (a discount); false = everyone (news, a festival). */
+    val freeOnly: Boolean,
+    val link: PosterLink?,
+    val card: PosterCardText?,
     val endsAtMillis: Long,
-    val showEndDate: Boolean,
 )
 
+/** A seasonal campaign as the server reports it. */
 data class CampaignStatus(val id: String, val year: Int, val active: Boolean, val endsAtMillis: Long)
 
 /** The campaign id analytics events carry: the server's, or the year's own when the server reports none. */
@@ -53,8 +68,8 @@ data class AccountStatus(
     /** The Chinese New Year campaign; null when the server runs none. */
     val campaign: CampaignStatus? = null,
     val siamsi: SiamSiStatus = SiamSiStatus(),
-    /** The home promo while one runs; the server leaves it out for Premium and outside its window. */
-    val promo: PromoStatus? = null,
+    /** The poster while one runs; the server leaves it out outside its window, and a free-only one for Premium. */
+    val poster: PosterStatus? = null,
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)

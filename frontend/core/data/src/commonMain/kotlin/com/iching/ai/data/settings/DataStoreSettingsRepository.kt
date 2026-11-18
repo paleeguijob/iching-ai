@@ -41,7 +41,9 @@ class DataStoreSettingsRepository(
             prefs[SIAMSI_PENDING] = next.siamsiUsage.pendingDraw
             prefs[SIAMSI_LAST_ENABLED] = next.siamsiLastEnabled
             // One string, newline-joined: a string-set key would lose the order that decides which ids drop first.
-            prefs[DISMISSED_PROMOS] = next.dismissedPromoIds.joinToString("\n")
+            prefs[SEEN_POSTERS] = next.seenPosterIds.joinToString("\n")
+            prefs[DISMISSED_POSTER_CARDS] = next.dismissedPosterCardIds.joinToString("\n")
+            next.firstOpenEpochDay?.let { prefs[FIRST_OPEN_DAY] = it } ?: prefs.remove(FIRST_OPEN_DAY)
             prefs.remove(LEGACY_API_KEY)
         }
     }
@@ -77,7 +79,9 @@ class DataStoreSettingsRepository(
             pendingDraw = this[SIAMSI_PENDING] ?: false,
         ),
         siamsiLastEnabled = this[SIAMSI_LAST_ENABLED] ?: false,
-        dismissedPromoIds = this[DISMISSED_PROMOS]?.split("\n")?.filter { it.isNotEmpty() } ?: emptyList(),
+        seenPosterIds = this[SEEN_POSTERS].lines(),
+        dismissedPosterCardIds = this[DISMISSED_POSTER_CARDS].lines(),
+        firstOpenEpochDay = this[FIRST_OPEN_DAY],
     )
 
     private fun MutablePreferences.writeStreak(streak: StreakState) {
@@ -101,7 +105,9 @@ class DataStoreSettingsRepository(
         val PUSH_PROMPT_SHOWN = booleanPreferencesKey("push_prompt_shown")
         val DIVINATION_MODE = stringPreferencesKey("divination_mode")
         val SIAMSI_SET = stringPreferencesKey("siamsi_set")
-        val DISMISSED_PROMOS = stringPreferencesKey("dismissed_promos")
+        val SEEN_POSTERS = stringPreferencesKey("seen_posters")
+        val DISMISSED_POSTER_CARDS = stringPreferencesKey("dismissed_poster_cards")
+        val FIRST_OPEN_DAY = longPreferencesKey("first_open_day")
         val SIAMSI_DAY = longPreferencesKey("siamsi_day")
         val SIAMSI_USED = intPreferencesKey("siamsi_used")
         val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
@@ -111,3 +117,6 @@ class DataStoreSettingsRepository(
         val LEGACY_API_KEY = stringPreferencesKey("gemini_api_key")
     }
 }
+
+/** A newline-joined id list back into ids; missing = none. */
+private fun String?.lines(): List<String> = this?.split("\n")?.filter { it.isNotEmpty() } ?: emptyList()
