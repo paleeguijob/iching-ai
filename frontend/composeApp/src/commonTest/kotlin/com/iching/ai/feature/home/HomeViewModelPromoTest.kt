@@ -26,7 +26,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -81,7 +83,7 @@ class HomeViewModelPromoTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(): HomeViewModel {
+    private fun viewModel(repo: SettingsRepository = settings): HomeViewModel {
         api.statusNow = WITH_PROMO
         val auth = FakeAuth()
         val session = AppSession(
@@ -89,17 +91,37 @@ class HomeViewModelPromoTest {
             FirebaseApiSession(auth),
             api,
             FakeJournal(),
-            settings,
+            repo,
             scope,
         )
         session.start()
         val vm = HomeViewModel(
-            GetDailyHexagramUseCase(PromoHexagram), ObserveSettingsUseCase(settings), session, api,
-            GetHexagramUseCase(PromoHexagram), UpdateSettingsUseCase(settings), nowMillis = { now },
+            GetDailyHexagramUseCase(PromoHexagram), ObserveSettingsUseCase(repo), session, api,
+            GetHexagramUseCase(PromoHexagram), UpdateSettingsUseCase(repo), nowMillis = { now },
         )
         vm.promoCard.launchIn(scope)
         scheduler.advanceUntilIdle()
         return vm
+    }
+
+    @Test
+    fun dismissedPromoNeverFlashesWhileSettingsLoad() {
+        // Settings that have not loaded yet, then arrive saying this promo was closed in an earlier launch.
+        val stored = MutableStateFlow<AppSettings?>(null)
+        val late = object : SettingsRepository {
+            override val settings: Flow<AppSettings> = stored.filterNotNull()
+            override suspend fun update(transform: (AppSettings) -> AppSettings) = stored.update { transform(it ?: AppSettings()) }
+            override suspend fun clear() {
+                stored.value = AppSettings()
+            }
+        }
+        val vm = viewModel(late)
+        val seen = mutableListOf<PromoCard?>()
+        vm.promoCard.onEach { seen += it }.launchIn(scope)
+        scheduler.advanceUntilIdle()
+        stored.value = AppSettings(dismissedPromoIds = listOf("1111-2026"))
+        scheduler.advanceUntilIdle()
+        assertEquals(emptyList(), seen.filterNotNull())
     }
 
     private fun logged(event: String) = analytics.events.filter { it.first == event }.map { it.second }

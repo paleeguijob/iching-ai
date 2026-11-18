@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
@@ -102,8 +101,8 @@ class HomeViewModel(
     /** The home promo card while one runs, until the seeker closes it. */
     val promoCard: StateFlow<PromoCard?> = combine(
         session.status,
-        // Settings may not have emitted yet; nothing closed until they do.
-        observeSettings().map { it.dismissedPromoIds }.onStart { emit(emptyList()) },
+        // No card until settings load: an empty default would flash a promo closed in an earlier launch.
+        observeSettings().map { it.dismissedPromoIds },
         now,
     ) { status, dismissed, millis -> promoCard(status, dismissed, millis) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
