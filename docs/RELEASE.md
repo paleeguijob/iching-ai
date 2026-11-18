@@ -403,19 +403,54 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 2. ☐ Deploy **ทั้ง hosting และ functions** (`copy-data` คัดลอกไฟล์ให้ server ตอน build ถ้า deploy hosting อย่างเดียว นักพรตจะแปลจากข้อความเก่า)
 3. ☐ เพิ่ม version ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ แอปจะโหลดฉบับใหม่มาแทนฉบับที่ติดมากับแอป
 
-### E. เปิดโปรบนหน้าแรก (การ์ดโปร Premium, ไม่ต้องออกแอปใหม่)
-สเปก: [`docs/superpowers/specs/2026-11-17-home-promo-card-design.md`](superpowers/specs/2026-11-17-home-promo-card-design.md) · การ์ดขึ้นเฉพาะผู้ใช้ฟรี ใต้แถว streak กดแล้วไปหน้าจ่ายเงิน กด × ปิดถาวรต่อ `id`
+### E. เปิดโปสเตอร์ (popup บนหน้าแรก + การ์ดท้ายหน้ากวาประจำวัน, ไม่ต้องออกแอปใหม่)
+สเปก: [`docs/superpowers/specs/2026-11-18-poster-popup-design.md`](superpowers/specs/2026-11-18-poster-popup-design.md)
 
-ครั้งแรกเท่านั้น: ☐ Deploy functions (`cd backend/functions && npm run deploy`) ก่อนโปรแรก — server เก่าไม่ส่ง `promo` และแอปที่มีการ์ดต้องเป็นเวอร์ชันที่ขึ้น store แล้ว
+ตั้งได้ทีละ 1 โปสเตอร์ ใช้ได้ 3 แบบ:
+- โปรลดราคา: `audience: "free"`, `link: "paywall"`, มี `card`
+- feature ใหม่: `audience: "all"`, `link` ไปหน้านั้น
+- วันสำคัญ: `audience: "all"`, ไม่ใส่ `link` และ `card`
 
-1. ☐ ตั้ง offer ลดราคาใน Play Console (Subscriptions → base plan → Add offer) ให้ช่วงเวลาตรงกับโปร
-2. ☐ ใน RevenueCat สร้าง offering ที่ใช้ offer นั้น แล้วตั้งเป็น **current**
-3. ☐ เปิดหน้าจ่ายเงินบนเครื่องจริง ดูว่าราคาที่ลดแล้วขึ้นถูก
-4. ☐ เขียน `config/runtime.promo` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน — `id` (ใหม่ทุกโปร), `startsAt`/`endsAt` (ISO +07:00, `endsAt` = เที่ยงคืนหลังวันสุดท้าย), `label` ≤ 20 ตัวอักษร, `title` ≤ 40, `cta` ≤ 12, `showEndDate` · เกินความยาวหรือขาดฟิลด์ = ไม่มีโปร (log จะขึ้น `promo_invalid`)
+popup เด้งครั้งเดียวต่อ `id` บนหน้าแรก เมื่อครบทุกข้อ:
+- ไม่ใช่วันที่ติดตั้งแอป
+- วันนั้นอ่านกวาประจำวันแล้ว
+- โหลดภาพเสร็จแล้ว
+
+คนที่ไม่เคยเปิดอ่านกวาประจำวันจะไม่เห็น popup
+
+การ์ดอยู่ใต้ปุ่ม "อ่านต่อในคัมภีร์" จนกว่าผู้ใช้จะกด × หรือหมดเวลา
+
+ครั้งแรกเท่านั้น: ☐ Deploy functions (`cd backend/functions && npm run deploy`) ก่อนโปสเตอร์แรก เพราะ server เก่าไม่ส่ง `poster` และแอปต้องเป็นเวอร์ชันที่ขึ้น store แล้ว
+
+**ภาพ**
+1. ☐ ภาพสัดส่วน **4:5** (แนะนำ 1080×1350)
+   - ใช้ได้ทั้ง WebP, PNG และ JPEG แต่ไฟล์ควรไม่เกิน ~500 KB
+   - export เป็น PNG แล้วแปลงที่ squoosh.app เป็น WebP คุณภาพ 90 ได้ภาพเท่าเดิมแต่ไฟล์เล็กกว่า
+   - ข้อความสำคัญควรห่างขอบ 8% เพราะมุมภาพโค้ง
+2. ☐ ตั้งชื่อไฟล์เป็นตัวอังกฤษ ตัวเลข `.` `-` `_` เท่านั้น เช่น `cny-2027.webp` แล้ววางใน `backend/hosting/public/content/posters/`
+3. ☐ `cd backend && firebase deploy --only hosting`
+4. ☐ เปิด `https://<โดเมน hosting>/content/posters/<ไฟล์>` ในเบราว์เซอร์ เพื่อดูว่าภาพขึ้น
+
+**ถ้าเป็นโปรลดราคา (ทำก่อนเปิดโปสเตอร์)**
+5. ☐ ตั้ง offer ลดราคาใน Play Console (Subscriptions → base plan → Add offer) ให้ช่วงเวลาตรงกับโปร
+6. ☐ ใน RevenueCat สร้าง offering ที่ใช้ offer นั้น แล้วตั้งเป็น **current**
+7. ☐ เปิดหน้าจ่ายเงินบนเครื่องจริง ดูว่าราคาที่ลดแล้วขึ้นถูก และตรงกับตัวเลขในภาพและการ์ด
+
+**ตั้งค่า**
+8. ☐ เขียน `config/runtime.poster` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน
+
+   | ฟิลด์ | ใส่อะไร |
+   |---|---|
+   | `id` | ใหม่ทุกครั้ง ห้ามมีช่องว่าง |
+   | `startsAt`/`endsAt` | ชนิด **string** แบบ ISO +07:00 (ห้ามใช้ชนิด timestamp) · `endsAt` = เที่ยงคืนหลังวันสุดท้าย |
+   | `image` | ชื่อไฟล์อย่างเดียว ไม่มี `/` |
+   | `alt` | ≤ 120 ตัวอักษร ให้ TalkBack อ่านแทนภาพ |
+   | `audience` | `"free"` หรือ `"all"` |
+   | `link` | (ไม่บังคับ) `paywall` `daily` `year` `library` `journal` |
+   | `card` | (ไม่บังคับ, ต้องมี `link`) `{label ≤ 20, title ≤ 40, cta ≤ 12, showEndDate}` · ถ้า `link` เป็น `daily` การ์ดจะไม่ขึ้น |
+
    - ความยาวนับสระและวรรณยุกต์เป็นตัวอักษรด้วย เช่น "ที่" = 3 ตัว เช็กด้วย `"ข้อความ".length` ใน console ของเบราว์เซอร์
-   - `startsAt`/`endsAt` ต้องเป็นชนิด **string** ใน Firestore ห้ามใช้ชนิด timestamp
-   - `id` ห้ามมีช่องว่างหรือขึ้นบรรทัดใหม่
-5. ☐ เช็กว่าตัวเลขใน `title` ตรงกับราคาบนหน้าจ่ายเงิน
-6. ☐ ตั้ง `enabled: true` (server cache ค่าไว้ ≤ 1 นาที)
-7. ☐ ดู analytics `promo_shown` / `promo_tapped` / `promo_dismissed` (param `promo_id`)
-8. ☐ หลังวันจบ: สลับ offering ใน RevenueCat กลับเป็นปกติ (การ์ดหายเองตาม `endsAt`)
+   - ผิดข้อใดข้อหนึ่ง = ไม่มีโปสเตอร์ และ log ของ functions จะขึ้น `poster_invalid`
+9. ☐ ตั้ง `enabled: true` (server เก็บค่าไว้ไม่เกิน 1 นาที) แล้วดู log ว่าไม่มี `poster_invalid`
+10. ☐ ดู analytics `poster_shown` / `poster_tapped` / `poster_closed` (param `poster_id`, `surface` = `popup` หรือ `card`)
+11. ☐ ปิดก่อนกำหนด: ตั้ง `enabled: false` · หลังจบโปรลดราคา: สลับ offering ใน RevenueCat กลับเป็นปกติ
