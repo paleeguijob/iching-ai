@@ -72,6 +72,7 @@ import com.iching.ai.feature.journal.JournalScreen
 import com.iching.ai.feature.library.HexagramDetailScreen
 import com.iching.ai.feature.library.LibraryScreen
 import com.iching.ai.feature.settings.SettingsScreen
+import com.iching.ai.domain.model.PosterLink
 import com.iching.ai.navigation.DailyRoute
 import com.iching.ai.navigation.DivinationRoute
 import com.iching.ai.navigation.HexagramRoute
@@ -170,6 +171,15 @@ private fun MainNavigation() {
             }
         }
 
+        /** Where a poster leads; the library and journal are tabs, so they open the way the tab bar does. */
+        fun openLink(link: PosterLink) = when (link) {
+            PosterLink.PAYWALL -> nav.navigate(PaywallRoute)
+            PosterLink.DAILY -> nav.navigate(DailyRoute) { launchSingleTop = true }
+            PosterLink.YEAR -> nav.navigate(YearRoute)
+            PosterLink.LIBRARY -> openTab(TABS[1])
+            PosterLink.JOURNAL -> openTab(TABS[2])
+        }
+
         val pendingDaily by PendingNavigation.daily.collectAsState()
         LaunchedEffect(pendingDaily) {
             if (pendingDaily) {
@@ -235,6 +245,7 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onOpenLink = ::openLink,
                     )
                 }
                 screen<YearRoute> { entry ->

@@ -17,7 +17,6 @@ import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
-import com.iching.ai.domain.model.withPosterCardDismissed
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AdResult
@@ -95,32 +94,8 @@ class HomeViewModel(
 
     val status: StateFlow<AccountStatus> = session.status
 
-    /** Refreshed on resume with [today], so a promo that ends while home stays open drops off. */
+    /** Refreshed on resume with [today], so a poster that ends while home stays open drops off. */
     private val now = MutableStateFlow(nowMillis())
-
-    /** The home promo card while one runs, until the seeker closes it. */
-    val promoCard: StateFlow<PromoCard?> = combine(
-        session.status,
-        // No card until settings load: an empty default would flash a promo closed in an earlier launch.
-        observeSettings().map { it.dismissedPosterCardIds },
-        now,
-    ) { status, dismissed, millis -> promoCard(status, dismissed, millis) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    private var loggedPromoId: String? = null
-
-    fun onPromoShown(id: String) {
-        if (loggedPromoId == id) return
-        loggedPromoId = id
-        session.log("promo_shown", mapOf("promo_id" to id))
-    }
-
-    fun onPromoTapped(id: String) = session.log("promo_tapped", mapOf("promo_id" to id))
-
-    fun onPromoDismissed(id: String) {
-        session.log("promo_dismissed", mapOf("promo_id" to id))
-        viewModelScope.launch { updateSettings { it.withPosterCardDismissed(id) } }
-    }
 
     private val yearResult = MutableStateFlow<YearHexagram?>(null)
     private val yearHexagram = MutableStateFlow<Hexagram?>(null)

@@ -4,6 +4,7 @@ import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.campaignIdFor
+import com.iching.ai.domain.model.withPosterCardDismissed
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
@@ -108,6 +109,7 @@ val presentationModule = module {
     }
     viewModel {
         val session = get<AppSession>()
+        val updateSettings = get<UpdateSettingsUseCase>()
         DailyViewModel(
             getDaily = get(),
             recordView = get(),
@@ -116,6 +118,9 @@ val presentationModule = module {
             pushSupported = { session.dailyPushSupported },
             enablePush = { session.setDailyPush(true) },
             syncStreak = session::syncStreak,
+            status = session.status,
+            settings = get<ObserveSettingsUseCase>()(),
+            dismissPosterCard = { id -> updateSettings { it.withPosterCardDismissed(id) } },
         )
     }
     viewModel {

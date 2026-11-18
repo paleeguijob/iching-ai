@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,14 +39,22 @@ import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.InkDivider
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.feature.poster.PosterCardRow
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.toThaiNumerals
 
 @Composable
-fun DailyScreen(viewModel: DailyViewModel, onBack: () -> Unit, onOpenHexagram: (Int) -> Unit) {
+fun DailyScreen(
+    viewModel: DailyViewModel,
+    onBack: () -> Unit,
+    onOpenHexagram: (Int) -> Unit,
+    onOpenLink: (PosterLink) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val card by viewModel.posterCard.collectAsStateWithLifecycle()
     var sharing by remember { mutableStateOf(false) }
 
     LifecycleResumeEffect(viewModel) {
@@ -102,6 +111,18 @@ fun DailyScreen(viewModel: DailyViewModel, onBack: () -> Unit, onOpenHexagram: (
                 ZenPrimaryButton("แชร์การ์ดวันนี้", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
                 ZenSecondaryButton("อ่านต่อในคัมภีร์", onClick = { onOpenHexagram(hexagram.id) }, modifier = Modifier.fillMaxWidth())
+                card?.let { c ->
+                    LaunchedEffect(c.id) { viewModel.onPosterCardShown(c.id) }
+                    Spacer(Modifier.height(16.dp))
+                    PosterCardRow(
+                        c,
+                        onClick = {
+                            viewModel.onPosterCardTapped(c.id)
+                            onOpenLink(c.link)
+                        },
+                        onDismiss = { viewModel.onPosterCardClosed(c.id) },
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
             }
             if (sharing) {
