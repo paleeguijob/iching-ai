@@ -21,8 +21,8 @@ private val THAI_MONTHS_SHORT = listOf(
 )
 
 /** e.g. "๖ พ.ย." — day in Thai numerals and the short month, for compact journal rows. */
-fun formatThaiShortDate(epochMillis: Long): String {
-    val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+fun formatThaiShortDate(epochMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone)
     return "${dt.day.toThaiNumerals()} ${THAI_MONTHS_SHORT[dt.month.ordinal]}"
 }
 
