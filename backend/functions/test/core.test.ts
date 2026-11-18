@@ -29,7 +29,7 @@ import {
   status,
 } from "../src/core/quota";
 import { campaignActive, dueCampaignPush, parseCampaign } from "../src/core/campaign";
-import { parsePromo } from "../src/core/promo";
+import { parsePoster, posterFor } from "../src/core/poster";
 import { readFileSync } from "node:fs";
 import { checkSafety, MEDICAL_EMERGENCY, MEDICAL_MESSAGE, SELF_HARM, SELF_HARM_MESSAGE } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
@@ -565,69 +565,94 @@ describe("siamsi", () => {
   });
 });
 
-describe("promo", () => {
+describe("poster", () => {
+  const card = { label: "โปรพิเศษ", title: "Premium รายปี ลด ๔๐%", cta: "ดูโปร", showEndDate: true };
   const valid = {
     id: "1111-2026",
     enabled: true,
     startsAt: "2026-11-10T00:00:00+07:00",
     endsAt: "2026-11-21T00:00:00+07:00",
-    label: "โปรพิเศษ",
-    title: "Premium รายปี ลด ๔๐%",
-    cta: "ดูโปร",
-    showEndDate: true,
+    image: "1111-2026.webp",
+    alt: "Premium รายปี ลด ๔๐%",
+    audience: "free",
+    link: "paywall",
+    card,
   };
+  const minimal = { ...valid, audience: "all" } as Record<string, unknown>;
+  delete minimal.link;
+  delete minimal.card;
   const start = Date.parse(valid.startsAt);
   const end = Date.parse(valid.endsAt);
   const freeUser = (now: number) => normalizeUser({}, bangkokDay(now));
   const premiumUser = (now: number) => normalizeUser({ premiumUntil: now + 86_400_000 }, bangkokDay(now));
 
-  it("parses a valid promo", () => {
-    assert.deepEqual(parsePromo(valid), { ...valid, startsAt: start, endsAt: end });
+  it("parses a full poster", () => {
+    assert.deepEqual(parsePoster(valid), { ...valid, startsAt: start, endsAt: end });
   });
 
-  it("missing or mistyped field is no promo", () => {
-    for (const key of Object.keys(valid)) {
+  it("parses a poster without link or card", () => {
+    const p = parsePoster(minimal);
+    assert.equal(p?.link, null);
+    assert.equal(p?.card, null);
+  });
+
+  it("missing or bad field is no poster", () => {
+    for (const key of ["id", "enabled", "startsAt", "endsAt", "image", "alt", "audience"]) {
       const raw: Record<string, unknown> = { ...valid };
       delete raw[key];
-      assert.equal(parsePromo(raw), null, `without ${key}`);
+      assert.equal(parsePoster(raw), null, `without ${key}`);
     }
-    assert.equal(parsePromo({ ...valid, enabled: "yes" }), null);
-    assert.equal(parsePromo({ ...valid, label: "" }), null);
-    assert.equal(parsePromo(null), null);
+    const bad: Record<string, unknown>[] = [
+      { id: "" },
+      { id: "11 11" },
+      { id: "a\nb" },
+      { image: "https://x/a.webp" },
+      { image: "../a.webp" },
+      { image: "posters/a.webp" },
+      { image: "a.gif" },
+      { alt: "ก".repeat(121) },
+      { audience: "vip" },
+      { link: "shop" },
+      { card: { ...card, title: "ก".repeat(41) } },
+      { card: { ...card, label: "ก".repeat(21) } },
+      { card: { ...card, cta: "ก".repeat(13) } },
+      { endsAt: valid.startsAt },
+      { startsAt: 1 },
+    ];
+    for (const patch of bad) assert.equal(parsePoster({ ...valid, ...patch }), null, JSON.stringify(patch));
+    const noLink: Record<string, unknown> = { ...valid };
+    delete noLink.link;
+    assert.equal(parsePoster(noLink), null, "card without link");
+    assert.equal(parsePoster(null), null);
   });
 
-  it("end before start is no promo", () => {
-    assert.equal(parsePromo({ ...valid, endsAt: valid.startsAt }), null);
+  it("accepts the allowed image types and limits", () => {
+    for (const image of ["a.png", "a.jpg", "a.jpeg", "A_b-1.webp"]) assert.notEqual(parsePoster({ ...valid, image }), null, image);
+    assert.notEqual(parsePoster({ ...valid, alt: "ก".repeat(120) }), null);
   });
 
-  it("title length limit", () => {
-    assert.notEqual(parsePromo({ ...valid, title: "ก".repeat(40) }), null);
-    assert.equal(parsePromo({ ...valid, title: "ก".repeat(41) }), null);
-    assert.notEqual(parsePromo({ ...valid, label: "ก".repeat(20) }), null);
-    assert.equal(parsePromo({ ...valid, label: "ก".repeat(21) }), null);
-    assert.notEqual(parsePromo({ ...valid, cta: "ก".repeat(12) }), null);
-    assert.equal(parsePromo({ ...valid, cta: "ก".repeat(13) }), null);
+  it("posterFor sends only in the window and by audience", () => {
+    const p = parsePoster(valid)!;
+    const sent = { id: valid.id, image: valid.image, alt: valid.alt, audience: "free", link: "paywall", card, endsAt: end };
+    assert.deepEqual(posterFor(p, false, start), sent);
+    assert.equal(posterFor(p, false, start - 1), null);
+    assert.equal(posterFor(p, false, end), null);
+    assert.equal(posterFor(p, true, start), null);
+    assert.equal(posterFor({ ...p, enabled: false }, false, start), null);
+    const all = parsePoster(minimal)!;
+    assert.equal(posterFor(all, true, start)?.id, valid.id);
   });
 
-  it("status carries the promo only in its window and for free accounts", () => {
-    const cfg = mergeConfig({ promo: valid });
-    const sent = { id: valid.id, label: valid.label, title: valid.title, cta: valid.cta, endsAt: end, showEndDate: true };
-    assert.deepEqual(status(freeUser(start), null, cfg, start).promo, sent);
-    assert.equal(status(freeUser(start - 1), null, cfg, start - 1).promo, null);
-    assert.equal(status(freeUser(end), null, cfg, end).promo, null);
-    assert.equal(status(premiumUser(start), null, cfg, start).promo, null);
-    const off = mergeConfig({ promo: { ...valid, enabled: false } });
-    assert.equal(status(freeUser(start), null, off, start).promo, null);
+  it("status carries the poster", () => {
+    assert.equal(status(freeUser(start), null, mergeConfig({ poster: valid }), start).poster?.id, valid.id);
+    assert.equal(status(premiumUser(start), null, mergeConfig({ poster: valid }), start).poster, null);
+    assert.equal(status(freeUser(start), null, mergeConfig(undefined), start).poster, null);
   });
 
-  it("a promo that fails to parse is reported", () => {
-    assert.deepEqual(configWarnings({ promo: { ...valid, title: "ก".repeat(41) } }), ["promo_invalid"]);
-    assert.deepEqual(configWarnings({ promo: valid }), []);
+  it("a poster that fails to parse is reported", () => {
+    assert.deepEqual(configWarnings({ poster: { ...valid, image: "a.gif" } }), ["poster_invalid"]);
+    assert.deepEqual(configWarnings({ poster: valid }), []);
     assert.deepEqual(configWarnings({}), []);
     assert.deepEqual(configWarnings(undefined), []);
-  });
-
-  it("no promo configured sends null", () => {
-    assert.equal(status(freeUser(start), null, mergeConfig(undefined), start).promo, null);
   });
 });
