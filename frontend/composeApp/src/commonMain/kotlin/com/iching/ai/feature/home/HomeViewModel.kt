@@ -10,7 +10,7 @@ import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.model.YearHexagram
-import com.iching.ai.domain.model.currentOn
+import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
@@ -85,8 +85,9 @@ class HomeViewModel(
     /** A contemplation for today, the same for everyone on a given date. */
     val dailyHexagram: StateFlow<Hexagram?> = _dailyHexagram.asStateFlow()
 
-    val streakDays: StateFlow<Int> = combine(observeSettings(), today) { settings, day -> settings.streak.currentOn(day) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    /** The last seven days of opening the daily hexagram, shown under today's card. */
+    val streakWeek: StateFlow<StreakWeek> = combine(observeSettings(), today) { settings, day -> streakWeek(settings.streak, day) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value))
 
     val status: StateFlow<AccountStatus> = session.status
 
