@@ -16,6 +16,8 @@ import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
+import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.domain.model.withPromoDismissed
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AdResult
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
@@ -77,6 +80,8 @@ class HomeViewModel(
     private val session: AppSession,
     private val api: OracleApi,
     private val getHexagram: GetHexagramUseCase,
+    private val updateSettings: UpdateSettingsUseCase,
+    private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) : ViewModel() {
 
     private val _dailyHexagram = MutableStateFlow<Hexagram?>(null)
@@ -90,6 +95,33 @@ class HomeViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value))
 
     val status: StateFlow<AccountStatus> = session.status
+
+    /** Refreshed on resume with [today], so a promo that ends while home stays open drops off. */
+    private val now = MutableStateFlow(nowMillis())
+
+    /** The home promo card while one runs, until the seeker closes it. */
+    val promoCard: StateFlow<PromoCard?> = combine(
+        session.status,
+        // Settings may not have emitted yet; nothing closed until they do.
+        observeSettings().map { it.dismissedPromoIds }.onStart { emit(emptyList()) },
+        now,
+    ) { status, dismissed, millis -> promoCard(status, dismissed, millis) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private var loggedPromoId: String? = null
+
+    fun onPromoShown(id: String) {
+        if (loggedPromoId == id) return
+        loggedPromoId = id
+        session.log("promo_shown", mapOf("promo_id" to id))
+    }
+
+    fun onPromoTapped(id: String) = session.log("promo_tapped", mapOf("promo_id" to id))
+
+    fun onPromoDismissed(id: String) {
+        session.log("promo_dismissed", mapOf("promo_id" to id))
+        viewModelScope.launch { updateSettings { it.withPromoDismissed(id) } }
+    }
 
     private val yearResult = MutableStateFlow<YearHexagram?>(null)
     private val yearHexagram = MutableStateFlow<Hexagram?>(null)
@@ -342,11 +374,11 @@ class HomeViewModel(
     /** Runs on every resume too: the app may have stayed open past midnight. */
     fun refreshDay() {
         viewModelScope.launch {
-            val now = nowMillis()
-            today.value = bangkokEpochDay(now)
-            _dailyHexagram.value = getDaily(now)
+            val millis = nowMillis()
+            now.value = millis
+            today.value = bangkokEpochDay(millis)
+            _dailyHexagram.value = getDaily(millis)
         }
     }
 
-    private fun nowMillis() = Clock.System.now().toEpochMilliseconds()
 }

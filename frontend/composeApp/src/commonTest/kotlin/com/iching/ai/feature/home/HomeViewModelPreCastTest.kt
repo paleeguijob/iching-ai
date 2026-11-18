@@ -7,6 +7,7 @@ import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
+import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
@@ -93,7 +94,7 @@ class HomeViewModelPreCastTest {
             scope,
         )
         if (start) session.start()
-        val vm = HomeViewModel(GetDailyHexagramUseCase(OneHexagram), ObserveSettingsUseCase(NoSettings), session, api, GetHexagramUseCase(OneHexagram))
+        val vm = HomeViewModel(GetDailyHexagramUseCase(OneHexagram), ObserveSettingsUseCase(NoSettings), session, api, GetHexagramUseCase(OneHexagram), UpdateSettingsUseCase(NoSettings))
         scope.launch { vm.castRequests.collect { casts += it } }
         scheduler.runCurrent()
         return vm

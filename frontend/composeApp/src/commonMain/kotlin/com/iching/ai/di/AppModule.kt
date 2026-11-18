@@ -100,7 +100,8 @@ fun platformModule(bridges: NativeBridges): Module = module {
 }
 
 val presentationModule = module {
-    viewModelOf(::HomeViewModel)
+    // Not viewModelOf: it would try to inject the clock parameter instead of using its default.
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel {
         val session = get<AppSession>()
         SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log)
