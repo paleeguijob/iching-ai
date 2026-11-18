@@ -411,7 +411,10 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 1. ☐ ตั้ง offer ลดราคาใน Play Console (Subscriptions → base plan → Add offer) ให้ช่วงเวลาตรงกับโปร
 2. ☐ ใน RevenueCat สร้าง offering ที่ใช้ offer นั้น แล้วตั้งเป็น **current**
 3. ☐ เปิดหน้าจ่ายเงินบนเครื่องจริง ดูว่าราคาที่ลดแล้วขึ้นถูก
-4. ☐ เขียน `config/runtime.promo` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน — `id` (ใหม่ทุกโปร), `startsAt`/`endsAt` (ISO +07:00, `endsAt` = เที่ยงคืนหลังวันสุดท้าย), `label` ≤ 20 ตัวอักษร, `title` ≤ 40, `cta` ≤ 12, `showEndDate` · เกินความยาวหรือขาดฟิลด์ = ไม่มีโปร
+4. ☐ เขียน `config/runtime.promo` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน — `id` (ใหม่ทุกโปร), `startsAt`/`endsAt` (ISO +07:00, `endsAt` = เที่ยงคืนหลังวันสุดท้าย), `label` ≤ 20 ตัวอักษร, `title` ≤ 40, `cta` ≤ 12, `showEndDate` · เกินความยาวหรือขาดฟิลด์ = ไม่มีโปร (log จะขึ้น `promo_invalid`)
+   - ความยาวนับสระและวรรณยุกต์เป็นตัวอักษรด้วย เช่น "ที่" = 3 ตัว เช็กด้วย `"ข้อความ".length` ใน console ของเบราว์เซอร์
+   - `startsAt`/`endsAt` ต้องเป็นชนิด **string** ใน Firestore ห้ามใช้ชนิด timestamp
+   - `id` ห้ามมีช่องว่างหรือขึ้นบรรทัดใหม่
 5. ☐ เช็กว่าตัวเลขใน `title` ตรงกับราคาบนหน้าจ่ายเงิน
 6. ☐ ตั้ง `enabled: true` (server cache ค่าไว้ ≤ 1 นาที)
 7. ☐ ดู analytics `promo_shown` / `promo_tapped` / `promo_dismissed` (param `promo_id`)

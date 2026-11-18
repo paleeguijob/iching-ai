@@ -99,6 +99,15 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
   return out;
 }
 
+/**
+ * Problems in the stored config that mergeConfig drops quietly. A promo that fails to parse would otherwise just
+ * never show, with nothing saying why (a Thai title over 40 code units, or a Timestamp where an ISO string belongs).
+ */
+export function configWarnings(raw: Record<string, unknown> | undefined): string[] {
+  if (!raw || raw.promo === undefined || raw.promo === null) return [];
+  return parsePromo(raw.promo) === null ? ["promo_invalid"] : [];
+}
+
 export interface DailyUsage {
   day: string;
   free: number;

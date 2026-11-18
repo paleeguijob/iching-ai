@@ -13,7 +13,7 @@ import { buildDailyPush } from "./core/daily";
 import { streamGemini } from "./core/gemini";
 import { loadScripture } from "./core/hexagrams";
 import { loadSiamSiSets } from "./core/siamsi";
-import { mergeConfig, RuntimeConfig } from "./core/quota";
+import { configWarnings, mergeConfig, RuntimeConfig } from "./core/quota";
 import { firestoreStore } from "./store";
 
 initializeApp();
@@ -32,6 +32,7 @@ let configCache: { at: number; value: RuntimeConfig } | null = null;
 async function runtimeConfig(): Promise<RuntimeConfig> {
   if (configCache && Date.now() - configCache.at < 60_000) return configCache.value;
   const snap = await db.doc("config/runtime").get();
+  for (const warning of configWarnings(snap.data())) logger.warn(warning);
   configCache = { at: Date.now(), value: mergeConfig(snap.data()) };
   return configCache.value;
 }

@@ -19,6 +19,7 @@ import { findStick, loadSiamSiSets } from "../src/core/siamsi";
 import {
   bangkokDay,
   chargeReading,
+  configWarnings,
   DEFAULT_CONFIG,
   grantAdReward,
   mergeConfig,
@@ -617,6 +618,13 @@ describe("promo", () => {
     assert.equal(status(premiumUser(start), null, cfg, start).promo, null);
     const off = mergeConfig({ promo: { ...valid, enabled: false } });
     assert.equal(status(freeUser(start), null, off, start).promo, null);
+  });
+
+  it("a promo that fails to parse is reported", () => {
+    assert.deepEqual(configWarnings({ promo: { ...valid, title: "ก".repeat(41) } }), ["promo_invalid"]);
+    assert.deepEqual(configWarnings({ promo: valid }), []);
+    assert.deepEqual(configWarnings({}), []);
+    assert.deepEqual(configWarnings(undefined), []);
   });
 
   it("no promo configured sends null", () => {
