@@ -35,7 +35,7 @@
 | `id` | string ไม่ว่าง ไม่มีช่องว่าง/ขึ้นบรรทัด | `"cny-2027"` | key ของการจำและ analytics · เปลี่ยน id = ประกาศใหม่ |
 | `enabled` | boolean | `true` | สวิตช์ปิดทันที |
 | `startsAt` / `endsAt` | ISO string, `endsAt > startsAt` | `2027-02-05T00:00+07:00` | ช่วงเวลา |
-| `image` | path ใต้ `content/posters/` ลงท้าย `.webp` `.png` `.jpg` | `"cny-2027.webp"` | ภาพบน Hosting |
+| `image` | path ใต้ `content/posters/` ลงท้าย `.webp` `.png` `.jpg` `.jpeg` | `"cny-2027.webp"` | ภาพบน Hosting |
 | `alt` | string ไม่ว่าง ≤ 120 | `"ตรุษจีน ๒๕๗๐ ขอให้ร่ำรวย"` | ให้ TalkBack อ่าน |
 | `audience` | `"free"` หรือ `"all"` | `"free"` | `free` = ไม่ส่งให้ Premium |
 | `link` | ไม่ใส่ หรือหนึ่งใน `paywall` `daily` `year` `library` `journal` | `"paywall"` | กดภาพแล้วไปไหน |
@@ -43,7 +43,7 @@
 
 - มี `card` แต่ไม่มี `link` = ผิดรูปแบบ (การ์ดที่กดแล้วไม่ไปไหนไม่มีประโยชน์)
 - `image` ห้ามมี `..` หรือขึ้นต้นด้วย `/` หรือ `http` แอปสร้าง URL เองจาก `WEB_BASE_URL` แบบเดียวกับไฟล์เซียมซี (`{WEB_BASE_URL}/content/posters/{image}`) จึงโหลดได้เฉพาะจาก Hosting ของเรา
-- ภาพ: สัดส่วน **4:5** (แนะนำ 1080×1350) WebP ไม่เกิน 400 KB ข้อความสำคัญอยู่ห่างขอบ 8% เพราะมุมภาพโค้ง
+- ภาพ: สัดส่วน **4:5** (แนะนำ 1080×1350) WebP, PNG หรือ JPEG ควรไม่เกิน 500 KB (คำแนะนำ ไม่ได้บังคับในโค้ด) ข้อความสำคัญอยู่ห่างขอบ 8% เพราะมุมภาพโค้ง
 
 ## 4. `/status`
 

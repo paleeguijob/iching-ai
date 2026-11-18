@@ -20,7 +20,7 @@
   - `audience` ∈ {`free`, `all`}.
   - `link` ∈ {`paywall`, `daily`, `year`, `library`, `journal`} or absent.
   - `card` without `link` is invalid.
-- `image` is a bare file name matching `^[A-Za-z0-9][A-Za-z0-9._-]*\.(webp|png|jpg)$`. Ruling vs the spec's "path under `content/posters/`": no slashes, so `..`, `/`-prefixed and `http` values are all rejected.
+- `image` is a bare file name matching `^[A-Za-z0-9][A-Za-z0-9._-]*\.(webp|png|jpg|jpeg)$`. Ruling vs the spec's "path under `content/posters/`": no slashes, so `..`, `/`-prefixed and `http` values are all rejected.
 - Image URL: `{WEB_BASE_URL trimmed of '/'}/content/posters/{image}`.
 - Analytics events: `poster_shown`, `poster_tapped`, `poster_closed`, with params `poster_id` and `surface` = `popup` | `card`.
 - Remembered id lists keep the newest 20.
@@ -276,7 +276,7 @@
 
 **Files:**
 - Modify: `docs/RELEASE.md` §14.E, rewritten as "เปิดโปสเตอร์". Steps:
-  1. Put the 1080×1350 WebP (≤ 400 KB) in `backend/hosting/public/content/posters/`.
+  1. Put the 1080×1350 WebP, PNG or JPEG (aim ≤ 500 KB) in `backend/hosting/public/content/posters/`.
   2. `firebase deploy --only hosting`.
   3. Open `{WEB_BASE_URL}/content/posters/<file>` to confirm it loads.
   4. Set `config/runtime.poster` (field table from spec §3, dates as strings, `id` without spaces).
