@@ -121,4 +121,13 @@ data class AppSettings(
     val siamsiUsage: SiamSiUsage = SiamSiUsage(),
     /** Whether the server last said Siam Si is on, so an offline launch can still offer it. */
     val siamsiLastEnabled: Boolean = false,
+    /** Home promos the seeker closed, oldest first; at most [MAX_DISMISSED_PROMOS]. */
+    val dismissedPromoIds: List<String> = emptyList(),
 )
+
+const val MAX_DISMISSED_PROMOS = 20
+
+/** Remembers a closed promo so it never shows again; the oldest ids fall off past [MAX_DISMISSED_PROMOS]. */
+fun AppSettings.withPromoDismissed(id: String): AppSettings =
+    if (id in dismissedPromoIds) this
+    else copy(dismissedPromoIds = (dismissedPromoIds + id).takeLast(MAX_DISMISSED_PROMOS))

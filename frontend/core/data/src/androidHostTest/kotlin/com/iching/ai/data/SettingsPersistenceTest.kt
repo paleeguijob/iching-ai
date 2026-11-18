@@ -43,6 +43,14 @@ class SettingsPersistenceTest {
     }
 
     @Test
+    fun dismissedPromosSurviveReloadInOrder() = withStore { file ->
+        assertEquals(emptyList(), open(file) { it.settings.first() }.dismissedPromoIds)
+        open(file) { repo -> repo.update { it.copy(dismissedPromoIds = listOf("a", "b")) } }
+        Thread.sleep(100)
+        assertEquals(listOf("a", "b"), open(file) { it.settings.first() }.dismissedPromoIds)
+    }
+
+    @Test
     fun siamsiFieldsSurviveReloadAndDefaultWhenMissing() = withStore { file ->
         val fresh = open(file) { it.settings.first() }
         assertEquals(DivinationMode.ICHING, fresh.divinationMode)

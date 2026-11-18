@@ -40,6 +40,8 @@ class DataStoreSettingsRepository(
             prefs[SIAMSI_USED] = next.siamsiUsage.used
             prefs[SIAMSI_PENDING] = next.siamsiUsage.pendingDraw
             prefs[SIAMSI_LAST_ENABLED] = next.siamsiLastEnabled
+            // One string, newline-joined: a string-set key would lose the order that decides which ids drop first.
+            prefs[DISMISSED_PROMOS] = next.dismissedPromoIds.joinToString("\n")
             prefs.remove(LEGACY_API_KEY)
         }
     }
@@ -75,6 +77,7 @@ class DataStoreSettingsRepository(
             pendingDraw = this[SIAMSI_PENDING] ?: false,
         ),
         siamsiLastEnabled = this[SIAMSI_LAST_ENABLED] ?: false,
+        dismissedPromoIds = this[DISMISSED_PROMOS]?.split("\n")?.filter { it.isNotEmpty() } ?: emptyList(),
     )
 
     private fun MutablePreferences.writeStreak(streak: StreakState) {
@@ -98,6 +101,7 @@ class DataStoreSettingsRepository(
         val PUSH_PROMPT_SHOWN = booleanPreferencesKey("push_prompt_shown")
         val DIVINATION_MODE = stringPreferencesKey("divination_mode")
         val SIAMSI_SET = stringPreferencesKey("siamsi_set")
+        val DISMISSED_PROMOS = stringPreferencesKey("dismissed_promos")
         val SIAMSI_DAY = longPreferencesKey("siamsi_day")
         val SIAMSI_USED = intPreferencesKey("siamsi_used")
         val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
