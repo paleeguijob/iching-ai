@@ -28,6 +28,7 @@ import {
   status,
 } from "../src/core/quota";
 import { campaignActive, dueCampaignPush, parseCampaign } from "../src/core/campaign";
+import { parsePromo } from "../src/core/promo";
 import { readFileSync } from "node:fs";
 import { checkSafety, MEDICAL_EMERGENCY, MEDICAL_MESSAGE, SELF_HARM, SELF_HARM_MESSAGE } from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
@@ -560,5 +561,65 @@ describe("siamsi", () => {
   it("follow-up prompt takes the Siam Si context", () => {
     const p = buildFollowUpPrompt("q", siamsiContext(found.set, found.stick), "คำแปล", [], "แล้วควรเริ่มเมื่อไร");
     assert.ok(p.userMessage.includes(found.stick.poem_orig[0]));
+  });
+});
+
+describe("promo", () => {
+  const valid = {
+    id: "1111-2026",
+    enabled: true,
+    startsAt: "2026-11-10T00:00:00+07:00",
+    endsAt: "2026-11-21T00:00:00+07:00",
+    label: "โปรพิเศษ",
+    title: "Premium รายปี ลด ๔๐%",
+    cta: "ดูโปร",
+    showEndDate: true,
+  };
+  const start = Date.parse(valid.startsAt);
+  const end = Date.parse(valid.endsAt);
+  const freeUser = (now: number) => normalizeUser({}, bangkokDay(now));
+  const premiumUser = (now: number) => normalizeUser({ premiumUntil: now + 86_400_000 }, bangkokDay(now));
+
+  it("parses a valid promo", () => {
+    assert.deepEqual(parsePromo(valid), { ...valid, startsAt: start, endsAt: end });
+  });
+
+  it("missing or mistyped field is no promo", () => {
+    for (const key of Object.keys(valid)) {
+      const raw: Record<string, unknown> = { ...valid };
+      delete raw[key];
+      assert.equal(parsePromo(raw), null, `without ${key}`);
+    }
+    assert.equal(parsePromo({ ...valid, enabled: "yes" }), null);
+    assert.equal(parsePromo({ ...valid, label: "" }), null);
+    assert.equal(parsePromo(null), null);
+  });
+
+  it("end before start is no promo", () => {
+    assert.equal(parsePromo({ ...valid, endsAt: valid.startsAt }), null);
+  });
+
+  it("title length limit", () => {
+    assert.notEqual(parsePromo({ ...valid, title: "ก".repeat(40) }), null);
+    assert.equal(parsePromo({ ...valid, title: "ก".repeat(41) }), null);
+    assert.notEqual(parsePromo({ ...valid, label: "ก".repeat(20) }), null);
+    assert.equal(parsePromo({ ...valid, label: "ก".repeat(21) }), null);
+    assert.notEqual(parsePromo({ ...valid, cta: "ก".repeat(12) }), null);
+    assert.equal(parsePromo({ ...valid, cta: "ก".repeat(13) }), null);
+  });
+
+  it("status carries the promo only in its window and for free accounts", () => {
+    const cfg = mergeConfig({ promo: valid });
+    const sent = { id: valid.id, label: valid.label, title: valid.title, cta: valid.cta, endsAt: end, showEndDate: true };
+    assert.deepEqual(status(freeUser(start), null, cfg, start).promo, sent);
+    assert.equal(status(freeUser(start - 1), null, cfg, start - 1).promo, null);
+    assert.equal(status(freeUser(end), null, cfg, end).promo, null);
+    assert.equal(status(premiumUser(start), null, cfg, start).promo, null);
+    const off = mergeConfig({ promo: { ...valid, enabled: false } });
+    assert.equal(status(freeUser(start), null, off, start).promo, null);
+  });
+
+  it("no promo configured sends null", () => {
+    assert.equal(status(freeUser(start), null, mergeConfig(undefined), start).promo, null);
   });
 });

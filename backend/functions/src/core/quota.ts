@@ -7,6 +7,7 @@
  */
 
 import { Campaign, campaignActive, DEFAULT_CAMPAIGN, parseCampaign } from "./campaign";
+import { parsePromo, Promo, promoFor, StatusPromo } from "./promo";
 
 export interface RuntimeConfig {
   /** Global kill-switch: false → every reading comes back as raw scripture. */
@@ -36,6 +37,8 @@ export interface RuntimeConfig {
   /** Siam Si draws a free account gets per day, one rewarded ad each. Counted by the app. */
   siamsiAdDrawsPerDay: number;
   siamsiPremiumPerDay: number;
+  /** Home promo for free accounts; null when unset or malformed (= no promo). */
+  promo: Promo | null;
 }
 
 export interface SiamSiSetRef {
@@ -66,6 +69,7 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   ],
   siamsiAdDrawsPerDay: 1,
   siamsiPremiumPerDay: 10,
+  promo: null,
 };
 
 const isSetRef = (v: unknown): v is SiamSiSetRef =>
@@ -82,6 +86,8 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
     const def = DEFAULT_CONFIG[key];
     if (key === "campaign") {
       if (v !== undefined) out.campaign = parseCampaign(v);
+    } else if (key === "promo") {
+      if (v !== undefined) out.promo = parsePromo(v);
     } else if (key === "siamsiSets") {
       if (Array.isArray(v) && v.every(isSetRef)) out.siamsiSets = v.map((r) => ({ id: r.id, version: r.version }));
     } else if (key === "forceModel") {
@@ -150,6 +156,7 @@ export interface QuotaStatus {
   aiEnabled: boolean;
   campaign: { id: string; year: number; active: boolean; endsAt: number } | null;
   siamsi: { enabled: boolean; sets: SiamSiSetRef[]; drawsPerDay: number };
+  promo: StatusPromo | null;
 }
 
 export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number): QuotaStatus {
@@ -184,6 +191,7 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
       sets: cfg.siamsiSets,
       drawsPerDay: premium ? cfg.siamsiPremiumPerDay : cfg.siamsiAdDrawsPerDay,
     },
+    promo: promoFor(cfg.promo, premium, now),
   };
 }
 
