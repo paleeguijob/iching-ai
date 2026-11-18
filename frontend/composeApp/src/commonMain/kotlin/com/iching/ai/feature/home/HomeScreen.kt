@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -155,6 +156,7 @@ fun HomeScreen(
     }
     val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     val week by viewModel.streakWeek.collectAsStateWithLifecycle()
+    val promo by viewModel.promoCard.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
         viewModel.onResumed()
@@ -201,6 +203,18 @@ fun HomeScreen(
                         viewModel.onCampaignCardTapped(card)
                         onOpenYear()
                     })
+                }
+                promo?.let { p ->
+                    LaunchedEffect(p.id) { viewModel.onPromoShown(p.id) }
+                    Spacer(Modifier.height(ZenSpacing.md))
+                    PromoCardRow(
+                        p,
+                        onClick = {
+                            viewModel.onPromoTapped(p.id)
+                            onOpenPaywall()
+                        },
+                        onDismiss = { viewModel.onPromoDismissed(p.id) },
+                    )
                 }
                 Spacer(Modifier.height(ZenSpacing.md))
             }
@@ -469,6 +483,41 @@ private fun StreakWeekRow(week: StreakWeek, onClick: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/**
+ * A promotion, kept quieter than today's hexagram: white card, thin edge, a small cinnabar seal tile. Tapping it
+ * opens the paywall; × closes this promo for good.
+ */
+@Composable
+private fun PromoCardRow(card: PromoCard, onClick: () -> Unit, onDismiss: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(ZenColors.Card)
+            .border(1.dp, ZenColors.current.outlineVariant, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(52.dp).clip(RoundedCornerShape(10.dp)).background(ZenColors.CinnabarRed),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("易", style = MaterialTheme.typography.titleLarge, color = ZenColors.PaperCream)
+        }
+        Spacer(Modifier.width(ZenSpacing.md))
+        Column(Modifier.weight(1f)) {
+            Text(card.label, style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(card.title, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(card.cta, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+        }
+        IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.Top)) {
+            Icon(Icons.Outlined.Close, contentDescription = "ปิดโปรนี้", tint = ZenColors.InkFaint, modifier = Modifier.size(18.dp))
+        }
     }
 }
 
