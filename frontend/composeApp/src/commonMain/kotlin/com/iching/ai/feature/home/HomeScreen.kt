@@ -161,6 +161,7 @@ fun HomeScreen(
     // Never over another sheet: the popup waits (still held by the view model) until that one closes.
     if (sheet == null && !setSheetOpen) {
         popup?.let { p ->
+            LaunchedEffect(p.id) { viewModel.onPopupDisplayed(p.id) }
             PosterPopupDialog(
                 p,
                 onTap = { viewModel.onPopupTapped()?.let(onOpenLink) },

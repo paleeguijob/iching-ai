@@ -141,9 +141,22 @@ class HomeViewModelPosterTest {
     }
 
     @Test
+    fun heldPopupIsNotSeenUntilDisplayed() {
+        // Home's view model lives on under the daily page (e.g. opened from the push): holding the popup there must
+        // not spend it, or closing the app from that page loses the poster without the seeker ever seeing it.
+        val vm = viewModel()
+        assertEquals("cny", vm.popup.value?.id)
+        assertEquals(emptyList(), logged("poster_shown"))
+        assertEquals(emptyList(), settings.flow.value.seenPosterIds)
+    }
+
+    @Test
     fun popsAfterDailyReadAndImageLoads() {
         val vm = viewModel()
         assertEquals(PosterPopup("cny", URL, "ตรุษจีน", PosterLink.PAYWALL), vm.popup.value)
+        vm.onPopupDisplayed("cny")
+        vm.onPopupDisplayed("cny")
+        scheduler.advanceUntilIdle()
         assertEquals(listOf(cny), logged("poster_shown"))
         assertEquals(listOf("cny"), settings.flow.value.seenPosterIds)
     }
@@ -151,6 +164,7 @@ class HomeViewModelPosterTest {
     @Test
     fun popupStaysUntilClosedAfterSeenIsSaved() {
         val vm = viewModel()
+        vm.onPopupDisplayed("cny")
         vm.onResumed()
         scheduler.advanceUntilIdle()
         assertEquals("cny", vm.popup.value?.id)
@@ -211,7 +225,10 @@ class HomeViewModelPosterTest {
 
     @Test
     fun seenPosterDoesNotPopInNewViewModel() {
-        viewModel().onPopupClosed()
+        viewModel().run {
+            onPopupDisplayed("cny")
+            onPopupClosed()
+        }
         scheduler.advanceUntilIdle()
         assertNull(viewModel().popup.value)
         assertEquals(1, logged("poster_shown").size)

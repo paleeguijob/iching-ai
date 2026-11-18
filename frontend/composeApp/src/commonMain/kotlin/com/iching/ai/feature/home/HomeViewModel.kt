@@ -109,7 +109,7 @@ class HomeViewModel(
     private val loadingImages = mutableSetOf<String>()
     private val _popup = MutableStateFlow<PosterPopup?>(null)
 
-    /** The poster popup, held from the moment it shows until the seeker closes or taps it. */
+    /** The poster popup, held from the moment it qualifies until the seeker closes or taps it. */
     val popup: StateFlow<PosterPopup?> = _popup.asStateFlow()
 
     init {
@@ -121,7 +121,7 @@ class HomeViewModel(
             // No default settings seed: one would pop a poster that already showed in an earlier launch.
             combine(session.status, observeSettings(), today, now, readyImages) { status, settings, day, millis, ready ->
                 posterPopup(status, settings, day, millis, ready)
-            }.collect { next -> if (next != null && _popup.value == null) showPopup(next) }
+            }.collect { next -> if (next != null && _popup.value == null) _popup.value = next }
         }
     }
 
@@ -141,10 +141,17 @@ class HomeViewModel(
         }
     }
 
-    private fun showPopup(popup: PosterPopup) {
-        _popup.value = popup
-        session.log("poster_shown", popupParams(popup.id))
-        viewModelScope.launch { updateSettings { it.withPosterSeen(popup.id) } }
+    private var displayedId: String? = null
+
+    /**
+     * Called by home once the popup is actually on screen. Holding it is not enough: this view model lives on under
+     * the daily page and behind sheets, and spending the poster there would lose it if the app closes first.
+     */
+    fun onPopupDisplayed(id: String) {
+        if (displayedId == id) return
+        displayedId = id
+        session.log("poster_shown", popupParams(id))
+        viewModelScope.launch { updateSettings { it.withPosterSeen(id) } }
     }
 
     fun onPopupClosed() {
