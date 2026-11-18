@@ -402,3 +402,17 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 1. ☐ แก้ไฟล์ชุดนั้น แล้วเพิ่ม `"version"` ในไฟล์ (เช่น `"version": 2`) วางไว้ที่ `backend/hosting/public/content/siamsi/{id}.json`
 2. ☐ Deploy **ทั้ง hosting และ functions** (`copy-data` คัดลอกไฟล์ให้ server ตอน build ถ้า deploy hosting อย่างเดียว นักพรตจะแปลจากข้อความเก่า)
 3. ☐ เพิ่ม version ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ แอปจะโหลดฉบับใหม่มาแทนฉบับที่ติดมากับแอป
+
+### E. เปิดโปรบนหน้าแรก (การ์ดโปร Premium, ไม่ต้องออกแอปใหม่)
+สเปก: [`docs/superpowers/specs/2026-11-17-home-promo-card-design.md`](superpowers/specs/2026-11-17-home-promo-card-design.md) · การ์ดขึ้นเฉพาะผู้ใช้ฟรี ใต้แถว streak กดแล้วไปหน้าจ่ายเงิน กด × ปิดถาวรต่อ `id`
+
+ครั้งแรกเท่านั้น: ☐ Deploy functions (`cd backend/functions && npm run deploy`) ก่อนโปรแรก — server เก่าไม่ส่ง `promo` และแอปที่มีการ์ดต้องเป็นเวอร์ชันที่ขึ้น store แล้ว
+
+1. ☐ ตั้ง offer ลดราคาใน Play Console (Subscriptions → base plan → Add offer) ให้ช่วงเวลาตรงกับโปร
+2. ☐ ใน RevenueCat สร้าง offering ที่ใช้ offer นั้น แล้วตั้งเป็น **current**
+3. ☐ เปิดหน้าจ่ายเงินบนเครื่องจริง ดูว่าราคาที่ลดแล้วขึ้นถูก
+4. ☐ เขียน `config/runtime.promo` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน — `id` (ใหม่ทุกโปร), `startsAt`/`endsAt` (ISO +07:00, `endsAt` = เที่ยงคืนหลังวันสุดท้าย), `label` ≤ 20 ตัวอักษร, `title` ≤ 40, `cta` ≤ 12, `showEndDate` · เกินความยาวหรือขาดฟิลด์ = ไม่มีโปร
+5. ☐ เช็กว่าตัวเลขใน `title` ตรงกับราคาบนหน้าจ่ายเงิน
+6. ☐ ตั้ง `enabled: true` (server cache ค่าไว้ ≤ 1 นาที)
+7. ☐ ดู analytics `promo_shown` / `promo_tapped` / `promo_dismissed` (param `promo_id`)
+8. ☐ หลังวันจบ: สลับ offering ใน RevenueCat กลับเป็นปกติ (การ์ดหายเองตาม `endsAt`)
