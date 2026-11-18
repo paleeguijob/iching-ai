@@ -30,6 +30,7 @@ import com.iching.ai.feature.journal.JournalViewModel
 import com.iching.ai.feature.library.HexagramDetailViewModel
 import com.iching.ai.feature.library.LibraryViewModel
 import com.iching.ai.feature.paywall.PaywallViewModel
+import com.iching.ai.feature.poster.posterImagesModule
 import com.iching.ai.feature.settings.SettingsViewModel
 import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.platform.NativeBridges
@@ -102,7 +103,7 @@ fun platformModule(bridges: NativeBridges): Module = module {
 
 val presentationModule = module {
     // Not viewModelOf: it would try to inject the clock parameter instead of using its default.
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel {
         val session = get<AppSession>()
         SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log)
@@ -173,6 +174,6 @@ val presentationModule = module {
 fun initKoin(bridges: NativeBridges, config: KoinAppDeclaration? = null) {
     startKoin {
         config?.invoke(this)
-        modules(platformModule(bridges), dataModule, domainModule, presentationModule)
+        modules(platformModule(bridges), posterImagesModule(), dataModule, domainModule, presentationModule)
     }
 }

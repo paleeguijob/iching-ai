@@ -230,6 +230,7 @@ private fun MainNavigation() {
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         siamsi = koinViewModel(),
                         onSiamSiDraw = { nav.navigate(it) },
+                        onOpenLink = ::openLink,
                     )
                 }
                 screen<SiamSiRoute> { entry ->

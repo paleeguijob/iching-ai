@@ -10,7 +10,10 @@ import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.model.campaignIdFor
 import com.iching.ai.domain.model.YearHexagram
+import com.iching.ai.domain.model.PosterLink
 import com.iching.ai.domain.model.StreakState
+import com.iching.ai.domain.model.withFirstOpen
+import com.iching.ai.domain.model.withPosterSeen
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
@@ -19,6 +22,9 @@ import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
+import com.iching.ai.feature.poster.PosterImages
+import com.iching.ai.feature.poster.PosterPopup
+import com.iching.ai.feature.poster.posterPopup
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
@@ -79,6 +85,7 @@ class HomeViewModel(
     private val api: OracleApi,
     private val getHexagram: GetHexagramUseCase,
     private val updateSettings: UpdateSettingsUseCase,
+    private val images: PosterImages,
     private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) : ViewModel() {
 
@@ -96,6 +103,65 @@ class HomeViewModel(
 
     /** Refreshed on resume with [today], so a poster that ends while home stays open drops off. */
     private val now = MutableStateFlow(nowMillis())
+
+    /** Poster images already in the cache; the popup waits for its image so it never shows an empty frame. */
+    private val readyImages = MutableStateFlow<Set<String>>(emptySet())
+    private val loadingImages = mutableSetOf<String>()
+    private val _popup = MutableStateFlow<PosterPopup?>(null)
+
+    /** The poster popup, held from the moment it shows until the seeker closes or taps it. */
+    val popup: StateFlow<PosterPopup?> = _popup.asStateFlow()
+
+    init {
+        viewModelScope.launch { updateSettings { it.withFirstOpen(today.value) } }
+        viewModelScope.launch {
+            session.status.map { it.poster?.imageUrl }.distinctUntilChanged().collect { url -> url?.let(::preload) }
+        }
+        viewModelScope.launch {
+            // No default settings seed: one would pop a poster that already showed in an earlier launch.
+            combine(session.status, observeSettings(), today, now, readyImages) { status, settings, day, millis, ready ->
+                posterPopup(status, settings, day, millis, ready)
+            }.collect { next -> if (next != null && _popup.value == null) showPopup(next) }
+        }
+    }
+
+    private fun preload(url: String) {
+        if (url in readyImages.value || !loadingImages.add(url)) return
+        viewModelScope.launch {
+            val ok = try {
+                images.preload(url)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            } finally {
+                loadingImages.remove(url)
+            }
+            if (ok) readyImages.update { it + url }
+        }
+    }
+
+    private fun showPopup(popup: PosterPopup) {
+        _popup.value = popup
+        session.log("poster_shown", popupParams(popup.id))
+        viewModelScope.launch { updateSettings { it.withPosterSeen(popup.id) } }
+    }
+
+    fun onPopupClosed() {
+        val shown = _popup.value ?: return
+        _popup.value = null
+        session.log("poster_closed", popupParams(shown.id))
+    }
+
+    /** Clears the popup and returns where it leads, if anywhere. */
+    fun onPopupTapped(): PosterLink? {
+        val shown = _popup.value ?: return null
+        _popup.value = null
+        session.log("poster_tapped", popupParams(shown.id))
+        return shown.link
+    }
+
+    private fun popupParams(id: String) = mapOf("poster_id" to id, "surface" to "popup")
 
     private val yearResult = MutableStateFlow<YearHexagram?>(null)
     private val yearHexagram = MutableStateFlow<Hexagram?>(null)
@@ -165,6 +231,8 @@ class HomeViewModel(
     fun onResumed() {
         castSent = false
         refreshDay()
+        // Retries an image that failed to load, e.g. offline when the status arrived.
+        session.status.value.poster?.imageUrl?.let(::preload)
         if (session.status.value.campaign?.active == true) refreshYear()
     }
 

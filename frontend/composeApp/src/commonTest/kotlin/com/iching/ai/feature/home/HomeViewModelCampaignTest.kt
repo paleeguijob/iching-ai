@@ -10,6 +10,7 @@ import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.feature.poster.NoPosterImages
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.FakeAds
@@ -85,7 +86,7 @@ class HomeViewModelCampaignTest {
             scope,
         )
         session.start()
-        val vm = HomeViewModel(GetDailyHexagramUseCase(Hexagrams), ObserveSettingsUseCase(NoSettings), session, api, GetHexagramUseCase(Hexagrams), UpdateSettingsUseCase(NoSettings))
+        val vm = HomeViewModel(GetDailyHexagramUseCase(Hexagrams), ObserveSettingsUseCase(NoSettings), session, api, GetHexagramUseCase(Hexagrams), UpdateSettingsUseCase(NoSettings), NoPosterImages)
         vm.campaignCard.onEach {
             seen += it
             vm.onCampaignCardShown(it)

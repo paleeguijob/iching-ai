@@ -83,6 +83,8 @@ import com.iching.ai.ui.components.ZenCard
 import com.iching.ai.ui.components.ZenChip
 import com.iching.ai.ui.components.ZenSegmented
 import com.iching.ai.ui.theme.LocalTabBarHeight
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.feature.poster.PosterPopupDialog
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.theme.ctaBottomPadding
@@ -101,6 +103,7 @@ fun HomeScreen(
     onOpenPaywall: () -> Unit,
     siamsi: SiamSiHomeViewModel,
     onSiamSiDraw: (SiamSiRoute) -> Unit,
+    onOpenLink: (PosterLink) -> Unit,
 ) {
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
     val mode by siamsi.mode.collectAsStateWithLifecycle()
@@ -153,6 +156,17 @@ fun HomeScreen(
             onCastFromReady = viewModel::onCastFromReady,
             onDismiss = viewModel::onSheetDismissed,
         )
+    }
+    val popup by viewModel.popup.collectAsStateWithLifecycle()
+    // Never over another sheet: the popup waits (still held by the view model) until that one closes.
+    if (sheet == null && !setSheetOpen) {
+        popup?.let { p ->
+            PosterPopupDialog(
+                p,
+                onTap = { viewModel.onPopupTapped()?.let(onOpenLink) },
+                onClose = viewModel::onPopupClosed,
+            )
+        }
     }
     val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     val week by viewModel.streakWeek.collectAsStateWithLifecycle()
