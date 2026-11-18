@@ -5,6 +5,7 @@ import com.iching.ai.data.api.HttpOracleApi
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.CoinFace
+import com.iching.ai.domain.model.PromoStatus
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StreakState
@@ -226,6 +227,21 @@ class HttpOracleApiTest {
     @Test
     fun statusWithoutACampaignHasNone() = runTest {
         assertNull(apiAnswering(HttpStatusCode.OK, """{"premium":false,"campaign":null}""").status().campaign)
+    }
+
+    @Test
+    fun statusReadsPromo() = runTest {
+        val api = apiAnswering(
+            HttpStatusCode.OK,
+            """{"premium":false,"promo":{"id":"1111-2026","label":"โปรพิเศษ","title":"ลด","cta":"ดูโปร","endsAt":1795194000000,"showEndDate":true}}""",
+        )
+        assertEquals(PromoStatus("1111-2026", "โปรพิเศษ", "ลด", "ดูโปร", 1795194000000L, true), api.status().promo)
+    }
+
+    @Test
+    fun statusWithoutPromoIsNull() = runTest {
+        assertNull(apiAnswering(HttpStatusCode.OK, """{"premium":false}""").status().promo)
+        assertNull(apiAnswering(HttpStatusCode.OK, """{"premium":false,"promo":null}""").status().promo)
     }
 
     @Test

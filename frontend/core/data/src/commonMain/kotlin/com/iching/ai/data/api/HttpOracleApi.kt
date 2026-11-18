@@ -2,6 +2,7 @@ package com.iching.ai.data.api
 
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
+import com.iching.ai.domain.model.PromoStatus
 import com.iching.ai.domain.model.SiamSiStatus
 import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.siamsi.SiamSiSetRef
@@ -81,6 +82,7 @@ internal data class StatusDto(
     val aiEnabled: Boolean = true,
     val campaign: CampaignDto? = null,
     val siamsi: SiamSiStatusDto? = null,
+    val promo: PromoDto? = null,
 ) {
     fun toDomain() = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
@@ -88,6 +90,7 @@ internal data class StatusDto(
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
         campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
         siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version) }, s.drawsPerDay) } ?: SiamSiStatus(),
+        promo = promo?.let { PromoStatus(it.id, it.label, it.title, it.cta, it.endsAt, it.showEndDate) },
     )
 }
 
@@ -95,6 +98,16 @@ internal data class StatusDto(
 @Serializable internal data class SiamSiStatusDto(val enabled: Boolean = false, val sets: List<SiamSiSetRefDto> = emptyList(), val drawsPerDay: Int = 1)
 @Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
 @Serializable internal data class CreatedDto(val readingId: String)
+
+@Serializable
+internal data class PromoDto(
+    val id: String,
+    val label: String,
+    val title: String,
+    val cta: String,
+    val endsAt: Long,
+    val showEndDate: Boolean = false,
+)
 
 @Serializable internal data class CampaignDto(val id: String, val year: Int, val active: Boolean, val endsAt: Long)
 

@@ -11,6 +11,16 @@ data class Account(
 )
 
 /** A seasonal campaign as the server reports it. */
+/** A time-boxed promotion for the home card; [endsAtMillis] is exclusive. */
+data class PromoStatus(
+    val id: String,
+    val label: String,
+    val title: String,
+    val cta: String,
+    val endsAtMillis: Long,
+    val showEndDate: Boolean,
+)
+
 data class CampaignStatus(val id: String, val year: Int, val active: Boolean, val endsAtMillis: Long)
 
 /** The campaign id analytics events carry: the server's, or the year's own when the server reports none. */
@@ -43,6 +53,8 @@ data class AccountStatus(
     /** The Chinese New Year campaign; null when the server runs none. */
     val campaign: CampaignStatus? = null,
     val siamsi: SiamSiStatus = SiamSiStatus(),
+    /** The home promo while one runs; the server leaves it out for Premium and outside its window. */
+    val promo: PromoStatus? = null,
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)
