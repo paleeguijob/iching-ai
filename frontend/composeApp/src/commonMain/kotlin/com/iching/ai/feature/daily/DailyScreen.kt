@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iching.ai.feature.home.campaignLine
 import com.iching.ai.feature.share.ShareCardSheet
 import com.iching.ai.feature.share.dailyShareContent
 import com.iching.ai.ui.components.HexagramFigure
@@ -52,9 +53,11 @@ fun DailyScreen(
     onBack: () -> Unit,
     onOpenHexagram: (Int) -> Unit,
     onOpenLink: (PosterLink) -> Unit,
+    onOpenYear: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val card by viewModel.posterCard.collectAsStateWithLifecycle()
+    val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     var sharing by remember { mutableStateOf(false) }
 
     LifecycleResumeEffect(viewModel) {
@@ -96,11 +99,16 @@ fun DailyScreen(
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(22.dp))
-                Text(
-                    "เส้นทางเต๋า · เปิดดูต่อเนื่อง ${state.streak.current.toThaiNumerals()} วัน",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ZenColors.BambooDeep,
-                )
+                val week = state.week
+                if (week != null) {
+                    StreakWeekRow(week)
+                } else {
+                    Text(
+                        "เส้นทางเต๋า · เปิดดูต่อเนื่อง ${state.streak.current.toThaiNumerals()} วัน",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ZenColors.BambooDeep,
+                    )
+                }
                 Spacer(Modifier.height(ZenSpacing.lg))
                 ZenCard {
                     SectionLabel("คำตัดสิน", Modifier.fillMaxWidth())
@@ -111,6 +119,15 @@ fun DailyScreen(
                 ZenPrimaryButton("แชร์การ์ดวันนี้", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
                 ZenSecondaryButton("อ่านต่อในคัมภีร์", onClick = { onOpenHexagram(hexagram.id) }, modifier = Modifier.fillMaxWidth())
+                val year = campaign
+                campaignLine(year)?.let { line ->
+                    LaunchedEffect(year::class) { viewModel.onCampaignCardShown(year) }
+                    Spacer(Modifier.height(16.dp))
+                    CampaignLineRow(line, onClick = {
+                        viewModel.onCampaignCardTapped(year)
+                        onOpenYear()
+                    })
+                }
                 card?.let { c ->
                     LaunchedEffect(c.id) { viewModel.onPosterCardShown(c.id) }
                     Spacer(Modifier.height(16.dp))

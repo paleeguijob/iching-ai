@@ -225,7 +225,6 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenDaily = { nav.navigate(DailyRoute) },
-                        onOpenYear = { nav.navigate(YearRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         siamsi = koinViewModel(),
@@ -247,6 +246,7 @@ private fun MainNavigation() {
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
                         onOpenLink = ::openLink,
+                        onOpenYear = { nav.navigate(YearRoute) },
                     )
                 }
                 screen<YearRoute> { entry ->

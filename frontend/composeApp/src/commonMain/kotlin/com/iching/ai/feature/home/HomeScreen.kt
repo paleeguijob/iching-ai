@@ -1,11 +1,17 @@
 package com.iching.ai.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -25,16 +33,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.CardGiftcard
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,59 +48,70 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.domain.model.PosterLink
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.feature.poster.PosterPopupDialog
 import com.iching.ai.feature.siamsi.DrawButton
+import com.iching.ai.feature.siamsi.DrawGateUi
+import com.iching.ai.feature.siamsi.SiamSiCylinder
 import com.iching.ai.feature.siamsi.SiamSiHomeViewModel
 import com.iching.ai.feature.siamsi.SiamSiNav
 import com.iching.ai.feature.siamsi.SiamSiSetSheet
 import com.iching.ai.feature.siamsi.shortLabel
-import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.ui.components.AncientCoin
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.PaperBackground
-import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenCard
 import com.iching.ai.ui.components.ZenChip
+import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSegmented
 import com.iching.ai.ui.theme.LocalTabBarHeight
-import com.iching.ai.domain.model.PosterLink
-import com.iching.ai.feature.poster.PosterPopupDialog
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
+import kotlinx.coroutines.launch
 import com.iching.ai.ui.theme.ctaBottomPadding
 import com.iching.ai.ui.toThaiNumerals
 
 /**
- * Home: today's hexagram leads; asking a question is the quieter bar pinned at the bottom.
+ * Home: asking leads. Three coins sit in the middle and start the cast, today's hexagram is one row above them,
+ * and the question, what guidance is left and the Start button sit at the bottom. Typing hides the coins.
  */
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onCast: (String, QuestionCategory?) -> Unit,
     onOpenDaily: () -> Unit,
-    onOpenYear: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPaywall: () -> Unit,
     siamsi: SiamSiHomeViewModel,
@@ -169,7 +182,6 @@ fun HomeScreen(
             )
         }
     }
-    val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
     val week by viewModel.streakWeek.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
@@ -186,76 +198,316 @@ fun HomeScreen(
             viewModel.onStart(question.trim(), QuestionCategory.fromWire(category))
         }
     }
+    val action = if (isSiamSi) siamsiAction(drawGate.button) else ichingAction(deciding)
+    var focused by remember { mutableStateOf(false) }
+    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    // Typing while the keyboard is up; a keyboard closed with Back leaves the field focused but brings the coins back.
+    val typing = focused && imeBottom > 0.dp
+    val showChips = !isSiamSi && (typing || category != null)
 
     PaperBackground(showMountains = true) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Column(
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = ZenSpacing.screen),
-            ) {
-                Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CinnabarSeal(text = "易", size = 24.dp, tilt = 0f)
-                    Spacer(Modifier.width(10.dp))
-                    Text("อี้จิง", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Outlined.Settings, contentDescription = "ตั้งค่า", tint = ZenColors.InkSoft)
-                    }
-                }
-
-                Spacer(Modifier.height(ZenSpacing.sm))
-                DailyHeroCard(daily, onClick = onOpenDaily)
-                Spacer(Modifier.height(ZenSpacing.md))
-                StreakWeekRow(week, onClick = onOpenDaily)
-
-                val card = campaign
-                campaignLine(card)?.let { line ->
-                    LaunchedEffect(card::class) { viewModel.onCampaignCardShown(card) }
-                    CampaignLineRow(line, onClick = {
-                        viewModel.onCampaignCardTapped(card)
-                        onOpenYear()
-                    })
-                }
-                Spacer(Modifier.height(ZenSpacing.md))
-            }
-            // Pinned outside the scroll, a gap above the tab bar or the keyboard, whichever is taller; the
-            // max() keeps it from dipping behind the bar while the keyboard animates in or out.
-            val bottom = ctaBottomPadding(
-                imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding(),
-                tabBarHeight = LocalTabBarHeight.current,
-            )
-            AskBar(
-                question = question,
-                onQuestionChange = { question = it },
-                category = category,
-                onCategoryChange = { picked ->
-                    category = picked?.wire
-                    val pickable = QuestionCategory.entries.filter { it.pickable }
-                    if (picked != null && (question.isBlank() || pickable.any { it.sampleTh == question })) {
-                        question = picked.sampleTh
-                    }
-                },
+        // The bottom group sits a gap above the tab bar or the keyboard, whichever is taller; the max() keeps
+        // it from dipping behind the bar while the keyboard animates in or out.
+        val bottom = ctaBottomPadding(imeBottom = imeBottom, tabBarHeight = LocalTabBarHeight.current)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(start = ZenSpacing.screen, end = ZenSpacing.screen, bottom = bottom),
+        ) {
+            HomeTopBar(
                 siamsiEnabled = siamsiEnabled,
                 isSiamSi = isSiamSi,
                 onModeSelect = { siamsi.onModeSelected(if (it) DivinationMode.SIAMSI else DivinationMode.ICHING) },
-                send = if (isSiamSi) siamsiSend(drawGate.button) else ichingSend(deciding),
-                onSend = start,
-                footer = if (isSiamSi) {
-                    AskFooter(
-                        text = drawGate.line,
-                        alert = drawGate.button == DrawButton.PAYWALL || drawGate.button == DrawButton.DISABLED,
+                onOpenSettings = onOpenSettings,
+            )
+            if (!typing) {
+                Spacer(Modifier.height(ZenSpacing.sm))
+                DailyStrip(daily, pending = week.days.any { it.isToday && !it.done }, onClick = onOpenDaily)
+            }
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                if (!typing) {
+                    Ritual(
+                        isSiamSi = isSiamSi,
+                        action = action,
+                        onStart = start,
+                        setLabel = if (isSiamSi) selectedSet?.shortLabel() else null,
+                        onOpenSet = { setSheetOpen = true },
                     )
-                } else {
-                    ichingFooter(guidanceQuota(status))
-                },
-                setLabel = if (isSiamSi) selectedSet?.shortLabel() else null,
-                onOpenSet = { setSheetOpen = true },
-                showPremium = isSiamSi && drawGate.button == DrawButton.PAYWALL,
-                modifier = Modifier.padding(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.sm, bottom = bottom),
+                }
+            }
+            if (showChips) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QuestionCategory.entries.filter { it.pickable }.forEach { c ->
+                        val selected = category == c.wire
+                        ZenChip(c.labelTh, selected, onClick = {
+                            category = if (selected) null else c.wire
+                            val pickable = QuestionCategory.entries.filter { it.pickable }
+                            if (!selected && (question.isBlank() || pickable.any { it.sampleTh == question })) {
+                                question = c.sampleTh
+                            }
+                        })
+                    }
+                }
+                Spacer(Modifier.height(ZenSpacing.sm))
+            }
+            AskField(
+                question = question,
+                onQuestionChange = { question = it },
+                placeholder = if (isSiamSi) "เรื่องที่อยากถาม (ไม่บังคับ)…" else "พิมพ์คำถาม หรือเว้นว่างไว้อธิษฐานในใจ",
+                onFocusChange = { focused = it },
+                expanded = typing,
+            )
+            Spacer(Modifier.height(ZenSpacing.sm))
+            if (isSiamSi) {
+                SiamSiQuotaBar(drawGate)
+            } else {
+                GuidanceQuotaBar(guidanceQuota(status), compact = typing)
+            }
+            Spacer(Modifier.height(ZenSpacing.sm))
+            ZenPrimaryButton(
+                text = action.label,
+                onClick = start,
+                enabled = action.enabled,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/** The seal and name, the I Ching / Siam Si switch when Siam Si is on, and settings. */
+@Composable
+private fun HomeTopBar(
+    siamsiEnabled: Boolean,
+    isSiamSi: Boolean,
+    onModeSelect: (siamsi: Boolean) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        CinnabarSeal(text = "易", size = 24.dp, tilt = 0f)
+        Spacer(Modifier.width(10.dp))
+        Text(
+            "อี้จิง",
+            style = MaterialTheme.typography.titleMedium,
+            color = ZenColors.InkBlack,
+            maxLines = 1,
+            modifier = Modifier.weight(1f),
+        )
+        if (siamsiEnabled) {
+            ZenSegmented(
+                options = listOf("อี้จิง", "เซียมซี"),
+                selected = if (isSiamSi) 1 else 0,
+                onSelect = { onModeSelect(it == 1) },
+                modifier = Modifier.width(156.dp),
+            )
+        }
+        IconButton(onClick = onOpenSettings) {
+            Icon(Icons.Outlined.Settings, contentDescription = "ตั้งค่า", tint = ZenColors.InkSoft)
+        }
+    }
+}
+
+/**
+ * Today's hexagram as one row. A red dot says it has not been opened today, which is what keeps the streak;
+ * an empty row of the same height holds its place while it loads.
+ */
+@Composable
+private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Unit) {
+    ZenCard(onClick = hexagram?.let { onClick }, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (hexagram == null) {
+                Box(Modifier.size(width = 28.dp, height = 36.dp).clip(RoundedCornerShape(4.dp)).background(ZenColors.PaperDeep))
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.fillMaxWidth(0.4f).height(10.dp).clip(CircleShape).background(ZenColors.PaperDeep))
+                    Box(Modifier.fillMaxWidth(0.75f).height(10.dp).clip(CircleShape).background(ZenColors.PaperDeep))
+                }
+                return@Row
+            }
+            HexagramFigure(hexagram.pattern, lineWidth = 28.dp, lineHeight = 4.dp, gap = 3.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (pending) {
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(ZenColors.CinnabarRed))
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        if (pending) "กวาประจำวัน · ยังไม่ได้เปิดดู" else "กวาประจำวัน",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ZenColors.CinnabarRed,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Text(
+                    "${hexagram.id.toThaiNumerals()} · ${hexagram.shortNameTh} ${hexagram.meaningTh}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = ZenColors.InkBlack,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = ZenColors.InkFaint)
+        }
+    }
+}
+
+/**
+ * The middle of home: a line asking what is on the seeker's mind, then the three coins (or the Siam Si cylinder)
+ * that start the cast like the button does. On a short screen the caption goes first, then the coins shrink.
+ */
+@Composable
+private fun Ritual(isSiamSi: Boolean, action: HomeAction, onStart: () -> Unit, setLabel: String?, onOpenSet: () -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val roomy = maxHeight >= 250.dp
+        val tight = maxHeight < 190.dp
+        val spacious = maxHeight >= 420.dp
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(ZenSpacing.md)) {
+            Text(
+                "มีเรื่องใดค้างใจ",
+                style = if (tight) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displaySmall,
+                color = ZenColors.InkBlack,
+                textAlign = TextAlign.Center,
+            )
+            // A tap on the art starts only what costs nothing. When the next step is an ad or the paywall it
+            // nudges instead and points at the labelled button, so a stray tap never opens an ad.
+            val hint = action.artHint
+            val scope = rememberCoroutineScope()
+            val wobble = remember { Animatable(0f) }
+            var hintShown by remember { mutableStateOf(false) }
+            LaunchedEffect(hint) { hintShown = false }
+            val onArtTap: () -> Unit = {
+                if (hint == null) {
+                    onStart()
+                } else {
+                    hintShown = true
+                    scope.launch {
+                        wobble.snapTo(0f)
+                        for (angle in listOf(-6f, 5f, -3f, 0f)) wobble.animateTo(angle, tween(70))
+                    }
+                }
+            }
+            val tapModifier = Modifier
+                .clip(RoundedCornerShape(60.dp))
+                .clickable(enabled = action.enabled, role = Role.Button, onClick = onArtTap)
+                .semantics {
+                    contentDescription = hint ?: action.label
+                    role = Role.Button
+                }
+                .alpha(if (action.enabled) 1f else 0.45f)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .graphicsLayer { rotationZ = wobble.value }
+            if (isSiamSi) {
+                SmallCylinder(height = if (tight) 96.dp else if (spacious) 200.dp else 150.dp, modifier = tapModifier)
+                if (setLabel != null) SetButton(setLabel, onOpenSet)
+                ArtHint(hint, visible = hint != null && hintShown)
+            } else {
+                CoinTrio(size = if (tight) 52.dp else if (spacious) 88.dp else 72.dp, modifier = tapModifier)
+                if (roomy) {
+                    Text(
+                        "ตั้งจิตถึงเรื่องนั้น แล้วแตะเหรียญเพื่อโยน ๖ ครั้ง",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ZenColors.InkSoft,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The line under the art after a tap that did not start: which button to press instead. */
+@Composable
+private fun ArtHint(hint: String?, visible: Boolean) {
+    // Holds its height so the art does not jump when the line appears.
+    Box(Modifier.heightIn(min = 20.dp), contentAlignment = Alignment.Center) {
+        AnimatedVisibility(visible, enter = fadeIn(tween(180)), exit = fadeOut(tween(180))) {
+            Text(hint.orEmpty(), style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+/** The same bronze coins the toss screen throws, resting at slightly different angles. */
+@Composable
+private fun CoinTrio(size: Dp, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        AncientCoin(face = null, tossKey = 0, size = size, modifier = Modifier.rotate(-8f))
+        AncientCoin(face = null, tossKey = 0, size = size, modifier = Modifier.offset(y = -(size / 7)).rotate(14f))
+        AncientCoin(face = null, tossKey = 0, size = size, modifier = Modifier.rotate(-14f))
+    }
+}
+
+/** The Siam Si screen's cylinder drawn small; on home it only starts the draw, so its own hold-to-shake is off. */
+@Composable
+private fun SmallCylinder(height: Dp, modifier: Modifier = Modifier) {
+    // The cylinder lays itself out at its full size; it is scaled down to [height] here.
+    val full = 370.dp
+    val scale = height / full
+    Box(modifier.size(width = height * 0.62f, height = height), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .requiredSize(width = 240.dp, height = full)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clearAndSetSemantics { },
+        ) {
+            SiamSiCylinder(shaking = false, onHoldChange = {})
+        }
+    }
+}
+
+@Composable
+private fun SetButton(label: String, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .heightIn(min = 40.dp)
+            .clip(shape)
+            .border(1.dp, ZenColors.current.outline, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 14.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("ชุด: $label", style = MaterialTheme.typography.labelMedium, color = ZenColors.InkBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Icon(Icons.Outlined.ExpandMore, contentDescription = null, tint = ZenColors.InkSoft, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** The question box: one line at rest, a few lines while typing. */
+@Composable
+private fun AskField(
+    question: String,
+    onQuestionChange: (String) -> Unit,
+    placeholder: String,
+    onFocusChange: (Boolean) -> Unit,
+    expanded: Boolean,
+) {
+    val shape = RoundedCornerShape(if (expanded) 20.dp else 26.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(ZenColors.Card)
+            .border(if (expanded) 1.5.dp else 1.dp, if (expanded) ZenColors.InkBlack else ZenColors.current.outlineVariant, shape),
+    ) {
+        TextField(
+            value = question,
+            onValueChange = { if (it.length <= 300) onQuestionChange(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = if (expanded) 88.dp else 52.dp)
+                .onFocusChanged { onFocusChange(it.isFocused) },
+            placeholder = {
+                Text(placeholder, color = ZenColors.InkFaint, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            },
+            maxLines = if (expanded) 4 else 1,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            colors = quietFieldColors(),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
+        )
     }
 }
 
@@ -302,6 +554,25 @@ fun siamsiButtonText(button: DrawButton): String = when (button) {
 /** The Start button waits, with a word, while the status is checked before casting. */
 fun startButtonText(deciding: Boolean): String = if (deciding) "กำลังตั้งจิต..." else "เริ่มเสี่ยงทาย"
 
+/** What the Start button and the coins say and whether they can be pressed. */
+/** [artHint] is set when tapping the art must not start: the line shown instead, naming the button to press. */
+private data class HomeAction(val label: String, val enabled: Boolean, val artHint: String? = null)
+
+private fun ichingAction(deciding: Boolean) = HomeAction(startButtonText(deciding), enabled = !deciding)
+
+private fun siamsiAction(button: DrawButton) =
+    HomeAction(siamsiButtonText(button), enabled = button != DrawButton.DISABLED, artHint = siamsiArtHint(button))
+
+/**
+ * What a tap on the cylinder says instead of starting, or null when it may start the draw. A rewarded ad must be
+ * chosen on purpose and home never upsells, so only the labelled button leads to either.
+ */
+fun siamsiArtHint(button: DrawButton): String? = when (button) {
+    DrawButton.WATCH_AD -> "กดปุ่มด้านล่างเพื่อดูโฆษณาแล้วเขย่า"
+    DrawButton.PAYWALL -> "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"
+    DrawButton.SHAKE, DrawButton.DISABLED -> null
+}
+
 /** What the home screen says about today's guidance; [count] is null when no count applies. */
 data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
 
@@ -336,309 +607,72 @@ fun guidanceQuota(status: AccountStatus): GuidanceQuota {
 internal fun quotaLine(quota: GuidanceQuota): String =
     quota.count?.let { "${quota.label} ${it.toThaiNumerals()} ครั้ง" } ?: quota.label
 
-/** Quiet centred quota text above the Start button; the note, when there is one, goes underneath. */
-@Composable
-internal fun GuidanceQuotaBar(quota: GuidanceQuota) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            quotaLine(quota),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (quota.count == 0) ZenColors.CinnabarRed else ZenColors.InkSoft,
-            textAlign = TextAlign.Center,
-        )
-        quota.note?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkFaint, textAlign = TextAlign.Center)
-        }
-    }
-}
-
-/** The year hexagram as one quiet line under today's card; [pending] marks a year not cast yet. */
-data class CampaignLine(val text: String, val action: String, val pending: Boolean)
-
-fun campaignLine(card: CampaignCard): CampaignLine? = when (card) {
-    CampaignCard.Hidden -> null
-    is CampaignCard.New -> CampaignLine("กวาประจำปี${campaignYearLabel(card.year)} · ยังไม่ได้เสี่ยง", action = "เสี่ยง", pending = true)
-    is CampaignCard.Cast -> CampaignLine("กวาประจำปีของท่าน: ${card.hexagram.shortNameTh}", action = "ดู", pending = false)
-}
-
-@Composable
-private fun CampaignLineRow(line: CampaignLine, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (line.pending) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(ZenColors.CinnabarRed))
-            Spacer(Modifier.width(ZenSpacing.sm))
-        }
-        Text(
-            line.text,
-            style = MaterialTheme.typography.bodySmall,
-            color = ZenColors.InkSoft,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text("${line.action} ›", style = MaterialTheme.typography.labelLarge, color = ZenColors.CinnabarRed)
-    }
-}
-
-/** Today's hexagram, the first thing on home. An empty card of the same size holds its place while it loads. */
-@Composable
-private fun DailyHeroCard(hexagram: Hexagram?, onClick: () -> Unit) {
-    ZenCard(onClick = hexagram?.let { onClick }, contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)) {
-        SectionLabel("กวาประจำวัน", color = ZenColors.CinnabarRed)
-        if (hexagram == null) {
-            Spacer(Modifier.height(240.dp))
-            return@ZenCard
-        }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(ZenSpacing.lg))
-            HexagramFigure(hexagram.pattern, lineWidth = 72.dp, lineHeight = 8.dp, gap = 6.dp)
-            Spacer(Modifier.height(ZenSpacing.lg))
-            Text(
-                "${hexagram.id.toThaiNumerals()} · ${hexagram.shortNameTh}",
-                style = MaterialTheme.typography.headlineMedium,
-                color = ZenColors.InkBlack,
-                textAlign = TextAlign.Center,
-            )
-            Text(hexagram.meaningTh, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft, textAlign = TextAlign.Center)
-            if (hexagram.dailyMessage.isNotBlank()) {
-                Spacer(Modifier.height(ZenSpacing.md))
-                Text(
-                    "“${hexagram.dailyMessage}”",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = ZenColors.InkBlack,
-                    textAlign = TextAlign.Center,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Spacer(Modifier.height(ZenSpacing.md))
-            Text("อ่านกวาวันนี้ ›", style = MaterialTheme.typography.labelLarge, color = ZenColors.CinnabarRed)
-        }
-    }
-}
-
 /**
- * Seven numbered circles of the current run: ticked once counted, today ringed while it is still waiting, a gift
- * where a theme unlocks. Tapping it opens today's hexagram, which is what counts the day.
+ * What guidance is left, shown before Start and never pressable: the words on the left, the count large on the
+ * right in bamboo green, or cinnabar at zero. [compact] drops the note while the keyboard is up.
  */
 @Composable
-private fun StreakWeekRow(week: StreakWeek, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-    ) {
-        Row(Modifier.fillMaxWidth()) {
-            week.days.forEach { day ->
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    val shape = CircleShape
-                    Box(
-                        Modifier
-                            .size(28.dp)
-                            .clip(shape)
-                            .background(if (day.done) ZenColors.CinnabarSoft else Color.Transparent)
-                            .border(
-                                width = if (day.isToday && !day.done) 1.5.dp else 1.dp,
-                                color = when {
-                                    day.done -> ZenColors.CinnabarSoft
-                                    day.isToday -> ZenColors.CinnabarRed
-                                    else -> ZenColors.current.outline
-                                },
-                                shape = shape,
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        when {
-                            day.done -> Icon(Icons.Outlined.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            day.milestone -> Icon(
-                                Icons.Outlined.CardGiftcard,
-                                contentDescription = null,
-                                tint = ZenColors.CinnabarRed,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        day.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (day.isToday) ZenColors.InkBlack else ZenColors.InkFaint,
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            week.caption,
-            style = MaterialTheme.typography.bodySmall,
-            color = ZenColors.InkSoft,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+internal fun GuidanceQuotaBar(quota: GuidanceQuota, compact: Boolean = false) {
+    // The AI-paused label carries its note after the dash; it reads better as heading and note.
+    val (label, note) = quota.label.split(" — ", limit = 2).let { parts ->
+        if (parts.size == 2) parts[0] to parts[1] else quota.label to quota.note
     }
-}
-
-/** The round send button's look: its icon, spoken label, and whether it can be pressed or is waiting. */
-private data class SendUi(val icon: ImageVector, val label: String, val enabled: Boolean, val busy: Boolean = false)
-
-private fun ichingSend(deciding: Boolean) =
-    SendUi(Icons.AutoMirrored.Outlined.ArrowForward, startButtonText(deciding), enabled = !deciding, busy = deciding)
-
-private fun siamsiSend(button: DrawButton) = SendUi(
-    icon = when (button) {
-        DrawButton.WATCH_AD -> Icons.Outlined.PlayArrow
-        DrawButton.PAYWALL -> Icons.Outlined.Lock
-        DrawButton.SHAKE, DrawButton.DISABLED -> Icons.AutoMirrored.Outlined.ArrowForward
-    },
-    label = siamsiButtonText(button),
-    enabled = button != DrawButton.DISABLED,
-)
-
-/** The one line under the ask field. */
-private data class AskFooter(val text: String, val alert: Boolean, val note: String? = null)
-
-/** The quota in one line; its note only when nothing is left, where it says what still works. */
-private fun ichingFooter(quota: GuidanceQuota) =
-    AskFooter(quotaLine(quota), alert = quota.count == 0, note = quota.note.takeIf { quota.count == 0 })
-
-/** Asking, kept quiet: the mode, a short field with a round send button, and the quota. Categories show while typing. */
-@Composable
-private fun AskBar(
-    question: String,
-    onQuestionChange: (String) -> Unit,
-    category: String?,
-    onCategoryChange: (QuestionCategory?) -> Unit,
-    siamsiEnabled: Boolean,
-    isSiamSi: Boolean,
-    onModeSelect: (siamsi: Boolean) -> Unit,
-    send: SendUi,
-    onSend: () -> Unit,
-    footer: AskFooter,
-    setLabel: String?,
-    onOpenSet: () -> Unit,
-    showPremium: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    var focused by remember { mutableStateOf(false) }
-    Column(modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("มีเรื่องอยากถาม?", style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f))
-            if (siamsiEnabled) {
-                ZenSegmented(
-                    options = listOf("อี้จิง", "เซียมซี"),
-                    selected = if (isSiamSi) 1 else 0,
-                    onSelect = { onModeSelect(it == 1) },
-                    modifier = Modifier.width(160.dp),
-                )
-            }
-        }
-        if (focused || category != null) {
-            Spacer(Modifier.height(ZenSpacing.sm))
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuestionCategory.entries.filter { it.pickable }.forEach { c ->
-                    val selected = category == c.wire
-                    ZenChip(c.labelTh, selected, onClick = { onCategoryChange(if (selected) null else c) })
-                }
-            }
-        }
-        Spacer(Modifier.height(ZenSpacing.sm))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val shape = RoundedCornerShape(24.dp)
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(shape)
-                    .background(ZenColors.Card)
-                    .border(1.dp, ZenColors.current.outlineVariant, shape),
-            ) {
-                TextField(
-                    value = question,
-                    onValueChange = { if (it.length <= 300) onQuestionChange(it) },
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
-                    placeholder = {
-                        Text(
-                            if (isSiamSi) "เรื่องที่อยากถาม (ไม่บังคับ)…" else "พิมพ์คำถาม หรือเว้นว่างแล้วกดเสี่ยง",
-                            color = ZenColors.InkFaint,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    },
-                    maxLines = 3,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    colors = quietFieldColors(),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default),
-                )
-            }
-            Spacer(Modifier.width(ZenSpacing.sm))
-            SendButton(send, onSend)
-        }
-        Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                footer.text,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (footer.alert) ZenColors.CinnabarRed else ZenColors.InkSoft,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 12.dp),
-            )
-            when {
-                showPremium -> FooterLink("สมัคร Premium ›", onSend)
-                setLabel != null -> FooterLink("ชุด: $setLabel ›", onOpenSet)
-            }
-        }
-        footer.note?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodySmall,
-                color = ZenColors.InkFaint,
-                modifier = Modifier.padding(start = 12.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun FooterLink(text: String, onClick: () -> Unit) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        color = ZenColors.CinnabarRed,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier
-            .padding(start = ZenSpacing.sm)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 8.dp),
+    QuotaPanel(
+        label = label,
+        note = note.takeUnless { compact },
+        count = quota.count,
+        alert = quota.count == 0,
+        compact = compact,
+        spoken = quotaLine(quota),
     )
 }
 
+/** The Siam Si draw line in the same panel; no count, since the gate words already say it. */
 @Composable
-private fun SendButton(send: SendUi, onClick: () -> Unit) {
-    Box(
+private fun SiamSiQuotaBar(gate: DrawGateUi) {
+    val alert = gate.button == DrawButton.PAYWALL || gate.button == DrawButton.DISABLED
+    QuotaPanel(label = gate.line, note = null, count = null, alert = alert, compact = false, spoken = gate.line)
+}
+
+@Composable
+private fun QuotaPanel(label: String, note: String?, count: Int?, alert: Boolean, compact: Boolean, spoken: String) {
+    val shape = RoundedCornerShape(14.dp)
+    val edge = if (alert) ZenColors.CinnabarRed.copy(alpha = 0.35f) else ZenColors.current.outlineVariant
+    Row(
         Modifier
-            .size(52.dp)
-            .clip(CircleShape)
-            .background(if (send.enabled || send.busy) ZenColors.InkBlack else ZenColors.InkFaint)
-            .clickable(enabled = send.enabled, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = send.label },
-        contentAlignment = Alignment.Center,
+            .fillMaxWidth()
+            .clip(shape)
+            .background(ZenColors.PaperMid)
+            .border(1.dp, edge, shape)
+            .padding(horizontal = 14.dp, vertical = if (compact) 6.dp else 10.dp)
+            .clearAndSetSemantics { contentDescription = listOfNotNull(spoken, note).joinToString(" ") },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (send.busy) {
-            CircularProgressIndicator(Modifier.size(20.dp), color = ZenColors.PaperCream, strokeWidth = 2.dp)
-        } else {
-            Icon(send.icon, contentDescription = null, tint = ZenColors.PaperCream)
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (alert) ZenColors.CinnabarRed else ZenColors.InkBlack,
+            )
+            note?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
+            }
+        }
+        count?.let {
+            Spacer(Modifier.width(ZenSpacing.md))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    it.toThaiNumerals(),
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (compact) 22.sp else 32.sp,
+                        lineHeight = if (compact) 26.sp else 36.sp,
+                    ),
+                    color = if (it == 0) ZenColors.CinnabarRed else ZenColors.BambooDeep,
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("ครั้ง", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, modifier = Modifier.padding(bottom = 4.dp))
+            }
         }
     }
 }

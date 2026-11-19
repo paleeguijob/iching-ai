@@ -10,7 +10,6 @@ import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.SettingsRepository
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
-import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.poster.PosterImages
@@ -115,8 +114,8 @@ class HomeViewModelPosterTest {
         )
         session.start()
         val vm = HomeViewModel(
-            GetDailyHexagramUseCase(PosterHexagram), ObserveSettingsUseCase(repo), session, api,
-            GetHexagramUseCase(PosterHexagram), UpdateSettingsUseCase(repo), images, nowMillis = { now },
+            GetDailyHexagramUseCase(PosterHexagram), ObserveSettingsUseCase(repo), session,
+            UpdateSettingsUseCase(repo), images, nowMillis = { now },
         )
         scheduler.advanceUntilIdle()
         return vm

@@ -25,6 +25,7 @@ import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.daily.DailyViewModel
 import com.iching.ai.feature.divination.DivinationViewModel
 import com.iching.ai.feature.home.HomeViewModel
+import com.iching.ai.feature.home.YearCampaignCards
 import com.iching.ai.feature.journal.JournalEntryViewModel
 import com.iching.ai.feature.journal.JournalViewModel
 import com.iching.ai.feature.library.HexagramDetailViewModel
@@ -103,7 +104,7 @@ fun platformModule(bridges: NativeBridges): Module = module {
 
 val presentationModule = module {
     // Not viewModelOf: it would try to inject the clock parameter instead of using its default.
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
     viewModel {
         val session = get<AppSession>()
         SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log)
@@ -111,6 +112,8 @@ val presentationModule = module {
     viewModel {
         val session = get<AppSession>()
         val updateSettings = get<UpdateSettingsUseCase>()
+        val api = get<OracleApi>()
+        val getHexagram = get<GetHexagramUseCase>()
         DailyViewModel(
             getDaily = get(),
             recordView = get(),
@@ -122,6 +125,9 @@ val presentationModule = module {
             status = session.status,
             settings = get<ObserveSettingsUseCase>()(),
             dismissPosterCard = { id -> updateSettings { it.withPosterCardDismissed(id) } },
+            yearCampaign = { scope ->
+                YearCampaignCards(scope, session.status, api::yearHexagram, getHexagram::invoke, session::log)
+            },
         )
     }
     viewModel {

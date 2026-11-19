@@ -10,8 +10,14 @@ import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.RecordDailyViewUseCase
+import com.iching.ai.domain.oracle.bangkokEpochDay
+import com.iching.ai.feature.home.CampaignCard
+import com.iching.ai.feature.home.StreakWeek
+import com.iching.ai.feature.home.YearCampaignCards
+import com.iching.ai.feature.home.streakWeek
 import com.iching.ai.feature.poster.PosterCard
 import com.iching.ai.feature.poster.posterCard
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +34,8 @@ import kotlin.time.Clock
 data class DailyUiState(
     val hexagram: Hexagram? = null,
     val streak: StreakState = StreakState(),
+    /** The seven-day row of the current run, once today's view is recorded. */
+    val week: StreakWeek? = null,
     val newlyUnlocked: List<AppTheme> = emptyList(),
     val showPushPrompt: Boolean = false,
 )
@@ -46,7 +54,22 @@ class DailyViewModel(
     settings: Flow<AppSettings> = emptyFlow(),
     /** Remembers a closed poster card so it never shows again. */
     private val dismissPosterCard: suspend (String) -> Unit = {},
+    /** Builds the year hexagram card on this view model's scope; null where there is none (tests). */
+    yearCampaign: (CoroutineScope) -> YearCampaignCards? = { null },
 ) : ViewModel() {
+
+    private val campaign = yearCampaign(viewModelScope)
+
+    /** The year hexagram's line near the end of the page. */
+    val campaignCard: StateFlow<CampaignCard> = campaign?.card ?: MutableStateFlow(CampaignCard.Hidden)
+
+    fun onCampaignCardShown(card: CampaignCard) {
+        campaign?.onShown(card)
+    }
+
+    fun onCampaignCardTapped(card: CampaignCard) {
+        campaign?.onTapped(card)
+    }
 
     private val _state = MutableStateFlow(DailyUiState())
     val state: StateFlow<DailyUiState> = _state.asStateFlow()
@@ -86,6 +109,7 @@ class DailyViewModel(
 
     /** Also runs on every resume: the screen may have stayed open past midnight. */
     fun refresh() {
+        campaign?.onResumed()
         viewModelScope.launch {
             val millis = now()
             nowMillis.value = millis
@@ -101,6 +125,7 @@ class DailyViewModel(
                 it.copy(
                     hexagram = hexagram,
                     streak = update.state,
+                    week = streakWeek(update.state, bangkokEpochDay(millis)),
                     newlyUnlocked = it.newlyUnlocked + update.newlyUnlocked,
                     showPushPrompt = it.showPushPrompt || offerPush,
                 )
