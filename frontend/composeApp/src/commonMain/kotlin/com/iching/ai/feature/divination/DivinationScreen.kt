@@ -77,6 +77,7 @@ fun DivinationScreen(
     onDone: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val guides = rememberFirstReadingGuides(castDone = state.tossesDone == 6)
     val sound = rememberSoundPlayer()
     var confirmLeave by remember { mutableStateOf(false) }
     val requestBack = { if (state.leavingInterrupts) confirmLeave = true else onBack() }
@@ -152,10 +153,10 @@ fun DivinationScreen(
                     DivinationPhase.CASTING -> if (state.year) {
                         YearWaitingStage()
                     } else {
-                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining, guide = guides.cast)
                     }
                     DivinationPhase.SAFETY -> SafetyStage(state.safetyMessage.orEmpty(), onDone)
-                    else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone)
+                    else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone, guides)
                 }
             }
         }
@@ -191,7 +192,7 @@ private fun YearWaitingStage() {
 }
 
 @Composable
-private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit) {
+private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit, guide: Boolean) {
     TossStage(
         prompt = if (state.question.isBlank()) "ตั้งจิตให้สงบ แล้วโยนเหรียญ" else "“${state.question}”",
         tosses = state.tosses,
@@ -202,6 +203,7 @@ private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRem
         canToss = state.canToss,
         onToss = onToss,
         onTossRemaining = onTossRemaining,
+        guide = guide,
     )
 }
 
@@ -212,6 +214,7 @@ private fun ReadingStage(
     onOpenHexagram: (Int) -> Unit,
     onOpenPaywall: () -> Unit,
     onDone: () -> Unit,
+    guides: FirstReadingGuides,
 ) {
     val cast = state.cast ?: run {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -240,6 +243,11 @@ private fun ReadingStage(
             onHexagramClick = onOpenHexagram,
         )
         Spacer(Modifier.height(24.dp))
+        if (state.phase != DivinationPhase.REVEAL && guides.reading) {
+            LaunchedEffect(Unit) { guides.onReadingGuideShown() }
+            HowToReadNote(hasRelating = cast.relating != null, onDismiss = guides::dismissReading)
+            Spacer(Modifier.height(16.dp))
+        }
         if (state.phase != DivinationPhase.REVEAL) {
             if (state.phase == DivinationPhase.COMPLETE) {
                 state.notice?.let {

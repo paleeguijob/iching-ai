@@ -81,6 +81,7 @@ import com.iching.ai.navigation.JournalEntryRoute
 import com.iching.ai.navigation.JournalRoute
 import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
+import com.iching.ai.navigation.GuideRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
 import com.iching.ai.navigation.SiamSiRoute
@@ -96,6 +97,7 @@ import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
+import com.iching.ai.feature.onboarding.GuideScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.campaignIdFor
@@ -352,7 +354,11 @@ private fun MainNavigation() {
                         onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         onOpenYear = { nav.navigate(YearRoute) },
+                        onOpenGuide = { nav.navigate(GuideRoute) },
                     )
+                }
+                screen<GuideRoute> { entry ->
+                    GuideScreen(onClose = { nav.popFrom(entry) })
                 }
                 screen<PaywallRoute> { entry ->
                     PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popFrom(entry) })

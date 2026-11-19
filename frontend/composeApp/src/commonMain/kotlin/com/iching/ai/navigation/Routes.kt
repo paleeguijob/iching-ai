@@ -17,3 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable data class JournalEntryRoute(val id: Long)
 @Serializable data object SettingsRoute
 @Serializable data object PaywallRoute
+/** The how-to-use pages from first launch, opened again from settings. */
+@Serializable data object GuideRoute

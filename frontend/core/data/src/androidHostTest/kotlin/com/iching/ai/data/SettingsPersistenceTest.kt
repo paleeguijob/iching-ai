@@ -1,6 +1,7 @@
 package com.iching.ai.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.iching.ai.data.settings.DataStoreSettingsRepository
@@ -136,5 +137,34 @@ class SettingsPersistenceTest {
             assertEquals(AppTheme.INK_PAPER, loaded.selectedTheme)
             assertEquals(false, loaded.dailyPushEnabled)
         }
+    }
+
+    @Test
+    fun newInstallGetsTheGuidesUntilSeen() = withStore { file ->
+        open(file) { repo ->
+            repo.update { it.copy(firstOpenEpochDay = 20_400L) }
+            repo.update { it.copy(onboardingAccepted = true) }
+            val loaded = repo.settings.first()
+            assertEquals(false, loaded.castGuideSeen)
+            assertEquals(false, loaded.readingGuideSeen)
+            repo.update { it.copy(castGuideSeen = true) }
+            assertEquals(true, repo.settings.first().castGuideSeen)
+            assertEquals(false, repo.settings.first().readingGuideSeen)
+        }
+    }
+
+    @Test
+    fun installFromBeforeTheGuidesSkipsThem() = withStore { file ->
+        // A build without the guide keys wrote only the disclaimer flag.
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            PreferenceDataStoreFactory.create(scope = scope) { file }.edit { it[booleanPreferencesKey("onboarding_accepted_v1")] = true }
+        } finally {
+            scope.cancel()
+        }
+        Thread.sleep(100)
+        val loaded = open(file) { it.settings.first() }
+        assertEquals(true, loaded.castGuideSeen)
+        assertEquals(true, loaded.readingGuideSeen)
     }
 }

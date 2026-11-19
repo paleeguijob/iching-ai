@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +40,8 @@ import com.iching.ai.ui.toThaiNumerals
 /**
  * The coin-toss stage shared by the reading and the year ritual: the hexagram building up line by line,
  * the three coins and the toss button. It shows whatever [tosses] it is given; the caller decides the faces.
- * [onTossRemaining] is null where there is no "toss until done" action.
+ * [onTossRemaining] is null where there is no "toss until done" action. With [guide], the first cast also says
+ * how to toss and what each line means in plain words.
  */
 @Composable
 internal fun TossStage(
@@ -52,6 +54,7 @@ internal fun TossStage(
     canToss: Boolean,
     onToss: () -> Unit,
     onTossRemaining: (() -> Unit)? = null,
+    guide: Boolean = false,
 ) {
     val noRipple = remember { MutableInteractionSource() }
     Column(
@@ -71,6 +74,15 @@ internal fun TossStage(
             textAlign = TextAlign.Center,
             maxLines = 3,
         )
+        if (guide && tosses.isEmpty() && !awaitingCast) {
+            Spacer(Modifier.height(ZenSpacing.sm))
+            Text(
+                "แตะเหรียญหรือปุ่มด้านล่างทีละครั้ง เส้นจะต่อขึ้นจากล่างจนครบหกเส้น",
+                style = MaterialTheme.typography.bodySmall,
+                color = ZenColors.CinnabarRed,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.weight(0.6f))
         HexagramFigure(
             pattern = null,
@@ -95,12 +107,23 @@ internal fun TossStage(
             }
         }
         Spacer(Modifier.height(18.dp))
-        Box(Modifier.height(28.dp), contentAlignment = Alignment.Center) {
+        // Holds two lines while guiding so the coins do not jump when the plain-words note appears.
+        Box(Modifier.heightIn(min = if (guide) 48.dp else 28.dp), contentAlignment = Alignment.Center) {
             val last = tosses.lastOrNull()
             if (awaitingCast) {
                 Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
             } else if (!isTossing && last != null) {
-                Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                    if (guide) {
+                        Text(
+                            lineGloss(last.line),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (last.line.isChanging) ZenColors.CinnabarRed else ZenColors.InkSoft,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
         Spacer(Modifier.weight(0.4f))
@@ -132,6 +155,14 @@ private fun CastProgress(cast: Int) {
             Box(Modifier.fillMaxWidth(cast / 6f).fillMaxHeight().background(ZenColors.InkBlack))
         }
     }
+}
+
+/** The line's meaning in plain words, for a newcomer's first cast. */
+private fun lineGloss(line: LineType): String = when (line) {
+    LineType.YOUNG_YANG -> "เส้นเต็ม เป็นเส้นนิ่ง ไม่เปลี่ยน"
+    LineType.YOUNG_YIN -> "เส้นขาด เป็นเส้นนิ่ง ไม่เปลี่ยน"
+    LineType.OLD_YANG -> "เส้นเต็มที่กำลังกลายเป็นเส้นขาด จะพาไปสู่ “กวาแปร”"
+    LineType.OLD_YIN -> "เส้นขาดที่กำลังกลายเป็นเส้นเต็ม จะพาไปสู่ “กวาแปร”"
 }
 
 private fun lineLabel(line: LineType): String = when (line) {

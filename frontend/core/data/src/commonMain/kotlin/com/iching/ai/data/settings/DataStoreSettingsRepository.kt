@@ -29,6 +29,8 @@ class DataStoreSettingsRepository(
             val next = transform(prefs.toSettings())
             prefs[SOUND] = next.soundEnabled
             prefs[ONBOARDING] = next.onboardingAccepted
+            prefs[CAST_GUIDE_SEEN] = next.castGuideSeen
+            prefs[READING_GUIDE_SEEN] = next.readingGuideSeen
             prefs.writeStreak(next.streak)
             prefs[SELECTED_THEME] = next.selectedTheme.wire
             prefs[DAILY_PUSH_ENABLED] = next.dailyPushEnabled
@@ -60,6 +62,10 @@ class DataStoreSettingsRepository(
     private fun Preferences.toSettings() = AppSettings(
         soundEnabled = this[SOUND] ?: true,
         onboardingAccepted = this[ONBOARDING] ?: false,
+        // Installs from before the guides already know the app: with the disclaimer accepted and no key yet,
+        // the guides count as seen. A new install writes both keys false when it accepts.
+        castGuideSeen = this[CAST_GUIDE_SEEN] ?: (this[ONBOARDING] ?: false),
+        readingGuideSeen = this[READING_GUIDE_SEEN] ?: (this[ONBOARDING] ?: false),
         streak = StreakState(
             current = this[STREAK_CURRENT] ?: 0,
             best = this[STREAK_BEST] ?: 0,
@@ -95,6 +101,8 @@ class DataStoreSettingsRepository(
     private companion object {
         val SOUND = booleanPreferencesKey("sound_enabled")
         val ONBOARDING = booleanPreferencesKey("onboarding_accepted_v1")
+        val CAST_GUIDE_SEEN = booleanPreferencesKey("cast_guide_seen")
+        val READING_GUIDE_SEEN = booleanPreferencesKey("reading_guide_seen")
         val STREAK_CURRENT = intPreferencesKey("streak_current")
         val STREAK_BEST = intPreferencesKey("streak_best")
         val STREAK_LAST_DAY = longPreferencesKey("streak_last_day")

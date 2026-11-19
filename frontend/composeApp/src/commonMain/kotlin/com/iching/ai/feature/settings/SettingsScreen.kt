@@ -74,7 +74,13 @@ import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit, onOpenYear: () -> Unit) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenPaywall: () -> Unit,
+    onOpenYear: () -> Unit,
+    onOpenGuide: () -> Unit,
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
@@ -278,6 +284,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                     color = ZenColors.InkSoft,
                 )
                 Card {
+                    LinkRow("วิธีเสี่ยงทาย", onClick = onOpenGuide)
+                    Divider()
                     LinkRow("นโยบายความเป็นส่วนตัว") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }
                     Divider()
                     LinkRow("ข้อกำหนดการใช้งาน") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }

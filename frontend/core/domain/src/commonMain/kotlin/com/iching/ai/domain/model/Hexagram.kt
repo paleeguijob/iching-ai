@@ -109,6 +109,10 @@ data class AppSettings(
     val soundEnabled: Boolean = true,
     /** The seeker has read and accepted the disclaimer on first launch. */
     val onboardingAccepted: Boolean = false,
+    /** The first cast has run with the plain-language notes on each line; later casts go without them. */
+    val castGuideSeen: Boolean = false,
+    /** The note explaining the primary and relating hexagrams has shown on a reading. */
+    val readingGuideSeen: Boolean = false,
     val streak: StreakState = StreakState(),
     val selectedTheme: AppTheme = AppTheme.INK_PAPER,
     val dailyPushEnabled: Boolean = false,
