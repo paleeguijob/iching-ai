@@ -231,8 +231,9 @@ describe("safety", () => {
 });
 
 describe("quota", () => {
-  // The free daily reading is off by default; these tests pin it on to keep that path covered.
-  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1 };
+  // The free daily reading is off by default; these tests pin it on to keep that path covered, and pin the
+  // welcome reading off and the older Premium/ad numbers so each path is tested on its own.
+  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1, welcomeReadings: 0, premiumDailyReadings: 10, adRewardsPerDay: 2 };
   const now = Date.UTC(2026, 9, 31, 5, 0, 0);
   const day = bangkokDay(now);
   const fresh = () => normalizeUser(undefined, day);
@@ -243,18 +244,52 @@ describe("quota", () => {
     assert.equal(bangkokDay(Date.UTC(2026, 9, 31, 17, 0)), "2026-11-01");
   });
 
-  it("by default free users get no reading without an ad or a coin", () => {
+  it("by default a new seeker gets one welcome reading, then pays with an ad or a coin", () => {
     const s = status(fresh(), dev(), DEFAULT_CONFIG, now);
-    assert.equal(s.includedLeft, 0);
-    assert.equal(s.readingsLeft, 0);
-    assert.equal(s.adsWatchableLeft, DEFAULT_CONFIG.adRewardsPerDay);
-    assert.deepEqual(chargeReading(fresh(), dev(), DEFAULT_CONFIG, now), { ok: false, reason: "quota" });
-    const ad = grantAdReward(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.equal(s.includedLeft, 1);
+    assert.equal(s.readingsLeft, 1);
+    assert.equal(s.adsWatchableLeft, 3);
+    const welcome = chargeReading(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.ok(welcome.ok && welcome.charge === "welcome" && welcome.model === DEFAULT_CONFIG.freeModel);
+    if (!welcome.ok) return;
+    const later = now + 60_000;
+    assert.equal(status(welcome.user, welcome.device, DEFAULT_CONFIG, later).includedLeft, 0);
+    assert.deepEqual(chargeReading(welcome.user, welcome.device, DEFAULT_CONFIG, later), { ok: false, reason: "quota" });
+    const ad = grantAdReward(welcome.user, welcome.device, DEFAULT_CONFIG, later);
     assert.ok(ad.ok);
     if (!ad.ok) return;
-    const paid = chargeReading(ad.user, ad.device, DEFAULT_CONFIG, now);
+    const paid = chargeReading(ad.user, ad.device, DEFAULT_CONFIG, later);
     assert.ok(paid.ok);
     if (paid.ok) assert.equal(paid.charge, "ad");
+  });
+
+  it("the welcome reading never comes back: not the next day, not on a new account, not without a device", () => {
+    const welcome = chargeReading(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.ok(welcome.ok);
+    if (!welcome.ok) return;
+    const tomorrow = now + 86_400_000;
+    const nextDay = normalizeUser(welcome.user, bangkokDay(tomorrow));
+    const sameDevice = normalizeDevice(welcome.device!, bangkokDay(tomorrow));
+    assert.deepEqual(chargeReading(nextDay, sameDevice, DEFAULT_CONFIG, tomorrow), { ok: false, reason: "quota" });
+    assert.deepEqual(chargeReading(normalizeUser(undefined, day), welcome.device, DEFAULT_CONFIG, now + 60_000), { ok: false, reason: "quota" });
+    assert.deepEqual(chargeReading(welcome.user, dev(), DEFAULT_CONFIG, now + 60_000), { ok: false, reason: "quota" });
+    assert.deepEqual(chargeReading(fresh(), null, DEFAULT_CONFIG, now), { ok: false, reason: "quota" });
+    assert.equal(status(fresh(), null, DEFAULT_CONFIG, now).includedLeft, 0);
+  });
+
+  it("gives the welcome reading back when the model fails", () => {
+    const welcome = chargeReading(fresh(), dev(), DEFAULT_CONFIG, now);
+    assert.ok(welcome.ok);
+    if (!welcome.ok) return;
+    const back = refundReading(welcome.user, welcome.device, "welcome");
+    assert.equal(back.user.welcomeUsed, 0);
+    assert.equal(back.device?.welcomeUsed, 0);
+    assert.equal(status(back.user, back.device, DEFAULT_CONFIG, now).includedLeft, 1);
+  });
+
+  it("premium gets five readings a day by default and no welcome reading", () => {
+    const s = status({ ...fresh(), premiumUntil: now + 86_400_000 }, dev(), DEFAULT_CONFIG, now);
+    assert.equal(s.includedLeft, 5);
   });
 
   it("free users get one Flash-Lite reading a day when it is switched on", () => {
@@ -519,8 +554,8 @@ describe("siamsi", () => {
     const c = mergeConfig(undefined);
     assert.equal(c.siamsiEnabled, false);
     assert.deepEqual(c.siamsiSets, [{ id: "guanyin100", version: 1 }, { id: "jiazi60", version: 1 }]);
-    assert.equal(c.siamsiAdDrawsPerDay, 1);
-    assert.equal(c.siamsiPremiumPerDay, 10);
+    assert.equal(c.siamsiAdDrawsPerDay, 2);
+    assert.equal(c.siamsiPremiumPerDay, 3);
   });
 
   it("config rejects malformed set lists and wrong types", () => {
@@ -531,14 +566,14 @@ describe("siamsi", () => {
     assert.equal(mergeConfig({ siamsiAdDrawsPerDay: 3 }).siamsiAdDrawsPerDay, 3);
   });
 
-  it("status gives one draw a day to free accounts and ten to Premium", () => {
+  it("status gives two draws a day to free accounts and three to Premium", () => {
     const now = Date.UTC(2026, 10, 8);
     const day = bangkokDay(now);
     const cfg = mergeConfig({ siamsiEnabled: true });
     const free = status(normalizeUser({}, day), null, cfg, now);
-    assert.deepEqual(free.siamsi, { enabled: true, sets: cfg.siamsiSets, drawsPerDay: 1 });
+    assert.deepEqual(free.siamsi, { enabled: true, sets: cfg.siamsiSets, drawsPerDay: 2 });
     const premium = status(normalizeUser({ premiumUntil: now + 86_400_000 }, day), null, cfg, now);
-    assert.equal(premium.siamsi.drawsPerDay, 10);
+    assert.equal(premium.siamsi.drawsPerDay, 3);
   });
 
   it("prompt carries the slip, the question and the Siam Si rules", () => {

@@ -197,8 +197,8 @@
 |---|---|---|
 | `siamsiEnabled` | `false` | สวิตช์ฟีเจอร์ |
 | `siamsiSets` | `["guanyin100","jiazi60"]` | ชุดที่เปิดให้ใช้ + `version` ของแต่ละชุด |
-| `siamsiAdDrawsPerDay` | `1` | เพดานผู้ใช้ฟรี (ดูโฆษณา 1 ครั้ง = 1 ใบ) · ส่งผ่าน `GET /status` |
-| `siamsiPremiumPerDay` | `10` | เพดาน Premium · ส่งผ่าน `GET /status` |
+| `siamsiAdDrawsPerDay` | `2` (เดิม 1, ปรับ 19 พ.ย. 2026) | เพดานผู้ใช้ฟรี (ดูโฆษณา 1 ครั้ง = 1 ใบ) · ส่งผ่าน `GET /status` |
+| `siamsiPremiumPerDay` | `3` (เดิม 10, ปรับ 19 พ.ย. 2026) | เพดาน Premium · ส่งผ่าน `GET /status` |
 
 - โควตาเซียมซีนับฝั่ง client เท่านั้น server ไม่บันทึก (ไม่มีต้นทุนให้ป้องกัน) · ไม่ยุ่งกับ `adRewardsPerDay`, `adEarned`, `adUsed` ของอี้จิง
 

@@ -207,7 +207,7 @@ describe("api", () => {
     modelMode = "ok";
     modelChunks = null;
     droppingRes = null;
-    cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1 };
+    cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1, welcomeReadings: 0, premiumDailyReadings: 10, adRewardsPerDay: 2 };
     entitlements = { premiumUntil: null, coinPurchases: [] };
     deps = {
       verifyIdToken: async (t) => {
@@ -890,7 +890,7 @@ describe("api", () => {
       it("premium readings leave coins alone until the daily allowance runs out", async () => {
         entitlements = { premiumUntil: now + 86_400_000, coinPurchases: [coinPack("GPA.1")] };
         await send("POST", "/purchases/sync");
-        for (let i = 0; i < DEFAULT_CONFIG.premiumDailyReadings; i++) {
+        for (let i = 0; i < cfg.premiumDailyReadings; i++) {
           now += 60_000;
           await send("POST", "/divine", { question: `ข้อ ${i}` });
         }

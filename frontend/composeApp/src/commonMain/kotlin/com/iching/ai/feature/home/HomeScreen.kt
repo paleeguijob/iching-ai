@@ -548,7 +548,7 @@ private fun quietFieldColors() = TextFieldDefaults.colors(
 fun siamsiButtonText(button: DrawButton): String = when (button) {
     DrawButton.WATCH_AD -> "▶ ดูโฆษณาแล้วเขย่าเซียมซี"
     DrawButton.SHAKE, DrawButton.DISABLED -> "เขย่าเซียมซี"
-    DrawButton.PAYWALL -> "สมัคร Premium เสี่ยงได้ ๑๐ ครั้ง/วัน ไม่มีโฆษณา"
+    DrawButton.PAYWALL -> "สมัคร Premium เสี่ยงได้ ๓ ครั้ง/วัน ไม่มีโฆษณา"
 }
 
 /** The Start button waits, with a word, while the status is checked before casting. */

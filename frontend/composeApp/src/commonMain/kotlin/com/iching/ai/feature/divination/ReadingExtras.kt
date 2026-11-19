@@ -119,7 +119,7 @@ fun ReadingNoticeCard(
             offersUpsell -> {
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton(
-                    text = "Premium · วันละ ๑๐ คำทำนาย" + (upsell.premiumTrial?.let { " · $it" } ?: ""),
+                    text = "Premium · วันละ ๕ คำทำนาย" + (upsell.premiumTrial?.let { " · $it" } ?: ""),
                     onClick = { onUpsellPremium(); onOpenPaywall() },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -153,7 +153,7 @@ fun ReadingNoticeCard(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                ZenSecondaryButton("Premium · วันละ ๑๐ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
+                ZenSecondaryButton("Premium · วันละ ๕ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
             }
             canRetry && retryable -> ZenTextButton("ถามนักพรตอีกครั้ง", onClick = onRetry)
         }

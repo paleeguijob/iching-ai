@@ -13,7 +13,7 @@ import { mergeStreaks, normalizeStreak, THEMES } from "./core/streak";
  *   coinGrants/{txId}                coins, at, revokedAt: one per store transaction, across accounts and
  *                                    kept after account deletion (no uid), so a pack is never credited twice
  *   users/{uid}/coinGrants/{txId}    the same marker as written before it moved; still honoured
- *   devices/{sha256(deviceId)}       per-device daily free usage (anti account-farming)
+ *   devices/{sha256(deviceId)}       per-device daily free usage + lifetime welcome readings (anti account-farming)
  *   reports/{autoId}                 "report this answer" submissions
  *   config/runtime                   kill-switch and limits (see core/quota.ts RuntimeConfig)
  * Clients never touch Firestore directly (firestore.rules denies everything).
@@ -85,13 +85,14 @@ export function firestoreStore(db: Firestore): Store {
               coins: out.user.coins,
               usage: out.user.usage,
               lastReadingAt: out.user.lastReadingAt,
+              welcomeUsed: out.user.welcomeUsed,
               updatedAt: now,
               ...(userSnap.exists ? {} : { createdAt: now, premiumUntil: null }),
             },
             { merge: true },
           );
         }
-        if (out.device && deviceRef) tx.set(deviceRef, { usage: out.device.usage, updatedAt: now }, { merge: true });
+        if (out.device && deviceRef) tx.set(deviceRef, { usage: out.device.usage, welcomeUsed: out.device.welcomeUsed, updatedAt: now }, { merge: true });
         return out.result;
       });
     },

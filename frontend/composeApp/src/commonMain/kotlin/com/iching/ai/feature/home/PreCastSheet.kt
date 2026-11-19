@@ -111,7 +111,7 @@ private fun AdChoice(ui: PreCastSheetUi, copy: PreCastCopy, onWatchAd: () -> Uni
     Spacer(Modifier.height(8.dp))
     ZenSecondaryButton(copy.withoutWords, onClick = onScriptureOnly, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
     TextButton(onClick = onPremium, enabled = !ui.busy) {
-        Text("Premium · วันละ ๑๐ คำทำนาย ไม่มีโฆษณา", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+        Text("Premium · วันละ ๕ คำทำนาย ไม่มีโฆษณา", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
     }
 }
 
@@ -119,7 +119,7 @@ private fun AdChoice(ui: PreCastSheetUi, copy: PreCastCopy, onWatchAd: () -> Uni
 private fun UpsellChoice(ui: PreCastSheetUi, copy: PreCastCopy, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
     Heading("คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว", "ท่านยังรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้ได้")
     ZenPrimaryButton(
-        text = "Premium · วันละ ๑๐ คำทำนาย" + (ui.premiumTrial?.let { " · $it" } ?: ""),
+        text = "Premium · วันละ ๕ คำทำนาย" + (ui.premiumTrial?.let { " · $it" } ?: ""),
         onClick = onPremium,
         enabled = !ui.busy,
         modifier = Modifier.fillMaxWidth(),
