@@ -1539,6 +1539,21 @@ describe("api", () => {
       assert.equal(res.events.at(-1)!.data.shareSummary, "a".repeat(140));
     });
 
+    it("a retried reading caps its summary by the language the prompt was built in", async () => {
+      modelMode = "fail";
+      const failed = await divine({ "x-app-lang": "en" });
+      const id = failed.events[0].data.readingId as string;
+      // The English scripture is gone by the retry: the prompt is Thai, so the Thai cap of 100 applies.
+      deps.scripture = new Scripture(Array.from({ length: 64 }, (_, i) => scripture.get(i + 1)), null);
+      handle = createApi(deps);
+      modelMode = "ok";
+      modelChunks = ["น้ำไหล\n", `[สรุป] ${"a".repeat(120)}`];
+      const retry = await divine({ "x-app-lang": "en" }, { readingId: id });
+      assert.match(modelPrompts.at(-1)!, /\[คำถามของผู้แสวงหา\]/);
+      assert.equal(retry.events.at(-1)!.event, "done");
+      assert.equal(retry.events.at(-1)!.data.shareSummary, null);
+    });
+
     it("the crisis reply follows the language asked for, and Thai phrases are still caught in English", async () => {
       for (const question of ["I want to kill myself", "อยากตาย"]) {
         const res = await divine({ "x-app-lang": "en" }, { question });

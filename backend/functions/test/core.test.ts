@@ -332,8 +332,28 @@ describe("safety", () => {
     }
   });
 
-  it("English phrase lists are already normalized", () => {
-    for (const w of [...SELF_HARM_EN, ...MEDICAL_EMERGENCY_EN]) assert.equal(w, w.toLowerCase().replace(/[^a-z]/g, ""), w);
+  it("English phrases match whole words only, never across word boundaries", () => {
+    for (const q of [
+      "Should I spend it all on a new car?",
+      "Should I lend it all to my brother?",
+      "Can I attend it all this week?",
+      "Should I take my career in a new direction?",
+      "I feel unconsciously drawn to her",
+      "Is a chest painting a good gift?",
+      "Should I start seizing the day?",
+    ]) {
+      assert.equal(checkSafety(q, "en").kind, "ok", q);
+    }
+    for (const q of ["I want to end it all", "I want to END IT ALL.", "ending it all seems easier"]) {
+      const v = checkSafety(q, "en");
+      assert.equal(v.kind === "crisis" && v.topic, "self_harm", q);
+    }
+    assert.equal(checkSafety("He has CHEST-PAINS!", "en").kind, "crisis");
+    assert.equal(checkSafety("I can not breathe", "en").kind, "crisis");
+  });
+
+  it("every English phrase is a lower-case pattern of letters and spaces", () => {
+    for (const w of [...SELF_HARM_EN, ...MEDICAL_EMERGENCY_EN]) assert.match(w, /^[a-z ()|?]+$/, w);
   });
 
   it("lets ordinary English questions through", () => {

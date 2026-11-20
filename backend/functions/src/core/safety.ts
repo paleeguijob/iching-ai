@@ -23,27 +23,33 @@ export const MEDICAL_EMERGENCY = [
 ];
 
 /**
- * English phrases, matched after normalizeForSafety (lower case, no spaces or apostrophes: "can't breathe" → "cantbreathe").
+ * English phrases, as regular-expression sources matched whole-word on normalizeEnglishForSafety's text (lower case,
+ * apostrophes dropped, everything else that is not a letter or digit one space: "Can't  breathe!" → "cant breathe ").
+ * Spaces are kept so a phrase can't run across words: "spend it all" is not "end it all".
  * Kept apart from the Thai lists above, which must match the app's copy.
  */
 export const SELF_HARM_EN = [
-  "killmyself", "killingmyself", "suicide", "suicidal", "endmylife", "endingmylife", "enditall", "takemyownlife",
-  "wanttodie", "wannadie", "wishiwasdead", "wishiweredead", "betteroffdead", "dontwanttolive", "dontwanttobealive",
-  "selfharm", "hurtmyself", "harmmyself", "cutmyself", "cuttingmyself",
+  "kill(ing)? myself", "suicid(e|es|al)", "end(ing)? my (own )?life", "end(ing)? it all", "take my (own )?life",
+  "want(ed)? to die", "wanna die", "wish i (was|were) dead", "better off dead", "(dont|do not) want to (live|be alive)",
+  "self ?harm(ing|ed)?", "(hurt|hurting|harm|harming|cut|cutting) myself",
 ];
 
 export const MEDICAL_EMERGENCY_EN = [
-  "cantbreathe", "cannotbreathe", "notbreathing", "chestpain", "heartattack", "stroke", "unconscious",
-  "severebleeding", "bleedingheavily", "wontstopbleeding", "seizure", "overdose", "anaphylaxis", "anaphylactic",
-  "snakebite",
+  "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack", "stroke", "unconscious",
+  "severe bleeding", "bleeding (heavily|badly)", "wont stop bleeding", "seizures?", "overdos(e|ed|ing)",
+  "anaphyla(xis|ctic)", "snake ?bite", "bitten by a snake",
 ];
 
 /** Topics that still get a reading, with the prompt reminding the hermit to point to experts. */
 const SENSITIVE = [
   "หมอ", "โรค", "ป่วย", "มะเร็ง", "ผ่าตัด", "กินยา", "ตั้งครรภ์", "ซึมเศร้า", "ฟ้อง", "คดี", "ทนาย",
   "ศาล", "หุ้น", "คริปโต", "ลงทุน", "หนี้", "กู้", "ล้มละลาย", "พนัน", "หวย",
+];
+
+/** English sensitive word stems, matched from the start of a word. */
+const SENSITIVE_EN = [
   "doctor", "illness", "disease", "cancer", "surgery", "medication", "pregnan", "depress", "lawsuit", "lawyer",
-  "stocks", "crypto", "invest", "debt", "loan", "bankrupt", "gambl", "lottery",
+  "stocks?", "crypto", "invest", "debt", "loan", "bankrupt", "gambl", "lottery",
 ];
 
 export const SELF_HARM_MESSAGE = `ผู้แสวงหาเอ๋ย ถ้อยคำของท่านบอกผู้เฒ่าว่าใจของท่านกำลังแบกสิ่งที่หนักเหลือเกิน ในยามนี้คัมภีร์ขอวางไว้ก่อน เพราะสิ่งสำคัญที่สุดคือตัวท่านเอง
@@ -71,18 +77,26 @@ export function normalizeForSafety(text: string): string {
   return text.toLowerCase().replace(/[\s​‌‍⁠'’.,!?-]/g, "");
 }
 
-const SELF_HARM_ALL = [...SELF_HARM, ...SELF_HARM_EN];
-const MEDICAL_EMERGENCY_ALL = [...MEDICAL_EMERGENCY, ...MEDICAL_EMERGENCY_EN];
+/** Lower-case, drop apostrophes ("can't" → "cant"), and turn every other run of non-letters into one space. */
+export function normalizeEnglishForSafety(text: string): string {
+  return ` ${text.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, " ").trim()} `;
+}
+
+const wholeWords = (phrases: string[]) => new RegExp(`\\b(?:${phrases.join("|")})\\b`);
+const SELF_HARM_EN_RE = wholeWords(SELF_HARM_EN);
+const MEDICAL_EMERGENCY_EN_RE = wholeWords(MEDICAL_EMERGENCY_EN);
+const SENSITIVE_EN_RE = new RegExp(`\\b(?:${SENSITIVE_EN.join("|")})`);
 
 /** Checks the Thai and the English phrases whatever [lang] is; [lang] only picks the reply's language. */
 export function checkSafety(text: string, lang: Lang = "th"): SafetyVerdict {
   const t = normalizeForSafety(text);
+  const e = normalizeEnglishForSafety(text);
   const en = lang === "en";
-  if (SELF_HARM_ALL.some((w) => t.includes(w))) {
+  if (SELF_HARM.some((w) => t.includes(w)) || SELF_HARM_EN_RE.test(e)) {
     return { kind: "crisis", topic: "self_harm", message: en ? SELF_HARM_MESSAGE_EN : SELF_HARM_MESSAGE };
   }
-  if (MEDICAL_EMERGENCY_ALL.some((w) => t.includes(w))) {
+  if (MEDICAL_EMERGENCY.some((w) => t.includes(w)) || MEDICAL_EMERGENCY_EN_RE.test(e)) {
     return { kind: "crisis", topic: "medical_emergency", message: en ? MEDICAL_MESSAGE_EN : MEDICAL_MESSAGE };
   }
-  return { kind: "ok", sensitive: SENSITIVE.some((w) => t.includes(w)) };
+  return { kind: "ok", sensitive: SENSITIVE.some((w) => t.includes(w)) || SENSITIVE_EN_RE.test(e) };
 }

@@ -158,24 +158,45 @@ The seeker is now asking a follow-up to the earlier reading.
 - Answer only in English.
 `.trim();
 
-function hexagramBlock(label: string, h: Hexagram, includeDescription = true, lang: Lang = "th"): string {
-  if (lang === "en") {
-    const rows = [
-      `${label}: Hexagram ${h.id} ${h.nameCn} (${h.pinyin}) — ${h.nameTh}`,
-      `Trigrams: upper ${trigramNature(upperTrigram(h), h)} / lower ${trigramNature(lowerTrigram(h), h)}`,
-      `Judgment: ${h.judgment}`,
-      `Image: ${h.image}`,
-    ];
-    if (includeDescription) rows.push(`Overview: ${h.description}`);
-    return rows.join("\n");
-  }
+/** Labels of the scripture context, per language. */
+const SCRIPTURE_LABELS = {
+  th: {
+    header: "[Context Data — คัมภีร์อี้จิงที่จับยามได้]",
+    primary: "กวาหลัก",
+    relating: "กวาแปร (ทิศทางที่สถานการณ์กำลังคลี่คลายไป)",
+    hexagram: "กวาที่",
+    trigrams: (upper: string, lower: string) => `ตรีแกรม: บน ${upper} / ล่าง ${lower}`,
+    judgment: "คำตัดสิน",
+    image: "ภาพลักษณ์",
+    overview: "ภาพรวม",
+    noChange: "เส้นแปร: ไม่มี — ให้ยึดคำตัดสินและภาพลักษณ์ของกวาหลักเป็นแก่น",
+    changing: (n: number) => `เส้นแปร (${n} เส้น) — ความหมายเฉพาะที่ต้องเน้น:`,
+    allSix: "เมื่อเส้นทั้งหกแปรพร้อมกัน",
+  },
+  en: {
+    header: "[Context Data — the I Ching hexagram that was cast]",
+    primary: "Primary hexagram",
+    relating: "Relating hexagram (the direction the situation is unfolding toward)",
+    hexagram: "Hexagram",
+    trigrams: (upper: string, lower: string) => `Trigrams: upper ${upper} / lower ${lower}`,
+    judgment: "Judgment",
+    image: "Image",
+    overview: "Overview",
+    noChange: "Changing lines: none — keep the judgment and image of the primary hexagram at the heart",
+    changing: (n: number) => `Changing lines (${n}) — their specific meanings, to be stressed:`,
+    allSix: "When all six lines change together",
+  },
+} as const;
+
+function hexagramBlock(label: string, h: Hexagram, includeDescription: boolean, lang: Lang): string {
+  const l = SCRIPTURE_LABELS[lang];
   const rows = [
-    `${label}: กวาที่ ${h.id} ${h.nameCn} (${h.pinyin}) — ${h.nameTh}`,
-    `ตรีแกรม: บน ${trigramNature(upperTrigram(h), h)} / ล่าง ${trigramNature(lowerTrigram(h), h)}`,
-    `คำตัดสิน: ${h.judgment}`,
-    `ภาพลักษณ์: ${h.image}`,
+    `${label}: ${l.hexagram} ${h.id} ${h.nameCn} (${h.pinyin}) — ${h.nameTh}`,
+    l.trigrams(trigramNature(upperTrigram(h), h), trigramNature(lowerTrigram(h), h)),
+    `${l.judgment}: ${h.judgment}`,
+    `${l.image}: ${h.image}`,
   ];
-  if (includeDescription) rows.push(`ภาพรวม: ${h.description}`);
+  if (includeDescription) rows.push(`${l.overview}: ${h.description}`);
   return rows.join("\n");
 }
 
@@ -184,38 +205,20 @@ function hexagramBlock(label: string, h: Hexagram, includeDescription = true, la
  * [lang] defaults to the language of the cast's hexagrams.
  */
 export function scriptureContext(cast: Pick<Cast, "lines" | "primary" | "relating">, lang: Lang = cast.primary.lang ?? "th"): string {
-  if (lang === "en") return scriptureContextEn(cast);
-  const parts = ["[Context Data — คัมภีร์อี้จิงที่จับยามได้]", hexagramBlock("กวาหลัก", cast.primary)];
+  const l = SCRIPTURE_LABELS[lang];
+  const parts = [l.header, hexagramBlock(l.primary, cast.primary, true, lang)];
   const changing = changingPositions(cast.lines);
   if (changing.length === 0) {
-    parts.push("เส้นแปร: ไม่มี — ให้ยึดคำตัดสินและภาพลักษณ์ของกวาหลักเป็นแก่น");
+    parts.push(l.noChange);
   } else {
-    parts.push(`เส้นแปร (${changing.length} เส้น) — ความหมายเฉพาะที่ต้องเน้น:`);
-    for (const p of changing) parts.push(`- ${linePositionTh(p)}: ${cast.primary.lines[p - 1]}`);
+    parts.push(l.changing(changing.length));
+    for (const p of changing) parts.push(`- ${linePosition(p, lang)}: ${cast.primary.lines[p - 1]}`);
     if (changing.length === 6 && cast.primary.allLines) {
-      parts.push(`- เมื่อเส้นทั้งหกแปรพร้อมกัน: ${cast.primary.allLines}`);
+      parts.push(`- ${l.allSix}: ${cast.primary.allLines}`);
     }
   }
   if (cast.relating) {
-    parts.push("", hexagramBlock("กวาแปร (ทิศทางที่สถานการณ์กำลังคลี่คลายไป)", cast.relating, false));
-  }
-  return parts.join("\n");
-}
-
-function scriptureContextEn(cast: Pick<Cast, "lines" | "primary" | "relating">): string {
-  const parts = ["[Context Data — the I Ching hexagram that was cast]", hexagramBlock("Primary hexagram", cast.primary, true, "en")];
-  const changing = changingPositions(cast.lines);
-  if (changing.length === 0) {
-    parts.push("Changing lines: none — keep the judgment and image of the primary hexagram at the heart");
-  } else {
-    parts.push(`Changing lines (${changing.length}) — their specific meanings, to be stressed:`);
-    for (const p of changing) parts.push(`- ${linePositionEn(p)}: ${cast.primary.lines[p - 1]}`);
-    if (changing.length === 6 && cast.primary.allLines) {
-      parts.push(`- When all six lines change together: ${cast.primary.allLines}`);
-    }
-  }
-  if (cast.relating) {
-    parts.push("", hexagramBlock("Relating hexagram (the direction the situation is unfolding toward)", cast.relating, false, "en"));
+    parts.push("", hexagramBlock(l.relating, cast.relating, false, lang));
   }
   return parts.join("\n");
 }
@@ -366,34 +369,51 @@ export const SIAMSI_RULES_EN = `
 - Never predict death or serious illness.
 `.trim();
 
+/** Labels of the Siam Si context, per language. */
+const SIAMSI_LABELS = {
+  th: {
+    header: "[Context Data — ใบเซียมซีที่เสี่ยงได้]",
+    book: (set: SiamSiSet, stick: SiamSiStick, label: string) =>
+      `ตำรา: ${set.name} (${set.source.title}) · ใบที่ ${stick.number}${label} จาก ${set.count} ใบ`,
+    level: "ระดับ",
+    levels: LEVEL_TH,
+    poemOrig: "กลอนต้นฉบับ:",
+    translation: "คำแปล:",
+    story: "เรื่องในตำนาน",
+    summary: "ความหมายรวม",
+    topicsHeading: "คำทำนายรายเรื่อง:",
+    topics: TOPIC_TH,
+  },
+  en: {
+    header: "[Context Data — the Siam Si slip that was drawn]",
+    book: (set: SiamSiSet, stick: SiamSiStick, label: string) =>
+      `Book: ${set.name} (${set.source.title}) · slip ${stick.number}${label} of ${set.count}`,
+    level: "Level",
+    levels: LEVEL_EN,
+    poemOrig: "Original verse:",
+    translation: "Translation:",
+    story: "Legend",
+    summary: "Overall meaning",
+    topicsHeading: "Readings by topic:",
+    topics: TOPIC_EN,
+  },
+} as const;
+
 export function siamsiContext(set: SiamSiSet, stick: SiamSiStick, lang: Lang = "th"): string {
+  const l = SIAMSI_LABELS[lang];
   const grade = stick.grade_orig ? ` (${stick.grade_orig})` : "";
   const label = stick.label_orig ? ` ${stick.label_orig}` : "";
-  if (lang === "en") {
-    return [
-      "[Context Data — the Siam Si slip that was drawn]",
-      `Book: ${set.name} (${set.source.title}) · slip ${stick.number}${label} of ${set.count}`,
-      `Level: ${LEVEL_EN[stick.level]}${grade}`,
-      "Original verse:",
-      ...stick.poem_orig.map((l) => `  ${l}`),
-      ...(stick.poem_th.join() !== stick.poem_orig.join() ? ["Translation:", ...stick.poem_th.map((l) => `  ${l}`)] : []),
-      `Legend: ${stick.story}`,
-      `Overall meaning: ${stick.summary}`,
-      "Readings by topic:",
-      ...TOPIC_EN.filter(([k]) => stick.topics[k]).map(([k, en]) => `- ${en}: ${stick.topics[k]}`),
-    ].join("\n");
-  }
   return [
-    "[Context Data — ใบเซียมซีที่เสี่ยงได้]",
-    `ตำรา: ${set.name} (${set.source.title}) · ใบที่ ${stick.number}${label} จาก ${set.count} ใบ`,
-    `ระดับ: ${LEVEL_TH[stick.level]}${grade}`,
-    "กลอนต้นฉบับ:",
-    ...stick.poem_orig.map((l) => `  ${l}`),
-    ...(stick.poem_th.join() !== stick.poem_orig.join() ? ["คำแปล:", ...stick.poem_th.map((l) => `  ${l}`)] : []),
-    `เรื่องในตำนาน: ${stick.story}`,
-    `ความหมายรวม: ${stick.summary}`,
-    "คำทำนายรายเรื่อง:",
-    ...TOPIC_TH.filter(([k]) => stick.topics[k]).map(([k, th]) => `- ${th}: ${stick.topics[k]}`),
+    l.header,
+    l.book(set, stick, label),
+    `${l.level}: ${l.levels[stick.level]}${grade}`,
+    l.poemOrig,
+    ...stick.poem_orig.map((x) => `  ${x}`),
+    ...(stick.poem_th.join() !== stick.poem_orig.join() ? [l.translation, ...stick.poem_th.map((x) => `  ${x}`)] : []),
+    `${l.story}: ${stick.story}`,
+    `${l.summary}: ${stick.summary}`,
+    l.topicsHeading,
+    ...l.topics.filter(([k]) => stick.topics[k]).map(([k, name]) => `- ${name}: ${stick.topics[k]}`),
   ].join("\n");
 }
 

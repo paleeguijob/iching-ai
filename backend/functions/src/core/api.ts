@@ -264,8 +264,19 @@ export function createApi(deps: Deps) {
   const readStatus = (uid: string, deviceHash: string | null, cfg: RuntimeConfig): Promise<QuotaStatus> =>
     deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now()) }));
 
-  /** Streams an AI reading for an existing cast, charging quota first and refunding on failure. */
-  async function interpret(sse: Sse, uid: string, deviceHash: string | null, cfg: RuntimeConfig, reading: StoredReading, prompt: Prompt) {
+  /**
+   * Streams an AI reading for an existing cast, charging quota first and refunding on failure.
+   * [lang] is the language [prompt] was built in; it sets the share summary's length limit.
+   */
+  async function interpret(
+    sse: Sse,
+    uid: string,
+    deviceHash: string | null,
+    cfg: RuntimeConfig,
+    reading: StoredReading,
+    prompt: Prompt,
+    lang: Lang,
+  ) {
     const resuming = reading.interrupted && reading.interrupted.resumes < MAX_FREE_RESUMES ? reading.interrupted : null;
     const decision = await deps.store.quotaTx<ChargeDecision>(uid, deviceHash, (user, device) => {
       const d = resuming ? resumeReading(user, resuming.charge, cfg, deps.now()) : chargeReading(user, device, cfg, deps.now());
@@ -295,7 +306,7 @@ export function createApi(deps: Deps) {
     };
     try {
       const stream = deps.streamModel(prompt, decision.model, abort.signal);
-      const splitter = new SummarySplitter(reading.lang ?? "th");
+      const splitter = new SummarySplitter(lang);
       let step = await stream.next();
       while (!step.done) {
         show(splitter.push(step.value));
@@ -408,15 +419,16 @@ export function createApi(deps: Deps) {
       sse.send("delta", { text: reading.aiText });
       sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
     } else {
+      const served = cast.primary.lang ?? "th"; // the language of the scripture in the prompt
       const prompt = buildReadingPrompt(
         reading.question,
         cast,
         reading.category,
         reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
         b.format === "cards",
-        cast.primary.lang ?? "th", // the language of the scripture in the prompt
+        served,
       );
-      await interpret(sse, uid, deviceHash, cfg, reading, prompt);
+      await interpret(sse, uid, deviceHash, cfg, reading, prompt, served);
     }
     sse.end();
   }
@@ -483,7 +495,7 @@ export function createApi(deps: Deps) {
       const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick, reading.lang ?? "th");
       if (!slip) throw new HttpError(404, "reading_not_found");
       const prompt = buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category, slip.lang);
-      await interpret(sse, uid, deviceHash, cfg, reading, prompt);
+      await interpret(sse, uid, deviceHash, cfg, reading, prompt, slip.lang);
     }
     sse.end();
   }
