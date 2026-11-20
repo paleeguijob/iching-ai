@@ -295,7 +295,7 @@ export function createApi(deps: Deps) {
     };
     try {
       const stream = deps.streamModel(prompt, decision.model, abort.signal);
-      const splitter = new SummarySplitter();
+      const splitter = new SummarySplitter(reading.lang ?? "th");
       let step = await stream.next();
       while (!step.done) {
         show(splitter.push(step.value));
@@ -358,7 +358,8 @@ export function createApi(deps: Deps) {
       cast = castFromStored(deps.scripture.forLang(lang), found);
     } else {
       const question = sanitizeQuestion(b.question);
-      const safety = checkSafety(question);
+      // No reading yet: the reply is in the language asked for; both languages' phrases are checked.
+      const safety = checkSafety(question, lang);
       if (safety.kind === "crisis") {
         const sse = new Sse(res);
         deps.log.info("safety_redirect", { uid, topic: safety.topic });
@@ -413,6 +414,7 @@ export function createApi(deps: Deps) {
         reading.category,
         reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
         b.format === "cards",
+        cast.primary.lang ?? "th", // the language of the scripture in the prompt
       );
       await interpret(sse, uid, deviceHash, cfg, reading, prompt);
     }
@@ -438,7 +440,7 @@ export function createApi(deps: Deps) {
       const served = cfg.siamsiSets.some((r) => r.id === setId) ? findStick(deps.siamsi, setId, stick, requested) : null;
       if (!served) throw new HttpError(400, "bad_stick");
       const question = sanitizeQuestion(b.question);
-      const safety = checkSafety(question);
+      const safety = checkSafety(question, requested);
       if (safety.kind === "crisis") {
         const sse = new Sse(res);
         deps.log.info("safety_redirect", { uid, topic: safety.topic });
@@ -480,7 +482,8 @@ export function createApi(deps: Deps) {
     } else {
       const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick, reading.lang ?? "th");
       if (!slip) throw new HttpError(404, "reading_not_found");
-      await interpret(sse, uid, deviceHash, cfg, reading, buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category));
+      const prompt = buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category, slip.lang);
+      await interpret(sse, uid, deviceHash, cfg, reading, prompt);
     }
     sse.end();
   }
@@ -497,7 +500,7 @@ export function createApi(deps: Deps) {
     if (!reading || !reading.aiText) throw new HttpError(404, "reading_not_found");
 
     const sse = new Sse(res);
-    const safety = checkSafety(message);
+    const safety = checkSafety(message, reading.lang ?? "th");
     if (safety.kind === "crisis") {
       sse.send("safety", { topic: safety.topic, message: safety.message });
       sse.end();
@@ -509,7 +512,8 @@ export function createApi(deps: Deps) {
       return;
     }
     const model = cfg.forceModel ?? cfg.freeModel;
-    const prompt = buildFollowUpPrompt(reading.question, followUpContext(reading), reading.aiText, reading.followUps, message);
+    const context = followUpContext(reading);
+    const prompt = buildFollowUpPrompt(reading.question, context.text, reading.aiText, reading.followUps, message, context.lang);
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -594,13 +598,18 @@ export function createApi(deps: Deps) {
     deps.log.info("account_merged", { from: from.uid, to: uid });
   }
 
-  function followUpContext(reading: StoredReading): string {
+  /** The context in the reading's language, and that language: Thai if the English text has since gone missing. */
+  function followUpContext(reading: StoredReading): { text: string; lang: Lang } {
     // A reading keeps the language it was made in, whatever the header or config say now.
     const lang = reading.lang ?? "th";
-    if (!reading.siamsi) return scriptureContext(castFromStored(deps.scripture.forLang(lang), reading));
+    if (!reading.siamsi) {
+      const cast = castFromStored(deps.scripture.forLang(lang), reading);
+      const served = cast.primary.lang ?? "th";
+      return { text: scriptureContext(cast, served), lang: served };
+    }
     const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick, lang);
     if (!slip) throw new HttpError(404, "reading_not_found");
-    return siamsiContext(slip.set, slip.stick);
+    return { text: siamsiContext(slip.set, slip.stick, slip.lang), lang: slip.lang };
   }
 
   const toClientReading = (r: StoredReading) => ({
@@ -690,7 +699,7 @@ export function createApi(deps: Deps) {
         const cards = req.query.format === "cards";
         const readings = (await deps.store.listReadings(uid, limit, since)).map(toClientReading);
         res.status(200).json({
-          readings: cards ? readings : readings.map((r) => ({ ...r, aiText: r.aiText && sectionsAsPlainText(r.aiText) })),
+          readings: cards ? readings : readings.map((r) => ({ ...r, aiText: r.aiText && sectionsAsPlainText(r.aiText, r.lang) })),
         });
         return;
       }

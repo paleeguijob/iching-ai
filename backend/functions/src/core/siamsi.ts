@@ -60,6 +60,23 @@ export const TOPIC_TH: [string, string][] = [
   ["dealings", "คดีความ/การติดต่อ"],
 ];
 
+export const LEVEL_EN: Record<SiamSiStick["level"], string> = {
+  excellent: "Very good",
+  good: "Good",
+  fair: "Fair",
+  caution: "Take care",
+};
+
+export const TOPIC_EN: [string, string][] = [
+  ["work", "Work"],
+  ["money", "Money"],
+  ["love", "Love"],
+  ["health", "Health"],
+  ["travel", "Travel"],
+  ["lost", "Lost things"],
+  ["dealings", "Disputes and dealings"],
+];
+
 const isCompleteEnglish = (set: SiamSiSet, en: SiamSiSetEn | null): en is SiamSiSetEn => {
   if (!en || en.id !== set.id || !en.name || !Array.isArray(en.sticks)) return false;
   const byNumber = new Map(en.sticks.map((s) => [s.number, s]));

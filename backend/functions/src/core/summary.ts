@@ -1,15 +1,20 @@
+import type { Lang } from "./lang";
+
 /**
  * The model ends a reading with a one-line summary for the share card, after this marker. It comes
  * from the same model call, so it adds a few tokens rather than a second request.
  */
 export const SUMMARY_MARKER = "[สรุป]";
 
-/** Longer than this won't fit the card, and a summary cut off mid-sentence is what it exists to avoid. */
-export const MAX_SUMMARY_CHARS = 100;
+/**
+ * Longer than this won't fit the card, and a summary cut off mid-sentence is what it exists to avoid.
+ * English words take more letters than Thai for the same thought, so its card holds more.
+ */
+export const MAX_SUMMARY_CHARS: Record<Lang, number> = { th: 100, en: 140 };
 
-function cleanSummary(raw: string): string | null {
+function cleanSummary(raw: string, lang: Lang): string | null {
   const text = raw.replace(/[*#_`]/g, "").replace(/\s+/g, " ").trim();
-  return text.length > 0 && text.length <= MAX_SUMMARY_CHARS ? text : null;
+  return text.length > 0 && text.length <= MAX_SUMMARY_CHARS[lang] ? text : null;
 }
 
 /** Length of the longest end of [text] that could still grow into the marker. */
@@ -24,6 +29,9 @@ function partialMarkerLength(text: string): number {
 export class SummarySplitter {
   private held = "";
   private summary: string | null = null;
+
+  /** [lang] is the reading's language; it sets the longest summary kept. */
+  constructor(private readonly lang: Lang = "th") {}
 
   /** Returns the text that is safe to show now; it may be empty. */
   push(chunk: string): string {
@@ -47,6 +55,6 @@ export class SummarySplitter {
   finish(): { text: string; summary: string | null } {
     const text = this.held;
     this.held = "";
-    return { text, summary: this.summary === null ? null : cleanSummary(this.summary) };
+    return { text, summary: this.summary === null ? null : cleanSummary(this.summary, this.lang) };
   }
 }

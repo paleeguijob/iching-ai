@@ -1520,6 +1520,48 @@ describe("api", () => {
       assert.deepEqual([p.englishEnabled, p.hexagramsEnVersion, p.siamsi.sets[0].enVersion], [true, 3, 2]);
     });
 
+    it("an English reading gets the English prompt; a Thai one the Thai prompt", async () => {
+      await divine({ "x-app-lang": "en" }, { question: "q", format: "cards" });
+      assert.match(modelPrompts[0], /Answer only in English/);
+      assert.match(modelPrompts[0], /\[ดวงเด่น\] \[ควรระวัง\] \[คำแนะนำ\]/);
+      assert.doesNotMatch(modelPrompts[0], /\[คำถามของผู้แสวงหา\]/);
+      now += 60_000;
+      entitlements = { premiumUntil: now + 30 * 86_400_000, coinPurchases: [] };
+      await handle(req("POST", "/purchases/sync"), new FakeRes());
+      await divine();
+      assert.match(modelPrompts.at(-1)!, /\[คำถามของผู้แสวงหา\]/);
+      assert.doesNotMatch(modelPrompts.at(-1)!, /Answer only in English/);
+    });
+
+    it("an English share summary may run to 140 characters", async () => {
+      modelChunks = ["The river runs.\n", `[สรุป] ${"a".repeat(140)}`];
+      const res = await divine({ "x-app-lang": "en" });
+      assert.equal(res.events.at(-1)!.data.shareSummary, "a".repeat(140));
+    });
+
+    it("the crisis reply follows the language asked for, and Thai phrases are still caught in English", async () => {
+      for (const question of ["I want to kill myself", "อยากตาย"]) {
+        const res = await divine({ "x-app-lang": "en" }, { question });
+        assert.deepEqual(res.events.map((e) => e.event), ["safety"]);
+        assert.match(String(res.events[0].data.message), /findahelpline\.com/);
+      }
+      const th = await divine({}, { question: "I want to kill myself" });
+      assert.match(String(th.events[0].data.message), /1323/);
+      assert.equal(modelCalls.length, 0);
+    });
+
+    it("a follow-up in an English reading gets the English rules and an English crisis reply", async () => {
+      await makePremium();
+      const en = await divine({ "x-app-lang": "en" });
+      const id = en.events[0].data.readingId as string;
+      await handle(req("POST", "/follow-up", { readingId: id, message: "When?" }), new FakeRes());
+      assert.match(modelPrompts.at(-1)!, /\[Follow-up question\]\nWhen\?/);
+      const crisis = new FakeRes();
+      await handle(req("POST", "/follow-up", { readingId: id, message: "chest pain" }), crisis);
+      assert.equal(crisis.events[0].event, "safety");
+      assert.match(String(crisis.events[0].data.message), /local emergency number/);
+    });
+
     it("a Siam Si reading in English uses the English slip; a set without an English file uses Thai", async () => {
       cfg = { ...cfg, siamsiEnabled: true };
       await makePremium();
@@ -1528,6 +1570,7 @@ describe("api", () => {
       assert.equal((await store.getReading("u1", res.events[0].data.readingId as string))!.lang, "en");
       assert.match(modelPrompts[0], /EN:poem17/);
       assert.match(modelPrompts[0], /EN:story/);
+      assert.match(modelPrompts[0], /Explain the Siam Si verse above in plain English/);
 
       deps.siamsi = new Map([["guanyin100", { ...enSiamsi.get("guanyin100")!, en: null }]]);
       handle = createApi(deps);

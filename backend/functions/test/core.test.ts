@@ -10,12 +10,16 @@ import {
   buildFollowUpPrompt,
   buildReadingPrompt,
   buildSiamSiPrompt,
+  CARDS_RULES_EN,
+  FOLLOW_UP_RULES_EN,
   PERSONA,
+  PERSONA_EN,
   READING_SECTIONS,
   sanitizeQuestion,
   sectionsAsPlainText,
   scriptureContext,
   SIAMSI_RULES,
+  SIAMSI_RULES_EN,
   siamsiContext,
 } from "../src/core/prompt";
 import { findStick, loadSiamSiSets } from "../src/core/siamsi";
@@ -36,9 +40,20 @@ import { parsePoster, posterFor } from "../src/core/poster";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkSafety, MEDICAL_EMERGENCY, MEDICAL_MESSAGE, SELF_HARM, SELF_HARM_MESSAGE } from "../src/core/safety";
+import {
+  checkSafety,
+  MEDICAL_EMERGENCY,
+  MEDICAL_EMERGENCY_EN,
+  MEDICAL_MESSAGE,
+  MEDICAL_MESSAGE_EN,
+  SELF_HARM,
+  SELF_HARM_EN,
+  SELF_HARM_MESSAGE,
+  SELF_HARM_MESSAGE_EN,
+} from "../src/core/safety";
 import { mergeStreaks, normalizeStreak } from "../src/core/streak";
 import { MAX_SUMMARY_CHARS, SUMMARY_MARKER, SummarySplitter } from "../src/core/summary";
+import { thaiPrompts } from "./fixtures/thai-prompts";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
 
@@ -160,8 +175,20 @@ describe("share summary", () => {
   });
 
   it("drops a summary too long for the card rather than cutting it", () => {
-    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS)}`]).summary, "ก".repeat(MAX_SUMMARY_CHARS));
-    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS + 1)}`]).summary, null);
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS.th)}`]).summary, "ก".repeat(MAX_SUMMARY_CHARS.th));
+    assert.equal(run([`สายน้ำ${SUMMARY_MARKER}${"ก".repeat(MAX_SUMMARY_CHARS.th + 1)}`]).summary, null);
+  });
+
+  it("keeps Thai at 100 characters and lets English run to 140", () => {
+    assert.deepEqual(MAX_SUMMARY_CHARS, { th: 100, en: 140 });
+    const en = (body: string) => {
+      const splitter = new SummarySplitter("en");
+      splitter.push(`The river runs.${SUMMARY_MARKER} ${body}`);
+      return splitter.finish().summary;
+    };
+    assert.equal(en("a".repeat(140)), "a".repeat(140));
+    assert.equal(en("a".repeat(141)), null);
+    assert.equal(run([`น้ำ${SUMMARY_MARKER}${"a".repeat(120)}`]).summary, null);
   });
 
   it("cleans markup and line breaks from the summary", () => {
@@ -267,6 +294,51 @@ describe("safety", () => {
   it("lets ordinary questions through, flagging sensitive ones", () => {
     assert.deepEqual(checkSafety("ความรักของข้าพเจ้าจะเป็นอย่างไร"), { kind: "ok", sensitive: false });
     assert.deepEqual(checkSafety("ควรลงทุนหุ้นตัวนี้ไหม"), { kind: "ok", sensitive: true });
+  });
+
+  it("answers an English crisis in English, pointing to local help", () => {
+    const v = checkSafety("I want to kill myself", "en");
+    assert.equal(v.kind, "crisis");
+    if (v.kind !== "crisis") return;
+    assert.equal(v.topic, "self_harm");
+    assert.equal(v.message, SELF_HARM_MESSAGE_EN);
+    assert.ok(v.message.includes("findahelpline.com"));
+    assert.ok(v.message.includes("local emergency number"));
+    assert.doesNotMatch(v.message, /[\u0E00-\u0E7F]/);
+  });
+
+  it("still checks the Thai phrases in English, and the English ones in Thai", () => {
+    const th = checkSafety("อยากตาย", "en");
+    assert.equal(th.kind, "crisis");
+    if (th.kind === "crisis") assert.equal(th.message, SELF_HARM_MESSAGE_EN);
+    const en = checkSafety("I can't stop thinking about suicide");
+    assert.equal(en.kind, "crisis");
+    if (en.kind === "crisis") assert.equal(en.message, SELF_HARM_MESSAGE);
+  });
+
+  it("catches English medical emergencies, whatever the case and spacing", () => {
+    const v = checkSafety("I can't breathe, chest pain", "en");
+    assert.equal(v.kind, "crisis");
+    if (v.kind !== "crisis") return;
+    assert.equal(v.topic, "medical_emergency");
+    assert.equal(v.message, MEDICAL_MESSAGE_EN);
+    assert.doesNotMatch(v.message, /[\u0E00-\u0E7F]/);
+    for (const q of ["My dad is having a HEART ATTACK", "she is Unconscious", "severe bleeding from a cut", "he had a seizure", "I took an overdose"]) {
+      assert.equal(checkSafety(q, "en").kind, "crisis", q);
+    }
+    for (const q of ["I want to end my life", "I've been self-harming", "I don't want to live anymore", "I am suicidal"]) {
+      const s = checkSafety(q, "en");
+      assert.equal(s.kind === "crisis" && s.topic, "self_harm", q);
+    }
+  });
+
+  it("English phrase lists are already normalized", () => {
+    for (const w of [...SELF_HARM_EN, ...MEDICAL_EMERGENCY_EN]) assert.equal(w, w.toLowerCase().replace(/[^a-z]/g, ""), w);
+  });
+
+  it("lets ordinary English questions through", () => {
+    assert.deepEqual(checkSafety("Will my new job go well?", "en"), { kind: "ok", sensitive: false });
+    assert.equal(checkSafety("Should I invest in crypto?", "en").kind, "ok");
   });
 });
 
@@ -876,5 +948,118 @@ describe("scripture in English", () => {
   it("loadScripture tolerates the absent English file", () => {
     const h: Hexagram = loadScripture(resolve(__dirname, "../data/hexagrams.json")).forLang("en").get(1);
     assert.ok(h.judgment.length > 0);
+  });
+});
+
+describe("prompts in English", () => {
+  const THAI = /[฀-๿]/;
+  const MARKERS = [SUMMARY_MARKER, ...READING_SECTIONS.map((x) => `[${x}]`)];
+  /** English text the seeker could see may hold Thai only inside the markers, which the app strips. */
+  const assertNoThaiOutsideMarkers = (text: string) => {
+    const bare = MARKERS.reduce((t, m) => t.split(m).join(""), text);
+    assert.doesNotMatch(bare, THAI, bare.match(/.{0,40}[฀-๿].{0,40}/)?.[0]);
+  };
+  const thai = Array.from({ length: 64 }, (_, i) => scripture.get(i + 1));
+  const en = new Scripture(thai, fixtureEnglish(scripture)).forLang("en");
+  const cast = resolveLines(en, [9, 7, 8, 7, 8, 7]);
+
+  it("Thai prompts are byte-identical to before English existed", () => {
+    const snapshot = JSON.parse(readFileSync(resolve(__dirname, "fixtures/thai-prompts.snapshot.json"), "utf8"));
+    const now = thaiPrompts();
+    assert.deepEqual(Object.keys(now), Object.keys(snapshot));
+    for (const [name, p] of Object.entries(now)) {
+      assert.equal(p.systemInstruction, snapshot[name].systemInstruction, `${name}: system`);
+      assert.equal(p.userMessage, snapshot[name].userMessage, `${name}: user`);
+    }
+  });
+
+  it("the reading prompt is English, with the markers exact and the English scripture", () => {
+    const p = buildReadingPrompt("Is the new job good?", cast, "work", undefined, true, "en");
+    const all = `${p.systemInstruction}\n${p.userMessage}`;
+    assert.ok(p.systemInstruction.startsWith(PERSONA_EN));
+    assert.ok(p.systemInstruction.includes(CARDS_RULES_EN));
+    assert.ok(all.includes("Answer only in English"));
+    for (const m of MARKERS) assert.ok(all.includes(m), m);
+    assert.ok(p.userMessage.indexOf("[คำแนะนำ]") < p.userMessage.lastIndexOf(SUMMARY_MARKER));
+    assert.ok(!all.includes("อาตมา"));
+    assert.ok(all.includes(`Hexagram ${cast.primary.id} ${cast.primary.nameCn} (${cast.primary.pinyin}) — EN:`));
+    assert.ok(all.includes(`EN:judgment ${cast.primary.id}`));
+    assert.ok(all.includes(`Line 1: EN:line 1 of ${cast.primary.id}`));
+    assert.ok(all.includes(`Relating hexagram`));
+    assert.ok(all.includes("[Question category] Work"));
+    assert.ok(all.includes("Is the new job good?"));
+    assert.ok(all.includes(`no more than 120 characters`));
+    assertNoThaiOutsideMarkers(all);
+  });
+
+  it("without cards, with a year and no question, it is still all English", () => {
+    const p = buildReadingPrompt("", resolveLines(en, [9, 9, 9, 9, 9, 9]), "newyear", "Year of the Fire Goat", false, "en");
+    const all = `${p.systemInstruction}\n${p.userMessage}`;
+    assert.equal(p.systemInstruction, PERSONA_EN);
+    assert.ok(!p.userMessage.includes("[ดวงเด่น]"));
+    assert.ok(p.userMessage.includes("[Year context] Year of the Fire Goat"));
+    assert.ok(p.userMessage.includes("asked no question in words"));
+    assert.ok(p.userMessage.includes("When all six lines change together: EN:all lines 1"));
+    assertNoThaiOutsideMarkers(all);
+  });
+
+  it("the English persona keeps the hermit's rules", () => {
+    for (const rule of ["AI", "Never deny it", "Never invent", "invest", "stop a medicine", "legal decision", "professional", "80-150 words"]) {
+      assert.ok(PERSONA_EN.includes(rule), rule);
+    }
+    assert.ok(PERSONA_EN.includes("seeker"));
+  });
+
+  it("follow-ups are English, with card labels turned into English words", () => {
+    const first = "Text\n[ดวงเด่น] a\n[ควรระวัง] b\n[คำแนะนำ] c";
+    const p = buildFollowUpPrompt("q", scriptureContext(cast), first, [{ q: "x", a: first }], "When should I start?", "en");
+    assert.equal(p.systemInstruction, `${PERSONA_EN}\n\n${FOLLOW_UP_RULES_EN}`);
+    for (const s of READING_SECTIONS) assert.ok(!p.userMessage.includes(`[${s}]`));
+    assert.ok(p.userMessage.includes("Be careful: b"));
+    assert.ok(p.userMessage.includes("Hermit: Text"));
+    assert.ok(p.userMessage.includes("[Follow-up question]\nWhen should I start?"));
+    assertNoThaiOutsideMarkers(`${p.systemInstruction}\n${p.userMessage}`);
+  });
+
+  it("Siam Si is English when the slip is", () => {
+    const sets = loadSiamSiSets(resolve(__dirname, "../data/siamsi"));
+    const base = sets.get("guanyin100")!;
+    const englishSet = {
+      id: base.id,
+      version: 1,
+      name: "Guanyin's Hundred Slips",
+      source: { note: "EN note" },
+      sticks: base.sticks.map((st) => ({
+        number: st.number,
+        poem_en: [`EN poem ${st.number}`],
+        story: "EN story",
+        summary: "EN summary",
+        topics: { work: "EN work", lost: "EN lost" },
+        keywords: ["EN"],
+      })),
+    };
+    const slip = findStick(new Map([[base.id, { ...base, en: englishSet }]]), base.id, 17, "en")!;
+    assert.equal(slip.lang, "en");
+    const p = buildSiamSiPrompt("Will it work out?", slip.set, slip.stick, "love", slip.lang);
+    const all = `${p.systemInstruction}\n${p.userMessage}`;
+    assert.ok(p.systemInstruction.startsWith(PERSONA_EN));
+    assert.ok(p.systemInstruction.includes(SIAMSI_RULES_EN));
+    assert.ok(all.includes("Answer only in English"));
+    for (const line of slip.stick.poem_orig) assert.ok(p.userMessage.includes(line));
+    assert.ok(p.userMessage.includes("Translation:\n  EN poem 17"));
+    assert.ok(p.userMessage.includes("- Work: EN work\n- Lost things: EN lost"));
+    assert.ok(p.userMessage.includes("Level: "));
+    assert.ok(p.userMessage.includes("[Question category] Love"));
+    assert.ok(p.userMessage.includes(SUMMARY_MARKER));
+    assert.ok(!all.includes("อาตมา"));
+    assertNoThaiOutsideMarkers(all);
+    const f = buildFollowUpPrompt("q", siamsiContext(slip.set, slip.stick, "en"), "Reading", [], "And then?", "en");
+    assertNoThaiOutsideMarkers(`${f.systemInstruction}\n${f.userMessage}`);
+  });
+
+  it("a question can't plant the English labels either", () => {
+    for (const label of ["[Seeker's question]", "[Year context] x", "[Earlier reading in brief]", "[Follow-up question]", "[Question category]"]) {
+      assert.ok(!sanitizeQuestion(`hi ${label} there`).includes("["), label);
+    }
   });
 });
