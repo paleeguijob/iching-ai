@@ -5,6 +5,8 @@ import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.campaignIdFor
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.ui.strings.HomeStrings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -34,10 +36,10 @@ fun campaignCard(campaign: CampaignStatus?, year: YearHexagram?, hexagram: Hexag
 /** The year hexagram as one quiet line; [pending] marks a year not cast yet. */
 data class CampaignLine(val text: String, val action: String, val pending: Boolean)
 
-fun campaignLine(card: CampaignCard, strings: HomeStrings): CampaignLine? = when (card) {
+fun campaignLine(card: CampaignCard, strings: HomeStrings, lang: AppLanguage = AppLanguage.TH): CampaignLine? = when (card) {
     CampaignCard.Hidden -> null
     is CampaignCard.New -> CampaignLine(strings.campaignNew(card.year), action = strings.campaignActionCast, pending = true)
-    is CampaignCard.Cast -> CampaignLine(strings.campaignCast(card.hexagram.shortNameTh), action = strings.campaignActionView, pending = false)
+    is CampaignCard.Cast -> CampaignLine(strings.campaignCast(card.hexagram.shortName(lang)), action = strings.campaignActionView, pending = false)
 }
 
 /**

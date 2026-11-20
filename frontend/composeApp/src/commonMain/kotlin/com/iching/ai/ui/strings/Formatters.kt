@@ -1,6 +1,7 @@
 package com.iching.ai.ui.strings
 
 import com.iching.ai.domain.model.AppLanguage
+import com.iching.ai.domain.model.Hexagram
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
@@ -77,4 +78,25 @@ fun zodiacYearLabel(year: Int, lang: AppLanguage): String {
         AppLanguage.TH -> "${ZODIAC_TH[i]} ${formatNumber(year + 543, lang)}"
         AppLanguage.EN -> "Year of the ${ZODIAC_EN[i]} $year"
     }
+}
+
+/**
+ * The hexagram's full name for a list row or a line of text: TH "乾 เฉียน", EN "乾 Qián · Heaven".
+ * In English the Thai text is never used; if the English text is missing only "乾 Qián" is shown.
+ */
+fun Hexagram.displayName(lang: AppLanguage): String = when (lang) {
+    AppLanguage.TH -> "$nameCn $shortNameTh"
+    AppLanguage.EN -> if (nameEn.isBlank()) "$nameCn $pinyin" else "$nameCn $pinyin · $nameEn"
+}
+
+/** The short name without the Chinese character, for places that show [Hexagram.nameCn] separately. */
+fun Hexagram.shortName(lang: AppLanguage): String = when (lang) {
+    AppLanguage.TH -> shortNameTh
+    AppLanguage.EN -> nameEn
+}
+
+/** The meaning line under the name; in English it is the English meaning, empty if only Thai text is loaded. */
+fun Hexagram.meaning(lang: AppLanguage): String = when (lang) {
+    AppLanguage.TH -> meaningTh
+    AppLanguage.EN -> if (nameEn.isBlank()) "" else meaningTh
 }

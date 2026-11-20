@@ -5,6 +5,7 @@ import com.iching.ai.ui.components.ZenCardRow
 import com.iching.ai.ui.theme.tabContentBottomPadding
 import com.iching.ai.ui.theme.LocalTabBarHeight
 import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.strings.displayName
 import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.formatShortDate
 import com.iching.ai.ui.strings.formatTime
@@ -223,8 +224,8 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                 Spacer(Modifier.height(4.dp))
                 Text(
                     entry.siamsi?.label ?: buildString {
-                        entry.primary?.let { append("${it.nameCn} ${it.shortNameTh}") }
-                        entry.relating?.let { append(" → ${it.nameCn} ${it.shortNameTh}") }
+                        entry.primary?.let { append(it.displayName(lang)) }
+                        entry.relating?.let { append(" → ${it.displayName(lang)}") }
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.BambooDeep,

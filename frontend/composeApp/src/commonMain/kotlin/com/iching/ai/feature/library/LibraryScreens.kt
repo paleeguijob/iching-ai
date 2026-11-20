@@ -62,6 +62,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.Trigram
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.displayName
+import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.feature.reading.ScriptureBlock
 import com.iching.ai.ui.components.CinnabarSeal
@@ -152,6 +156,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
 /** One row of the list; consecutive rows read as a single card (rounded only at the ends). */
 @Composable
 private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onClick: () -> Unit) {
+    val lang = LocalAppLanguage.current
     ZenCardRow(first, last) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
@@ -166,9 +171,9 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
             HexagramFigure(hexagram.pattern, lineWidth = 30.dp, lineHeight = 4.dp, gap = 3.dp)
             Spacer(Modifier.width(ZenSpacing.md))
             Column(Modifier.weight(1f)) {
-                Text("${hexagram.nameCn} ${hexagram.shortNameTh}", style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
+                Text(hexagram.displayName(lang), style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
                 Text(
-                    hexagram.meaningTh,
+                    hexagram.meaning(lang),
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkSoft,
                     maxLines = 1,
@@ -183,6 +188,7 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
 fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit) {
     val hexagram by viewModel.hexagram.collectAsStateWithLifecycle()
     val strings = LocalStrings.current
+    val lang = LocalAppLanguage.current
     val library = strings.library
     PaperBackground(showMountains = false) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -209,8 +215,8 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                     Spacer(Modifier.width(12.dp))
                     CinnabarSeal(text = h.nameCn.take(2), size = 40.dp)
                 }
-                Text("${h.shortNameTh} · ${h.pinyin}", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkSoft)
-                Text(h.meaningTh, style = MaterialTheme.typography.titleLarge, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                Text("${h.shortName(lang)} · ${h.pinyin}", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkSoft)
+                Text(h.meaning(lang), style = MaterialTheme.typography.titleLarge, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TrigramChip(library.upperTrigram, h.upperTrigram)

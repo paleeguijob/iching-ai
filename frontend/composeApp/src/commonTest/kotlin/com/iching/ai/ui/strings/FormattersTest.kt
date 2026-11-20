@@ -2,6 +2,7 @@ package com.iching.ai.ui.strings
 
 import com.iching.ai.domain.model.AppLanguage.EN
 import com.iching.ai.domain.model.AppLanguage.TH
+import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.ui.formatThaiShortDate
 import kotlinx.datetime.LocalDateTime
@@ -44,5 +45,27 @@ class FormattersTest {
     fun month() {
         assertEquals("พฤศจิกายน 2569", formatMonth(millis(), TH, bangkok))
         assertEquals("November 2026", formatMonth(millis(), EN, bangkok))
+    }
+
+    private fun hex(nameTh: String, nameEn: String = "") = Hexagram(
+        id = 1, nameCn = "乾", pinyin = "Qián", nameTh = nameTh, pattern = "111111",
+        keywords = emptyList(), judgment = "", image = "", description = "", lines = List(6) { "" }, nameEn = nameEn,
+    )
+
+    @Test
+    fun hexagramNames() {
+        val th = hex("เฉียน — ความเข้มแข็ง")
+        assertEquals("乾 เฉียน", th.displayName(TH))
+        assertEquals("เฉียน", th.shortName(TH))
+        assertEquals("ความเข้มแข็ง", th.meaning(TH))
+        val en = hex("Heaven — Strong and unceasing", "Heaven")
+        assertEquals("乾 Qián · Heaven", en.displayName(EN))
+        assertEquals("Heaven", en.shortName(EN))
+        assertEquals("Strong and unceasing", en.meaning(EN))
+        // Thai text left over in English mode (overlay not available) must never be shown.
+        val fallback = hex("เฉียน — ความเข้มแข็ง")
+        assertEquals("乾 Qián", fallback.displayName(EN))
+        assertEquals("", fallback.shortName(EN))
+        assertEquals("", fallback.meaning(EN))
     }
 }

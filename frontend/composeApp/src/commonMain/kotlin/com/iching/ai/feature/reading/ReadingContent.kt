@@ -57,6 +57,8 @@ import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.InkDivider
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.TypewriterText
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
 import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.strings.ReadingStrings
@@ -114,6 +116,7 @@ fun CastSummary(
 
 @Composable
 private fun HexagramCard(hexagram: Hexagram, lines: List<LineType>?, label: String, onClick: ((Int) -> Unit)?) {
+    val lang = LocalAppLanguage.current
     Column(
         Modifier
             .width(140.dp)
@@ -134,12 +137,12 @@ private fun HexagramCard(hexagram: Hexagram, lines: List<LineType>?, label: Stri
         Spacer(Modifier.height(12.dp))
         Text(hexagram.nameCn, style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
         Text(
-            "${hexagram.id}. ${hexagram.shortNameTh}",
+            "${hexagram.id}. ${hexagram.shortName(lang)}",
             style = MaterialTheme.typography.titleSmall,
             color = ZenColors.InkBlack,
         )
         Text(
-            hexagram.meaningTh,
+            hexagram.meaning(lang),
             style = MaterialTheme.typography.bodySmall,
             color = ZenColors.InkSoft,
             textAlign = TextAlign.Center,
@@ -289,6 +292,7 @@ fun AiContentLabel(source: InterpretationSource?, onReport: (() -> Unit)?, repor
 @Composable
 fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: List<Int>) {
     val strings = LocalStrings.current.reading
+    val lang = LocalAppLanguage.current
     var expanded by rememberSaveable { mutableStateOf(false) }
     ZenCard(contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp)) {
         Row(
@@ -309,7 +313,7 @@ fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: 
                     ScriptureBlock(LocalStrings.current.library.linePosition(position), primary.lines[position - 1], accent = ZenColors.CinnabarRed)
                 }
                 if (changingPositions.size == 6) primary.allLines?.let { ScriptureBlock(strings.allLinesChange, it, ZenColors.CinnabarRed) }
-                relating?.let { ScriptureBlock(strings.relatingHeading(it.shortNameTh), it.judgment, ZenColors.BambooDeep) }
+                relating?.let { ScriptureBlock(strings.relatingHeading(it.shortName(lang)), it.judgment, ZenColors.BambooDeep) }
             }
         }
     }

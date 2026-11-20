@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
 
 /** Colours of one card style. Fixed, not the selected theme, so shared cards look like one brand. */
@@ -71,6 +74,7 @@ private class CardPalette(
 @Composable
 fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
     val hexagram = content.hexagram
+    val lang = LocalAppLanguage.current
     val newYear = content.style == CardStyle.NEW_YEAR
     val palette = if (newYear) CardPalette.NewYear else CardPalette.Classic
     Box(
@@ -99,14 +103,14 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                         Text(hexagram.nameCn, style = MaterialTheme.typography.displayLarge, color = palette.ink)
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            hexagram.shortNameTh,
+                            hexagram.shortName(lang),
                             style = MaterialTheme.typography.titleLarge,
                             color = palette.ink,
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
                     }
                     Text(
-                        hexagram.meaningTh,
+                        hexagram.meaning(lang),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = palette.cinnabar,
                         maxLines = 2,

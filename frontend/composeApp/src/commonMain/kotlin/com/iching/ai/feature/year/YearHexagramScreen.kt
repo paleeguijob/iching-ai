@@ -53,6 +53,8 @@ import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
 import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.strings.zodiacYearLabel
@@ -182,6 +184,7 @@ private fun ResultStage(
     onAskHermit: (() -> Unit)?,
 ) {
     val hexagram = ui.hexagram
+    val lang = LocalAppLanguage.current
     val message = hexagram.yearMessage
     val strings = LocalStrings.current.year
     val common = LocalStrings.current.common
@@ -211,12 +214,12 @@ private fun ResultStage(
         )
         Spacer(Modifier.height(14.dp))
         Text(
-            "${hexagram.nameCn}  ${common.number(hexagram.id)} · ${hexagram.shortNameTh}",
+            "${hexagram.nameCn}  ${common.number(hexagram.id)} · ${hexagram.shortName(lang)}",
             style = MaterialTheme.typography.titleLarge,
             color = ZenColors.InkBlack,
             textAlign = TextAlign.Center,
         )
-        Text(hexagram.meaningTh, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+        Text(hexagram.meaning(lang), style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
 
         if (message != null) {
             Spacer(Modifier.height(24.dp))

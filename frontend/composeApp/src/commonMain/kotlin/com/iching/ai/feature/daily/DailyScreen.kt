@@ -1,5 +1,8 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenCard
@@ -55,6 +58,7 @@ fun DailyScreen(
     onOpenLink: (PosterLink) -> Unit,
     onOpenYear: () -> Unit,
 ) {
+    val lang = LocalAppLanguage.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val card by viewModel.posterCard.collectAsStateWithLifecycle()
     val campaign by viewModel.campaignCard.collectAsStateWithLifecycle()
@@ -88,11 +92,11 @@ fun DailyScreen(
                 Spacer(Modifier.height(18.dp))
                 Text(hexagram.nameCn, style = MaterialTheme.typography.displayMedium, color = ZenColors.InkBlack)
                 Text(
-                    "${common.number(hexagram.id)} · ${hexagram.shortNameTh}",
+                    "${common.number(hexagram.id)} · ${hexagram.shortName(lang)}",
                     style = MaterialTheme.typography.titleSmall,
                     color = ZenColors.InkSoft,
                 )
-                Text(hexagram.meaningTh, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                Text(hexagram.meaning(lang), style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(22.dp))
                 Text(
                     hexagram.dailyMessage,
@@ -122,7 +126,7 @@ fun DailyScreen(
                 Spacer(Modifier.height(12.dp))
                 ZenSecondaryButton(strings.readMore, onClick = { onOpenHexagram(hexagram.id) }, modifier = Modifier.fillMaxWidth())
                 val year = campaign
-                campaignLine(year, LocalStrings.current.home)?.let { line ->
+                campaignLine(year, LocalStrings.current.home, lang)?.let { line ->
                     LaunchedEffect(year::class) { viewModel.onCampaignCardShown(year) }
                     Spacer(Modifier.height(16.dp))
                     CampaignLineRow(line, onClick = {
