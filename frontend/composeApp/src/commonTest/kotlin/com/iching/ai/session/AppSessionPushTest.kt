@@ -1,5 +1,6 @@
 package com.iching.ai.session
 
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
@@ -26,14 +27,16 @@ private class FakeNotifications : NativeNotifications {
     var neverAnswers = false
     var throws = false
     val calls = mutableListOf<Boolean>()
+    val languages = mutableListOf<AppLanguage>()
     override fun isSupported() = true
     override fun permissionGranted() = granted
     override fun requestPermission(callback: ResultCallback) {
         granted = grantOnRequest
         callback.onResult(if (granted) "granted" else "denied", null)
     }
-    override fun setDailySubscribed(enabled: Boolean, callback: ResultCallback) {
+    override fun setDailySubscribed(enabled: Boolean, lang: AppLanguage, callback: ResultCallback) {
         calls += enabled
+        languages += lang
         if (throws) error("bridge failed")
         if (neverAnswers) return
         if (subscribeWorks) callback.onResult("ok", null) else callback.onResult(null, "offline")
@@ -191,5 +194,42 @@ class AppSessionPushTest {
     @Test
     fun appVersionComesFromTheInstalledApp() = runTest {
         assertEquals("1.0", session(MemorySettings(), backgroundScope).appVersion)
+    }
+
+    @Test
+    fun changingLanguageResyncsTheTopicWhenPushIsOn() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true))
+        val session = session(settings, backgroundScope)
+        session.onLanguageChanged(AppLanguage.EN)
+        testScheduler.runCurrent()
+        assertEquals(listOf(true), notifications.calls)
+        assertEquals(listOf(AppLanguage.EN), notifications.languages)
+        assertTrue(settings.flow.value.dailyPushSynced)
+    }
+
+    @Test
+    fun changingLanguageLeavesPushOffAlone() = runTest {
+        val session = session(MemorySettings(), backgroundScope)
+        session.onLanguageChanged(AppLanguage.EN)
+        testScheduler.runCurrent()
+        assertEquals(emptyList(), notifications.calls)
+    }
+
+    @Test
+    fun anUnchangedLanguageDoesNotResync() = runTest {
+        val session = session(MemorySettings(AppSettings(dailyPushEnabled = true)), backgroundScope)
+        session.onLanguageChanged(AppLanguage.TH)
+        testScheduler.runCurrent()
+        assertEquals(emptyList(), notifications.calls)
+    }
+
+    @Test
+    fun enablingAfterSwitchingToEnglishSubscribesEnglish() = runTest {
+        notifications.granted = true
+        val session = session(MemorySettings(), backgroundScope)
+        session.onLanguageChanged(AppLanguage.EN)
+        session.setDailyPush(true)
+        testScheduler.runCurrent()
+        assertEquals(listOf(AppLanguage.EN), notifications.languages)
     }
 }

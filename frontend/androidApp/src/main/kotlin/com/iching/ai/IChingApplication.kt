@@ -15,7 +15,14 @@ import com.iching.ai.platform.AndroidReview
 import com.iching.ai.platform.NativeBridges
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.stringsFor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
+import org.koin.mp.KoinPlatform
 
 class IChingApplication : Application() {
 
@@ -54,6 +61,11 @@ class IChingApplication : Application() {
         )
         initKoin(bridges) {
             androidContext(this@IChingApplication)
+        }
+        // The channel name follows the language in force; the launcher name stays as it is.
+        val holder = KoinPlatform.getKoin().get<AppLanguageHolder>()
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+            holder.language.collect { notifications.createChannel(stringsFor(it).daily.title) }
         }
     }
 

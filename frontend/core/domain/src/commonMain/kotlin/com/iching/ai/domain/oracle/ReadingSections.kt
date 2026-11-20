@@ -34,10 +34,13 @@ fun parseReading(text: String): ReadingParts {
     return ReadingParts(full.substring(0, markers.first().range.first).trim(), sections)
 }
 
-/** The reading for the device voice: the message, then each card with its heading said as a word. */
-fun readingForSpeech(text: String): String {
+/**
+ * The reading for the device voice: the message, then each card with its heading said as a word.
+ * [title] gives the heading to say; the default is the server's Thai marker, which an English voice must not read.
+ */
+fun readingForSpeech(text: String, title: (ReadingSection) -> String = { it.label }): String {
     val parts = parseReading(text)
-    return (listOf(parts.message) + parts.sections.map { "${it.label}. ${it.text}" })
+    return (listOf(parts.message) + parts.sections.map { "${title(it)}. ${it.text}" })
         .filter { it.isNotBlank() }
         .joinToString("\n")
 }

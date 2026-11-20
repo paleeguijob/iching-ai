@@ -9,17 +9,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.oracle.splitForSpeech
 import com.iching.ai.domain.oracle.stripMarkup
+import com.iching.ai.ui.strings.LocalAppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 
+/** The voice of the language the reading is in. */
+internal fun voiceTag(lang: AppLanguage) = if (lang == AppLanguage.EN) "en-US" else "th-TH"
+
 /** Short enough that the first piece starts quickly, long enough not to chop up every clause. */
 private const val SPEECH_PIECE_CHARS = 200
 
-private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
+private class AndroidSpeechPlayer(private val context: Context, private val lang: AppLanguage) : SpeechPlayer {
     private val _state = MutableStateFlow(SpeechState.IDLE)
     override val state: StateFlow<SpeechState> = _state.asStateFlow()
 
@@ -39,7 +44,7 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
         val created = TextToSpeech(context.applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 // Loading the voice here rather than on the first speak() is part of the head start.
-                thaiAvailable = engine?.setLanguage(Locale.forLanguageTag("th-TH"))?.let { it >= TextToSpeech.LANG_AVAILABLE } == true
+                thaiAvailable = engine?.setLanguage(Locale.forLanguageTag(voiceTag(lang)))?.let { it >= TextToSpeech.LANG_AVAILABLE } == true
                 engineReady = true
                 pending?.invoke()
                 clearPending()
@@ -134,7 +139,8 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
 @Composable
 actual fun rememberSpeechPlayer(): SpeechPlayer {
     val context = LocalContext.current
-    val player = remember(context) { AndroidSpeechPlayer(context) }
+    val lang = LocalAppLanguage.current
+    val player = remember(context, lang) { AndroidSpeechPlayer(context, lang) }
     DisposableEffect(player) { onDispose { player.release() } }
     return player
 }

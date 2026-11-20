@@ -2,6 +2,7 @@ package com.iching.ai.session
 
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.domain.model.Account
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.SignInProvider
@@ -223,14 +224,28 @@ class AppSession(
         return if (enabled) DailyPushResult.ENABLED else DailyPushResult.DISABLED
     }
 
+    /** The language whose daily topic the device should hold; follows the language in force. */
+    private var pushLanguage = AppLanguage.TH
+
+    /** The language in force changed: move a seeker who has the daily push on over to that language's topic. */
+    suspend fun onLanguageChanged(lang: AppLanguage) {
+        if (lang == pushLanguage) return
+        pushLanguage = lang
+        if (settings.settings.firstOrNull()?.dailyPushEnabled != true) return
+        settings.update { it.copy(dailyPushSynced = false) }
+        syncDailyPush()
+    }
+
     /** Brings the FCM topic in line with the setting. A failure (offline) is retried on the next launch. */
     private suspend fun syncDailyPush() {
         try {
             val current = settings.settings.firstOrNull() ?: return
             if (current.dailyPushSynced || !dailyPushSupported) return
             val enabled = current.dailyPushEnabled
-            awaitNative { bridges.notifications.setDailySubscribed(enabled, it) }
-            settings.update { if (it.dailyPushEnabled == enabled) it.copy(dailyPushSynced = true) else it }
+            val lang = pushLanguage
+            awaitNative { bridges.notifications.setDailySubscribed(enabled, lang, it) }
+            // A change of setting or language while this ran leaves it unsynced for the next pass.
+            settings.update { if (it.dailyPushEnabled == enabled && pushLanguage == lang) it.copy(dailyPushSynced = true) else it }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

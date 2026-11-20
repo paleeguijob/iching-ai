@@ -9,18 +9,21 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationManagerCompat
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.messaging.FirebaseMessaging
+import com.iching.ai.domain.model.AppLanguage
+import com.iching.ai.ui.strings.ThDailyStrings
 
-/** Keep the channel id and topic in step with backend/functions/src/core/daily.ts and index.ts. */
-private const val DAILY_TOPIC = "daily-hexagram-th"
+/** Keep the channel id in step with backend/functions/src/core/daily.ts and index.ts; topics are in DailyTopic.kt. */
 const val DAILY_CHANNEL_ID = "daily"
 
 class AndroidNotifications(private val context: Context) : NativeNotifications {
     private var permissionLauncher: ActivityResultLauncher<String>? = null
     private var pendingPermission: ResultCallback? = null
 
-    fun createChannel() {
-        val channel = NotificationChannel(DAILY_CHANNEL_ID, "กวาประจำวัน", NotificationManager.IMPORTANCE_DEFAULT)
+    /** Creating a channel that exists only renames it, so this also follows a change of the app language. */
+    fun createChannel(name: String = ThDailyStrings.title) {
+        val channel = NotificationChannel(DAILY_CHANNEL_ID, name, NotificationManager.IMPORTANCE_DEFAULT)
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
@@ -50,12 +53,15 @@ class AndroidNotifications(private val context: Context) : NativeNotifications {
         launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    override fun setDailySubscribed(enabled: Boolean, callback: ResultCallback) {
+    override fun setDailySubscribed(enabled: Boolean, lang: AppLanguage, callback: ResultCallback) {
         val messaging = FirebaseMessaging.getInstance()
         // Auto-init is off in the manifest so nobody gets an FCM token before opting in.
         if (enabled) messaging.isAutoInitEnabled = true
-        val task = if (enabled) messaging.subscribeToTopic(DAILY_TOPIC) else messaging.unsubscribeFromTopic(DAILY_TOPIC)
-        task.addOnCompleteListener {
+        // Always leave the other language's topic; when switching off, leave both.
+        val own = dailyTopicFor(lang)
+        val first = if (enabled) messaging.subscribeToTopic(own) else messaging.unsubscribeFromTopic(own)
+        val second = messaging.unsubscribeFromTopic(otherTopic(lang))
+        Tasks.whenAll(first, second).addOnCompleteListener {
             if (it.isSuccessful) callback.onResult("ok", null)
             else callback.onResult(null, it.exception?.message ?: "FCM topic change failed")
         }

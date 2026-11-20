@@ -52,6 +52,12 @@ class ReadingSectionsTest {
     }
 
     @Test
+    fun speechUsesTheGivenHeadingInsteadOfTheThaiMarker() {
+        val speech = readingForSpeech("Hello\n[ดวงเด่น] a\n[ควรระวัง] b") { s -> if (s.label == "ดวงเด่น") "Going well" else "Watch out" }
+        assertEquals("Hello\nGoing well. a\nWatch out. b", speech)
+    }
+
+    @Test
     fun toleratesSpacesInsideMarkersAndAColonAfter() {
         val parts = parseReading("ข้อความ\n[ ดวงเด่น ]: ก\n[ควรระวัง] - ข")
         assertEquals(listOf(ReadingSection("ดวงเด่น", "ก"), ReadingSection("ควรระวัง", "ข")), parts.sections)

@@ -33,6 +33,7 @@ val keystoreProps = Properties().apply {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(projects.core.domain)
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.foundation)
     implementation(libs.koin.android)

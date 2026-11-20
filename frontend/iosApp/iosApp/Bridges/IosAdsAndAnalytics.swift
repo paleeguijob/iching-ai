@@ -121,6 +121,6 @@ final class IosNotifications: NSObject, NativeNotifications {
     func isSupported() -> Bool { false }
     func permissionGranted() -> Bool { false }
     func requestPermission(callback: ResultCallback) { callback.onResult(value: "denied", error: nil) }
-    func setDailySubscribed(enabled: Bool, callback: ResultCallback) { callback.onResult(value: "ok", error: nil) }
+    func setDailySubscribed(enabled: Bool, lang: AppLanguage, callback: ResultCallback) { callback.onResult(value: "ok", error: nil) }
     func openSystemSettings() {}
 }

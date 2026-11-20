@@ -1,5 +1,6 @@
 package com.iching.ai.platform
 
+import com.iching.ai.domain.model.AppLanguage
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -83,8 +84,11 @@ interface NativeNotifications {
     /** value = "granted" or "denied". */
     fun requestPermission(callback: ResultCallback)
 
-    /** Subscribes to or leaves the daily hexagram FCM topic. value = "ok". */
-    fun setDailySubscribed(enabled: Boolean, callback: ResultCallback)
+    /**
+     * Subscribes to the daily hexagram FCM topic of [lang] and always leaves the other language's topic,
+     * or leaves both when [enabled] is false. value = "ok".
+     */
+    fun setDailySubscribed(enabled: Boolean, lang: AppLanguage, callback: ResultCallback)
     fun openSystemSettings()
 }
 

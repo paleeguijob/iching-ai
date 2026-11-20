@@ -287,7 +287,7 @@ private fun ReadingStage(
                 Spacer(Modifier.height(12.dp))
                 if (state.isAiReading) {
                     ListenButton(
-                        text = readingForSpeech(state.interpretation),
+                        text = readingForSpeech(state.interpretation, LocalStrings.current.reading::sectionTitle),
                         premium = state.status.premium,
                         onOpenPaywall = onOpenPaywall,
                         log = viewModel::logEvent,

@@ -40,6 +40,7 @@ import com.iching.ai.session.FirebaseApiSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import com.iching.ai.data.scripture.HexagramContentState
 import com.iching.ai.data.siamsi.SiamSiContentState
 import com.iching.ai.ui.strings.AppLanguageHolder
@@ -95,13 +96,16 @@ fun platformModule(bridges: NativeBridges): Module = module {
         )
     }
     single {
+        val holderScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         AppLanguageHolder(
             observeSettings = get(),
             englishAllowed = get<AppSession>().let { session ->
                 effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
             },
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+            scope = holderScope,
         ).also { holder ->
+            // The daily push topic follows the effective language (the kill switch gives Thai).
+            holderScope.launch { holder.language.collect { get<AppSession>().onLanguageChanged(it) } }
             // The scripture follows the effective language (the kill switch gives Thai) and the server's file version.
             val session = get<AppSession>()
             get<HexagramContentState>().apply {

@@ -9,6 +9,8 @@ import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.iching.ai.domain.model.AppLanguage
+import com.iching.ai.ui.strings.LocalAppLanguage
 import platform.AVFAudio.AVSpeechBoundary
 import platform.AVFAudio.AVSpeechSynthesisVoice
 import platform.AVFAudio.AVSpeechSynthesizer
@@ -19,7 +21,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.darwin.NSObject
 
-private class IosSpeechPlayer : SpeechPlayer {
+private class IosSpeechPlayer(private val lang: AppLanguage) : SpeechPlayer {
     private val _state = MutableStateFlow(SpeechState.IDLE)
     override val state: StateFlow<SpeechState> = _state.asStateFlow()
 
@@ -47,7 +49,7 @@ private class IosSpeechPlayer : SpeechPlayer {
     override fun prepare() = Unit
 
     override fun speak(text: String, onUnavailable: () -> Unit) {
-        val voice = AVSpeechSynthesisVoice.voiceWithLanguage("th-TH")
+        val voice = AVSpeechSynthesisVoice.voiceWithLanguage(if (lang == AppLanguage.EN) "en-US" else "th-TH")
         val cleaned = stripMarkup(text)
         if (voice == null || cleaned.isEmpty()) {
             onUnavailable()
@@ -74,7 +76,8 @@ private class IosSpeechPlayer : SpeechPlayer {
 
 @Composable
 actual fun rememberSpeechPlayer(): SpeechPlayer {
-    val player = remember { IosSpeechPlayer() }
+    val lang = LocalAppLanguage.current
+    val player = remember(lang) { IosSpeechPlayer(lang) }
     DisposableEffect(player) { onDispose { player.release() } }
     return player
 }
