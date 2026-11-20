@@ -186,14 +186,14 @@ private fun SlipCard(set: SiamSiSet, stick: SiamSiStick) {
             stick.poemOrig.forEach { OriginalLine(it, fontSize = 20.sp) }
             Spacer(Modifier.height(ZenSpacing.sm))
         }
-        // The Thai lines step in and out like the couplets of a temple slip.
-        stick.poemTh.forEachIndexed { i, line ->
+        // Centred on the same axis as the original lines above them.
+        stick.poemTh.forEach { line ->
             Text(
                 line,
                 style = if (thaiOnly) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
                 color = if (thaiOnly) ZenColors.InkBlack else ZenColors.InkSoft,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(start = if (i % 2 == 1) 28.dp else 0.dp, end = if (i % 2 == 0) 28.dp else 0.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Spacer(Modifier.height(ZenSpacing.md))
