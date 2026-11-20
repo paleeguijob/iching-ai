@@ -100,7 +100,7 @@ class EnglishContentTest {
 
     @Test
     fun usesUnifiedTermsAndNoBannedRenderings() {
-        val banned = listOf("far-reaching", "prosperous.", "and prosperous", "is prosperous", "good luck", "free of blame", "no blame", "wanderer", "breakthrough")
+        val banned = listOf("far-reaching", "prosperous.", "and prosperous", "is prosperous", "good luck", "free of blame", "no blame", "wanderer", "breakthrough", "unfortunate", "to blame")
         hexagrams.forEach { h ->
             val id = h.getValue("id").jsonPrimitive.int
             val scripture = buildList {
