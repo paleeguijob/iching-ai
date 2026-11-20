@@ -57,6 +57,7 @@ import com.iching.ai.feature.share.readingShareContent
 import com.iching.ai.feature.reading.AiContentLabel
 import com.iching.ai.feature.reading.OracleSheet
 import com.iching.ai.feature.reading.ScriptureSection
+import com.iching.ai.domain.oracle.readingForSpeech
 import com.iching.ai.platform.ZenSound
 import com.iching.ai.platform.rememberSoundPlayer
 import com.iching.ai.ui.components.AncientCoin
@@ -282,7 +283,7 @@ private fun ReadingStage(
                 Spacer(Modifier.height(12.dp))
                 if (state.isAiReading) {
                     ListenButton(
-                        text = state.interpretation,
+                        text = readingForSpeech(state.interpretation),
                         premium = state.status.premium,
                         onOpenPaywall = onOpenPaywall,
                         log = viewModel::logEvent,

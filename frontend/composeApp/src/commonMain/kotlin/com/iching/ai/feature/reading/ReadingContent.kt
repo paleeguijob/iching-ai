@@ -2,6 +2,7 @@ package com.iching.ai.feature.reading
 
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenCard
+import com.iching.ai.ui.components.ZenCardDivider
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.animation.AnimatedVisibility
@@ -34,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,7 +50,9 @@ import androidx.compose.ui.unit.dp
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
+import com.iching.ai.domain.oracle.ReadingSection
 import com.iching.ai.domain.oracle.linePositionTh
+import com.iching.ai.domain.oracle.parseReading
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.InkDivider
@@ -163,6 +167,9 @@ fun OracleSheet(
     // Asking the hermit again clears the text: the seal waits for the new words too.
     if (text.isEmpty() && animate) revealed = false
     val header = sheetHeader(source)
+    val parts = remember(text) { parseReading(text) }
+    var messageRevealed by rememberSaveable { mutableStateOf(!animate) }
+    if (text.isEmpty() && animate) messageRevealed = false
     ZenCard(
         modifier = modifier.animateContentSize(tween(300)),
         accentTop = true,
@@ -189,12 +196,26 @@ fun OracleSheet(
                 color = ZenColors.InkFaint,
             )
         } else {
-            TypewriterText(
-                text = text,
-                animate = animate,
-                style = MaterialTheme.typography.bodyLarge,
-                onRevealed = { if (isComplete) revealed = true },
-            )
+            if (parts.message.isNotEmpty()) {
+                TypewriterText(
+                    text = parts.message,
+                    animate = animate,
+                    style = MaterialTheme.typography.bodyLarge,
+                    onRevealed = {
+                        messageRevealed = true
+                        if (isComplete) revealed = true
+                    },
+                )
+            } else if (isComplete) {
+                revealed = true
+            }
+            // Cards wait for the message to finish typing, then arrive one by one as the stream brings them.
+            AnimatedVisibility(
+                visible = parts.sections.isNotEmpty() && (!animate || messageRevealed || parts.message.isEmpty()),
+                enter = fadeIn(tween(500)),
+            ) {
+                ReadingSectionRows(parts.sections, Modifier.padding(top = ZenSpacing.md))
+            }
         }
         AnimatedVisibility(
             visible = isComplete && revealed,
@@ -203,6 +224,25 @@ fun OracleSheet(
         ) {
             Row(Modifier.padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 CinnabarSeal(text = "武當", size = 44.dp)
+            }
+        }
+    }
+}
+
+/** The reading's cards, laid out like the Siam Si topic rows: heading on the left, its words beside it. */
+@Composable
+private fun ReadingSectionRows(sections: List<ReadingSection>, modifier: Modifier = Modifier) {
+    Column(modifier.animateContentSize(tween(300))) {
+        sections.forEach { section ->
+            ZenCardDivider()
+            Row(Modifier.padding(vertical = 11.dp), verticalAlignment = Alignment.Top) {
+                Text(
+                    section.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ZenColors.InkBlack,
+                    modifier = Modifier.width(92.dp),
+                )
+                Text(section.text, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, modifier = Modifier.weight(1f))
             }
         }
     }
