@@ -761,6 +761,33 @@ describe("siamsi", () => {
     assert.deepEqual([th.lang, th.stick.story], ["th", found.stick.story]);
   });
 
+  it("an English set whose stories are all empty is still complete and served in English", () => {
+    const dir = mkdtempSync(join(tmpdir(), "siamsi-"));
+    const base = sets.get("guanyin100")!;
+    const { en: _drop, ...plain } = base;
+    writeFileSync(join(dir, "guanyin100.json"), JSON.stringify(plain));
+    const enStick = (n: number, story: unknown) => ({ number: n, poem_en: [`EN ${n}`], story, summary: "EN summary", topics: { work: "EN work" }, keywords: ["EN"] });
+    const write = (story: unknown) =>
+      writeFileSync(join(dir, "guanyin100.en.json"), JSON.stringify({ id: "guanyin100", version: 1, name: "EN set", source: { note: "n" }, sticks: base.sticks.map((s) => enStick(s.number, story)) }));
+    write("");
+    const loaded = loadSiamSiSets(dir);
+    assert.ok(loaded.get("guanyin100")!.en);
+    const r = findStick(loaded, "guanyin100", 5, "en")!;
+    assert.deepEqual([r.lang, r.stick.story, r.stick.poem_th], ["en", "", ["EN 5"]]);
+    write(undefined);
+    assert.equal(loadSiamSiSets(dir).get("guanyin100")!.en, null);
+  });
+
+  it("the bundled English files load as complete English sets", () => {
+    for (const id of ["guanyin100", "jiazi60"]) {
+      const set = sets.get(id)!;
+      assert.ok(set.en, `${id} en`);
+      const r = findStick(sets, id, 1, "en")!;
+      assert.equal(r.lang, "en");
+      assert.ok(!/[\u0E00-\u0E7F]/.test(JSON.stringify(r.stick.poem_th) + r.stick.summary + JSON.stringify(r.stick.topics)));
+    }
+  });
+
   it("loads {id}.en.json beside the set, ignores it as a set, and keeps it only when complete", () => {
     const dir = mkdtempSync(join(tmpdir(), "siamsi-"));
     const base = sets.get("jiazi60")!;

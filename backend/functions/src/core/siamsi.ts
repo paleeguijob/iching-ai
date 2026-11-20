@@ -22,7 +22,7 @@ export interface SiamSiSet {
   count: number;
   source: { title: string; note: string };
   sticks: SiamSiStick[];
-  /** English file ({id}.en.json), kept only when it covers every stick of the set. */
+  /** English file ({id}.en.json), kept only when it covers every stick of the set (an empty story is allowed: the Thai sets have none). */
   en?: SiamSiSetEn | null;
 }
 
@@ -82,7 +82,7 @@ const isCompleteEnglish = (set: SiamSiSet, en: SiamSiSetEn | null): en is SiamSi
   const byNumber = new Map(en.sticks.map((s) => [s.number, s]));
   return set.sticks.every((s) => {
     const e = byNumber.get(s.number);
-    return !!e && e.poem_en?.length > 0 && !!e.story && !!e.summary && !!e.topics && Array.isArray(e.keywords);
+    return !!e && e.poem_en?.length > 0 && typeof e.story === "string" && !!e.summary && !!e.topics && Array.isArray(e.keywords);
   });
 };
 
