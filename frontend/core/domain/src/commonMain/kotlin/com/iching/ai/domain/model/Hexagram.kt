@@ -131,6 +131,10 @@ data class AppSettings(
     val dismissedPosterCardIds: List<String> = emptyList(),
     /** The Bangkok epoch day this install first opened; no poster pops on that day. Null until recorded. */
     val firstOpenEpochDay: Long? = null,
+    /** Readings (I Ching or Siam Si) whose interpretation finished; counts toward asking for a store rating. */
+    val completedReadings: Int = 0,
+    /** The Bangkok epoch day the store rating sheet was last asked for; null until it first is. */
+    val lastReviewRequestEpochDay: Long? = null,
 )
 
 const val MAX_REMEMBERED_POSTERS = 20
@@ -146,3 +150,9 @@ fun AppSettings.withPosterCardDismissed(id: String): AppSettings =
 
 /** Records the first day the app opened; later calls keep the first. */
 fun AppSettings.withFirstOpen(day: Long): AppSettings = if (firstOpenEpochDay != null) this else copy(firstOpenEpochDay = day)
+
+/** One more reading finished. */
+fun AppSettings.withReadingCompleted(): AppSettings = copy(completedReadings = completedReadings + 1)
+
+/** Remembers the day the store rating sheet was asked for; the app can't tell whether it actually showed. */
+fun AppSettings.withReviewRequested(day: Long): AppSettings = copy(lastReviewRequestEpochDay = day)

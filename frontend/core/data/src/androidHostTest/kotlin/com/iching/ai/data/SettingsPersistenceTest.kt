@@ -44,6 +44,18 @@ class SettingsPersistenceTest {
     }
 
     @Test
+    fun reviewCountersSurviveReloadAndDefaultOnUpgrade() = withStore { file ->
+        val fresh = open(file) { it.settings.first() }
+        assertEquals(0, fresh.completedReadings)
+        assertEquals(null, fresh.lastReviewRequestEpochDay)
+        open(file) { repo -> repo.update { it.copy(completedReadings = 4, lastReviewRequestEpochDay = 20_410L) } }
+        Thread.sleep(100)
+        val loaded = open(file) { it.settings.first() }
+        assertEquals(4, loaded.completedReadings)
+        assertEquals(20_410L, loaded.lastReviewRequestEpochDay)
+    }
+
+    @Test
     fun posterIdsAndFirstOpenSurviveReload() = withStore { file ->
         val fresh = open(file) { it.settings.first() }
         assertEquals(emptyList(), fresh.seenPosterIds)

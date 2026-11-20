@@ -46,6 +46,8 @@ class DataStoreSettingsRepository(
             prefs[SEEN_POSTERS] = next.seenPosterIds.joinToString("\n")
             prefs[DISMISSED_POSTER_CARDS] = next.dismissedPosterCardIds.joinToString("\n")
             next.firstOpenEpochDay?.let { prefs[FIRST_OPEN_DAY] = it } ?: prefs.remove(FIRST_OPEN_DAY)
+            prefs[COMPLETED_READINGS] = next.completedReadings
+            next.lastReviewRequestEpochDay?.let { prefs[LAST_REVIEW_REQUEST_DAY] = it } ?: prefs.remove(LAST_REVIEW_REQUEST_DAY)
             prefs.remove(LEGACY_API_KEY)
         }
     }
@@ -88,6 +90,8 @@ class DataStoreSettingsRepository(
         seenPosterIds = this[SEEN_POSTERS].lines(),
         dismissedPosterCardIds = this[DISMISSED_POSTER_CARDS].lines(),
         firstOpenEpochDay = this[FIRST_OPEN_DAY],
+        completedReadings = this[COMPLETED_READINGS] ?: 0,
+        lastReviewRequestEpochDay = this[LAST_REVIEW_REQUEST_DAY],
     )
 
     private fun MutablePreferences.writeStreak(streak: StreakState) {
@@ -116,6 +120,8 @@ class DataStoreSettingsRepository(
         val SEEN_POSTERS = stringPreferencesKey("seen_posters")
         val DISMISSED_POSTER_CARDS = stringPreferencesKey("dismissed_poster_cards")
         val FIRST_OPEN_DAY = longPreferencesKey("first_open_day")
+        val COMPLETED_READINGS = intPreferencesKey("completed_readings")
+        val LAST_REVIEW_REQUEST_DAY = longPreferencesKey("last_review_request_day")
         val SIAMSI_DAY = longPreferencesKey("siamsi_day")
         val SIAMSI_USED = intPreferencesKey("siamsi_used")
         val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
