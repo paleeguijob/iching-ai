@@ -99,6 +99,9 @@ internal data class StatusDto(
 @Serializable internal data class SiamSiSetRefDto(val id: String, val version: Int)
 @Serializable internal data class SiamSiStatusDto(val enabled: Boolean = false, val sets: List<SiamSiSetRefDto> = emptyList(), val drawsPerDay: Int = 1)
 @Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
+/** Tells the server this app splits I Ching readings into cards; older apps send nothing and get paragraphs. */
+private const val READING_FORMAT = "cards"
+
 @Serializable internal data class CreatedDto(val readingId: String)
 
 // Every field is optional, so a poster shape from a newer server drops just the poster, not the whole status.
@@ -230,10 +233,14 @@ class HttpOracleApi(
         stream("/divine", buildJsonObject {
             put("question", question)
             category?.let { put("category", it.wire) }
+            put("format", READING_FORMAT)
         })
 
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> =
-        stream("/divine", buildJsonObject { put("readingId", readingId) })
+        stream("/divine", buildJsonObject {
+            put("readingId", readingId)
+            put("format", READING_FORMAT)
+        })
 
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> =
         stream("/follow-up", buildJsonObject {
@@ -267,6 +274,7 @@ class HttpOracleApi(
         stream("/divine", buildJsonObject {
             put("mode", "year")
             put("question", question)
+            put("format", READING_FORMAT)
         })
 
     override suspend fun claimAdReward(): Pair<Boolean, AccountStatus> =

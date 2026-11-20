@@ -188,6 +188,21 @@ class HttpOracleApiTest {
     }
 
     @Test
+    fun everyIChingReadingAsksForCards() = runTest {
+        val bodies = mutableListOf<String>()
+        val engine = MockEngine { r ->
+            bodies += "${r.url.encodedPath} ${(r.body as TextContent).text}"
+            respond("", HttpStatusCode.OK, sse)
+        }
+        val api = HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api", "https://w/")
+        api.divine("งานใหม่", null).toList()
+        api.interpretAgain("r1").toList()
+        api.divineYear("ปีนี้เป็นอย่างไร").toList()
+        assertEquals(3, bodies.size)
+        assertTrue(bodies.all { it.startsWith("/api/divine ") && it.contains("\"format\":\"cards\"") }, bodies.toString())
+    }
+
+    @Test
     fun mapsLimitedAndSafetyEvents() = runTest {
         val engine = MockEngine {
             respond(
