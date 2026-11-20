@@ -1,5 +1,7 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.strings.TH_STRINGS
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.QuestionCategory
@@ -94,7 +96,7 @@ class HomeViewModelPreCastTest {
             scope,
         )
         if (start) session.start()
-        val vm = HomeViewModel(GetDailyHexagramUseCase(OneHexagram), ObserveSettingsUseCase(NoSettings), session, UpdateSettingsUseCase(NoSettings), NoPosterImages)
+        val vm = HomeViewModel(GetDailyHexagramUseCase(OneHexagram), ObserveSettingsUseCase(NoSettings), session, UpdateSettingsUseCase(NoSettings), NoPosterImages, thaiLanguageHolder())
         scope.launch { vm.castRequests.collect { casts += it } }
         scheduler.runCurrent()
         return vm
@@ -284,8 +286,8 @@ class HomeViewModelPreCastTest {
 
     @Test
     fun startButtonSaysItIsWaiting() {
-        assertEquals("เริ่มเสี่ยงทาย", startButtonText(deciding = false))
-        assertEquals("กำลังตั้งจิต...", startButtonText(deciding = true))
+        assertEquals("เริ่มเสี่ยงทาย", startButtonText(deciding = false, TH_STRINGS.home))
+        assertEquals("กำลังตั้งจิต...", startButtonText(deciding = true, TH_STRINGS.home))
     }
 
     @Test

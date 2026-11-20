@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.LocalStrings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -82,28 +83,30 @@ internal fun rememberFirstReadingGuides(castDone: Boolean): FirstReadingGuides {
 /** Under the cast on a newcomer's first reading: what the one or two hexagrams mean and where the full text is. */
 @Composable
 internal fun HowToReadNote(hasRelating: Boolean, onDismiss: () -> Unit) {
+    val strings = LocalStrings.current.divination
+    val reading = LocalStrings.current.reading
     ZenCard(contentPadding = PaddingValues(start = 16.dp, end = 8.dp, top = 14.dp, bottom = 4.dp)) {
         Column(Modifier.fillMaxWidth().padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("อ่านกวาอย่างไร", style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
-            Term("กวาหลัก", "ภาพของเรื่องนี้ในตอนนี้")
+            Text(strings.howToReadTitle, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
+            Term(reading.primaryLabel, strings.termPrimaryMeaning)
             if (hasRelating) {
-                Term("กวาแปร", "ทิศที่เรื่องกำลังเปลี่ยนไป เกิดจากเส้นแปรที่ท่านโยนได้")
+                Term(reading.relatingLabel, strings.termRelatingMeaning)
             } else {
                 Text(
-                    "ครั้งนี้ไม่มีเส้นแปร จึงมีเพียงกวาเดียว",
+                    strings.noChangingLines,
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkSoft,
                 )
             }
             Text(
-                "แตะที่กวาเพื่ออ่านตัวบทเต็มในคัมภีร์",
+                strings.tapToReadFull,
                 style = MaterialTheme.typography.bodySmall,
                 color = ZenColors.InkSoft,
             )
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onDismiss) {
-                Text("เข้าใจแล้ว", style = MaterialTheme.typography.labelLarge, color = ZenColors.BambooDeep)
+                Text(LocalStrings.current.common.gotIt, style = MaterialTheme.typography.labelLarge, color = ZenColors.BambooDeep)
             }
         }
     }

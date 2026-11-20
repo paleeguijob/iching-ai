@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.Hexagram
@@ -115,7 +116,7 @@ class HomeViewModelPosterTest {
         session.start()
         val vm = HomeViewModel(
             GetDailyHexagramUseCase(PosterHexagram), ObserveSettingsUseCase(repo), session,
-            UpdateSettingsUseCase(repo), images, nowMillis = { now },
+            UpdateSettingsUseCase(repo), images, thaiLanguageHolder(), nowMillis = { now },
         )
         scheduler.advanceUntilIdle()
         return vm

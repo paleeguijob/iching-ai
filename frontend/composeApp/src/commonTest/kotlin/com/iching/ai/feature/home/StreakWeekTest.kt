@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
 import kotlin.test.Test
@@ -9,7 +10,7 @@ class StreakWeekTest {
     private val today = 20402L
 
     private fun week(current: Int, lastBack: Long?, best: Int = current) =
-        streakWeek(StreakState(current = current, best = best, lastEpochDay = lastBack?.let { today - it }), today)
+        streakWeek(StreakState(current = current, best = best, lastEpochDay = lastBack?.let { today - it }), today, TH_STRINGS.home)
 
     @Test
     fun noStreakShowsDayOneAsTodayAndInvitesToStart() {

@@ -35,7 +35,7 @@ import com.iching.ai.ui.components.AncientCoin
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
 
 /**
  * The coin-toss stage shared by the reading and the year ritual: the hexagram building up line by line,
@@ -56,6 +56,7 @@ internal fun TossStage(
     onTossRemaining: (() -> Unit)? = null,
     guide: Boolean = false,
 ) {
+    val strings = LocalStrings.current.divination
     val noRipple = remember { MutableInteractionSource() }
     Column(
         Modifier
@@ -77,7 +78,7 @@ internal fun TossStage(
         if (guide && tosses.isEmpty() && !awaitingCast) {
             Spacer(Modifier.height(ZenSpacing.sm))
             Text(
-                "แตะเหรียญหรือปุ่มด้านล่างทีละครั้ง เส้นจะต่อขึ้นจากล่างจนครบหกเส้น",
+                strings.tossHint,
                 style = MaterialTheme.typography.bodySmall,
                 color = ZenColors.CinnabarRed,
                 textAlign = TextAlign.Center,
@@ -111,13 +112,13 @@ internal fun TossStage(
         Box(Modifier.heightIn(min = if (guide) 48.dp else 28.dp), contentAlignment = Alignment.Center) {
             val last = tosses.lastOrNull()
             if (awaitingCast) {
-                Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
+                Text(strings.settling, style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
             } else if (!isTossing && last != null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                    Text(strings.lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
                     if (guide) {
                         Text(
-                            lineGloss(last.line),
+                            strings.lineGloss(last.line),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (last.line.isChanging) ZenColors.CinnabarRed else ZenColors.InkSoft,
                             textAlign = TextAlign.Center,
@@ -128,24 +129,24 @@ internal fun TossStage(
         }
         Spacer(Modifier.weight(0.4f))
         ZenPrimaryButton(
-            text = if (tosses.isEmpty()) "โยนเหรียญ" else "โยนครั้งต่อไป",
+            text = if (tosses.isEmpty()) strings.toss else strings.tossNext,
             onClick = onToss,
             enabled = canToss,
             modifier = Modifier.fillMaxWidth(),
         )
         if (onTossRemaining != null) {
-            ZenTextButton("โยนต่อเนื่องจนครบ", onClick = onTossRemaining, enabled = canToss)
+            ZenTextButton(strings.tossRest, onClick = onTossRemaining, enabled = canToss)
         }
         Spacer(Modifier.height(12.dp))
     }
 }
 
-/** "๔ / ๖" with a thin ink bar: how many of the six lines are cast. */
+/** "4 / 6" with a thin ink bar: how many of the six lines are cast. */
 @Composable
 private fun CastProgress(cast: Int) {
     Column(Modifier.fillMaxWidth()) {
         Text(
-            "${cast.toThaiNumerals()} / ๖",
+            LocalStrings.current.divination.castProgress(cast),
             style = MaterialTheme.typography.labelMedium,
             color = ZenColors.InkFaint,
             modifier = Modifier.align(Alignment.End),
@@ -155,19 +156,4 @@ private fun CastProgress(cast: Int) {
             Box(Modifier.fillMaxWidth(cast / 6f).fillMaxHeight().background(ZenColors.InkBlack))
         }
     }
-}
-
-/** The line's meaning in plain words, for a newcomer's first cast. */
-private fun lineGloss(line: LineType): String = when (line) {
-    LineType.YOUNG_YANG -> "เส้นเต็ม เป็นเส้นนิ่ง ไม่เปลี่ยน"
-    LineType.YOUNG_YIN -> "เส้นขาด เป็นเส้นนิ่ง ไม่เปลี่ยน"
-    LineType.OLD_YANG -> "เส้นเต็มที่กำลังกลายเป็นเส้นขาด จะพาไปสู่ “กวาแปร”"
-    LineType.OLD_YIN -> "เส้นขาดที่กำลังกลายเป็นเส้นเต็ม จะพาไปสู่ “กวาแปร”"
-}
-
-private fun lineLabel(line: LineType): String = when (line) {
-    LineType.OLD_YIN -> "หยินแก่ (๖) — เส้นแปร"
-    LineType.YOUNG_YANG -> "หยางอ่อน (๗)"
-    LineType.YOUNG_YIN -> "หยินอ่อน (๘)"
-    LineType.OLD_YANG -> "หยางแก่ (๙) — เส้นแปร"
 }

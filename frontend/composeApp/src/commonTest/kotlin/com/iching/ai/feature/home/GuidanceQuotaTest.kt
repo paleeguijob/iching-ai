@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.AccountStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,13 +12,13 @@ class GuidanceQuotaTest {
     @Test
     fun freeShowsReadingsLeft() = assertEquals(
         GuidanceQuota("วันนี้เหลือคำชี้แนะจากนักพรต", count = 3, note = null),
-        guidanceQuota(free.copy(includedLeft = 1, readingsLeft = 3)),
+        guidanceQuota(free.copy(includedLeft = 1, readingsLeft = 3), TH_STRINGS.home),
     )
 
     @Test
     fun premiumShowsReadingsLeftToday() = assertEquals(
         GuidanceQuota("Premium · วันนี้เหลือคำชี้แนะจากนักพรต", count = 10, note = null),
-        guidanceQuota(premium.copy(includedLeft = 10, readingsLeft = 10)),
+        guidanceQuota(premium.copy(includedLeft = 10, readingsLeft = 10), TH_STRINGS.home),
     )
 
     @Test
@@ -27,7 +28,7 @@ class GuidanceQuotaTest {
             count = 1,
             note = "และมีเหรียญอี้จิงอีก ๑๐ เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ",
         ),
-        guidanceQuota(free.copy(coins = 10, includedLeft = 1, readingsLeft = 11)),
+        guidanceQuota(free.copy(coins = 10, includedLeft = 1, readingsLeft = 11), TH_STRINGS.home),
     )
 
     @Test
@@ -37,19 +38,19 @@ class GuidanceQuotaTest {
             count = 3,
             note = "และมีเหรียญอี้จิงอีก ๑๐ เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ",
         ),
-        guidanceQuota(premium.copy(coins = 10, includedLeft = 3, readingsLeft = 13)),
+        guidanceQuota(premium.copy(coins = 10, includedLeft = 3, readingsLeft = 13), TH_STRINGS.home),
     )
 
     @Test
     fun freeOutOfTodayShowsCoinsInsteadOfAds() = assertEquals(
         GuidanceQuota("เหรียญอี้จิงใช้ทำนายได้อีก", count = 10, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ"),
-        guidanceQuota(free.copy(coins = 10, includedLeft = 0, readingsLeft = 10, adsWatchableLeft = 2)),
+        guidanceQuota(free.copy(coins = 10, includedLeft = 0, readingsLeft = 10, adsWatchableLeft = 2), TH_STRINGS.home),
     )
 
     @Test
     fun premiumOutOfTodayShowsCoinsInsteadOfZero() = assertEquals(
         GuidanceQuota("Premium · เหรียญอี้จิงใช้ทำนายได้อีก", count = 10, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ"),
-        guidanceQuota(premium.copy(coins = 10, includedLeft = 0, readingsLeft = 10)),
+        guidanceQuota(premium.copy(coins = 10, includedLeft = 0, readingsLeft = 10), TH_STRINGS.home),
     )
 
     @Test
@@ -59,7 +60,7 @@ class GuidanceQuotaTest {
             count = 2,
             note = "กดเริ่มเสี่ยงทาย แล้วชมโฆษณาสั้นก่อนโยนเหรียญ",
         ),
-        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2)),
+        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2), TH_STRINGS.home),
     )
 
     @Test
@@ -69,30 +70,30 @@ class GuidanceQuotaTest {
             count = 0,
             note = "สมัคร Premium หรือใช้เหรียญอี้จิงเพื่อรับคำชี้แนะต่อ · ยังเสี่ยงทายและอ่านตัวบทได้",
         ),
-        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 0)),
+        guidanceQuota(free.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 0), TH_STRINGS.home),
     )
 
     @Test
     fun premiumAtZeroNeverOffersAnAd() = assertEquals(
         GuidanceQuota("Premium · วันนี้เหลือคำชี้แนะจากนักพรต", count = 0, note = "ยังเสี่ยงทายและอ่านตัวบทได้"),
-        guidanceQuota(premium.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2)),
+        guidanceQuota(premium.copy(includedLeft = 0, readingsLeft = 0, adsWatchableLeft = 2), TH_STRINGS.home),
     )
 
     @Test
     fun aiOffHidesTheCount() = assertEquals(
         GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null),
-        guidanceQuota(premium.copy(includedLeft = 10, aiEnabled = false)),
+        guidanceQuota(premium.copy(includedLeft = 10, aiEnabled = false), TH_STRINGS.home),
     )
 
     @Test
     fun quotaLineAppendsThaiCount() = assertEquals(
         "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก ๒ ครั้ง",
-        quotaLine(GuidanceQuota("ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก", 2, "x")),
+        quotaLine(GuidanceQuota("ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก", 2, "x"), TH_STRINGS.home),
     )
 
     @Test
     fun quotaLineWithoutCountIsLabel() = assertEquals(
         "นักพรตปลีกวิเวกชั่วคราว",
-        quotaLine(GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว", null, null)),
+        quotaLine(GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว", null, null), TH_STRINGS.home),
     )
 }

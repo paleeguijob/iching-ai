@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
@@ -66,7 +67,7 @@ class UpsellPlacementTest {
         )
         val vm = DivinationViewModel(
             "", null, TossCoinsUseCase(), ResolveCastUseCase(NoHexagrams), SaveReadingUseCase(FakeJournal()),
-            api, session, ObserveSettingsUseCase(NoSettings),
+            api, session, ObserveSettingsUseCase(NoSettings), thaiLanguageHolder(),
         )
         vm.onQuotaUpsellShown()
         vm.onUpsellPremium()

@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.Hexagram
@@ -133,6 +134,7 @@ class YearDivinationViewModelTest {
             api = api,
             session = session,
             observeSettings = ObserveSettingsUseCase(NoSettings),
+            languageHolder = thaiLanguageHolder(),
             yearOf = 2027,
         )
     }

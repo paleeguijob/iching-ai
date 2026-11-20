@@ -1,5 +1,6 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenCard
 import androidx.compose.foundation.layout.Column
@@ -120,7 +121,7 @@ fun DailyScreen(
                 Spacer(Modifier.height(12.dp))
                 ZenSecondaryButton("อ่านต่อในคัมภีร์", onClick = { onOpenHexagram(hexagram.id) }, modifier = Modifier.fillMaxWidth())
                 val year = campaign
-                campaignLine(year)?.let { line ->
+                campaignLine(year, LocalStrings.current.home)?.let { line ->
                     LaunchedEffect(year::class) { viewModel.onCampaignCardShown(year) }
                     Spacer(Modifier.height(16.dp))
                     CampaignLineRow(line, onClick = {

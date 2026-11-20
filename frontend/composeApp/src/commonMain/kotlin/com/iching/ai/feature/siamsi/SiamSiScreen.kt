@@ -1,5 +1,6 @@
 package com.iching.ai.feature.siamsi
 
+import com.iching.ai.ui.strings.LocalStrings
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -59,7 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.siamsi.PuaResult
 import com.iching.ai.feature.divination.SafetyStage
 import com.iching.ai.feature.home.PreCastSheet
-import com.iching.ai.feature.home.SIAMSI_PRECAST_COPY
+import com.iching.ai.feature.home.siamsiPreCastCopy
 import com.iching.ai.feature.share.SiamSiShareSheet
 import com.iching.ai.feature.share.siamsiShareContent
 import com.iching.ai.platform.ShakeAccumulator
@@ -104,7 +105,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
             },
             onCastFromReady = viewModel::onInterpretFromReady,
             onDismiss = viewModel::onSheetDismissed,
-            copy = SIAMSI_PRECAST_COPY,
+            copy = LocalStrings.current.home.siamsiPreCastCopy(),
         )
     }
 

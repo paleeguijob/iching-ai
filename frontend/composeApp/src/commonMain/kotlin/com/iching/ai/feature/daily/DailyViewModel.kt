@@ -1,5 +1,7 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.domain.model.AppLanguage
+import com.iching.ai.ui.strings.stringsFor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.AccountStatus
@@ -125,7 +127,8 @@ class DailyViewModel(
                 it.copy(
                     hexagram = hexagram,
                     streak = update.state,
-                    week = streakWeek(update.state, bangkokEpochDay(millis)),
+                    // Chunk 3b moves this view model onto AppLanguageHolder; until then its streak line stays Thai.
+                    week = streakWeek(update.state, bangkokEpochDay(millis), stringsFor(AppLanguage.TH).home),
                     newlyUnlocked = it.newlyUnlocked + update.newlyUnlocked,
                     showPushPrompt = it.showPushPrompt || offerPush,
                 )

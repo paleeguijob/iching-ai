@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.platform.SpeechState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,9 +23,9 @@ class ListenActionTest {
 
     @Test
     fun labelSaysWhatIsHappening() {
-        assertEquals("ฟังคำทำนาย", listenLabel(premium = true, SpeechState.IDLE))
-        assertEquals("กำลังเตรียมเสียง…", listenLabel(premium = true, SpeechState.PREPARING))
-        assertEquals("หยุดอ่าน", listenLabel(premium = true, SpeechState.SPEAKING))
-        assertEquals("ฟังคำทำนาย · Premium", listenLabel(premium = false, SpeechState.IDLE))
+        assertEquals("ฟังคำทำนาย", listenLabel(premium = true, SpeechState.IDLE, TH_STRINGS.divination))
+        assertEquals("กำลังเตรียมเสียง…", listenLabel(premium = true, SpeechState.PREPARING, TH_STRINGS.divination))
+        assertEquals("หยุดอ่าน", listenLabel(premium = true, SpeechState.SPEAKING, TH_STRINGS.divination))
+        assertEquals("ฟังคำทำนาย · Premium", listenLabel(premium = false, SpeechState.IDLE, TH_STRINGS.divination))
     }
 }

@@ -1,6 +1,7 @@
 package com.iching.ai.feature.home
 
 import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.components.ZenChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,9 +76,9 @@ fun AskYearScreen(
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = LocalStrings.current.common.back, tint = ZenColors.InkBlack)
                 }
-                Text("ถามนักพรตเรื่องปีนี้", style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
+                Text(LocalStrings.current.home.askYearTitle, style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
             }
             Column(Modifier.padding(horizontal = ZenSpacing.screen)) {
                 Spacer(Modifier.height(24.dp))
@@ -85,10 +86,10 @@ fun AskYearScreen(
                 Spacer(Modifier.height(12.dp))
                 ZenChip(QuestionCategory.NEWYEAR.labelTh, selected = true, onClick = {})
                 Spacer(Modifier.height(24.dp))
-                GuidanceQuotaBar(guidanceQuota(status))
+                GuidanceQuotaBar(guidanceQuota(status, LocalStrings.current.home))
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton(
-                    text = startButtonText(deciding),
+                    text = startButtonText(deciding, LocalStrings.current.home),
                     onClick = { viewModel.onStart(question.trim(), QuestionCategory.NEWYEAR) },
                     enabled = !deciding,
                     modifier = Modifier.fillMaxWidth(),

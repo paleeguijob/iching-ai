@@ -1,5 +1,7 @@
 package com.iching.ai
 
+import androidx.compose.ui.text.style.TextOverflow
+import com.iching.ai.ui.strings.HomeStrings
 import com.iching.ai.ui.theme.LocalTabBarHeight
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
@@ -116,12 +118,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.reflect.KClass
 
-private data class TopLevelTab(val route: Any, val routeClass: KClass<*>, val label: String, val icon: ImageVector)
+private data class TopLevelTab(val route: Any, val routeClass: KClass<*>, val label: (HomeStrings) -> String, val icon: ImageVector)
 
 private val TABS = listOf(
-    TopLevelTab(HomeRoute, HomeRoute::class, "ถามเต๋า", Icons.Outlined.Spa),
-    TopLevelTab(LibraryRoute, LibraryRoute::class, "คัมภีร์", Icons.AutoMirrored.Outlined.MenuBook),
-    TopLevelTab(JournalRoute, JournalRoute::class, "บันทึกชะตา", Icons.Outlined.HistoryEdu),
+    TopLevelTab(HomeRoute, HomeRoute::class, { it.tabAsk }, Icons.Outlined.Spa),
+    TopLevelTab(LibraryRoute, LibraryRoute::class, { it.tabLibrary }, Icons.AutoMirrored.Outlined.MenuBook),
+    TopLevelTab(JournalRoute, JournalRoute::class, { it.tabJournal }, Icons.Outlined.HistoryEdu),
 )
 
 @Composable
@@ -406,6 +408,7 @@ private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit, m
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TABS.forEach { tab ->
+            val tabLabel = tab.label(LocalStrings.current.home)
             val isSelected = tab == selected
             val tint = if (isSelected) ZenColors.InkBlack else ZenColors.InkFaint
             Column(
@@ -415,8 +418,8 @@ private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit, m
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(tab.icon, contentDescription = tab.label, tint = tint, modifier = Modifier.size(20.dp))
-                Text(tab.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                Icon(tab.icon, contentDescription = tabLabel, tint = tint, modifier = Modifier.size(20.dp))
+                Text(tabLabel, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Box(
                     Modifier
                         .padding(top = 3.dp)

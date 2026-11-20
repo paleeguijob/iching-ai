@@ -1,5 +1,7 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.DivinationStrings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,11 +28,11 @@ fun listenAction(premium: Boolean, state: SpeechState): ListenAction = when {
     else -> ListenAction.OPEN_PAYWALL
 }
 
-fun listenLabel(premium: Boolean, state: SpeechState): String = when {
-    state == SpeechState.PREPARING -> "กำลังเตรียมเสียง…"
-    state == SpeechState.SPEAKING -> "หยุดอ่าน"
-    premium -> "ฟังคำทำนาย"
-    else -> "ฟังคำทำนาย · Premium"
+fun listenLabel(premium: Boolean, state: SpeechState, strings: DivinationStrings): String = when {
+    state == SpeechState.PREPARING -> strings.listenPreparing
+    state == SpeechState.SPEAKING -> strings.listenStop
+    premium -> strings.listen
+    else -> strings.listenPremium
 }
 
 /** Reads the hermit's words aloud with the device's voice. A Premium perk. */
@@ -42,6 +44,7 @@ fun ListenButton(
     log: (String, Map<String, String>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalStrings.current.divination
     val player = rememberSpeechPlayer()
     val state by player.state.collectAsStateWithLifecycle()
     var noVoice by remember { mutableStateOf(false) }
@@ -51,7 +54,7 @@ fun ListenButton(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { player.stop() }
 
     ZenSecondaryButton(
-        text = listenLabel(premium, state),
+        text = listenLabel(premium, state, strings),
         modifier = modifier,
         onClick = {
             when (listenAction(premium, state)) {
@@ -68,15 +71,15 @@ fun ListenButton(
     if (noVoice) {
         AlertDialog(
             onDismissRequest = { noVoice = false },
-            title = { Text("ยังไม่มีเสียงภาษาไทยในเครื่อง") },
-            text = { Text("ติดตั้งเสียงอ่านภาษาไทยในการตั้งค่าของเครื่องก่อน แล้วกลับมาฟังอีกครั้ง") },
+            title = { Text(strings.noVoiceTitle) },
+            text = { Text(strings.noVoiceBody) },
             confirmButton = {
                 TextButton(onClick = {
                     noVoice = false
                     player.openVoiceSettings()
-                }) { Text("เปิดการตั้งค่า") }
+                }) { Text(strings.openSettings) }
             },
-            dismissButton = { TextButton(onClick = { noVoice = false }) { Text("ไว้ก่อน") } },
+            dismissButton = { TextButton(onClick = { noVoice = false }) { Text(strings.notNow) } },
         )
     }
 }

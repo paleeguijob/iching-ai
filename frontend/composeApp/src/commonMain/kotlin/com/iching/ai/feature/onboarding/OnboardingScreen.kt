@@ -1,5 +1,6 @@
 package com.iching.ai.feature.onboarding
 
+import com.iching.ai.ui.strings.LocalStrings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -76,21 +77,9 @@ import com.iching.ai.ui.components.ZenCard
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
-
-private val POINTS = listOf(
-    "เพื่อความบันเทิงและการสะท้อนคิด" to
-        "คำทำนายช่วยให้ท่านใคร่ครวญสถานการณ์ มิใช่คำแนะนำทางการแพทย์ กฎหมาย การเงิน หรือจิตวิทยา โปรดใช้วิจารณญาณก่อนตัดสินใจเรื่องสำคัญ",
-    "เนื้อหาสร้างโดย AI" to
-        "นักพรตในแอปนี้คือผู้ช่วย AI (Google Gemini) ที่สวมบทบาทและอ้างอิงตัวบทคัมภีร์อี้จิงจริง คำตอบอาจคลาดเคลื่อนได้",
-    "ความเป็นส่วนตัว" to
-        "คำถามของท่านจะถูกส่งไปประมวลผลที่ Google Gemini โปรดอย่าพิมพ์ข้อมูลที่ระบุตัวตน เช่น เลขบัตร ที่อยู่ หรือข้อมูลสุขภาพ",
-    "ยามทุกข์ใจ" to
-        "หากท่านกำลังรู้สึกไม่ปลอดภัยหรือคิดทำร้ายตนเอง โปรดโทรสายด่วนสุขภาพจิต 1323 หรือเหตุฉุกเฉิน 1669",
-)
 
 /** The three things a newcomer needs before the first cast: what to ask, how the coins work, what comes back. */
 private enum class IntroPage { ASK, CAST, READ }
@@ -112,6 +101,9 @@ fun GuideScreen(onClose: () -> Unit) {
 
 @Composable
 private fun IntroFlow(withDisclaimer: Boolean, onFinish: () -> Unit, onClose: (() -> Unit)?) {
+    val strings = LocalStrings.current.onboarding
+    val common = LocalStrings.current.common
+    val appName = LocalStrings.current.home.appName
     val intro = IntroPage.entries
     val pageCount = intro.size + if (withDisclaimer) 1 else 0
     val pager = rememberPagerState { pageCount }
@@ -140,13 +132,13 @@ private fun IntroFlow(withDisclaimer: Boolean, onFinish: () -> Unit, onClose: ((
             ) {
                 if (onClose != null) {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = common.back, tint = ZenColors.InkBlack)
                     }
                 } else {
                     Spacer(Modifier.width(ZenSpacing.lg))
                     CinnabarSeal(text = "易", size = 24.dp, tilt = 0f)
                     Spacer(Modifier.width(10.dp))
-                    Text("อี้จิง", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+                    Text(appName, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
                 }
                 Spacer(Modifier.weight(1f))
                 // Skip lands on the disclaimer when there is one, else it closes; hidden where it would do nothing.
@@ -156,7 +148,7 @@ private fun IntroFlow(withDisclaimer: Boolean, onFinish: () -> Unit, onClose: ((
                         onClick = { if (skipTarget != null) goTo(skipTarget) else onClose?.invoke() },
                         modifier = Modifier.padding(end = 8.dp),
                     ) {
-                        Text("ข้าม", style = MaterialTheme.typography.labelLarge, color = ZenColors.InkSoft)
+                        Text(strings.skip, style = MaterialTheme.typography.labelLarge, color = ZenColors.InkSoft)
                     }
                 }
             }
@@ -182,9 +174,9 @@ private fun IntroFlow(withDisclaimer: Boolean, onFinish: () -> Unit, onClose: ((
                 Spacer(Modifier.height(ZenSpacing.lg))
                 ZenPrimaryButton(
                     text = when {
-                        !last -> "ถัดไป"
-                        withDisclaimer -> "รับทราบและเริ่มต้น"
-                        else -> "เข้าใจแล้ว"
+                        !last -> strings.next
+                        withDisclaimer -> strings.acceptAndStart
+                        else -> common.gotIt
                     },
                     onClick = { if (last) onFinish() else goTo(page + 1) },
                     modifier = Modifier.fillMaxWidth(),
@@ -198,10 +190,11 @@ private fun IntroFlow(withDisclaimer: Boolean, onFinish: () -> Unit, onClose: ((
 /** One short ink stroke per page; the current one is longer and inked, the rest faint. */
 @Composable
 private fun StepMarks(count: Int, current: Int) {
+    val strings = LocalStrings.current.onboarding
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.semantics { contentDescription = "หน้า ${(current + 1).toThaiNumerals()} จาก ${count.toThaiNumerals()}" },
+        modifier = Modifier.semantics { contentDescription = strings.pageOf(current + 1, count) },
     ) {
         repeat(count) { i ->
             val width by animateDpAsState(if (i == current) 22.dp else 8.dp, tween(260), label = "mark")
@@ -217,13 +210,11 @@ private fun StepMarks(count: Int, current: Int) {
 
 @Composable
 private fun IntroPageContent(page: IntroPage, active: Boolean) {
+    val strings = LocalStrings.current.onboarding
     val (title, body) = when (page) {
-        IntroPage.ASK -> "ถามเรื่องที่ค้างใจ" to
-            "อี้จิงคือคัมภีร์โบราณของจีน ที่ผู้คนใช้ถามทางในยามลังเล\nพิมพ์คำถามของท่าน\nหรือเว้นว่างไว้แล้วอธิษฐานในใจก็ได้"
-        IntroPage.CAST -> "โยนเหรียญหกครั้ง" to
-            "เหรียญสามเหรียญ โยนหนึ่งครั้งได้หนึ่งเส้น\nต่อขึ้นจากล่างทีละเส้น\nครบหกเส้นเรียกว่า “กวา” หนึ่งใน ๖๔ กวาของคัมภีร์"
-        IntroPage.READ -> "อ่านคำตอบสองชั้น" to
-            "ชั้นแรก คือตัวบทคัมภีร์ของกวาที่ท่านได้\nชั้นที่สอง คือคำชี้แนะจากนักพรต\nซึ่ง AI เรียบเรียงจากตัวบท\nให้ตรงกับคำถามของท่าน"
+        IntroPage.ASK -> strings.askTitle to strings.askBody
+        IntroPage.CAST -> strings.castTitle to strings.castBody
+        IntroPage.READ -> strings.readTitle to strings.readBody
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compact = maxHeight < 520.dp
@@ -265,7 +256,7 @@ private fun IntroPageContent(page: IntroPage, active: Boolean) {
             if (page == IntroPage.READ) {
                 Spacer(Modifier.height(ZenSpacing.md))
                 Text(
-                    "เสี่ยงทายและอ่านตัวบทได้เสมอ\nส่วนคำชี้แนะจากนักพรตมีจำนวนต่อวัน\nหน้าแรกบอกที่เหลือไว้ก่อนท่านเริ่มทุกครั้ง",
+                    strings.readNote,
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkSoft,
                     textAlign = TextAlign.Center,
@@ -280,6 +271,7 @@ private fun IntroPageContent(page: IntroPage, active: Boolean) {
 /** The question box as home shows it, cycling through the sample questions of each category. */
 @Composable
 private fun AskVisual(active: Boolean) {
+    val strings = LocalStrings.current.onboarding
     val samples = remember { QuestionCategory.entries.filter { it.pickable } }
     var index by remember { mutableIntStateOf(0) }
     LaunchedEffect(active) {
@@ -311,7 +303,7 @@ private fun AskVisual(active: Boolean) {
             ) { i ->
                 val sample = samples.getOrNull(i)
                 Text(
-                    sample?.sampleTh ?: "เว้นว่างไว้ อธิษฐานในใจ…",
+                    sample?.sampleTh ?: strings.askBlank,
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (sample != null) ZenColors.InkBlack else ZenColors.InkFaint,
                     maxLines = 1,
@@ -326,7 +318,7 @@ private fun AskVisual(active: Boolean) {
             label = "category",
         ) { label ->
             Text(
-                label?.let { "เรื่อง$it" } ?: "ไม่ต้องเอ่ยคำถามก็ได้",
+                label?.let { strings.aboutCategory(it) } ?: strings.noQuestionNeeded,
                 style = MaterialTheme.typography.labelMedium,
                 color = ZenColors.BambooDeep,
             )
@@ -340,6 +332,7 @@ private fun AskVisual(active: Boolean) {
  */
 @Composable
 private fun CastVisual(compact: Boolean) {
+    val strings = LocalStrings.current.onboarding
     var tosses by remember { mutableStateOf(emptyList<CoinToss>()) }
     var tossKey by remember { mutableIntStateOf(0) }
     var settling by remember { mutableStateOf(false) }
@@ -361,7 +354,7 @@ private fun CastVisual(compact: Boolean) {
     Column(
         Modifier
             .clip(RoundedCornerShape(16.dp))
-            .clickable(role = Role.Button, onClickLabel = "โยนเหรียญ", onClick = toss)
+            .clickable(role = Role.Button, onClickLabel = strings.tossLabel, onClick = toss)
             .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -392,10 +385,10 @@ private fun CastVisual(compact: Boolean) {
             val line = tosses.lastOrNull()?.line
             Text(
                 when {
-                    tosses.isEmpty() -> "ลองแตะเหรียญดู"
+                    tosses.isEmpty() -> strings.tryTapping
                     settling -> "…"
-                    done -> "ครบหกเส้น ได้หนึ่งกวา · แตะเพื่อลองใหม่"
-                    line != null -> "${tosses.size.toThaiNumerals()} / ๖ · ${practiceLineName(line)}"
+                    done -> strings.practiceDone
+                    line != null -> strings.practiceProgress(tosses.size, strings.practiceLineName(line))
                     else -> ""
                 },
                 style = MaterialTheme.typography.labelLarge,
@@ -406,31 +399,24 @@ private fun CastVisual(compact: Boolean) {
     }
 }
 
-/** What a practice line is called in plain words. */
-private fun practiceLineName(line: LineType): String = when (line) {
-    LineType.YOUNG_YANG -> "เส้นเต็ม (หยาง)"
-    LineType.YOUNG_YIN -> "เส้นขาด (หยิน)"
-    LineType.OLD_YANG -> "เส้นเต็มที่กำลังแปร"
-    LineType.OLD_YIN -> "เส้นขาดที่กำลังแปร"
-}
-
 /** A hexagram as a reading opens it: the figure, its name and its judgment straight from the scripture. */
 @Composable
 private fun ReadVisual() {
+    val strings = LocalStrings.current.onboarding
     ZenCard(
         modifier = Modifier.widthIn(max = 340.dp),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
     ) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("กวาหลัก", style = MaterialTheme.typography.labelSmall, color = ZenColors.BambooDeep)
+            Text(LocalStrings.current.reading.primaryLabel, style = MaterialTheme.typography.labelSmall, color = ZenColors.BambooDeep)
             Spacer(Modifier.height(ZenSpacing.md))
             HexagramFigure(pattern = "111000", lineWidth = 74.dp, lineHeight = 9.dp, gap = 6.dp)
             Spacer(Modifier.height(ZenSpacing.md))
             Text("泰", style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
-            Text("๑๑ · ไท่ สันติ, ความรุ่งเรือง", style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
+            Text(strings.sampleName, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
             Spacer(Modifier.height(ZenSpacing.md))
             Text(
-                "“สิ่งเล็กจากไป สิ่งใหญ่มาถึง เป็นมงคล แผ่ซ่าน”",
+                strings.sampleJudgment,
                 style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
                 color = ZenColors.InkSoft,
                 textAlign = TextAlign.Center,
@@ -443,6 +429,8 @@ private fun ReadVisual() {
 @Composable
 private fun DisclaimerPage() {
     val uri = LocalUriHandler.current
+    val strings = LocalStrings.current.onboarding
+    val common = LocalStrings.current.common
     BoxWithConstraints(Modifier.fillMaxSize()) {
     Column(
         Modifier
@@ -456,12 +444,12 @@ private fun DisclaimerPage() {
         Spacer(Modifier.height(ZenSpacing.md))
         CinnabarSeal(text = "易經", size = 56.dp)
         Spacer(Modifier.height(18.dp))
-        Text("ก่อนเริ่มถามทาง", style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
+        Text(strings.disclaimerTitle, style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
         Spacer(Modifier.height(24.dp))
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            POINTS.forEachIndexed { i, (title, body) ->
+            strings.points.forEachIndexed { i, (title, body) ->
                 Row {
-                    Text((i + 1).toThaiNumerals(), style = MaterialTheme.typography.titleMedium, color = ZenColors.CinnabarRed)
+                    Text(common.number(i + 1), style = MaterialTheme.typography.titleMedium, color = ZenColors.CinnabarRed)
                     Spacer(Modifier.width(14.dp))
                     Column {
                         Text(title, style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
@@ -473,10 +461,10 @@ private fun DisclaimerPage() {
         Spacer(Modifier.height(ZenSpacing.sm))
         Row {
             TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }) {
-                Text("ข้อกำหนดการใช้งาน", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                Text(strings.terms, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
             }
             TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }) {
-                Text("นโยบายความเป็นส่วนตัว", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint, textAlign = TextAlign.Center)
+                Text(strings.privacy, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint, textAlign = TextAlign.Center)
             }
         }
         Spacer(Modifier.height(ZenSpacing.md))

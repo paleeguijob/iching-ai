@@ -106,7 +106,10 @@ import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import kotlinx.coroutines.launch
 import com.iching.ai.ui.theme.ctaBottomPadding
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.HomeStrings
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.formatNumber
 
 /**
  * Home: asking leads. Three coins sit in the middle and start the cast, today's hexagram is one row above them,
@@ -123,6 +126,7 @@ fun HomeScreen(
     onSiamSiDraw: (SiamSiRoute) -> Unit,
     onOpenLink: (PosterLink) -> Unit,
 ) {
+    val strings = LocalStrings.current.home
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
     val mode by siamsi.mode.collectAsStateWithLifecycle()
     val siamsiEnabled by siamsi.enabled.collectAsStateWithLifecycle()
@@ -203,7 +207,7 @@ fun HomeScreen(
             viewModel.onStart(question.trim(), QuestionCategory.fromWire(category))
         }
     }
-    val action = if (isSiamSi) siamsiAction(drawGate.button) else ichingAction(deciding)
+    val action = if (isSiamSi) siamsiAction(drawGate.button, strings) else ichingAction(deciding, strings)
     var focused by remember { mutableStateOf(false) }
     // The keyboard inset changes on every frame while the keyboard slides. Home only recomposes when it comes up
     // or goes away; the padding that follows it is read in the layout phase below.
@@ -264,7 +268,7 @@ fun HomeScreen(
             AskField(
                 question = question,
                 onQuestionChange = { question = it },
-                placeholder = if (isSiamSi) "เรื่องที่อยากถาม (ไม่บังคับ)…" else "พิมพ์คำถาม หรือเว้นว่างไว้อธิษฐานในใจ",
+                placeholder = if (isSiamSi) strings.askPlaceholderSiamsi else strings.askPlaceholder,
                 onFocusChange = { focused = it },
                 expanded = typing,
             )
@@ -272,7 +276,7 @@ fun HomeScreen(
             if (isSiamSi) {
                 SiamSiQuotaBar(drawGate)
             } else {
-                GuidanceQuotaBar(guidanceQuota(status), compact = typing)
+                GuidanceQuotaBar(guidanceQuota(status, strings), compact = typing)
             }
             Spacer(Modifier.height(ZenSpacing.sm))
             ZenPrimaryButton(
@@ -300,11 +304,12 @@ private fun HomeTopBar(
     onModeSelect: (siamsi: Boolean) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    val strings = LocalStrings.current.home
     Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         CinnabarSeal(text = "易", size = 24.dp, tilt = 0f)
         Spacer(Modifier.width(10.dp))
         Text(
-            "อี้จิง",
+            strings.appName,
             style = MaterialTheme.typography.titleMedium,
             color = ZenColors.InkBlack,
             maxLines = 1,
@@ -312,14 +317,14 @@ private fun HomeTopBar(
         )
         if (siamsiEnabled) {
             ZenSegmented(
-                options = listOf("อี้จิง", "เซียมซี"),
+                options = listOf(strings.modeIching, strings.modeSiamsi),
                 selected = if (isSiamSi) 1 else 0,
                 onSelect = { onModeSelect(it == 1) },
                 modifier = Modifier.width(156.dp),
             )
         }
         IconButton(onClick = onOpenSettings) {
-            Icon(Icons.Outlined.Settings, contentDescription = "ตั้งค่า", tint = ZenColors.InkSoft)
+            Icon(Icons.Outlined.Settings, contentDescription = strings.settings, tint = ZenColors.InkSoft)
         }
     }
 }
@@ -330,6 +335,8 @@ private fun HomeTopBar(
  */
 @Composable
 private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Unit) {
+    val strings = LocalStrings.current.home
+    val lang = LocalAppLanguage.current
     ZenCard(onClick = hexagram?.let { onClick }, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
         Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
             if (hexagram == null) {
@@ -350,7 +357,7 @@ private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Uni
                         Spacer(Modifier.width(6.dp))
                     }
                     Text(
-                        if (pending) "กวาประจำวัน · ยังไม่ได้เปิดดู" else "กวาประจำวัน",
+                        if (pending) strings.dailyHexagramPending else strings.dailyHexagram,
                         style = MaterialTheme.typography.labelMedium,
                         color = ZenColors.CinnabarRed,
                         maxLines = 1,
@@ -358,7 +365,7 @@ private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Uni
                     )
                 }
                 Text(
-                    "${hexagram.id.toThaiNumerals()} · ${hexagram.shortNameTh} ${hexagram.meaningTh}",
+                    "${formatNumber(hexagram.id, lang)} · ${hexagram.shortNameTh} ${hexagram.meaningTh}",
                     style = MaterialTheme.typography.titleSmall,
                     color = ZenColors.InkBlack,
                     maxLines = 1,
@@ -376,13 +383,14 @@ private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Uni
  */
 @Composable
 private fun Ritual(isSiamSi: Boolean, action: HomeAction, onStart: () -> Unit, setLabel: String?, onOpenSet: () -> Unit) {
+    val strings = LocalStrings.current.home
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val roomy = maxHeight >= 250.dp
         val tight = maxHeight < 190.dp
         val spacious = maxHeight >= 420.dp
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(ZenSpacing.md)) {
             Text(
-                "มีเรื่องใดค้างใจ",
+                strings.ritualPrompt,
                 style = if (tight) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displaySmall,
                 color = ZenColors.InkBlack,
                 textAlign = TextAlign.Center,
@@ -423,7 +431,7 @@ private fun Ritual(isSiamSi: Boolean, action: HomeAction, onStart: () -> Unit, s
                 CoinTrio(size = if (tight) 52.dp else if (spacious) 88.dp else 72.dp, modifier = tapModifier)
                 if (roomy) {
                     Text(
-                        "ตั้งจิตถึงเรื่องนั้น แล้วแตะเหรียญเพื่อโยน ๖ ครั้ง",
+                        strings.ritualCaption,
                         style = MaterialTheme.typography.bodySmall,
                         color = ZenColors.InkSoft,
                         textAlign = TextAlign.Center,
@@ -478,6 +486,7 @@ private fun SmallCylinder(height: Dp, modifier: Modifier = Modifier) {
 
 @Composable
 private fun SetButton(label: String, onClick: () -> Unit) {
+    val strings = LocalStrings.current.home
     val shape = RoundedCornerShape(20.dp)
     Row(
         Modifier
@@ -488,7 +497,7 @@ private fun SetButton(label: String, onClick: () -> Unit) {
             .padding(start = 14.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("ชุด: $label", style = MaterialTheme.typography.labelMedium, color = ZenColors.InkBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(strings.setButton(label), style = MaterialTheme.typography.labelMedium, color = ZenColors.InkBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Icon(Icons.Outlined.ExpandMore, contentDescription = null, tint = ZenColors.InkSoft, modifier = Modifier.size(18.dp))
     }
 }
@@ -533,7 +542,7 @@ private fun AskField(
 internal fun QuestionField(
     value: String,
     onChange: (String) -> Unit,
-    placeholder: String = "พิมพ์สิ่งที่ค้างคาใจ หรือเว้นว่างไว้เพื่ออธิษฐานในใจ...",
+    placeholder: String = LocalStrings.current.home.yearPlaceholder,
 ) {
     ZenCard(contentPadding = PaddingValues(4.dp)) {
         TextField(
@@ -562,67 +571,67 @@ private fun quietFieldColors() = TextFieldDefaults.colors(
 )
 
 /** Spoken label for the Siam Si send button, per spec table 2.2. */
-fun siamsiButtonText(button: DrawButton): String = when (button) {
-    DrawButton.WATCH_AD -> "▶ ดูโฆษณาแล้วเขย่าเซียมซี"
-    DrawButton.SHAKE, DrawButton.DISABLED -> "เขย่าเซียมซี"
-    DrawButton.PAYWALL -> "สมัคร Premium เสี่ยงได้ ๓ ครั้ง/วัน ไม่มีโฆษณา"
+fun siamsiButtonText(button: DrawButton, strings: HomeStrings): String = when (button) {
+    DrawButton.WATCH_AD -> strings.siamsiWatchAd
+    DrawButton.SHAKE, DrawButton.DISABLED -> strings.siamsiShake
+    DrawButton.PAYWALL -> strings.siamsiPaywall
 }
 
 /** The Start button waits, with a word, while the status is checked before casting. */
-fun startButtonText(deciding: Boolean): String = if (deciding) "กำลังตั้งจิต..." else "เริ่มเสี่ยงทาย"
+fun startButtonText(deciding: Boolean, strings: HomeStrings): String =
+    if (deciding) strings.startButtonDeciding else strings.startButton
 
 /** What the Start button and the coins say and whether they can be pressed. */
 /** [artHint] is set when tapping the art must not start: the line shown instead, naming the button to press. */
 private data class HomeAction(val label: String, val enabled: Boolean, val artHint: String? = null)
 
-private fun ichingAction(deciding: Boolean) = HomeAction(startButtonText(deciding), enabled = !deciding)
+private fun ichingAction(deciding: Boolean, strings: HomeStrings) =
+    HomeAction(startButtonText(deciding, strings), enabled = !deciding)
 
-private fun siamsiAction(button: DrawButton) =
-    HomeAction(siamsiButtonText(button), enabled = button != DrawButton.DISABLED, artHint = siamsiArtHint(button))
+private fun siamsiAction(button: DrawButton, strings: HomeStrings) =
+    HomeAction(siamsiButtonText(button, strings), enabled = button != DrawButton.DISABLED, artHint = siamsiArtHint(button, strings))
 
 /**
  * What a tap on the cylinder says instead of starting, or null when it may start the draw. A rewarded ad must be
  * chosen on purpose and home never upsells, so only the labelled button leads to either.
  */
-fun siamsiArtHint(button: DrawButton): String? = when (button) {
-    DrawButton.WATCH_AD -> "กดปุ่มด้านล่างเพื่อดูโฆษณาแล้วเขย่า"
-    DrawButton.PAYWALL -> "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"
+fun siamsiArtHint(button: DrawButton, strings: HomeStrings): String? = when (button) {
+    DrawButton.WATCH_AD -> strings.artHintWatchAd
+    DrawButton.PAYWALL -> strings.artHintPaywall
     DrawButton.SHAKE, DrawButton.DISABLED -> null
 }
 
 /** What the home screen says about today's guidance; [count] is null when no count applies. */
 data class GuidanceQuota(val label: String, val count: Int?, val note: String?)
 
-private const val FREE_OUT_OF_GUIDANCE_NOTE = "สมัคร Premium หรือใช้เหรียญอี้จิงเพื่อรับคำชี้แนะต่อ · ยังเสี่ยงทายและอ่านตัวบทได้"
-
-fun guidanceQuota(status: AccountStatus): GuidanceQuota {
+fun guidanceQuota(status: AccountStatus, strings: HomeStrings): GuidanceQuota {
     if (!status.aiEnabled) {
-        return GuidanceQuota("นักพรตปลีกวิเวกชั่วคราว — ยังเสี่ยงทายและอ่านตัวบทคัมภีร์ได้", count = null, note = null)
+        return GuidanceQuota(strings.quotaPaused, count = null, note = null)
     }
-    val prefix = if (status.premium) "Premium · " else ""
-    val label = "${prefix}วันนี้เหลือคำชี้แนะจากนักพรต"
+    val prefix = if (status.premium) strings.premiumPrefix else ""
+    val label = "${prefix}${strings.quotaToday}"
     val count = status.readingsLeftToday
     val coins = status.coins
     if (count > 0) {
-        val note = if (coins > 0) "และมีเหรียญอี้จิงอีก ${coins.toThaiNumerals()} เหรียญ ใช้ได้ทุกวัน ไม่มีวันหมดอายุ" else null
+        val note = if (coins > 0) strings.quotaPlusCoins(coins) else null
         return GuidanceQuota(label, count, note)
     }
-    if (coins > 0) return GuidanceQuota("${prefix}เหรียญอี้จิงใช้ทำนายได้อีก", coins, note = "ใช้ได้ทุกวัน ไม่มีวันหมดอายุ")
+    if (coins > 0) return GuidanceQuota("${prefix}${strings.quotaCoins}", coins, note = strings.coinsNote)
     // A zero here would read as "no more today", so point to the ads while any are left.
     if (!status.premium && status.adsWatchableLeft > 0) {
         return GuidanceQuota(
-            "ชมโฆษณา รับคำชี้แนะเพิ่มได้อีก",
+            strings.quotaAds,
             count = status.adsWatchableLeft,
-            note = "กดเริ่มเสี่ยงทาย แล้วชมโฆษณาสั้นก่อนโยนเหรียญ",
+            note = strings.quotaAdsNote,
         )
     }
-    val note = if (status.premium) "ยังเสี่ยงทายและอ่านตัวบทได้" else FREE_OUT_OF_GUIDANCE_NOTE
+    val note = if (status.premium) strings.premiumOutNote else strings.freeOutNote
     return GuidanceQuota(label, count, note)
 }
 
-/** One line for the quota, e.g. "วันนี้เหลือคำชี้แนะจากนักพรต ๒ ครั้ง". */
-internal fun quotaLine(quota: GuidanceQuota): String =
-    quota.count?.let { "${quota.label} ${it.toThaiNumerals()} ครั้ง" } ?: quota.label
+/** One line for the quota: its label and, when there is one, the count. */
+internal fun quotaLine(quota: GuidanceQuota, strings: HomeStrings): String =
+    quota.count?.let { strings.quotaSpoken(quota.label, it) } ?: quota.label
 
 /**
  * What guidance is left, shown before Start and never pressable: the words on the left, the count large on the
@@ -630,6 +639,7 @@ internal fun quotaLine(quota: GuidanceQuota): String =
  */
 @Composable
 internal fun GuidanceQuotaBar(quota: GuidanceQuota, compact: Boolean = false) {
+    val strings = LocalStrings.current.home
     // The AI-paused label carries its note after the dash; it reads better as heading and note.
     val (label, note) = quota.label.split(" — ", limit = 2).let { parts ->
         if (parts.size == 2) parts[0] to parts[1] else quota.label to quota.note
@@ -640,7 +650,7 @@ internal fun GuidanceQuotaBar(quota: GuidanceQuota, compact: Boolean = false) {
         count = quota.count,
         alert = quota.count == 0,
         compact = compact,
-        spoken = quotaLine(quota),
+        spoken = quotaLine(quota, strings),
     )
 }
 
@@ -653,6 +663,7 @@ private fun SiamSiQuotaBar(gate: DrawGateUi) {
 
 @Composable
 private fun QuotaPanel(label: String, note: String?, count: Int?, alert: Boolean, compact: Boolean, spoken: String) {
+    val strings = LocalStrings.current.home
     val shape = RoundedCornerShape(14.dp)
     val edge = if (alert) ZenColors.CinnabarRed.copy(alpha = 0.35f) else ZenColors.current.outlineVariant
     Row(
@@ -679,7 +690,7 @@ private fun QuotaPanel(label: String, note: String?, count: Int?, alert: Boolean
             Spacer(Modifier.width(ZenSpacing.md))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    it.toThaiNumerals(),
+                    formatNumber(it, LocalAppLanguage.current),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = if (compact) 22.sp else 32.sp,
@@ -688,7 +699,7 @@ private fun QuotaPanel(label: String, note: String?, count: Int?, alert: Boolean
                     color = if (it == 0) ZenColors.CinnabarRed else ZenColors.BambooDeep,
                 )
                 Spacer(Modifier.width(4.dp))
-                Text("ครั้ง", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, modifier = Modifier.padding(bottom = 4.dp))
+                Text(strings.quotaUnit, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, modifier = Modifier.padding(bottom = 4.dp))
             }
         }
     }

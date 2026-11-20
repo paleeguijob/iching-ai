@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
@@ -116,6 +117,7 @@ class ReadingSurvivesLeavingTest {
             api = api,
             session = session,
             observeSettings = ObserveSettingsUseCase(NoSettings),
+            languageHolder = thaiLanguageHolder(),
             resumeReadingId = resumeId,
             getReading = GetReadingUseCase(journal, resolve),
         )

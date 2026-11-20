@@ -25,6 +25,7 @@ import com.iching.ai.domain.model.withReviewRequested
 import com.iching.ai.feature.review.shouldRequestReview
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
+import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -60,7 +61,6 @@ data class PreCastSheetUi(
 )
 
 private const val STATUS_WAIT_MILLIS = 1_500L
-private const val PRODUCTS_FAILED_MESSAGE = "ยังโหลดแพ็กเกจจากร้านค้าไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
 
 class HomeViewModel(
     private val getDaily: GetDailyHexagramUseCase,
@@ -68,6 +68,7 @@ class HomeViewModel(
     private val session: AppSession,
     private val updateSettings: UpdateSettingsUseCase,
     private val images: PosterImages,
+    private val languageHolder: AppLanguageHolder,
     private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) : ViewModel() {
 
@@ -78,8 +79,10 @@ class HomeViewModel(
     val dailyHexagram: StateFlow<Hexagram?> = _dailyHexagram.asStateFlow()
 
     /** The last seven days of opening the daily hexagram, shown under today's card. */
-    val streakWeek: StateFlow<StreakWeek> = combine(observeSettings(), today) { settings, day -> streakWeek(settings.streak, day) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value))
+    val streakWeek: StateFlow<StreakWeek> = combine(observeSettings(), today, languageHolder.language) { settings, day, _ ->
+        streakWeek(settings.streak, day, languageHolder.strings.home)
+    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value, languageHolder.strings.home))
 
     val status: StateFlow<AccountStatus> = session.status
 
@@ -269,10 +272,10 @@ class HomeViewModel(
         viewModelScope.launch {
             when (session.watchAdForReading()) {
                 is AdResult.Granted -> castFromSheet()
-                AdResult.NotCompleted -> settle("ต้องชมโฆษณาจนจบจึงจะได้รับสิทธิ์")
-                is AdResult.Error -> settle("ยังไม่มีโฆษณาพร้อมแสดง โปรดลองใหม่อีกครู่ หรือเสี่ยงทายอ่านตัวบทไปก่อน")
+                AdResult.NotCompleted -> settle(languageHolder.strings.common.adMustFinish)
+                is AdResult.Error -> settle(languageHolder.strings.home.adUnavailableOrScripture)
                 AdResult.LimitReached -> {
-                    _sheet.update { it?.copy(kind = PreCastSheetKind.UPSELL, busy = false, message = "วันนี้ใช้สิทธิ์ชมโฆษณาครบแล้ว") }
+                    _sheet.update { it?.copy(kind = PreCastSheetKind.UPSELL, busy = false, message = languageHolder.strings.common.adLimitReached) }
                     if (_sheet.value != null) onUpsellShown()
                 }
             }
@@ -289,7 +292,7 @@ class HomeViewModel(
             // The price may not have loaded yet; the button works anyway, so look the pack up now.
             val coins = sh.coins ?: runCatching { session.products() }.getOrNull()?.firstOrNull { it.kind == ProductKind.COINS }
             if (coins == null) {
-                settle(PRODUCTS_FAILED_MESSAGE)
+                settle(languageHolder.strings.home.productsFailed)
                 return@launch
             }
             when (session.purchase(coins)) {
@@ -300,7 +303,7 @@ class HomeViewModel(
                 PurchaseResult.Cancelled -> settle(null)
                 PurchaseResult.Pending -> settle(PENDING_MESSAGE)
                 PurchaseResult.AwaitingPayment -> settle(AWAITING_PAYMENT_MESSAGE)
-                is PurchaseResult.Error -> settle("การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
+                is PurchaseResult.Error -> settle(languageHolder.strings.common.paymentFailed)
             }
         }
     }

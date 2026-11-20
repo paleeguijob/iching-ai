@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.repository.DivinationEvent
@@ -84,6 +85,7 @@ class DivinationViewModelTest {
             api = api,
             session = session,
             observeSettings = ObserveSettingsUseCase(NoSettings),
+            languageHolder = thaiLanguageHolder(),
         )
     }
 

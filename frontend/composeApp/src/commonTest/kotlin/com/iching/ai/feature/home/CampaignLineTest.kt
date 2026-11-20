@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.Hexagram
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,17 +13,17 @@ class CampaignLineTest {
     )
 
     @Test
-    fun hiddenHasNoLine() = assertNull(campaignLine(CampaignCard.Hidden))
+    fun hiddenHasNoLine() = assertNull(campaignLine(CampaignCard.Hidden, TH_STRINGS.home))
 
     @Test
     fun newAsksToCast() = assertEquals(
         CampaignLine("กวาประจำปีมะแม ๒๕๗๐ · ยังไม่ได้เสี่ยง", action = "เสี่ยง", pending = true),
-        campaignLine(CampaignCard.New(2027)),
+        campaignLine(CampaignCard.New(2027), TH_STRINGS.home),
     )
 
     @Test
     fun castNamesTheYearHexagram() = assertEquals(
         CampaignLine("กวาประจำปีของท่าน: ขุน", action = "ดู", pending = false),
-        campaignLine(CampaignCard.Cast(2027, kun)),
+        campaignLine(CampaignCard.Cast(2027, kun), TH_STRINGS.home),
     )
 }
