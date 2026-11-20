@@ -317,6 +317,7 @@ class SiamSiViewModel(
             }
             is DivinationEvent.Done -> {
                 session.updateStatus(event.status)
+                session.onReadingCompleted()
                 val words = text.toString().trim()
                 _interpret.update { it.copy(text = words, streaming = false) }
                 persist { it.copy(interpretation = words, source = InterpretationSource.AI) }

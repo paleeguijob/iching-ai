@@ -7,6 +7,7 @@ import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.repository.DivinationEvent
+import com.iching.ai.domain.repository.LimitReason
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
 import com.iching.ai.domain.repository.OracleApi
@@ -25,6 +26,7 @@ import com.iching.ai.session.FirebaseApiSession
 import com.iching.ai.session.NoAds
 import com.iching.ai.session.NoAnalytics
 import com.iching.ai.session.NoNotifications
+import com.iching.ai.session.CountingSettings
 import com.iching.ai.session.NoSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -86,6 +88,7 @@ class ReadingSurvivesLeavingTest {
     private val dispatcher = StandardTestDispatcher(scheduler)
     private val api = StreamingApi()
     private val journal = RecordingJournal()
+    private val settings = CountingSettings()
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -100,7 +103,7 @@ class ReadingSurvivesLeavingTest {
             FirebaseApiSession(auth),
             api,
             FakeJournal(),
-            NoSettings,
+            settings,
             CoroutineScope(dispatcher),
         )
         val resolve = ResolveCastUseCase(SomeHexagram)
@@ -158,6 +161,26 @@ class ReadingSurvivesLeavingTest {
         assertEquals("คำชี้แนะ", saved.interpretation)
         assertEquals(vm.state.value.savedReadingId, saved.id)
         assertTrue(saved.createdAtMillis > 0)
+    }
+
+    @Test
+    fun doneCountsAReading() {
+        viewModel().onTossRemaining()
+        api.divineEvents.trySend(DivinationEvent.Cast("r1", LINES, emptyList()))
+        api.divineEvents.trySend(DivinationEvent.Done(null))
+        api.divineEvents.close()
+        advance(60_000)
+        assertEquals(1, settings.state.value.completedReadings)
+    }
+
+    @Test
+    fun limitedDoesNotCountAReading() {
+        viewModel().onTossRemaining()
+        api.divineEvents.trySend(DivinationEvent.Cast("r1", LINES, emptyList()))
+        api.divineEvents.trySend(DivinationEvent.Limited(LimitReason.QUOTA, null, null))
+        api.divineEvents.close()
+        advance(60_000)
+        assertEquals(0, settings.state.value.completedReadings)
     }
 
     @Test

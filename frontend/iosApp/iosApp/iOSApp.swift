@@ -22,7 +22,8 @@ struct iOSApp: App {
             purchases: IosPurchases(configured: hasRevenueCat),
             ads: IosAds.shared,
             analytics: IosAnalytics(),
-            notifications: IosNotifications()
+            notifications: IosNotifications(),
+            review: IosReview()
         )
         MainViewControllerKt.doInitKoin(bridges: bridges)
     }

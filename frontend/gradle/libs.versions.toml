@@ -9,6 +9,7 @@ firebase-crashlytics-plugin = "3.0.4"
 revenuecat = "9.29.1"
 play-services-ads = "24.4.0"
 ump = "3.2.0"
+play-review = "2.0.2"
 androidx-credentials = "1.5.0"
 googleid = "1.1.1"
 agp = "9.5.0"
@@ -44,6 +45,7 @@ firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 revenuecat-purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "revenuecat" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
+play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
 ump = { module = "com.google.android.ump:user-messaging-platform", version.ref = "ump" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "androidx-credentials" }
 androidx-credentials-playServices = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidx-credentials" }

@@ -87,12 +87,31 @@ interface NativeNotifications {
     fun openSystemSettings()
 }
 
+interface NativeReview {
+    /** Asks the store's own rating sheet; value = "ok". The store may decide not to show it, and never says. */
+    fun requestReview(callback: ResultCallback)
+
+    /** Store page for the rate-app row; null where there is none yet (iOS until the App Store id exists). */
+    fun storeUrl(): String?
+
+    /** "android" or "ios", sent with feedback. */
+    fun platform(): String
+}
+
+/** No store to ask; used where a platform has no review bridge (and in tests). */
+object NoReview : NativeReview {
+    override fun requestReview(callback: ResultCallback) = callback.onResult("ok", null)
+    override fun storeUrl(): String? = null
+    override fun platform() = "unknown"
+}
+
 class NativeBridges(
     val auth: NativeAuth,
     val purchases: NativePurchases,
     val ads: NativeAds,
     val analytics: NativeAnalytics,
     val notifications: NativeNotifications,
+    val review: NativeReview = NoReview,
 )
 
 class NativeException(message: String) : Exception(message)

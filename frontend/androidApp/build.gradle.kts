@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.revenuecat.purchases)
     implementation(libs.play.services.ads)
     implementation(libs.ump)
+    implementation(libs.play.review)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.playServices)
     implementation(libs.googleid)

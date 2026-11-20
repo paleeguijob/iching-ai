@@ -127,7 +127,7 @@ class SiamSiViewModelTest {
         api.statusNow = status
         if (!keepSettings) settings = SlipSettings(AppSettings(siamsiUsage = usage))
         val auth = FakeAuth()
-        val session = AppSession(NativeBridges(auth, FakePurchases(), ads, LoggedAnalytics(), NoNotifications), FirebaseApiSession(auth), api, journal, NoSettings, scope)
+        val session = AppSession(NativeBridges(auth, FakePurchases(), ads, LoggedAnalytics(), NoNotifications), FirebaseApiSession(auth), api, journal, settings, scope)
         session.start()
         val vm = SiamSiViewModel(
             route = route,
@@ -217,6 +217,26 @@ class SiamSiViewModelTest {
         vm.onInterpret()
         scheduler.advanceUntilIdle()
         assertEquals(true, vm.interpret.value.onServer)
+    }
+
+    @Test
+    fun doneCountsAReading() {
+        val vm = viewModel(1, SAK)
+        vm.reachSlip()
+        api.siamsiEvents = listOf(DivinationEvent.Created("r1"), DivinationEvent.Delta("ใบนี้"), DivinationEvent.Done(null))
+        vm.onInterpret()
+        scheduler.advanceUntilIdle()
+        assertEquals(1, settings.flow.value.completedReadings)
+    }
+
+    @Test
+    fun failedDoesNotCountAReading() {
+        val vm = viewModel(1, SAK)
+        vm.reachSlip()
+        api.siamsiEvents = listOf(DivinationEvent.Created("r1"), DivinationEvent.Failed(com.iching.ai.domain.repository.FailureReason.NETWORK))
+        vm.onInterpret()
+        scheduler.advanceUntilIdle()
+        assertEquals(0, settings.flow.value.completedReadings)
     }
 
     @Test

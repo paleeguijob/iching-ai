@@ -7,6 +7,7 @@ import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.model.mergedWith
+import com.iching.ai.domain.model.withReadingCompleted
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.JournalRepository
@@ -128,6 +129,33 @@ class AppSession(
     val supportsApple: Boolean get() = bridges.auth.supportsApple()
     val supportsGoogle: Boolean get() = bridges.auth.supportsGoogle()
     val manageSubscriptionsUrl: String get() = bridges.purchases.manageSubscriptionsUrl()
+    val storeUrl: String? get() = bridges.review.storeUrl()
+
+    /** Set when a reading finishes; Home takes it on its next resume to decide whether to ask for a rating. */
+    private var readingFinished = false
+
+    /** A reading's interpretation finished: counts it, and lets Home consider asking for a rating. */
+    suspend fun onReadingCompleted() {
+        settings.update { it.withReadingCompleted() }
+        readingFinished = true
+    }
+
+    /** True once after each finished reading. */
+    fun takeReadingFinished(): Boolean = readingFinished.also { readingFinished = false }
+
+    /** Asks the store's rating sheet; a failure is only recorded, the seeker never sees it. */
+    suspend fun requestReview() {
+        try {
+            awaitNative(bridges.review::requestReview)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("review_request: ${e.message}")
+        }
+    }
+
+    suspend fun sendFeedback(message: String) =
+        api.sendFeedback(message, bridges.auth.appVersion(), bridges.review.platform())
 
     fun start() {
         if (started) return

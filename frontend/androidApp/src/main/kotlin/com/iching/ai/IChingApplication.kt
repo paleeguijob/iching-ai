@@ -11,6 +11,7 @@ import com.iching.ai.platform.AndroidAnalytics
 import com.iching.ai.platform.AndroidAuth
 import com.iching.ai.platform.AndroidNotifications
 import com.iching.ai.platform.AndroidPurchases
+import com.iching.ai.platform.AndroidReview
 import com.iching.ai.platform.NativeBridges
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
@@ -49,6 +50,7 @@ class IChingApplication : Application() {
             ads = ads,
             analytics = analytics,
             notifications = notifications,
+            review = AndroidReview(this, activities),
         )
         initKoin(bridges) {
             androidContext(this@IChingApplication)

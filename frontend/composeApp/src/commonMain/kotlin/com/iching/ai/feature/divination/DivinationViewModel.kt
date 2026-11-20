@@ -366,6 +366,7 @@ class DivinationViewModel(
                 }
                 is DivinationEvent.Done -> {
                     session.updateStatus(event.status)
+                    session.onReadingCompleted()
                     _state.update { it.copy(shareSummary = event.shareSummary) }
                     outcome = StreamOutcome.Done
                     settleIfReady()
