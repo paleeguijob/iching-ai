@@ -80,23 +80,23 @@ fun zodiacYearLabel(year: Int, lang: AppLanguage): String {
     }
 }
 
+/** English text is present only when the overlay set [Hexagram.nameEn]; blank means the content is Thai (ruling R25). */
+private val Hexagram.hasEnglish: Boolean get() = nameEn.isNotBlank()
+
 /**
  * The hexagram's full name for a list row or a line of text: TH "乾 เฉียน", EN "乾 Qián · Heaven".
- * In English the Thai text is never used; if the English text is missing only "乾 Qián" is shown.
+ * If the English overlay is missing (blank [Hexagram.nameEn]) the Thai name is shown.
  */
-fun Hexagram.displayName(lang: AppLanguage): String = when (lang) {
-    AppLanguage.TH -> "$nameCn $shortNameTh"
-    AppLanguage.EN -> if (nameEn.isBlank()) "$nameCn $pinyin" else "$nameCn $pinyin · $nameEn"
-}
+fun Hexagram.displayName(lang: AppLanguage): String =
+    if (lang == AppLanguage.EN && hasEnglish) "$nameCn $pinyin · $nameEn" else "$nameCn $shortNameTh"
 
 /** The short name without the Chinese character, for places that show [Hexagram.nameCn] separately. */
-fun Hexagram.shortName(lang: AppLanguage): String = when (lang) {
-    AppLanguage.TH -> shortNameTh
-    AppLanguage.EN -> nameEn
-}
+fun Hexagram.shortName(lang: AppLanguage): String =
+    if (lang == AppLanguage.EN && hasEnglish) nameEn else shortNameTh
 
-/** The meaning line under the name; in English it is the English meaning, empty if only Thai text is loaded. */
-fun Hexagram.meaning(lang: AppLanguage): String = when (lang) {
-    AppLanguage.TH -> meaningTh
-    AppLanguage.EN -> if (nameEn.isBlank()) "" else meaningTh
-}
+/**
+ * The meaning line under the name. Task 5's overlay (applyEnglish) encodes the English text as
+ * nameTh = "nameEn — meaningEn", so [Hexagram.meaningTh] is the English meaning whenever [hasEnglish];
+ * with no overlay it is the Thai meaning.
+ */
+fun Hexagram.meaning(lang: AppLanguage): String = meaningTh

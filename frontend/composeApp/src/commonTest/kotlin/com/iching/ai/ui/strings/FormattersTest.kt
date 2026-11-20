@@ -62,10 +62,10 @@ class FormattersTest {
         assertEquals("乾 Qián · Heaven", en.displayName(EN))
         assertEquals("Heaven", en.shortName(EN))
         assertEquals("Strong and unceasing", en.meaning(EN))
-        // Thai text left over in English mode (overlay not available) must never be shown.
+        // Overlay missing (blank nameEn, ruling R25): the Thai data is shown.
         val fallback = hex("เฉียน — ความเข้มแข็ง")
-        assertEquals("乾 Qián", fallback.displayName(EN))
-        assertEquals("", fallback.shortName(EN))
-        assertEquals("", fallback.meaning(EN))
+        assertEquals("乾 เฉียน", fallback.displayName(EN))
+        assertEquals("เฉียน", fallback.shortName(EN))
+        assertEquals("ความเข้มแข็ง", fallback.meaning(EN))
     }
 }
