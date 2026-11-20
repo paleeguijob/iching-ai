@@ -277,8 +277,10 @@ describe("safety", () => {
     );
     const list = (name: string) => [...kt.match(new RegExp(`val ${name} = listOf\\(([\\s\\S]*?)\\n\\)`))![1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
     const message = (name: string) => kt.match(new RegExp(`const val ${name} = """([\\s\\S]*?)"""`))![1];
-    assert.deepEqual(list("SELF_HARM"), SELF_HARM);
-    assert.deepEqual(list("MEDICAL_EMERGENCY"), MEDICAL_EMERGENCY);
+    // The app still keeps its English words in these lists until its own move to word-boundary English lists.
+    const thaiOnly = (words: string[]) => words.filter((w) => !/^[a-z]+$/.test(w));
+    assert.deepEqual(thaiOnly(list("SELF_HARM")), SELF_HARM);
+    assert.deepEqual(thaiOnly(list("MEDICAL_EMERGENCY")), MEDICAL_EMERGENCY);
     assert.equal(message("SELF_HARM_MESSAGE"), SELF_HARM_MESSAGE);
     assert.equal(message("MEDICAL_MESSAGE"), MEDICAL_MESSAGE);
   });
@@ -350,6 +352,27 @@ describe("safety", () => {
     }
     assert.equal(checkSafety("He has CHEST-PAINS!", "en").kind, "crisis");
     assert.equal(checkSafety("I can not breathe", "en").kind, "crisis");
+  });
+
+  it("the Thai lists hold Thai script only, and the English words they held are still caught", () => {
+    for (const w of [...SELF_HARM, ...MEDICAL_EMERGENCY]) assert.doesNotMatch(w, /[a-z]/i, w);
+    const moved: [string, string][] = [
+      ["suicide", "self_harm"], ["killmyself", "self_harm"], ["endmylife", "self_harm"], ["selfharm", "self_harm"],
+      ["wanttodie", "self_harm"], ["cutmyself", "self_harm"],
+      ["overdose", "medical_emergency"], ["heartattack", "medical_emergency"], ["stroke", "medical_emergency"],
+      ["cantbreathe", "medical_emergency"],
+    ];
+    for (const [w, topic] of moved) {
+      const v = checkSafety(`help ${w} now`);
+      assert.equal(v.kind === "crisis" && v.topic, topic, w);
+    }
+    for (const q of ["I want to end my life", "I want to kill myself", "I keep cutting myself", "he had a stroke"]) {
+      assert.equal(checkSafety(q).kind, "crisis", q);
+    }
+    for (const q of ["Will I spend my life with him?", "Should I upskill myself?", "Tickets to see the Strokes", "Will my band, Heart Attackers, get signed?"]) {
+      assert.equal(checkSafety(q).kind, "ok", q);
+      assert.equal(checkSafety(q, "en").kind, "ok", q);
+    }
   });
 
   it("every English phrase is a lower-case pattern of letters and spaces", () => {

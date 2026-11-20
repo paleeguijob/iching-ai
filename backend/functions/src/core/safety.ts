@@ -13,31 +13,30 @@ export const SELF_HARM = [
   "ฆ่าตัวตาย", "อยากตาย", "อยากหายไปจากโลก", "ไม่อยากมีชีวิต", "ไม่อยากอยู่แล้ว", "ไม่อยากตื่น",
   "จบชีวิต", "ปลิดชีพ", "ทำร้ายตัวเอง", "ทำร้ายตนเอง", "กรีดข้อมือ", "กรีดแขน", "กินยาตาย",
   "กินยาฆ่าตัว", "ผูกคอ", "โดดตึก", "กระโดดตึก", "โดดสะพาน", "ตายไปซะ", "อยู่ไปก็ไร้ค่า",
-  "suicide", "killmyself", "endmylife", "selfharm", "wanttodie", "cutmyself",
 ];
 
 export const MEDICAL_EMERGENCY = [
   "เจ็บหน้าอก", "แน่นหน้าอก", "หายใจไม่ออก", "หมดสติ", "ชักเกร็ง", "เลือดออกไม่หยุด",
   "กินยาเกินขนาด", "ยาเกินขนาด", "แพ้ยารุนแรง", "ปากเบี้ยว", "แขนขาอ่อนแรง", "โดนงูกัด",
-  "overdose", "heartattack", "stroke", "cantbreathe",
 ];
 
 /**
  * English phrases, as regular-expression sources matched whole-word on normalizeEnglishForSafety's text (lower case,
  * apostrophes dropped, everything else that is not a letter or digit one space: "Can't  breathe!" → "cant breathe ").
- * Spaces are kept so a phrase can't run across words: "spend it all" is not "end it all".
- * Kept apart from the Thai lists above, which must match the app's copy.
+ * Spaces are kept so a phrase can't run across words: "spend it all" is not "end it all". Within a phrase a space is
+ * optional, so a run-together "killmyself" is still caught. Every Latin-script phrase lives here; the Thai lists above
+ * hold Thai script only and are matched as before, with spaces removed.
  */
 export const SELF_HARM_EN = [
   "kill(ing)? myself", "suicid(e|es|al)", "end(ing)? my (own )?life", "end(ing)? it all", "take my (own )?life",
   "want(ed)? to die", "wanna die", "wish i (was|were) dead", "better off dead", "(dont|do not) want to (live|be alive)",
-  "self ?harm(ing|ed)?", "(hurt|hurting|harm|harming|cut|cutting) myself",
+  "self harm(ing|ed)?", "(hurt|hurting|harm|harming|cut|cutting) myself",
 ];
 
 export const MEDICAL_EMERGENCY_EN = [
   "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack", "stroke", "unconscious",
   "severe bleeding", "bleeding (heavily|badly)", "wont stop bleeding", "seizures?", "overdos(e|ed|ing)",
-  "anaphyla(xis|ctic)", "snake ?bite", "bitten by a snake",
+  "anaphyla(xis|ctic)", "snake bite", "bitten by a snake",
 ];
 
 /** Topics that still get a reading, with the prompt reminding the hermit to point to experts. */
@@ -82,7 +81,8 @@ export function normalizeEnglishForSafety(text: string): string {
   return ` ${text.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, " ").trim()} `;
 }
 
-const wholeWords = (phrases: string[]) => new RegExp(`\\b(?:${phrases.join("|")})\\b`);
+/** Spaces inside a phrase are optional ("killmyself" still matches), but it must start and end on a word break. */
+const wholeWords = (phrases: string[]) => new RegExp(`\\b(?:${phrases.map((p) => p.replace(/ /g, " ?")).join("|")})\\b`);
 const SELF_HARM_EN_RE = wholeWords(SELF_HARM_EN);
 const MEDICAL_EMERGENCY_EN_RE = wholeWords(MEDICAL_EMERGENCY_EN);
 const SENSITIVE_EN_RE = new RegExp(`\\b(?:${SENSITIVE_EN.join("|")})`);
