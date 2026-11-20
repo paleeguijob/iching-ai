@@ -1,6 +1,7 @@
 package com.iching.ai.feature.journal
 
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.Reading
@@ -46,13 +47,13 @@ class JournalFilterTest {
 
     @Test
     fun rowLabels() {
-        assertEquals("กวนอิม ใบที่ ๑๗ · ดี · มีคำแปล", siamsiRowLabel("เซียมซีเจ้าแม่กวนอิม", 17, SiamSiLevel.GOOD, null, hasInterpretation = true))
-        assertEquals("หกสิบกะจื๊อ ใบที่ ๓ 丙寅 · ดีมาก", siamsiRowLabel("เซียมซีหกสิบกะจื๊อ", 3, SiamSiLevel.EXCELLENT, "丙寅", hasInterpretation = false))
+        assertEquals("กวนอิม ใบที่ ๑๗ · ดี · มีคำแปล", siamsiRowLabel(TH_STRINGS.journal, "เซียมซีเจ้าแม่กวนอิม", 17, SiamSiLevel.GOOD, null, hasInterpretation = true))
+        assertEquals("หกสิบกะจื๊อ ใบที่ ๓ 丙寅 · ดีมาก", siamsiRowLabel(TH_STRINGS.journal, "เซียมซีหกสิบกะจื๊อ", 3, SiamSiLevel.EXCELLENT, "丙寅", hasInterpretation = false))
     }
 
     @Test
     fun aSiamSiReadingBecomesAnEntry() {
-        val entry = assertNotNull(journalEntry(siamsi(2, words = "คำแปล"), mapOf(1 to HEX), mapOf("guanyin100" to GUANYIN)))
+        val entry = assertNotNull(journalEntry(siamsi(2, words = "คำแปล"), mapOf(1 to HEX), mapOf("guanyin100" to GUANYIN), TH_STRINGS.journal))
         assertNull(entry.primary)
         assertEquals("กวนอิม ใบที่ ๑๗ · ดี · มีคำแปล", entry.siamsi?.label)
         assertEquals(GUANYIN.stick(17), entry.siamsi?.stick)
@@ -60,7 +61,7 @@ class JournalFilterTest {
 
     @Test
     fun aSetNoLongerOnTheDeviceFallsBackToItsId() {
-        val entry = assertNotNull(journalEntry(siamsi(2, set = "thai28", number = 5), mapOf(1 to HEX), emptyMap()))
+        val entry = assertNotNull(journalEntry(siamsi(2, set = "thai28", number = 5), mapOf(1 to HEX), emptyMap(), TH_STRINGS.journal))
         assertEquals("thai28 ใบที่ ๕", entry.siamsi?.label)
         assertNull(entry.siamsi?.stick)
         assertNull(entry.siamsi?.set)
@@ -68,14 +69,14 @@ class JournalFilterTest {
 
     @Test
     fun aStickMissingFromItsSetStillShowsItsNumber() {
-        val entry = assertNotNull(journalEntry(siamsi(2, number = 99), emptyMap(), mapOf("guanyin100" to GUANYIN)))
+        val entry = assertNotNull(journalEntry(siamsi(2, number = 99), emptyMap(), mapOf("guanyin100" to GUANYIN), TH_STRINGS.journal))
         assertEquals("กวนอิม ใบที่ ๙๙", entry.siamsi?.label)
     }
 
     @Test
     fun anIChingReadingKeepsItsHexagram() {
-        assertEquals(HEX, journalEntry(iching(1), mapOf(1 to HEX), emptyMap())?.primary)
-        assertNull(journalEntry(iching(1), emptyMap(), emptyMap()))
+        assertEquals(HEX, journalEntry(iching(1), mapOf(1 to HEX), emptyMap(), TH_STRINGS.journal)?.primary)
+        assertNull(journalEntry(iching(1), emptyMap(), emptyMap(), TH_STRINGS.journal))
     }
 
     @Test

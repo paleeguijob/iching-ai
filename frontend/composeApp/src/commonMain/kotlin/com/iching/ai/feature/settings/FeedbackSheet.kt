@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
 
 /** A send in flight keeps the sheet up, so its result (thanks or the error) is seen; see PreCastSheet for the same guard. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +48,8 @@ fun FeedbackSheet(
     onSend: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val strings = LocalStrings.current
+    val settings = strings.settings
     val sending by rememberUpdatedState(ui.sending)
     val sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
@@ -63,10 +65,10 @@ fun FeedbackSheet(
                 .padding(horizontal = ZenSpacing.screen)
                 .padding(bottom = ZenSpacing.lg),
         ) {
-            Text("ส่งความเห็นถึงเรา", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+            Text(settings.feedbackTitle, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
             Spacer(Modifier.height(ZenSpacing.xs))
             Text(
-                "ข้อความถึงทีมผู้พัฒนาโดยตรง ไม่แสดงต่อสาธารณะ",
+                settings.feedbackSubtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = ZenColors.InkSoft,
             )
@@ -76,7 +78,7 @@ fun FeedbackSheet(
                 onValueChange = onTextChange,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 148.dp),
                 enabled = !ui.sending,
-                placeholder = { Text("ชอบตรงไหน อยากให้ปรับอะไร เล่าให้เราฟังได้เลย", color = ZenColors.InkFaint) },
+                placeholder = { Text(settings.feedbackPlaceholder, color = ZenColors.InkFaint) },
                 textStyle = MaterialTheme.typography.bodyMedium,
                 shape = RoundedCornerShape(12.dp),
                 isError = ui.error != null,
@@ -101,7 +103,7 @@ fun FeedbackSheet(
                     modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
                 )
                 Text(
-                    "${ui.text.length.toThaiNumerals()}/${FEEDBACK_MAX_CHARS.toThaiNumerals()}",
+                    settings.feedbackCounter(ui.text.length, FEEDBACK_MAX_CHARS),
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkFaint,
                     modifier = Modifier.padding(start = ZenSpacing.md),
@@ -109,7 +111,7 @@ fun FeedbackSheet(
             }
             Spacer(Modifier.height(ZenSpacing.lg))
             ZenPrimaryButton(
-                if (ui.sending) "กำลังส่ง…" else "ส่ง",
+                if (ui.sending) settings.feedbackSending else strings.divination.send,
                 onClick = onSend,
                 enabled = ui.canSend,
                 // The seal marks an action that is ready; on a greyed button it reads as a stray dot.

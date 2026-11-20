@@ -92,6 +92,7 @@ private data class ProductJson(
     val price: String,
     val period: String? = null,
     val trial: String? = null,
+    val trialDays: Int? = null,
 )
 
 enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
@@ -367,7 +368,7 @@ class AppSession(
                 "coins" -> ProductKind.COINS
                 else -> return@mapNotNull null
             }
-            StoreProduct(p.packageId, p.productId, kind, p.title, p.price, p.period, p.trial)
+            StoreProduct(p.packageId, p.productId, kind, p.title, p.price, p.period, p.trial, p.trialDays)
         }.sortedBy { it.kind.ordinal }
     }
 

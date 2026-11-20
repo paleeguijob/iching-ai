@@ -1,6 +1,7 @@
 package com.iching.ai.feature.paywall
 
 import com.iching.ai.domain.model.AccountStatus
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.platform.NativeBridges
@@ -40,7 +41,7 @@ class PaywallViewModelTest {
     private val api = FakeApi()
 
     private fun viewModel(scope: CoroutineScope) = FakeAuth().let { auth ->
-        PaywallViewModel(AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics, NoNotifications), FirebaseApiSession(auth), api, FakeJournal(), NoSettings, scope))
+        PaywallViewModel(AppSession(NativeBridges(auth, purchases, NoAds, NoAnalytics, NoNotifications), FirebaseApiSession(auth), api, FakeJournal(), NoSettings, scope), thaiLanguageHolder())
     }
 
     @BeforeTest

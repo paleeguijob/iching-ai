@@ -15,8 +15,6 @@ import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
-import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
-import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.feature.poster.PosterImages
 import com.iching.ai.feature.poster.PosterPopup
 import com.iching.ai.feature.poster.posterPopup
@@ -258,7 +256,7 @@ class HomeViewModel(
             _sheet.update {
                 it?.copy(
                     coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
-                    premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                    premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.let(languageHolder.strings.paywall::trialLabel),
                 )
             }
         }
@@ -301,8 +299,8 @@ class HomeViewModel(
                     castFromSheet()
                 }
                 PurchaseResult.Cancelled -> settle(null)
-                PurchaseResult.Pending -> settle(PENDING_MESSAGE)
-                PurchaseResult.AwaitingPayment -> settle(AWAITING_PAYMENT_MESSAGE)
+                PurchaseResult.Pending -> settle(languageHolder.strings.paywall.pending)
+                PurchaseResult.AwaitingPayment -> settle(languageHolder.strings.paywall.awaitingPayment)
                 is PurchaseResult.Error -> settle(languageHolder.strings.common.paymentFailed)
             }
         }

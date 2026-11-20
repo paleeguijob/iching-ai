@@ -10,7 +10,6 @@ import com.iching.ai.domain.siamsi.SiamSiLevel
 import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiStick
-import com.iching.ai.ui.toThaiNumerals
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.GetHexagramsUseCase
@@ -19,7 +18,10 @@ import com.iching.ai.domain.usecase.ObserveJournalUseCase
 import com.iching.ai.domain.usecase.SaveOutcomeUseCase
 import com.iching.ai.navigation.SiamSiRoute
 import com.iching.ai.session.AppSession
-import com.iching.ai.ui.formatThaiMonth
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.JournalStrings
+import com.iching.ai.ui.strings.formatMonth
+import com.iching.ai.ui.strings.stringsFor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,7 +39,7 @@ data class JournalEntry(val reading: Reading, val primary: Hexagram?, val relati
 /** A Siam Si reading in the journal. [set] and [stick] are null when that set is no longer on the device. */
 data class SiamSiJournal(val pick: SiamSiPick, val set: SiamSiSet?, val stick: SiamSiStick?, val label: String)
 
-enum class JournalFilter(val labelTh: String) { ALL("ทั้งหมด"), ICHING("อี้จิง"), SIAMSI("เซียมซี") }
+enum class JournalFilter { ALL, ICHING, SIAMSI }
 
 fun filterJournal(readings: List<Reading>, filter: JournalFilter): List<Reading> = when (filter) {
     JournalFilter.ALL -> readings
@@ -45,25 +47,23 @@ fun filterJournal(readings: List<Reading>, filter: JournalFilter): List<Reading>
     JournalFilter.SIAMSI -> readings.filter { it.siamsi != null }
 }
 
-/** "เซียมซีเจ้าแม่กวนอิม" → "กวนอิม". */
-fun shortSetName(name: String): String = name.removePrefix("เซียมซี").removePrefix("เจ้าแม่").trim()
-
-/** "กวนอิม ใบที่ ๑๗ · ดี · มีคำแปล"; [level] is null when the slip itself is no longer on the device. */
-fun siamsiRowLabel(setName: String, number: Int, level: SiamSiLevel?, labelOrig: String?, hasInterpretation: Boolean): String =
-    buildString {
-        append("${shortSetName(setName)} ใบที่ ${number.toThaiNumerals()}")
-        labelOrig?.let { append(" $it") }
-        level?.let { append(" · ${it.labelTh}") }
-        if (hasInterpretation) append(" · มีคำแปล")
-    }
+/** "Guanyin slip 17 · Good · Interpreted" in the language of [strings]; [level] is null when the slip itself is no longer on the device. */
+fun siamsiRowLabel(
+    strings: JournalStrings,
+    setName: String,
+    number: Int,
+    level: SiamSiLevel?,
+    labelOrig: String?,
+    hasInterpretation: Boolean,
+): String = strings.siamsiRow(setName, number, labelOrig, level?.labelTh, hasInterpretation)
 
 /** The row for [reading], or null for a cast whose hexagram cannot be found. */
-fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<String, SiamSiSet>): JournalEntry? {
+fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<String, SiamSiSet>, strings: JournalStrings): JournalEntry? {
     val pick = reading.siamsi
     if (pick != null) {
         val set = sets[pick.setId]
         val stick = set?.sticks?.firstOrNull { it.number == pick.number }
-        val label = siamsiRowLabel(set?.name ?: pick.setId, pick.number, stick?.level, stick?.labelOrig, reading.interpretation.isNotBlank())
+        val label = siamsiRowLabel(strings, set?.name ?: pick.setId, pick.number, stick?.level, stick?.labelOrig, reading.interpretation.isNotBlank())
         return JournalEntry(reading, primary = null, relating = null, siamsi = SiamSiJournal(pick, set, stick, label))
     }
     val primary = hexagrams[reading.primaryId] ?: return null
@@ -71,7 +71,7 @@ fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<Stri
 }
 
 /**
- * Where "แปลความหมาย" in the journal leads for a slip not interpreted yet: back to the slip, on its saved row
+ * Where the "Interpret" action in the journal leads for a slip not interpreted yet: back to the slip, on its saved row
  * (and server reading, so a stream cut off by leaving the screen resumes without paying again).
  */
 fun siamsiInterpretRoute(reading: Reading): SiamSiRoute? {
@@ -105,18 +105,20 @@ class JournalViewModel(
     private val filterJournal: FilterJournalUseCase,
     session: AppSession,
     private val siamsiSets: SiamSiRepository,
+    private val languageHolder: AppLanguageHolder,
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(JournalFilter.ALL)
     val filter: StateFlow<JournalFilter> = _filter.asStateFlow()
 
-    val state: StateFlow<JournalUiState> = combine(observeJournal(), session.status, _filter) { readings, status, filter ->
+    val state: StateFlow<JournalUiState> = combine(observeJournal(), session.status, _filter, languageHolder.language) { readings, status, filter, lang ->
+        val strings = stringsFor(lang).journal
         val byId = getHexagrams().associateBy { it.id }
         val sets = setsFor(readings, siamsiSets)
         val (visible, hidden) = filterJournal(readings, status.journalDays, Clock.System.now().toEpochMilliseconds())
-        val entries = filterJournal(visible, filter).mapNotNull { journalEntry(it, byId, sets) }
+        val entries = filterJournal(visible, filter).mapNotNull { journalEntry(it, byId, sets, strings) }
         JournalUiState.Loaded(
-            months = entries.groupBy { formatThaiMonth(it.reading.createdAtMillis) }.map { (label, list) -> JournalMonth(label, list) },
+            months = entries.groupBy { formatMonth(it.reading.createdAtMillis, lang) }.map { (label, list) -> JournalMonth(label, list) },
             hiddenCount = hidden,
             journalDays = status.journalDays,
             hasSiamSi = readings.any { it.siamsi != null },
@@ -142,6 +144,7 @@ class JournalEntryViewModel(
     private val deleteReading: DeleteReadingUseCase,
     private val saveOutcome: SaveOutcomeUseCase,
     private val siamsiSets: SiamSiRepository,
+    private val languageHolder: AppLanguageHolder,
     private val log: (String, Map<String, String>) -> Unit = { _, _ -> },
 ) : ViewModel() {
     private val _entry = MutableStateFlow<JournalEntry?>(null)
@@ -151,7 +154,7 @@ class JournalEntryViewModel(
         viewModelScope.launch {
             val reading = getReading(id) ?: return@launch
             val byId = getHexagrams().associateBy { it.id }
-            _entry.value = journalEntry(reading, byId, setsFor(listOf(reading), siamsiSets))
+            _entry.value = journalEntry(reading, byId, setsFor(listOf(reading), siamsiSets), languageHolder.strings.journal)
         }
     }
 

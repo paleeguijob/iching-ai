@@ -7,6 +7,8 @@ import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.PaywallStrings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,18 +28,19 @@ data class PaywallUiState(
     val coins: StoreProduct? get() = products.firstOrNull { it.kind == ProductKind.COINS }
 }
 
-internal const val PENDING_MESSAGE = "ชำระเงินแล้ว แต่ระบบยังไม่อัปเดตสิทธิ์ โปรดอย่าซื้อซ้ำ กดกู้คืนการซื้ออีกครั้งในอีกสักครู่"
-internal const val AWAITING_PAYMENT_MESSAGE = "รอการชำระเงินให้เสร็จสิ้น สิทธิ์จะเข้าเองเมื่อชำระแล้ว โปรดอย่าซื้อซ้ำ"
-internal const val COINS_RECEIVED_MESSAGE = "ได้รับเหรียญแล้ว เก็บไว้ใช้วันไหนก็ได้ ไม่มีวันหมดอายุ"
-
 /** What restoring brought back; a coin pack counts, not only a subscription. */
-fun PurchaseResult.Success.restoreMessage(): String = when {
-    status.premium -> "กู้คืนสมาชิก Premium แล้ว"
-    coinsAdded > 0 -> "ได้รับ $coinsAdded เหรียญแล้ว"
-    else -> "ไม่พบการสมัครสมาชิกที่ยังใช้งานอยู่"
+fun PurchaseResult.Success.restoreMessage(strings: PaywallStrings): String = when {
+    status.premium -> strings.restoredPremium
+    coinsAdded > 0 -> strings.restoredCoins(coinsAdded)
+    else -> strings.restoreNothing
 }
 
-class PaywallViewModel(private val session: AppSession) : ViewModel() {
+class PaywallViewModel(
+    private val session: AppSession,
+    private val languageHolder: AppLanguageHolder,
+) : ViewModel() {
+    private val strings: PaywallStrings get() = languageHolder.strings.paywall
+
     private val _state = MutableStateFlow(PaywallUiState())
     val state: StateFlow<PaywallUiState> = _state.asStateFlow()
 
@@ -59,7 +62,7 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     products = products,
                     // Lead with the yearly plan (with its free trial).
                     selected = products.firstOrNull { p -> p.kind == ProductKind.YEARLY } ?: products.firstOrNull(),
-                    message = if (products.isEmpty()) "ยังโหลดแพ็กเกจจากร้านค้าไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่" else null,
+                    message = if (products.isEmpty()) strings.productsFailed else null,
                 )
             }
         }
@@ -77,12 +80,12 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     is PurchaseResult.Success -> it.copy(
                         busy = false,
                         purchased = true,
-                        message = if (product.kind == ProductKind.COINS) COINS_RECEIVED_MESSAGE else "ยินดีต้อนรับสู่ Premium",
+                        message = if (product.kind == ProductKind.COINS) strings.coinsReceived else strings.welcomePremium,
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
-                    PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
-                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE)
-                    is PurchaseResult.Error -> it.copy(busy = false, message = "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
+                    PurchaseResult.Pending -> it.copy(busy = false, message = strings.pending)
+                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = strings.awaitingPayment)
+                    is PurchaseResult.Error -> it.copy(busy = false, message = languageHolder.strings.common.paymentFailed)
                 }
             }
         }
@@ -98,12 +101,12 @@ class PaywallViewModel(private val session: AppSession) : ViewModel() {
                     is PurchaseResult.Success -> it.copy(
                         busy = false,
                         purchased = result.status.premium || result.coinsAdded > 0,
-                        message = result.restoreMessage(),
+                        message = result.restoreMessage(strings),
                     )
                     PurchaseResult.Cancelled -> it.copy(busy = false)
-                    PurchaseResult.Pending -> it.copy(busy = false, message = PENDING_MESSAGE)
-                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE)
-                    is PurchaseResult.Error -> it.copy(busy = false, message = "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
+                    PurchaseResult.Pending -> it.copy(busy = false, message = strings.pending)
+                    PurchaseResult.AwaitingPayment -> it.copy(busy = false, message = strings.awaitingPayment)
+                    is PurchaseResult.Error -> it.copy(busy = false, message = strings.restoreFailed)
                 }
             }
         }

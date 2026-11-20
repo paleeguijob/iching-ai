@@ -30,8 +30,6 @@ import com.iching.ai.feature.home.PreCastOffer
 import com.iching.ai.feature.home.PreCastSheetKind
 import com.iching.ai.feature.home.PreCastSheetUi
 import com.iching.ai.feature.home.preCastOffer
-import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
-import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.navigation.SiamSiRoute
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.CommonStrings
@@ -370,7 +368,7 @@ class SiamSiViewModel(
                 updateSheet {
                     it.copy(
                         coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
-                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.let(languageHolder.strings.paywall::trialLabel),
                     )
                 }
             }
@@ -417,8 +415,8 @@ class SiamSiViewModel(
             when (session.purchase(coins)) {
                 is PurchaseResult.Success -> streamFromSheet()
                 PurchaseResult.Cancelled -> updateSheet { it.copy(busy = false) }
-                PurchaseResult.Pending -> updateSheet { it.copy(busy = false, message = PENDING_MESSAGE) }
-                PurchaseResult.AwaitingPayment -> updateSheet { it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE) }
+                PurchaseResult.Pending -> updateSheet { it.copy(busy = false, message = languageHolder.strings.paywall.pending) }
+                PurchaseResult.AwaitingPayment -> updateSheet { it.copy(busy = false, message = languageHolder.strings.paywall.awaitingPayment) }
                 is PurchaseResult.Error -> updateSheet { it.copy(busy = false, message = common.paymentFailed) }
             }
         }

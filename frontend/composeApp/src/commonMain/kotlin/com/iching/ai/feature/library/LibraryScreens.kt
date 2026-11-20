@@ -62,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.Trigram
-import com.iching.ai.domain.oracle.linePositionTh
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.feature.reading.ScriptureBlock
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
@@ -71,12 +71,13 @@ import com.iching.ai.ui.components.LineGlyph
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
 
 @Composable
 fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val visible = state.visible
+    val strings = LocalStrings.current
+    val library = strings.library
     val bottom = tabContentBottomPadding(LocalTabBarHeight.current)
     PaperBackground(showMountains = false) {
         LazyColumn(
@@ -85,8 +86,8 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
         ) {
             item(contentType = "header") {
                 Column {
-                    Text("คัมภีร์ ๖๔ กวา", style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
-                    Text("สารานุกรมแห่งความเปลี่ยนแปลง", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                    Text(library.title, style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
+                    Text(library.subtitle, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
                     Spacer(Modifier.height(ZenSpacing.lg))
                     TextField(
                         value = state.query,
@@ -97,11 +98,11 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
                         trailingIcon = {
                             if (state.query.isNotEmpty()) {
                                 IconButton(onClick = { viewModel.onQueryChange("") }) {
-                                    Icon(Icons.Outlined.Close, "ล้าง", tint = ZenColors.InkFaint)
+                                    Icon(Icons.Outlined.Close, library.clear, tint = ZenColors.InkFaint)
                                 }
                             }
                         },
-                        placeholder = { Text("ค้นหาด้วยชื่อ เลข หรือความหมาย", color = ZenColors.InkFaint) },
+                        placeholder = { Text(library.searchPlaceholder, color = ZenColors.InkFaint) },
                         shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = ZenColors.Card,
@@ -118,7 +119,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
             }
             item(contentType = "filter") {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(ZenSpacing.sm)) {
-                    item { ZenChip("ทั้งหมด", state.trigram == null, onClick = { viewModel.onTrigramChange(null) }) }
+                    item { ZenChip(library.filterAll, state.trigram == null, onClick = { viewModel.onTrigramChange(null) }) }
                     items(Trigram.entries) { t ->
                         ZenChip("${t.symbol} ${t.natureTh}", state.trigram == t, onClick = { viewModel.onTrigramChange(t) })
                     }
@@ -136,7 +137,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
             if (!state.isLoading && visible.isEmpty()) {
                 item(contentType = "empty") {
                     Text(
-                        if (state.query.isBlank()) "ไม่พบกวาที่ตรงกับการค้นหา" else "ไม่พบกวาที่ตรงกับ “${state.query}”",
+                        if (state.query.isBlank()) library.noResults else library.noResultsFor(state.query),
                         style = MaterialTheme.typography.bodyMedium,
                         color = ZenColors.InkSoft,
                         textAlign = TextAlign.Center,
@@ -157,7 +158,7 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                hexagram.id.toThaiNumerals(),
+                LocalStrings.current.common.number(hexagram.id),
                 style = MaterialTheme.typography.labelMedium,
                 color = ZenColors.CinnabarRed,
                 modifier = Modifier.width(24.dp),
@@ -181,10 +182,12 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
 @Composable
 fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit) {
     val hexagram by viewModel.hexagram.collectAsStateWithLifecycle()
+    val strings = LocalStrings.current
+    val library = strings.library
     PaperBackground(showMountains = false) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             IconButton(onClick = onBack, modifier = Modifier.padding(start = 4.dp)) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = strings.common.back, tint = ZenColors.InkBlack)
             }
             val h = hexagram ?: return@Column
             Column(
@@ -195,7 +198,7 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                     .padding(horizontal = ZenSpacing.screen),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("กวาที่ ${h.id.toThaiNumerals()}", style = MaterialTheme.typography.labelLarge, color = ZenColors.CinnabarRed)
+                Text(library.hexagramNumber(h.id), style = MaterialTheme.typography.labelLarge, color = ZenColors.CinnabarRed)
                 Spacer(Modifier.height(16.dp))
                 Box(contentAlignment = Alignment.TopEnd) {
                     HexagramFigure(h.pattern, lineWidth = 132.dp, lineHeight = 15.dp, gap = 11.dp, modifier = Modifier.padding(12.dp))
@@ -210,8 +213,8 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                 Text(h.meaningTh, style = MaterialTheme.typography.titleLarge, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TrigramChip("ตรีแกรมบน", h.upperTrigram)
-                    TrigramChip("ตรีแกรมล่าง", h.lowerTrigram)
+                    TrigramChip(library.upperTrigram, h.upperTrigram)
+                    TrigramChip(library.lowerTrigram, h.lowerTrigram)
                 }
                 if (h.keywords.isNotEmpty()) {
                     Spacer(Modifier.height(14.dp))
@@ -225,14 +228,14 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                 Spacer(Modifier.height(ZenSpacing.lg))
                 ZenCard(contentPadding = PaddingValues(20.dp)) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    ScriptureBlock("คำตัดสิน", h.judgment, ZenColors.CinnabarRed)
-                    ScriptureBlock("ภาพลักษณ์", h.image)
-                    ScriptureBlock("ภาพรวม", h.description)
-                    SectionLabel("เส้นทั้งหก (จากบนลงล่าง)", color = ZenColors.InkSoft)
+                    ScriptureBlock(strings.reading.judgment, h.judgment, ZenColors.CinnabarRed)
+                    ScriptureBlock(strings.reading.image, h.image)
+                    ScriptureBlock(library.overview, h.description)
+                    SectionLabel(library.sixLines, color = ZenColors.InkSoft)
                     for (position in 6 downTo 1) {
                         LineRow(position, h.pattern[position - 1] == '1', h.lines[position - 1])
                     }
-                    h.allLines?.let { ScriptureBlock("เมื่อเส้นทั้งหกแปร", it, ZenColors.CinnabarRed) }
+                    h.allLines?.let { ScriptureBlock(library.whenAllLinesChange, it, ZenColors.CinnabarRed) }
                 }
                 }
                 Spacer(Modifier.height(48.dp))
@@ -261,13 +264,14 @@ private fun TrigramChip(label: String, trigram: Trigram) {
 
 @Composable
 private fun LineRow(position: Int, isYang: Boolean, text: String) {
+    val library = LocalStrings.current.library
     Row(verticalAlignment = Alignment.Top) {
         Column(Modifier.width(56.dp).padding(top = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             LineGlyph(isYang, Modifier.size(width = 34.dp, height = 5.dp))
         }
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
-            Text(linePositionTh(position), style = MaterialTheme.typography.labelMedium, color = ZenColors.BambooDeep)
+            Text(library.linePosition(position), style = MaterialTheme.typography.labelMedium, color = ZenColors.BambooDeep)
             Text(text, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkBlack)
         }
     }

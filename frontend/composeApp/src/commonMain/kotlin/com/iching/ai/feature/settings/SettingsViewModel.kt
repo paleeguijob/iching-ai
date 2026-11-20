@@ -17,6 +17,8 @@ import com.iching.ai.platform.NativeException
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.DailyPushResult
 import com.iching.ai.session.PurchaseResult
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.SettingsStrings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +33,6 @@ const val FEEDBACK_MAX_CHARS = 1000
 /** Opens the first of [urls] that [open] accepts (it throws when nothing handles a link); returns it, or null. */
 internal fun openFirst(urls: List<String>, open: (String) -> Unit): String? =
     urls.firstOrNull { url -> runCatching { open(url) }.isSuccess }
-internal const val FEEDBACK_THANKS = "ขอบคุณสำหรับความเห็น"
-internal const val FEEDBACK_FAILED = "ส่งไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
-internal const val FEEDBACK_LIMIT = "วันนี้ส่งความเห็นครบแล้ว ลองใหม่พรุ่งนี้นะ"
 
 /** The feedback sheet. Closing keeps the draft, so a seeker who taps away mid-sentence loses nothing. */
 data class FeedbackUi(val open: Boolean = false, val text: String = "", val sending: Boolean = false, val error: String? = null) {
@@ -45,7 +44,9 @@ class SettingsViewModel(
     private val updateSettings: UpdateSettingsUseCase,
     private val session: AppSession,
     private val api: OracleApi,
+    private val languageHolder: AppLanguageHolder,
 ) : ViewModel() {
+    private val strings: SettingsStrings get() = languageHolder.strings.settings
 
     val settings: StateFlow<AppSettings?> = observeSettings()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -61,15 +62,15 @@ class SettingsViewModel(
     val supportsGoogle: Boolean get() = session.supportsGoogle
     val manageSubscriptionsUrl: String get() = session.manageSubscriptionsUrl
 
-    /** Store page links for "ให้คะแนนแอป", best first; empty hides the row (iOS until the App Store id exists). */
+    /** Store page links for the "Rate the app" row, best first; empty hides the row (iOS until the App Store id exists). */
     val storeUrls: List<String> get() = session.storeUrls
 
     fun onRateAppTapped() = session.log("rate_app_tap")
 
-    /** What "แชร์แอปให้เพื่อน" sends: a line about the app and its web store page; null hides the row. */
+    /** What the "Share the app" row sends: a line about the app and its web store page; null hides the row. */
     val shareAppText: String?
         get() = storeUrls.firstOrNull { it.startsWith("https://") }
-            ?.let { "ลองเสี่ยงทายกับอี้จิง AI ดูสิ ทั้งอี้จิงและเซียมซี ได้คำทำนายเข้าใจง่ายจากตำราดั้งเดิม\n$it" }
+            ?.let(strings::shareAppText)
 
     fun onShareAppTapped() = session.log("share_app_tap")
 
@@ -90,13 +91,13 @@ class SettingsViewModel(
             try {
                 session.sendFeedback(draft.text.trim())
                 _feedback.value = FeedbackUi()
-                _message.value = FEEDBACK_THANKS
+                _message.value = strings.feedbackThanks
                 session.log("feedback_sent")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 val limit = e is ApiException && e.reason == FailureReason.FEEDBACK_LIMIT
-                _feedback.update { it.copy(sending = false, error = if (limit) FEEDBACK_LIMIT else FEEDBACK_FAILED) }
+                _feedback.update { it.copy(sending = false, error = if (limit) strings.feedbackLimit else strings.feedbackFailed) }
                 session.log("feedback_failed", mapOf("reason" to if (limit) "limit" else "error"))
             }
         }
@@ -158,28 +159,28 @@ class SettingsViewModel(
         val result = session.link(provider)
         _message.value = result.fold(
             onSuccess = { linked ->
-                if (linked.carriedOver) "เชื่อมบัญชีแล้ว การซื้อและบันทึกชะตาจะติดตามท่านไปยังเครื่องใหม่"
-                else "เชื่อมบัญชีแล้ว แต่ยังย้ายการซื้อหรือเหรียญจากเครื่องนี้ไม่ครบ โปรดตรวจสอบอินเทอร์เน็ตแล้วกดกู้คืนการซื้อ"
+                if (linked.carriedOver) strings.linkedCarriedOver
+                else strings.linkedPartial
             },
-            onFailure = { e -> if (e is NativeException && e.message == "cancelled") null else "เชื่อมบัญชีไม่สำเร็จ โปรดลองใหม่อีกครั้ง" },
+            onFailure = { e -> if (e is NativeException && e.message == "cancelled") null else strings.linkFailed },
         )
     }
 
     fun restore() = launchBusy {
         _message.value = when (val r = session.restorePurchases()) {
-            is PurchaseResult.Success -> r.restoreMessage()
-            else -> "กู้คืนไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
+            is PurchaseResult.Success -> r.restoreMessage(languageHolder.strings.paywall)
+            else -> strings.restoreFailed
         }
     }
 
     fun syncJournal() = launchBusy {
-        _message.value = journalSyncMessage(session.syncJournal())
+        _message.value = journalSyncMessage(session.syncJournal(), strings)
     }
 
     fun deleteAccount(onDone: () -> Unit) = launchBusy {
         session.deleteAccount().fold(
             onSuccess = { onDone() },
-            onFailure = { _message.value = "ลบบัญชีไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่" },
+            onFailure = { _message.value = strings.deleteFailed },
         )
     }
 
@@ -200,10 +201,9 @@ class SettingsViewModel(
     }
 }
 
-internal fun journalSyncMessage(result: Result<Int>): String = result.fold(
-    onSuccess = { added -> if (added > 0) "ดึงบันทึกชะตาจากระบบมา $added รายการ" else "บันทึกชะตาในเครื่องเป็นปัจจุบันแล้ว" },
+internal fun journalSyncMessage(result: Result<Int>, strings: SettingsStrings): String = result.fold(
+    onSuccess = { added -> if (added > 0) strings.syncAdded(added) else strings.syncUpToDate },
     onFailure = { e ->
-        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) "การดึงบันทึกชะตาจากระบบเป็นสิทธิ์ของสมาชิก Premium"
-        else "ดึงบันทึกชะตาไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
+        if (e is ApiException && e.reason == FailureReason.PREMIUM_REQUIRED) strings.syncPremiumOnly else strings.syncFailed
     },
 )

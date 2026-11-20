@@ -100,4 +100,6 @@ data class StoreProduct(
     val periodTh: String?,
     /** Free-trial description, e.g. "ทดลองฟรี 7 วัน"; null when none. */
     val trialTh: String?,
+    /** The free trial's length in days, for wording it in a language other than Thai; null when none. */
+    val trialDays: Int? = null,
 )

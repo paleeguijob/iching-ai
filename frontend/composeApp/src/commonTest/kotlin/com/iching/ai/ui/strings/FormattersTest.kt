@@ -39,4 +39,10 @@ class FormattersTest {
         assertEquals("14:05", formatTime(millis(), EN, bangkok))
         assertEquals("14:05 น.", formatTime(millis(), TH, bangkok))
     }
+
+    @Test
+    fun month() {
+        assertEquals("พฤศจิกายน 2569", formatMonth(millis(), TH, bangkok))
+        assertEquals("November 2026", formatMonth(millis(), EN, bangkok))
+    }
 }

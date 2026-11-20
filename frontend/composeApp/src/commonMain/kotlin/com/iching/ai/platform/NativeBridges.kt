@@ -49,7 +49,7 @@ interface NativePurchases {
 
     /**
      * value = JSON array of
-     * {"packageId","productId","kind":"monthly|yearly|coins","title","price","period","trial"}
+     * {"packageId","productId","kind":"monthly|yearly|coins","title","price","period","trial","trialDays"} (trial is Thai text; trialDays is the same trial as a number, or null)
      */
     fun offerings(callback: ResultCallback)
 

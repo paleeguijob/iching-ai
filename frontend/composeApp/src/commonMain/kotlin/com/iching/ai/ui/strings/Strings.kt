@@ -16,6 +16,11 @@ interface Strings {
     val daily: DailyStrings
     val year: YearStrings
     val poster: PosterStrings
+    val journal: JournalStrings
+    val library: LibraryStrings
+    val settings: SettingsStrings
+    val paywall: PaywallStrings
+    val review: ReviewStrings
 }
 
 private object ThStrings : Strings {
@@ -29,6 +34,11 @@ private object ThStrings : Strings {
     override val daily = ThDailyStrings
     override val year = ThYearStrings
     override val poster = ThPosterStrings
+    override val journal = ThJournalStrings
+    override val library = ThLibraryStrings
+    override val settings = ThSettingsStrings
+    override val paywall = ThPaywallStrings
+    override val review = ThReviewStrings
 }
 
 private object EnStrings : Strings {
@@ -42,6 +52,11 @@ private object EnStrings : Strings {
     override val daily = EnDailyStrings
     override val year = EnYearStrings
     override val poster = EnPosterStrings
+    override val journal = EnJournalStrings
+    override val library = EnLibraryStrings
+    override val settings = EnSettingsStrings
+    override val paywall = EnPaywallStrings
+    override val review = EnReviewStrings
 }
 
 fun stringsFor(lang: AppLanguage): Strings = when (lang) {

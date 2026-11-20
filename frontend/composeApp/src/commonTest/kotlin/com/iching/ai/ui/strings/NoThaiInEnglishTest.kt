@@ -2,12 +2,15 @@ package com.iching.ai.ui.strings
 
 import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.LineType
+import com.iching.ai.domain.model.ProductKind
+import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.oracle.ReadingSection
 import com.iching.ai.domain.siamsi.PuaResult
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -148,6 +151,79 @@ class NoThaiInEnglishTest {
         check("poster", listOf(
             s.labelWithEnd("Special offer", 1795194000000L - 1, TimeZone.of("Asia/Bangkok")), s.closePopup, s.closeCard,
         ))
+    }
+
+    @Test
+    fun journal() {
+        val s = EnJournalStrings
+        check("journal", listOf(
+            s.title, s.subtitle(null, 3), s.subtitle(7, 3), s.subtitle(1, 1), s.filterAll, s.filterIching, s.filterSiamsi,
+            s.hiddenTitle(3), s.hiddenTitle(1), s.hiddenBody, s.seePlans, s.yearReading, s.siamsiTag, s.scriptureTag,
+            s.prayedInHeart, s.emptyTitle, s.emptyBody, s.emptyAction, s.deleteDescription, s.deleteTitle, s.deleteBody,
+            s.delete, s.shareSlip, s.setMissing, s.outcomeQuestion, s.outcomeYes, s.outcomePartly, s.outcomeNo,
+            s.notePlaceholder, s.save, s.askHermitBody, s.askHermitAction,
+            s.siamsiRow("Guanyin Oracle", 17, null, "Good", true), s.siamsiRow("Guanyin Oracle", 3, "丙寅", null, false),
+        ))
+    }
+
+    @Test
+    fun library() {
+        val s = EnLibraryStrings
+        check("library", listOf(
+            s.title, s.subtitle, s.clear, s.searchPlaceholder, s.filterAll, s.noResults, s.noResultsFor("water"),
+            s.hexagramNumber(17), s.upperTrigram, s.lowerTrigram, s.overview, s.sixLines, s.whenAllLinesChange,
+        ) + (1..6).map { s.linePosition(it) })
+    }
+
+    @Test
+    fun settings() {
+        val s = EnSettingsStrings
+        val until = 1795194000000L
+        check("settings", listOf(
+            s.pageMain, s.pageAccount, s.pageFeedback, s.pageAbout, s.pushBlockedTitle, s.pushBlockedBody, s.planPremium,
+            s.planFree, s.readingsLeftToday(3), s.readingsLeftToday(1), s.coinsNote(10), s.until(until), s.details, s.upgrade,
+            s.sound, s.dailyPush, s.dailyPushSubtitle, s.yearRow(2027), s.theme, s.streak(3, 9), s.streak(1, 1),
+            s.lockedStreak(7), s.lockedStreak(1), s.lockedCampaign, s.lockedSpecial, s.lockedSuffix, s.linkedApple,
+            s.linkedGoogle, s.notLinked, s.localAccount, s.accountId("abcd1234"), s.linkHint, s.signInApple, s.signInGoogle,
+            s.syncJournal, s.sectionAccount, s.sectionPurchases, s.restore, s.manageSubscriptions, s.deleteAccount,
+            s.shareApp, s.shareAppSubtitle, s.shareAppText("https://example.com"), s.sendFeedback, s.sendFeedbackSubtitle,
+            s.aboutBody, s.howToCast, s.privacy, s.terms, s.version("2.0.0"), s.deleteTitle, s.deleteBody, s.deleteConfirm,
+            s.feedbackThanks, s.feedbackFailed, s.feedbackLimit, s.linkedCarriedOver, s.linkedPartial, s.linkFailed,
+            s.restoreFailed, s.deleteFailed, s.syncAdded(3), s.syncAdded(1), s.syncUpToDate, s.syncPremiumOnly, s.syncFailed,
+            s.feedbackTitle, s.feedbackSubtitle, s.feedbackPlaceholder, s.feedbackCounter(12, 1000), s.feedbackSending,
+        ))
+    }
+
+    @Test
+    fun paywall() {
+        val s = EnPaywallStrings
+        val yearly = StoreProduct("y", "iching_yearly", ProductKind.YEARLY, "", "\$3.99", "ปี", "ทดลองฟรี ๗ วัน", 7)
+        val monthly = StoreProduct("m", "iching_monthly", ProductKind.MONTHLY, "", "\$0.99", "เดือน", null)
+        val coins = StoreProduct("c", "iching_coins_10", ProductKind.COINS, "", "\$0.99", null, null)
+        check("paywall", listOf(
+            s.pending, s.awaitingPayment, s.coinsReceived, s.welcomePremium, s.restoredPremium, s.restoredCoins(10),
+            s.restoreNothing, s.restoreFailed, s.productsFailed, s.title, s.tagline, s.memberLine(null), s.memberLine(1795194000000L),
+            s.reload, s.coinsHeading, s.coinsNote(10), s.restore, s.manage, s.terms, s.privacy, s.planYearly, s.planMonthly,
+            s.bestValue, s.startTrial(s.trialLabel(yearly)!!), s.subscribe(monthly), s.subscribe(coins),
+            s.pricePerPeriod(yearly), s.pricePerPeriod(coins), s.renewalTerms(yearly), s.renewalTerms(monthly), s.renewalTerms(coins),
+        ) + s.benefits)
+        assertNull(s.trialLabel(monthly))
+        assertEquals("7-day free trial", s.trialLabel(yearly))
+        assertEquals("ทดลองฟรี ๗ วัน", ThPaywallStrings.trialLabel(yearly))
+        assertEquals("ทดลองฟรี ๗ วัน จากนั้น เรียกเก็บ \$3.99 ทุกปี ต่ออายุอัตโนมัติจนกว่าจะยกเลิก ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชีของร้านค้า อย่างน้อย ๒๔ ชั่วโมงก่อนรอบบิลถัดไป", ThPaywallStrings.renewalTerms(yearly))
+    }
+
+    @Test
+    fun review() {
+        val s = EnReviewStrings
+        check("review", listOf(s.rateApp, s.rateAppSubtitle))
+    }
+
+    @Test
+    fun englishSettingsNameNoPushHour() {
+        val text = listOf(EnSettingsStrings.dailyPush, EnSettingsStrings.dailyPushSubtitle).joinToString(" ")
+        assertFalse(Regex("\\d").containsMatchIn(text), text)
+        assertFalse(text.contains("Bangkok", ignoreCase = true), text)
     }
 
     @Test

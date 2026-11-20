@@ -5,7 +5,10 @@ import com.iching.ai.ui.components.ZenCardRow
 import com.iching.ai.ui.theme.tabContentBottomPadding
 import com.iching.ai.ui.theme.LocalTabBarHeight
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.formatThaiShortDate
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.formatShortDate
+import com.iching.ai.ui.strings.formatTime
+import com.iching.ai.ui.strings.JournalStrings
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.components.ZenCardDivider
 import androidx.compose.foundation.layout.navigationBars
@@ -81,8 +84,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.graphicsLayer
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
-import com.iching.ai.ui.formatThaiDate
-import com.iching.ai.ui.formatThaiTime
 import com.iching.ai.ui.theme.ZenColors
 
 @Composable
@@ -119,22 +120,29 @@ private fun Timeline(
     onFilter: (JournalFilter) -> Unit,
 ) {
     val bottom = tabContentBottomPadding(LocalTabBarHeight.current)
+    val strings = LocalStrings.current.journal
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
         contentPadding = PaddingValues(start = ZenSpacing.screen, end = ZenSpacing.screen, top = ZenSpacing.md, bottom = bottom),
     ) {
         item {
-            Text("บันทึกชะตา", style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
+            Text(strings.title, style = MaterialTheme.typography.displaySmall, color = ZenColors.InkBlack)
             Text(
-                if (journalDays == null) "ย้อนมองเส้นทางที่ผ่านมา $entryCount ครั้งแห่งการถามไถ่"
-                else "${journalDays} วันล่าสุด · $entryCount ครั้งแห่งการถามไถ่",
+                strings.subtitle(journalDays, entryCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = ZenColors.InkSoft,
             )
             if (hasSiamSi) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    JournalFilter.entries.forEach { f -> ZenChip(f.labelTh, f == filter, onClick = { onFilter(f) }) }
+                    JournalFilter.entries.forEach { f ->
+                        val label = when (f) {
+                            JournalFilter.ALL -> strings.filterAll
+                            JournalFilter.ICHING -> strings.filterIching
+                            JournalFilter.SIAMSI -> strings.filterSiamsi
+                        }
+                        ZenChip(label, f == filter, onClick = { onFilter(f) })
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -152,15 +160,15 @@ private fun Timeline(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("บันทึกเก่าอีก $hiddenCount รายการ", style = MaterialTheme.typography.titleSmall)
+                        Text(strings.hiddenTitle(hiddenCount), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "ยังเก็บไว้ในเครื่องของท่าน · เปิดดูทั้งหมดและกู้คืนข้ามเครื่องได้ด้วย Premium",
+                            strings.hiddenBody,
                             style = MaterialTheme.typography.labelSmall,
                             color = ZenColors.InkSoft,
                         )
                     }
                     Spacer(Modifier.width(ZenSpacing.md))
-                    Text("ดูแพ็กเกจ", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+                    Text(strings.seePlans, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
                 }
             }
         }
@@ -180,13 +188,12 @@ private fun Timeline(
     }
 }
 
-/** Marks a reading of the year hexagram in the journal. */
-internal const val YEAR_READING_LABEL = "กวาประจำปี"
-
 /** A reading row; the rows of one month read as a single card, rounded only at its ends. */
 @Composable
 private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onClick: () -> Unit) {
     val reading = entry.reading
+    val strings = LocalStrings.current.journal
+    val lang = LocalAppLanguage.current
     ZenCardRow(first, last) {
         Row(
             Modifier
@@ -198,16 +205,16 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
             Column(Modifier.weight(1f)) {
                 Text(
                     buildString {
-                        append("${formatThaiShortDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis).removeSuffix(" น.")}")
-                        if (reading.siamsi != null) append(" · เซียมซี")
-                        else if (reading.source == InterpretationSource.SCRIPTURE) append(" · ตัวบทคัมภีร์")
+                        append("${formatShortDate(reading.createdAtMillis, lang)} · ${formatTime(reading.createdAtMillis, lang).substringBefore(" ")}")
+                        if (reading.siamsi != null) append(" · ${strings.siamsiTag}")
+                        else if (reading.source == InterpretationSource.SCRIPTURE) append(" · ${strings.scriptureTag}")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ZenColors.InkFaint,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    reading.question.ifBlank { "อธิษฐานในใจ" },
+                    reading.question.ifBlank { strings.prayedInHeart },
                     style = MaterialTheme.typography.titleSmall,
                     color = ZenColors.InkBlack,
                     maxLines = 2,
@@ -223,10 +230,10 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
                     color = ZenColors.BambooDeep,
                 )
                 if (reading.yearOf != null) {
-                    Text(YEAR_READING_LABEL, style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
+                    Text(strings.yearReading, style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
                 }
                 reading.outcome?.let {
-                    Text("✓ ${outcomeLabel(it)}", style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
+                    Text("✓ ${outcomeLabel(it, strings)}", style = MaterialTheme.typography.labelSmall, color = ZenColors.CinnabarRed)
                 }
             }
             Spacer(Modifier.width(12.dp))
@@ -248,6 +255,7 @@ private fun TimelineItem(entry: JournalEntry, first: Boolean, last: Boolean, onC
 
 @Composable
 private fun EmptyJournal(onStartCasting: () -> Unit) {
+    val strings = LocalStrings.current.journal
     Column(
         Modifier.fillMaxSize().statusBarsPadding().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -255,16 +263,16 @@ private fun EmptyJournal(onStartCasting: () -> Unit) {
     ) {
         CinnabarSeal(text = "命錄", size = 64.dp)
         Spacer(Modifier.height(24.dp))
-        Text("บันทึกชะตายังว่างเปล่า", style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
+        Text(strings.emptyTitle, style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
         Spacer(Modifier.height(8.dp))
         Text(
-            "ทุกครั้งที่ท่านเสี่ยงทาย คำถามและคำชี้แนะจะถูกจารึกไว้ที่นี่\nให้ย้อนกลับมาทบทวนตามกาลเวลา",
+            strings.emptyBody,
             style = MaterialTheme.typography.bodyMedium,
             color = ZenColors.InkSoft,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.dp))
-        ZenPrimaryButton("เสี่ยงทายครั้งแรก", onClick = onStartCasting)
+        ZenPrimaryButton(strings.emptyAction, onClick = onStartCasting)
     }
 }
 
@@ -277,16 +285,18 @@ fun JournalEntryScreen(
     onInterpretSiamSi: (SiamSiRoute) -> Unit,
 ) {
     val entry by viewModel.entry.collectAsStateWithLifecycle()
+    val strings = LocalStrings.current
+    val journal = strings.journal
     var confirmDelete by remember { mutableStateOf(false) }
     PaperBackground(showMountains = false) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = strings.common.back, tint = ZenColors.InkBlack)
                 }
-                Text("บันทึกชะตา", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                Text(journal.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
                 IconButton(onClick = { confirmDelete = true }) {
-                    Icon(Icons.Outlined.DeleteOutline, contentDescription = "ลบบันทึก", tint = ZenColors.InkSoft)
+                    Icon(Icons.Outlined.DeleteOutline, contentDescription = journal.deleteDescription, tint = ZenColors.InkSoft)
                 }
             }
             val e = entry ?: return@Column
@@ -326,7 +336,7 @@ fun JournalEntryScreen(
                 }
                 if (e.reading.followUps.isNotEmpty()) {
                     Spacer(Modifier.height(20.dp))
-                    SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
+                    SectionLabel(strings.divination.followUpTitle, color = ZenColors.CinnabarRed)
                     Spacer(Modifier.height(10.dp))
                     e.reading.followUps.forEach { turn ->
                         Text("“${turn.question}”", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
@@ -346,15 +356,15 @@ fun JournalEntryScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("ลบบันทึกนี้?") },
-            text = { Text("บันทึกที่ลบแล้วจะไม่สามารถนำกลับคืนมาได้") },
+            title = { Text(journal.deleteTitle) },
+            text = { Text(journal.deleteBody) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     viewModel.delete(onBack)
-                }) { Text("ลบ", color = ZenColors.CinnabarRed) }
+                }) { Text(journal.delete, color = ZenColors.CinnabarRed) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(strings.common.cancel) } },
             containerColor = ZenColors.PaperCream,
         )
     }
@@ -370,6 +380,9 @@ private fun SiamSiJournalDetail(
     onInterpret: (SiamSiRoute) -> Unit,
 ) {
     var sharing by remember { mutableStateOf(false) }
+    val strings = LocalStrings.current
+    val journal = strings.journal
+    val lang = LocalAppLanguage.current
     val interpretRoute = siamsiInterpretRoute(reading)
     val set = slip.set
     val stick = slip.stick
@@ -382,7 +395,7 @@ private fun SiamSiJournalDetail(
             .padding(horizontal = 20.dp, vertical = 8.dp),
     ) {
         Text(
-            "${formatThaiShortDate(reading.createdAtMillis)} · ${formatThaiTime(reading.createdAtMillis)}",
+            "${formatShortDate(reading.createdAtMillis, lang)} · ${formatTime(reading.createdAtMillis, lang)}",
             style = MaterialTheme.typography.bodySmall,
             color = ZenColors.InkFaint,
         )
@@ -404,14 +417,14 @@ private fun SiamSiJournalDetail(
             )
             if (reading.interpretation.isBlank()) {
                 Spacer(Modifier.height(16.dp))
-                ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+                ZenSecondaryButton(journal.shareSlip, onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
             }
             if (sharing) {
-                SiamSiShareSheet(siamsiShareContent(set, stick, LocalStrings.current.share), log = log, onDismiss = { sharing = false })
+                SiamSiShareSheet(siamsiShareContent(set, stick, strings.share), log = log, onDismiss = { sharing = false })
             }
         } else {
             Text(slip.label, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
-            Text("ตำราชุดนี้ไม่มีในเครื่องแล้ว", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkFaint)
+            Text(journal.setMissing, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkFaint)
             if (reading.interpretation.isNotBlank()) {
                 Spacer(Modifier.height(16.dp))
                 OracleSheet(text = reading.interpretation, isComplete = true, animate = false, source = reading.source)
@@ -419,7 +432,7 @@ private fun SiamSiJournalDetail(
         }
         if (reading.followUps.isNotEmpty()) {
             Spacer(Modifier.height(20.dp))
-            SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
+            SectionLabel(strings.divination.followUpTitle, color = ZenColors.CinnabarRed)
             Spacer(Modifier.height(10.dp))
             reading.followUps.forEach { turn ->
                 Text("“${turn.question}”", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
@@ -451,24 +464,25 @@ private fun SiamSiStickIcon() {
     }
 }
 
-private fun outcomeLabel(outcome: Outcome) = when (outcome) {
-    Outcome.YES -> "เกิดขึ้นจริง"
-    Outcome.PARTLY -> "เกิดขึ้นบางส่วน"
-    Outcome.NO -> "ไม่เกิดขึ้น"
+private fun outcomeLabel(outcome: Outcome, strings: JournalStrings) = when (outcome) {
+    Outcome.YES -> strings.outcomeYes
+    Outcome.PARTLY -> strings.outcomePartly
+    Outcome.NO -> strings.outcomeNo
 }
 
 /** "Did it come true?" with a private note — the heart of the Destiny Journal. */
 @Composable
 private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?, String?) -> Unit) {
     var draft by rememberSaveable(note) { mutableStateOf(note.orEmpty()) }
+    val strings = LocalStrings.current.journal
     Column(Modifier.fillMaxWidth()) {
-        SectionLabel("เกิดขึ้นจริงไหม")
+        SectionLabel(strings.outcomeQuestion)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Outcome.entries.forEach { o ->
                 val selected = o == outcome
                 Text(
-                    outcomeLabel(o),
+                    outcomeLabel(o, strings),
                     style = MaterialTheme.typography.labelMedium,
                     color = if (selected) ZenColors.PaperCream else ZenColors.BambooDeep,
                     modifier = Modifier
@@ -485,7 +499,7 @@ private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?
             value = draft,
             onValueChange = { if (it.length <= 2000) draft = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("จดบันทึกส่วนตัว: สิ่งที่เกิดขึ้น สิ่งที่ได้เรียนรู้...", color = ZenColors.InkFaint) },
+            placeholder = { Text(strings.notePlaceholder, color = ZenColors.InkFaint) },
             textStyle = MaterialTheme.typography.bodyMedium,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -496,7 +510,7 @@ private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?
             ),
         )
         if (draft != note.orEmpty()) {
-            TextButton(onClick = { onChange(outcome, draft) }) { Text("บันทึก", color = ZenColors.CinnabarRed) }
+            TextButton(onClick = { onChange(outcome, draft) }) { Text(strings.save, color = ZenColors.CinnabarRed) }
         }
     }
 }
@@ -504,6 +518,7 @@ private fun OutcomeSection(outcome: Outcome?, note: String?, onChange: (Outcome?
 /** A cast the server knows but the hermit never finished (left mid-reading, out of quota, or a failure). */
 @Composable
 private fun AskHermitCard(onClick: () -> Unit) {
+    val strings = LocalStrings.current.journal
     Column(
         Modifier
             .fillMaxWidth()
@@ -512,11 +527,11 @@ private fun AskHermitCard(onClick: () -> Unit) {
             .padding(16.dp),
     ) {
         Text(
-            "กวานี้ยังไม่ได้รับคำชี้แนะจากนักพรต หากคำทำนายถูกตัดกลางทาง ท่านรับต่อได้โดยไม่เสียสิทธิ์ซ้ำ",
+            strings.askHermitBody,
             style = MaterialTheme.typography.bodySmall,
             color = ZenColors.InkBlack,
         )
         Spacer(Modifier.height(12.dp))
-        ZenPrimaryButton("รับคำชี้แนะจากนักพรต", onClick = onClick, modifier = Modifier.fillMaxWidth())
+        ZenPrimaryButton(strings.askHermitAction, onClick = onClick, modifier = Modifier.fillMaxWidth())
     }
 }

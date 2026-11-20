@@ -1,6 +1,7 @@
 package com.iching.ai.feature.settings
 
 import com.iching.ai.domain.repository.FailureReason
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.platform.NativeBridges
@@ -55,7 +56,7 @@ class SettingsShareAppTest {
             NativeBridges(auth, FakePurchases(), NoAds, analytics, NoNotifications, review),
             FirebaseApiSession(auth), api, FakeJournal(), settings, scope,
         )
-        val vm = SettingsViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), session, api)
+        val vm = SettingsViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), session, api, thaiLanguageHolder())
         scheduler.advanceUntilIdle()
         return vm
     }

@@ -81,10 +81,10 @@ import com.iching.ai.domain.model.currentOn
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
-import com.iching.ai.ui.formatThaiDate
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.paletteFor
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.SettingsStrings
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
@@ -108,6 +108,8 @@ fun SettingsScreen(
     val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
     val feedback by viewModel.feedback.collectAsStateWithLifecycle()
     val textSharer = rememberTextSharer()
+    val strings = LocalStrings.current
+    val st = strings.settings
     LifecycleResumeEffect(viewModel) {
         viewModel.refreshNotificationPermission()
         onPauseOrDispose { }
@@ -117,10 +119,10 @@ fun SettingsScreen(
     if (pushBlocked) {
         AlertDialog(
             onDismissRequest = viewModel::dismissPushBlocked,
-            title = { Text("ยังไม่ได้รับอนุญาตให้แจ้งเตือน") },
-            text = { Text("โปรดเปิดการแจ้งเตือนของแอปนี้ในการตั้งค่าของเครื่อง") },
-            confirmButton = { TextButton(onClick = viewModel::openNotificationSettings) { Text("เปิดการตั้งค่า") } },
-            dismissButton = { TextButton(onClick = viewModel::dismissPushBlocked) { Text("ไว้ก่อน") } },
+            title = { Text(st.pushBlockedTitle) },
+            text = { Text(st.pushBlockedBody) },
+            confirmButton = { TextButton(onClick = viewModel::openNotificationSettings) { Text(strings.divination.openSettings) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissPushBlocked) { Text(strings.divination.notNow) } },
         )
     }
 
@@ -144,9 +146,9 @@ fun SettingsScreen(
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { if (page == SettingsPage.MAIN) onBack() else page = SettingsPage.MAIN }) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = strings.common.back, tint = ZenColors.InkBlack)
                 }
-                Text(page.title, style = MaterialTheme.typography.headlineSmall)
+                Text(page.title(st), style = MaterialTheme.typography.headlineSmall)
             }
             message?.let {
                 Text(
@@ -187,39 +189,39 @@ fun SettingsScreen(
                                     CinnabarSeal(text = "易", size = 36.dp, tilt = 0f)
                                     Spacer(Modifier.width(ZenSpacing.md))
                                     Column(Modifier.weight(1f)) {
-                                        Text(if (status.premium) "Premium" else "ผู้ใช้ทั่วไป", style = MaterialTheme.typography.titleSmall)
+                                        Text(if (status.premium) st.planPremium else st.planFree, style = MaterialTheme.typography.titleSmall)
                                         Text(
                                             buildString {
-                                                append("วันนี้เหลือ ${status.readingsLeftToday} คำทำนาย")
-                                                if (!status.premium || status.coins > 0) append(" · เหรียญ ${status.coins} (ไม่มีวันหมดอายุ)")
-                                                if (status.premium) status.premiumUntilMillis?.let { append(" · ถึง ${formatThaiDate(it)}") }
+                                                append(st.readingsLeftToday(status.readingsLeftToday))
+                                                if (!status.premium || status.coins > 0) append(" · ${st.coinsNote(status.coins)}")
+                                                if (status.premium) status.premiumUntilMillis?.let { append(" · ${st.until(it)}") }
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             color = ZenColors.InkFaint,
                                         )
                                     }
                                     if (status.premium) {
-                                        ZenTextButton("รายละเอียด", onClick = onOpenPaywall)
+                                        ZenTextButton(st.details, onClick = onOpenPaywall)
                                     } else {
-                                        ZenPrimaryButton("อัปเกรด", onClick = onOpenPaywall, showSeal = false, compact = true)
+                                        ZenPrimaryButton(st.upgrade, onClick = onOpenPaywall, showSeal = false, compact = true)
                                     }
                                 }
                             }
 
                             Card {
-                                SwitchRow("เสียงเหรียญและกระดิ่งลม", checked = current.soundEnabled, onCheckedChange = viewModel::setSound)
+                                SwitchRow(st.sound, checked = current.soundEnabled, onCheckedChange = viewModel::setSound)
                                 if (viewModel.dailyPushSupported) {
                                     Divider()
                                     SwitchRow(
-                                        "แจ้งเตือนกวาประจำวัน",
-                                        subtitle = "ทุกเช้าเวลา ๗ นาฬิกา",
+                                        st.dailyPush,
+                                        subtitle = st.dailyPushSubtitle,
                                         checked = current.dailyPushEnabled && notificationsGranted,
                                         onCheckedChange = viewModel::setDailyPush,
                                     )
                                 }
                                 yearResult?.let { year ->
                                     Divider()
-                                    LinkRow("กวาประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
+                                    LinkRow(st.yearRow(year), onClick = onOpenYear)
                                 }
                             }
 
@@ -228,9 +230,9 @@ fun SettingsScreen(
                                     Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text("ธีม", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                    Text(st.theme, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                                     Text(
-                                        "ต่อเนื่อง ${current.streak.currentOn(bangkokEpochDay(Clock.System.now().toEpochMilliseconds())).toThaiNumerals()} วัน · ดีที่สุด ${current.streak.best.toThaiNumerals()} วัน",
+                                        st.streak(current.streak.currentOn(bangkokEpochDay(Clock.System.now().toEpochMilliseconds())), current.streak.best),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = ZenColors.InkFaint,
                                     )
@@ -238,50 +240,51 @@ fun SettingsScreen(
                                 ThemePicker(
                                     selected = current.selectedTheme,
                                     unlocked = current.streak.unlocked,
-                                    hintFor = { lockedThemeHint(it, status.campaign?.active == true) },
+                                    hintFor = { lockedThemeHint(it, status.campaign?.active == true, st) },
+                                    lockedSuffix = st.lockedSuffix,
                                     onSelect = viewModel::selectTheme,
                                 )
                             }
 
                             Card {
                                 LinkRow(
-                                    SettingsPage.ACCOUNT.title,
+                                    SettingsPage.ACCOUNT.title(st),
                                     subtitle = when (provider) {
-                                        SignInProvider.APPLE -> "เชื่อมกับ Apple แล้ว"
-                                        SignInProvider.GOOGLE -> "เชื่อมกับ Google แล้ว"
-                                        SignInProvider.ANONYMOUS -> "ยังไม่เชื่อมบัญชี"
+                                        SignInProvider.APPLE -> st.linkedApple
+                                        SignInProvider.GOOGLE -> st.linkedGoogle
+                                        SignInProvider.ANONYMOUS -> st.notLinked
                                     },
                                 ) { page = SettingsPage.ACCOUNT }
                                 Divider()
-                                LinkRow(SettingsPage.FEEDBACK.title) { page = SettingsPage.FEEDBACK }
+                                LinkRow(SettingsPage.FEEDBACK.title(st)) { page = SettingsPage.FEEDBACK }
                                 Divider()
-                                LinkRow(SettingsPage.ABOUT.title) { page = SettingsPage.ABOUT }
+                                LinkRow(SettingsPage.ABOUT.title(st)) { page = SettingsPage.ABOUT }
                             }
 
-                            VersionLine(viewModel.appVersion)
+                            VersionLine(st.version(viewModel.appVersion))
                         }
 
                         SettingsPage.ACCOUNT -> {
-                            SectionLabel("บัญชี")
+                            SectionLabel(st.sectionAccount)
                             Card {
                                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                     Text(
                                         when (provider) {
-                                            SignInProvider.APPLE -> "เชื่อมกับ Apple แล้ว"
-                                            SignInProvider.GOOGLE -> "เชื่อมกับ Google แล้ว"
-                                            SignInProvider.ANONYMOUS -> "บัญชีบนเครื่องนี้ (ยังไม่เชื่อม)"
+                                            SignInProvider.APPLE -> st.linkedApple
+                                            SignInProvider.GOOGLE -> st.linkedGoogle
+                                            SignInProvider.ANONYMOUS -> st.localAccount
                                         },
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                     Text(
-                                        account?.email ?: "รหัสบัญชี ${account?.uid?.take(8) ?: "—"}",
+                                        account?.email ?: st.accountId(account?.uid?.take(8) ?: "—"),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = ZenColors.InkFaint,
                                     )
                                     if (provider == SignInProvider.ANONYMOUS) {
                                         Spacer(Modifier.height(6.dp))
                                         Text(
-                                            "เชื่อมบัญชีเพื่อเก็บการซื้อและบันทึกชะตาไว้ เมื่อเปลี่ยนเครื่องหรือติดตั้งแอปใหม่",
+                                            st.linkHint,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = ZenColors.InkSoft,
                                         )
@@ -290,27 +293,27 @@ fun SettingsScreen(
                                 if (provider == SignInProvider.ANONYMOUS) {
                                     if (viewModel.supportsApple) {
                                         Divider()
-                                        LinkRow("ลงชื่อเข้าใช้ด้วย Apple", enabled = !busy) { viewModel.link(SignInProvider.APPLE) }
+                                        LinkRow(st.signInApple, enabled = !busy) { viewModel.link(SignInProvider.APPLE) }
                                     }
                                     if (viewModel.supportsGoogle) {
                                         Divider()
-                                        LinkRow("ลงชื่อเข้าใช้ด้วย Google", enabled = !busy) { viewModel.link(SignInProvider.GOOGLE) }
+                                        LinkRow(st.signInGoogle, enabled = !busy) { viewModel.link(SignInProvider.GOOGLE) }
                                     }
                                 }
                                 Divider()
-                                LinkRow("ดึงบันทึกชะตาจากระบบ", enabled = !busy) { viewModel.syncJournal() }
+                                LinkRow(st.syncJournal, enabled = !busy) { viewModel.syncJournal() }
                             }
 
-                            SectionLabel("การซื้อ", modifier = Modifier.padding(top = ZenSpacing.sm))
+                            SectionLabel(st.sectionPurchases, modifier = Modifier.padding(top = ZenSpacing.sm))
                             Card {
-                                LinkRow("กู้คืนการซื้อ", enabled = !busy) { viewModel.restore() }
+                                LinkRow(st.restore, enabled = !busy) { viewModel.restore() }
                                 Divider()
-                                LinkRow("จัดการการสมัครสมาชิก") { runCatching { uri.openUri(viewModel.manageSubscriptionsUrl) } }
+                                LinkRow(st.manageSubscriptions) { runCatching { uri.openUri(viewModel.manageSubscriptionsUrl) } }
                             }
 
                             Spacer(Modifier.height(ZenSpacing.lg))
                             Card {
-                                LinkRow("ลบบัญชีและข้อมูลทั้งหมด", color = ZenColors.CinnabarRed, enabled = !busy) { confirmDelete = true }
+                                LinkRow(st.deleteAccount, color = ZenColors.CinnabarRed, enabled = !busy) { confirmDelete = true }
                             }
                         }
 
@@ -318,39 +321,37 @@ fun SettingsScreen(
                             Card {
                                 val storeUrls = viewModel.storeUrls
                                 if (storeUrls.isNotEmpty()) {
-                                    LinkRow("ให้คะแนนแอป", subtitle = "รีวิวใน Google Play ช่วยให้คนอื่นเจอแอปนี้") {
+                                    LinkRow(strings.review.rateApp, subtitle = strings.review.rateAppSubtitle) {
                                         viewModel.onRateAppTapped()
                                         openFirst(storeUrls, uri::openUri)
                                     }
                                     Divider()
                                 }
                                 viewModel.shareAppText?.let { shareText ->
-                                    LinkRow("แชร์แอปให้เพื่อน", subtitle = "ส่งลิงก์ไปให้คนที่สนใจเสี่ยงทาย") {
+                                    LinkRow(st.shareApp, subtitle = st.shareAppSubtitle) {
                                         viewModel.onShareAppTapped()
                                         textSharer.share(shareText)
                                     }
                                     Divider()
                                 }
-                                LinkRow("ส่งความเห็น", subtitle = "บอกเราว่าชอบอะไร อยากให้ปรับตรงไหน", onClick = viewModel::openFeedback)
+                                LinkRow(st.sendFeedback, subtitle = st.sendFeedbackSubtitle, onClick = viewModel::openFeedback)
                             }
                         }
 
                         SettingsPage.ABOUT -> {
                             Text(
-                                "อี้จิง AI ใช้การโยนเหรียญสามเหรียญหกครั้งตามตำราดั้งเดิม แล้วอ้างอิงตัวบทคัมภีร์อี้จิง ๖๔ กวา ๓๘๔ เส้น " +
-                                    "เป็นแก่นของคำชี้แนะทุกครั้ง คำชี้แนะสร้างโดย AI (Google Gemini) มีไว้เพื่อความบันเทิงและการสะท้อนคิด " +
-                                    "มิใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน",
+                                st.aboutBody,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = ZenColors.InkSoft,
                             )
                             Card {
-                                LinkRow("วิธีเสี่ยงทาย", onClick = onOpenGuide)
+                                LinkRow(st.howToCast, onClick = onOpenGuide)
                                 Divider()
-                                LinkRow("นโยบายความเป็นส่วนตัว") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }
+                                LinkRow(st.privacy) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }
                                 Divider()
-                                LinkRow("ข้อกำหนดการใช้งาน") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }
+                                LinkRow(st.terms) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }
                             }
-                            VersionLine(viewModel.appVersion)
+                            VersionLine(st.version(viewModel.appVersion))
                         }
                     }
                 }
@@ -371,11 +372,10 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             containerColor = ZenColors.PaperCream,
-            title = { Text("ลบบัญชีและข้อมูลทั้งหมด?", style = MaterialTheme.typography.titleMedium) },
+            title = { Text(st.deleteTitle, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Text(
-                    "บันทึกชะตา บทสนทนา และเหรียญที่เหลือจะถูกลบถาวรทั้งบนเครื่องนี้และบนระบบ ไม่สามารถกู้คืนได้ " +
-                        "การลบบัญชีไม่ยกเลิกการสมัครสมาชิก โปรดยกเลิกในการตั้งค่าของ App Store / Google Play ด้วย",
+                    st.deleteBody,
                     style = MaterialTheme.typography.bodySmall,
                 )
             },
@@ -383,18 +383,18 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     confirmDelete = false
                     viewModel.deleteAccount(onDone = onBack)
-                }) { Text("ลบถาวร", color = ZenColors.CinnabarRed) }
+                }) { Text(st.deleteConfirm, color = ZenColors.CinnabarRed) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก", color = ZenColors.InkSoft) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(strings.common.cancel, color = ZenColors.InkSoft) } },
         )
     }
 }
 
 /** Why a theme is still locked: days in a row for streak themes, the year hexagram for the campaign one. */
-internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String = when {
-    theme.unlockDays >= 0 -> "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง"
-    campaignActive -> "รับได้จากการเสี่ยงทายกวาประจำปี"
-    else -> "ธีมพิเศษตรุษจีน"
+internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean, strings: SettingsStrings): String = when {
+    theme.unlockDays >= 0 -> strings.lockedStreak(theme.unlockDays)
+    campaignActive -> strings.lockedCampaign
+    else -> strings.lockedSpecial
 }
 
 /**
@@ -406,6 +406,7 @@ private fun ThemePicker(
     selected: AppTheme,
     unlocked: Set<AppTheme>,
     hintFor: (AppTheme) -> String,
+    lockedSuffix: String,
     onSelect: (AppTheme) -> Unit,
 ) {
     var hinted by remember { mutableStateOf<AppTheme?>(null) }
@@ -426,7 +427,7 @@ private fun ThemePicker(
                             }
                         }
                         .semantics {
-                            contentDescription = theme.labelTh + if (!isUnlocked) " (ยังล็อกอยู่)" else ""
+                            contentDescription = theme.labelTh + if (!isUnlocked) lockedSuffix else ""
                             this.selected = theme == selected
                         },
                     contentAlignment = Alignment.Center,
@@ -460,11 +461,15 @@ private fun ThemePicker(
 }
 
 /** The main settings page and the rarely-used groups that open from it, so the main page fits one screen. */
-private enum class SettingsPage(val title: String) {
-    MAIN("ตั้งค่า"),
-    ACCOUNT("บัญชีและการซื้อ"),
-    FEEDBACK("ความเห็นและแชร์แอป"),
-    ABOUT("เกี่ยวกับแอป"),
+private enum class SettingsPage {
+    MAIN, ACCOUNT, FEEDBACK, ABOUT;
+
+    fun title(strings: SettingsStrings): String = when (this) {
+        MAIN -> strings.pageMain
+        ACCOUNT -> strings.pageAccount
+        FEEDBACK -> strings.pageFeedback
+        ABOUT -> strings.pageAbout
+    }
 }
 
 @Composable
@@ -489,9 +494,9 @@ private fun SwitchRow(text: String, checked: Boolean, onCheckedChange: (Boolean)
 }
 
 @Composable
-private fun VersionLine(version: String) {
+private fun VersionLine(text: String) {
     Text(
-        "เวอร์ชัน $version",
+        text,
         style = MaterialTheme.typography.labelSmall,
         color = ZenColors.InkFaint,
         textAlign = TextAlign.Center,

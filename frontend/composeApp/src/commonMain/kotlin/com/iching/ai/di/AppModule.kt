@@ -185,7 +185,7 @@ val presentationModule = module {
         )
     }
     viewModelOf(::JournalViewModel)
-    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get(), get(), get<AppSession>()::log) }
+    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get(), get(), get(), get<AppSession>()::log) }
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PaywallViewModel)
 }

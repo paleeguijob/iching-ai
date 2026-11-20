@@ -15,6 +15,11 @@ private val THAI_MONTHS_SHORT = listOf(
     "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
 )
 
+private val EN_MONTHS = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
 private val EN_MONTHS_SHORT = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 private val THAI_DIGITS = "๐๑๒๓๔๕๖๗๘๙"
@@ -37,6 +42,15 @@ fun formatDate(epochMillis: Long, lang: AppLanguage, tz: TimeZone = TimeZone.cur
     return when (lang) {
         AppLanguage.TH -> "${dt.day} ${THAI_MONTHS[dt.month.ordinal]} ${dt.year + 543}"
         AppLanguage.EN -> "${dt.day} ${EN_MONTHS_SHORT[dt.month.ordinal]} ${dt.year}"
+    }
+}
+
+/** The journal's month heading: TH "ตุลาคม 2569" (Buddhist era), EN "October 2026". */
+fun formatMonth(epochMillis: Long, lang: AppLanguage, tz: TimeZone = TimeZone.currentSystemDefault()): String {
+    val dt = local(epochMillis, tz)
+    return when (lang) {
+        AppLanguage.TH -> "${THAI_MONTHS[dt.month.ordinal]} ${dt.year + 543}"
+        AppLanguage.EN -> "${EN_MONTHS[dt.month.ordinal]} ${dt.year}"
     }
 }
 

@@ -24,9 +24,6 @@ import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import com.iching.ai.session.AdResult
-import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
-import com.iching.ai.feature.paywall.COINS_RECEIVED_MESSAGE
-import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AppSession
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.session.PurchaseResult
@@ -463,7 +460,7 @@ class DivinationViewModel(
                 it.copy(
                     upsell = it.upsell.copy(
                         coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
-                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.let(languageHolder.strings.paywall::trialLabel),
                     ),
                 )
             }
@@ -489,10 +486,10 @@ class DivinationViewModel(
                 it.copy(
                     upsell = it.upsell.copy(buyingCoins = false),
                     message = when (result) {
-                        is PurchaseResult.Success -> COINS_RECEIVED_MESSAGE
+                        is PurchaseResult.Success -> languageHolder.strings.paywall.coinsReceived
                         PurchaseResult.Cancelled -> null
-                        PurchaseResult.Pending -> PENDING_MESSAGE
-                        PurchaseResult.AwaitingPayment -> AWAITING_PAYMENT_MESSAGE
+                        PurchaseResult.Pending -> languageHolder.strings.paywall.pending
+                        PurchaseResult.AwaitingPayment -> languageHolder.strings.paywall.awaitingPayment
                         is PurchaseResult.Error -> languageHolder.strings.common.paymentFailed
                     },
                 )

@@ -46,21 +46,16 @@ import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
-import com.iching.ai.ui.formatThaiDate
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 import kotlinx.coroutines.delay
-
-private val BENEFITS = listOf(
-    "คำทำนายจากนักพรต วันละ ๕ ครั้ง ด้วยปัญญาที่ลึกกว่า",
-    "ถามต่อกับนักพรตได้ ๓ คำถามในแต่ละคำทำนาย",
-    "บันทึกชะตาไม่จำกัด และกู้คืนข้ามเครื่องได้",
-    "ไม่มีโฆษณา",
-)
 
 @Composable
 fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val uri = LocalUriHandler.current
+    val strings = LocalStrings.current
+    val paywall = strings.paywall
     LaunchedEffect(state.purchased) {
         if (state.purchased) {
             delay(1600)
@@ -71,7 +66,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
     PaperBackground(showMountains = false) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, contentDescription = "ปิด", tint = ZenColors.InkBlack) }
+                IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, contentDescription = strings.common.close, tint = ZenColors.InkBlack) }
             }
             Column(
                 Modifier
@@ -83,16 +78,16 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
             ) {
                 CinnabarSeal(text = "道", size = 56.dp)
                 Spacer(Modifier.height(14.dp))
-                Text("อี้จิง Premium", style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
+                Text(paywall.title, style = MaterialTheme.typography.headlineMedium, color = ZenColors.InkBlack)
                 Text(
-                    "ให้นักพรตร่วมพินิจทุกการตัดสินใจของท่าน",
+                    paywall.tagline,
                     style = MaterialTheme.typography.bodyMedium,
                     color = ZenColors.InkSoft,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(20.dp))
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    BENEFITS.forEach { benefit ->
+                    paywall.benefits.forEach { benefit ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.CheckCircle, null, tint = ZenColors.BambooDeep, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
@@ -104,7 +99,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
 
                 if (state.status.premium) {
                     Text(
-                        "ท่านเป็นสมาชิก Premium" + (state.status.premiumUntilMillis?.let { " ถึง ${formatThaiDate(it)}" } ?: ""),
+                        paywall.memberLine(state.status.premiumUntilMillis),
                         style = MaterialTheme.typography.titleSmall,
                         color = ZenColors.BambooDeep,
                     )
@@ -113,7 +108,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
 
                 when {
                     state.loading -> CircularProgressIndicator(color = ZenColors.BambooDeep)
-                    state.products.isEmpty() -> ZenSecondaryButton("ลองโหลดใหม่", onClick = viewModel::load)
+                    state.products.isEmpty() -> ZenSecondaryButton(paywall.reload, onClick = viewModel::load)
                     else -> {
                         if (!state.status.premium) {
                             state.subscriptions.forEach { product ->
@@ -124,7 +119,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                             if (selected != null && selected.kind != ProductKind.COINS) {
                                 Spacer(Modifier.height(6.dp))
                                 ZenPrimaryButton(
-                                    text = if (state.busy) "กำลังดำเนินการ..." else selected.trialTh?.let { "เริ่ม$it" } ?: "สมัคร ${selected.price}/${selected.periodTh ?: ""}",
+                                    text = if (state.busy) strings.common.working else paywall.trialLabel(selected)?.let(paywall::startTrial) ?: paywall.subscribe(selected),
                                     onClick = { viewModel.buy() },
                                     enabled = !state.busy,
                                     color = ZenColors.CinnabarRed,
@@ -132,7 +127,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 Text(
-                                    renewalTerms(selected),
+                                    paywall.renewalTerms(selected),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = ZenColors.InkFaint,
                                     textAlign = TextAlign.Center,
@@ -141,7 +136,7 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                         }
                         state.coins?.let { coins ->
                             Spacer(Modifier.height(24.dp))
-                            SectionLabel("ไม่ชอบสมัครสมาชิก?")
+                            SectionLabel(paywall.coinsHeading)
                             Spacer(Modifier.height(10.dp))
                             Row(
                                 Modifier
@@ -154,9 +149,9 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Column(Modifier.weight(1f)) {
-                                    Text("เหรียญอี้จิง ๑๐ เหรียญ", style = MaterialTheme.typography.titleSmall)
+                                    Text(strings.common.coinPack, style = MaterialTheme.typography.titleSmall)
                                     Text(
-                                        "๑ เหรียญ = ๑ คำทำนายจากนักพรต ไม่มีวันหมดอายุ · ใช้เมื่อสิทธิ์ของวันหมด · มีอยู่ ${state.status.coins} เหรียญ",
+                                        paywall.coinsNote(state.status.coins),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = ZenColors.InkFaint,
                                     )
@@ -175,18 +170,18 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                 Spacer(Modifier.height(18.dp))
                 Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = viewModel::restore, enabled = !state.busy) {
-                        Text("กู้คืนการซื้อ", color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
+                        Text(paywall.restore, color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
                     }
                     TextButton(onClick = { runCatching { uri.openUri(viewModel.manageSubscriptionsUrl) } }) {
-                        Text("จัดการการสมัคร", color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
+                        Text(paywall.manage, color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }) {
-                        Text("ข้อกำหนดการใช้งาน", color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
+                        Text(paywall.terms, color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
                     }
                     TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }) {
-                        Text("นโยบายความเป็นส่วนตัว", color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
+                        Text(paywall.privacy, color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
                     }
                 }
                 Spacer(Modifier.height(24.dp))
@@ -195,16 +190,9 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
     }
 }
 
-/** Auto-renewal disclosure required by both stores, next to the purchase button. */
-private fun renewalTerms(product: StoreProduct): String {
-    val period = product.periodTh ?: "รอบ"
-    val trial = product.trialTh?.let { "$it จากนั้น " } ?: ""
-    return "${trial}เรียกเก็บ ${product.price} ทุก$period ต่ออายุอัตโนมัติจนกว่าจะยกเลิก " +
-        "ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชีของร้านค้า อย่างน้อย ๒๔ ชั่วโมงก่อนรอบบิลถัดไป"
-}
-
 @Composable
 private fun PlanCard(product: StoreProduct, selected: Boolean, onClick: () -> Unit) {
+    val paywall = LocalStrings.current.paywall
     val border = if (selected) ZenColors.InkBlack else ZenColors.current.outlineVariant
     Row(
         Modifier
@@ -218,19 +206,19 @@ private fun PlanCard(product: StoreProduct, selected: Boolean, onClick: () -> Un
     ) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (product.kind == ProductKind.YEARLY) "รายปี" else "รายเดือน", style = MaterialTheme.typography.titleSmall)
+                Text(if (product.kind == ProductKind.YEARLY) paywall.planYearly else paywall.planMonthly, style = MaterialTheme.typography.titleSmall)
                 if (product.kind == ProductKind.YEARLY) {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "คุ้มที่สุด",
+                        paywall.bestValue,
                         style = MaterialTheme.typography.labelSmall,
                         color = ZenColors.PaperCream,
                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(ZenColors.CinnabarRed).padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }
-            product.trialTh?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = ZenColors.BambooDeep) }
+            paywall.trialLabel(product)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = ZenColors.BambooDeep) }
         }
-        Text("${product.price}/${product.periodTh ?: ""}", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+        Text(paywall.pricePerPeriod(product), style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
     }
 }
