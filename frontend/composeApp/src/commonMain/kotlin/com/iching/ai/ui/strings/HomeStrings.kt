@@ -213,7 +213,7 @@ object EnHomeStrings : HomeStrings {
     override fun streakDayLabel(n: Int) = formatNumber(n, lang)
     override fun streakRun(days: Int) = "$days-day streak"
     override fun streakKeep(run: String) = "$run · open today's hexagram to keep it going"
-    override fun streakBest(run: String, best: Int) = "$run · best $best days"
+    override fun streakBest(run: String, best: Int) = "$run · best $best ${if (best == 1) "day" else "days"}"
     override fun streakNextTheme(run: String, daysLeft: Int, themeLabel: String) =
         "$run · $daysLeft more ${if (daysLeft == 1) "day" else "days"} to unlock the $themeLabel theme"
 

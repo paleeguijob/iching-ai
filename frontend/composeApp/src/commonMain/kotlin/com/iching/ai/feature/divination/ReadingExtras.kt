@@ -179,7 +179,7 @@ fun FollowUpSection(
                 Icon(Icons.Outlined.Lock, null, tint = ZenColors.BambooDeep)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(strings.followUpTeaser, style = MaterialTheme.typography.bodyMedium)
+                    Text(strings.followUpTeaser(3), style = MaterialTheme.typography.bodyMedium)
                     Text(strings.followUpPremiumOnly, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 }
                 Text(strings.seePlans, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
@@ -291,8 +291,8 @@ fun SafetyStage(message: String, onDone: () -> Unit) {
     ) {
         Icon(Icons.Outlined.Favorite, null, tint = ZenColors.CinnabarRed, modifier = Modifier.size(36.dp))
         Text(message, style = MaterialTheme.typography.bodyLarge, color = ZenColors.InkBlack)
-        ZenPrimaryButton(strings.hotlineMental, onClick = { runCatching { uri.openUri("tel:1323") } }, modifier = Modifier.fillMaxWidth(), color = ZenColors.CinnabarRed)
-        ZenSecondaryButton(strings.hotlineEmergency, onClick = { runCatching { uri.openUri("tel:1669") } }, modifier = Modifier.fillMaxWidth())
+        ZenPrimaryButton(strings.helplineLabel, onClick = { runCatching { uri.openUri(strings.helplineUri) } }, modifier = Modifier.fillMaxWidth(), color = ZenColors.CinnabarRed)
+        ZenSecondaryButton(strings.emergencyLabel, onClick = { runCatching { uri.openUri(strings.emergencyUri) } }, modifier = Modifier.fillMaxWidth())
         TextButton(onClick = onDone) { Text(strings.backHome, color = ZenColors.InkSoft) }
         CinnabarSeal(text = "安", size = 44.dp)
     }

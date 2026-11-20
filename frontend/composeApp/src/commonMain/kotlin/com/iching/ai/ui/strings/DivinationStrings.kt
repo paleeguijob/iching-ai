@@ -61,7 +61,7 @@ interface DivinationStrings {
     val askAgain: String
 
     val followUpTitle: String
-    val followUpTeaser: String
+    fun followUpTeaser(questions: Int): String
     val followUpPremiumOnly: String
     val seePlans: String
     val hermitThinking: String
@@ -73,8 +73,12 @@ interface DivinationStrings {
     val reportTitle: String
     val reportSubmit: String
 
-    val hotlineMental: String
-    val hotlineEmergency: String
+    val helplineLabel: String
+    val helplineUri: String
+    val emergencyLabel: String
+
+    /** An empty "tel:" opens the dialer without a number, for languages with no number that fits everywhere. */
+    val emergencyUri: String
     val backHome: String
 
     val recordNotFound: String
@@ -159,7 +163,7 @@ object ThDivinationStrings : DivinationStrings {
     override val askAgain = "ถามนักพรตอีกครั้ง"
 
     override val followUpTitle = "ถามต่อกับนักพรต"
-    override val followUpTeaser = "สนทนาต่อในกวาเดิมได้ ๓ คำถาม"
+    override fun followUpTeaser(questions: Int) = "สนทนาต่อในกวาเดิมได้ ${formatNumber(questions, lang)} คำถาม"
     override val followUpPremiumOnly = "สิทธิ์ของสมาชิก Premium"
     override val seePlans = "ดูแพ็กเกจ"
     override val hermitThinking = "นักพรตกำลังพินิจ..."
@@ -176,8 +180,10 @@ object ThDivinationStrings : DivinationStrings {
     override val reportTitle = "รายงานคำตอบนี้"
     override val reportSubmit = "ส่งรายงาน"
 
-    override val hotlineMental = "โทรสายด่วนสุขภาพจิต 1323"
-    override val hotlineEmergency = "เหตุฉุกเฉินทางการแพทย์ 1669"
+    override val helplineLabel = "โทรสายด่วนสุขภาพจิต 1323"
+    override val helplineUri = "tel:1323"
+    override val emergencyLabel = "เหตุฉุกเฉินทางการแพทย์ 1669"
+    override val emergencyUri = "tel:1669"
     override val backHome = "กลับสู่หน้าแรก"
 
     override val recordNotFound = "ไม่พบบันทึกนี้"
@@ -262,7 +268,7 @@ object EnDivinationStrings : DivinationStrings {
     override val askAgain = "Ask the hermit again"
 
     override val followUpTitle = "Ask the hermit more"
-    override val followUpTeaser = "Keep talking about this hexagram, 3 questions"
+    override fun followUpTeaser(questions: Int) = "Ask up to $questions more questions about this hexagram"
     override val followUpPremiumOnly = "For Premium members"
     override val seePlans = "See plans"
     override val hermitThinking = "The hermit is reflecting..."
@@ -279,8 +285,10 @@ object EnDivinationStrings : DivinationStrings {
     override val reportTitle = "Report this answer"
     override val reportSubmit = "Send report"
 
-    override val hotlineMental = "Call the mental health line 1323 (Thailand)"
-    override val hotlineEmergency = "Medical emergency 1669 (Thailand)"
+    override val helplineLabel = "Find a helpline near you"
+    override val helplineUri = "https://findahelpline.com"
+    override val emergencyLabel = "Contact your local emergency services"
+    override val emergencyUri = "tel:"
     override val backHome = "Back to home"
 
     override val recordNotFound = "This record was not found."

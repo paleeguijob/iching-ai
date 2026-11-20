@@ -96,7 +96,7 @@ object EnOnboardingStrings : OnboardingStrings {
         "Privacy" to
             "Your question is sent to Google Gemini for processing. Please do not type identifying details such as ID numbers, addresses or health information.",
         "In hard times" to
-            "If you feel unsafe or are thinking of harming yourself, please call a local crisis line or emergency number. In Thailand: mental health line 1323, emergency 1669.",
+            "If you feel unsafe or are thinking of harming yourself, please contact your local emergency services, or find a helpline near you at findahelpline.com.",
     )
     override val skip = "Skip"
     override val next = "Next"
