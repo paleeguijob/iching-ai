@@ -40,6 +40,7 @@ import com.iching.ai.session.FirebaseApiSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import com.iching.ai.data.scripture.HexagramContentState
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.effectiveEnglishEnabled
 import org.koin.core.context.startKoin
@@ -98,7 +99,14 @@ fun platformModule(bridges: NativeBridges): Module = module {
                 effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
             },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
-        )
+        ).also { holder ->
+            // The scripture follows the effective language (the kill switch gives Thai) and the server's file version.
+            val session = get<AppSession>()
+            get<HexagramContentState>().apply {
+                languageSource = { holder.language.value }
+                versionSource = { session.status.value.hexagramsEnVersion }
+            }
+        }
     }
     single {
         val session = get<AppSession>()

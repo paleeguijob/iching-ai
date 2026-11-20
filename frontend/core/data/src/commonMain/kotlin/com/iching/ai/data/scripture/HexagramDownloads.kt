@@ -25,13 +25,14 @@ class HexagramEnDownloads(
     private val serverVersion: () -> Int,
     private val fetchTimeoutMillis: Long = 15_000,
 ) {
+    /** Order: a complete downloaded or cached copy, then a complete bundled copy; null when neither is. */
     suspend fun load(): String? {
-        val inApp = bundled()
+        val inApp = bundled()?.takeIf(::isCompleteEnglish)
         val inAppVersion = inApp?.let(::englishVersion) ?: 0
         val wanted = serverVersion()
         if (inApp != null && inAppVersion >= wanted) return inApp
         val device = runCatching { cache.read(HEXAGRAMS_EN_CACHE_ID) }.getOrNull()
-            ?.takeIf { englishVersion(it.raw) != null }
+            ?.takeIf { isCompleteEnglish(it.raw) }
         if (device != null && device.version >= wanted) return device.raw
         val fresh = download(wanted)
         if (fresh != null) return fresh
@@ -49,7 +50,7 @@ class HexagramEnDownloads(
         } catch (e: Exception) {
             null
         } ?: return null
-        if (englishVersion(raw) == null) return null
+        if (!isCompleteEnglish(raw)) return null
         runCatching { cache.write(HEXAGRAMS_EN_CACHE_ID, version, raw) }
         return raw
     }
@@ -60,9 +61,14 @@ class HexagramEnDownloads(
  * version. The app updates it as settings and status change; until then the scripture stays Thai.
  */
 class HexagramContentState {
+    /** Set by the app to read its language holder; Thai until then. */
     @kotlin.concurrent.Volatile
-    var language: com.iching.ai.domain.model.AppLanguage = com.iching.ai.domain.model.AppLanguage.TH
+    var languageSource: () -> com.iching.ai.domain.model.AppLanguage = { com.iching.ai.domain.model.AppLanguage.TH }
 
+    /** Set by the app to read the latest status; 1 until then. */
     @kotlin.concurrent.Volatile
-    var hexagramsEnVersion: Int = 1
+    var versionSource: () -> Int = { 1 }
+
+    val language: com.iching.ai.domain.model.AppLanguage get() = languageSource()
+    val hexagramsEnVersion: Int get() = versionSource()
 }

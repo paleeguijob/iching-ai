@@ -112,4 +112,42 @@ class ScriptureEnglishTest {
         assertEquals("เฉียน — ฟ้า1", repo.byId(1).nameTh)
         assertEquals(listOf("th", "en"), reads)
     }
+
+    @Test
+    fun aFailedEnglishLoadIsRetriedNotRemembered() = runTest {
+        var english: String? = null
+        val repo = ScriptureHexagramRepository(loadEnglish = { english }, language = { AppLanguage.EN }, loadRaw = { thaiJson() })
+        assertEquals("เฉียน — ฟ้า1", repo.byId(1).nameTh)
+        english = enFile(64)
+        assertEquals("Heaven — Strong and unceasing", repo.byId(1).nameTh)
+    }
+
+    @Test
+    fun aNewEnglishVersionInvalidatesTheEnglishCache() = runTest {
+        var version = 1
+        var name = "Heaven"
+        val repo = ScriptureHexagramRepository(
+            loadEnglish = { enFile(64).replace("\"Heaven\"", "\"$name\"") },
+            language = { AppLanguage.EN }, englishVersion = { version }, loadRaw = { thaiJson() },
+        )
+        assertEquals("Heaven", repo.byId(1).nameEn)
+        name = "Sky"
+        assertEquals("Heaven", repo.byId(1).nameEn)
+        version = 2
+        assertEquals("Sky", repo.byId(1).nameEn)
+    }
+
+    @Test
+    fun switchingTheHolderToEnglishGivesEnglish() = runTest {
+        val state = com.iching.ai.data.scripture.HexagramContentState()
+        var current = AppLanguage.TH
+        state.languageSource = { current }
+        val repo = ScriptureHexagramRepository(
+            loadEnglish = { enFile(64) }, language = { state.language },
+            englishVersion = { state.hexagramsEnVersion }, loadRaw = { thaiJson() },
+        )
+        assertEquals("เฉียน — ฟ้า1", repo.byId(1).nameTh)
+        current = AppLanguage.EN
+        assertEquals("Heaven — Strong and unceasing", repo.byId(1).nameTh)
+    }
 }

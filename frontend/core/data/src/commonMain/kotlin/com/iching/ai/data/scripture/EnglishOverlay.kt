@@ -93,3 +93,21 @@ fun applyEnglish(th: List<Hexagram>, en: EnglishScripture): List<Hexagram> = th.
         yearMessage = e.yearMessageEn?.toDomain(),
     )
 }
+
+/**
+ * Whether [raw] is a usable English file on its own: valid JSON, hexagrams 1..64 once each, every field filled,
+ * six lines, a full year message, and the all-lines statement on hexagrams 1 and 2.
+ */
+fun isCompleteEnglish(raw: String): Boolean = try {
+    val hexagrams = englishJson.decodeFromString<EnglishFileDto>(raw).hexagrams
+    hexagrams.map { it.id }.sorted() == (1..64).toList() && hexagrams.all { e ->
+        e.nameEn.isNotBlank() && e.meaningEn.isNotBlank() && e.judgmentEn.isNotBlank() && e.imageEn.isNotBlank() &&
+            e.descriptionEn.isNotBlank() && e.dailyMessageEn.isNotBlank() && e.keywordsEn != null &&
+            e.linesEn?.let { it.size == 6 && it.none(String::isBlank) } == true &&
+            (e.id > 2 || !e.allLinesEn.isNullOrBlank()) && e.yearMessageEn?.isComplete() == true
+    }
+} catch (e: kotlinx.coroutines.CancellationException) {
+    throw e
+} catch (e: Exception) {
+    false
+}

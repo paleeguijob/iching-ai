@@ -69,6 +69,8 @@ internal object ScriptureParser {
 class ScriptureHexagramRepository(
     private val loadEnglish: suspend () -> String? = { Res.readBytes(BUNDLED_ENGLISH_HEXAGRAMS).decodeToString() },
     private val language: () -> AppLanguage = { AppLanguage.TH },
+    /** The server's English file version; a change drops the English text read for the old one. */
+    private val englishVersion: () -> Int = { 0 },
     // Last, so the existing `ScriptureHexagramRepository { raw }` call keeps binding its lambda to the Thai loader.
     private val loadRaw: suspend () -> String = { Res.readBytes("files/hexagrams.json").decodeToString() },
 ) : HexagramRepository {
@@ -80,6 +82,7 @@ class ScriptureHexagramRepository(
     private val mutex = Mutex()
     private var thai: Loaded? = null
     private var english: Loaded? = null
+    private var englishFor: Int = 0
 
     private suspend fun loaded(): Loaded = mutex.withLock {
         val th = thai ?: Loaded(
@@ -87,7 +90,11 @@ class ScriptureHexagramRepository(
             loadRaw().let { raw -> withContext(Dispatchers.Default) { ScriptureParser.parse(raw) } },
         ).also { thai = it }
         if (language() != AppLanguage.EN) return@withLock th
-        english ?: (loadEnglishOverlay(th) ?: th).also { english = it }
+        val version = englishVersion()
+        english?.takeIf { englishFor == version }
+            // A failed load is not remembered: the next call tries again instead of staying Thai for the process.
+            ?: loadEnglishOverlay(th)?.also { english = it; englishFor = version }
+            ?: th
     }
 
     private suspend fun loadEnglishOverlay(th: Loaded): Loaded? = try {

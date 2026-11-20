@@ -24,7 +24,14 @@ class HexagramEnDownloadTest {
     private var serve: String? = null
     private var serverVersion = 1
 
-    private fun file(version: Int) = """{"version":$version,"hexagrams":[]}"""
+    private val root = File("src/commonMain/composeResources/files")
+    private val real = File(root, "hexagrams.en.json").readText()
+
+    /** The real, complete file stamped with [version]. */
+    private fun file(version: Int) = real.replaceFirst("\"version\": 1", "\"version\": $version")
+
+    /** Parses, but is missing hexagram 64. */
+    private fun incomplete(version: Int) = file(version).replace("\"id\": 64,", "\"id\": 640,")
 
     private fun downloads(bundled: String?): HexagramEnDownloads {
         val engine = MockEngine { request ->
@@ -68,12 +75,35 @@ class HexagramEnDownloadTest {
     }
 
     @Test
-    fun hostingVersionNewerThanBundleIsWhatTheRepositoryServes() = runBlocking {
-        val root = File("src/commonMain/composeResources/files")
-        val thaiRaw = File(root, "hexagrams.json").readText()
-        val bundled = File(root, "hexagrams.en.json").readText()
+    fun incompleteDownloadIsNotCachedAndEnglishComesFromTheBundle() = runBlocking {
         serverVersion = 2
-        serve = bundled.replaceFirst("\"version\": 1", "\"version\": 2").replace("\"nameEn\": \"Heaven\"", "\"nameEn\": \"Sky\"")
+        serve = incomplete(2)
+        val thaiRaw = File(root, "hexagrams.json").readText()
+        val dl = downloads(file(1))
+        assertEquals(file(1), dl.load())
+        // Nothing was cached: a later launch with a good download is served by Hosting, not a stale bad copy.
+        serve = file(2)
+        assertEquals(file(2), downloads(file(1)).load())
+        assertEquals(2, requests.size)
+        val repo = ScriptureHexagramRepository(loadRaw = { thaiRaw }, loadEnglish = downloads(file(1))::load, language = { AppLanguage.EN })
+        assertNotNull(repo.byId(1).nameEn.takeIf { it.isNotBlank() })
+        Unit
+    }
+
+    @Test
+    fun incompleteCachedCopyIsIgnored() = runBlocking {
+        serverVersion = 2
+        FileSiamSiCache(dir, FileSystem.SYSTEM).write("hexagrams_en", 2, incomplete(2))
+        serve = null
+        assertEquals(file(1), downloads(file(1)).load())
+    }
+
+    @Test
+    fun hostingVersionNewerThanBundleIsWhatTheRepositoryServes() = runBlocking {
+        val thaiRaw = File(root, "hexagrams.json").readText()
+        val bundled = real
+        serverVersion = 2
+        serve = file(2).replace("\"nameEn\": \"Heaven\"", "\"nameEn\": \"Sky\"")
         val dl = downloads(bundled)
         val repo = ScriptureHexagramRepository(loadRaw = { thaiRaw }, loadEnglish = dl::load, language = { AppLanguage.EN })
         assertEquals("Sky", repo.byId(1).nameEn)
@@ -81,7 +111,6 @@ class HexagramEnDownloadTest {
 
     @Test
     fun theBundledEnglishFileCoversAllSixtyFour() = runBlocking {
-        val root = File("src/commonMain/composeResources/files")
         val repo = ScriptureHexagramRepository(
             loadRaw = { File(root, "hexagrams.json").readText() },
             loadEnglish = { File(root, "hexagrams.en.json").readText() },

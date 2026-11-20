@@ -77,7 +77,7 @@ val dataModule: Module = module {
     single<HexagramRepository> {
         val content: HexagramContentState = get()
         val downloads: HexagramEnDownloads = get()
-        ScriptureHexagramRepository(loadEnglish = downloads::load, language = { content.language })
+        ScriptureHexagramRepository(loadEnglish = downloads::load, language = { content.language }, englishVersion = { content.hexagramsEnVersion })
     }
     single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get()) }
     single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL, BuildConfig.WEB_BASE_URL) }
