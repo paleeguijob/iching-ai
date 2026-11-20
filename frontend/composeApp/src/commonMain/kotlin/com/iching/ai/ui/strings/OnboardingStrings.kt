@@ -36,7 +36,19 @@ interface OnboardingStrings {
     val disclaimerTitle: String
     val terms: String
     val privacy: String
+
+    /** The language picker. Bilingual on purpose, the same in both languages: a seeker must find their own. */
+    val languageTitle: String
+    val languageThai: String
+    val languageEnglish: String
+    val languageHint: String
 }
+
+/** Shown as is in Thai and in English: someone with English switched on must still be able to find Thai. */
+internal const val LANGUAGE_TITLE = "ภาษา / Language"
+internal const val LANGUAGE_NAME_TH = "ภาษาไทย"
+internal const val LANGUAGE_NAME_EN = "English"
+internal const val LANGUAGE_HINT = "เปลี่ยนได้ในตั้งค่า · Change anytime in Settings"
 
 object ThOnboardingStrings : OnboardingStrings {
     private val lang = AppLanguage.TH
@@ -85,6 +97,10 @@ object ThOnboardingStrings : OnboardingStrings {
     override val disclaimerTitle = "ก่อนเริ่มถามทาง"
     override val terms = "ข้อกำหนดการใช้งาน"
     override val privacy = "นโยบายความเป็นส่วนตัว"
+    override val languageTitle = LANGUAGE_TITLE
+    override val languageThai = LANGUAGE_NAME_TH
+    override val languageEnglish = LANGUAGE_NAME_EN
+    override val languageHint = LANGUAGE_HINT
 }
 
 object EnOnboardingStrings : OnboardingStrings {
@@ -127,9 +143,13 @@ object EnOnboardingStrings : OnboardingStrings {
     }
 
     override val sampleName = "11 · Tài · Peace"
-    override val sampleJudgment = "“The small departs, the great arrives. Good fortune and success.”"
+    override val sampleJudgment = "“The small go away, the great arrive. Good fortune. Flourishing.”"
 
     override val disclaimerTitle = "Before you begin"
     override val terms = "Terms of use"
     override val privacy = "Privacy policy"
+    override val languageTitle = LANGUAGE_TITLE
+    override val languageThai = LANGUAGE_NAME_TH
+    override val languageEnglish = LANGUAGE_NAME_EN
+    override val languageHint = LANGUAGE_HINT
 }

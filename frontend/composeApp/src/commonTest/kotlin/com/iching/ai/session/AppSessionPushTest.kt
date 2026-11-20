@@ -47,6 +47,7 @@ private class RecordingAnalytics : NativeAnalytics {
         events += name to params
     }
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) = Unit
     override fun recordError(message: String) = Unit
 }
 

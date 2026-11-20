@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.Account
 import com.iching.ai.domain.model.AccountStatus
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.SignInProvider
@@ -146,6 +147,14 @@ class SettingsViewModel(
 
     fun dismissPushBlocked() {
         _pushBlocked.value = false
+    }
+
+    /** False while English is switched off server-side: the language row stays hidden and everyone reads Thai. */
+    val englishEnabled: StateFlow<Boolean> get() = languageHolder.englishEnabled
+
+    fun setLanguage(lang: AppLanguage) {
+        viewModelScope.launch { updateSettings { it.copy(language = lang) } }
+        session.log("language_selected", mapOf("lang" to lang.wire, "source" to "settings"))
     }
 
     fun selectTheme(theme: AppTheme) {

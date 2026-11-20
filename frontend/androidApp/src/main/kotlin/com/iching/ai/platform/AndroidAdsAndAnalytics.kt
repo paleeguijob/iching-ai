@@ -123,6 +123,10 @@ class AndroidAnalytics(context: Context) : NativeAnalytics {
         FirebaseCrashlytics.getInstance().setUserId(uid ?: "")
     }
 
+    override fun setUserProperty(name: String, value: String) {
+        analytics.setUserProperty(name, value)
+    }
+
     override fun recordError(message: String) {
         FirebaseCrashlytics.getInstance().recordException(RuntimeException(message))
     }

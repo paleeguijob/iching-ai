@@ -95,6 +95,7 @@ fun SettingsScreen(
     onOpenPaywall: () -> Unit,
     onOpenYear: () -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenLanguage: () -> Unit,
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
@@ -107,6 +108,7 @@ fun SettingsScreen(
     val notificationsGranted by viewModel.notificationsGranted.collectAsStateWithLifecycle()
     val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
     val feedback by viewModel.feedback.collectAsStateWithLifecycle()
+    val englishEnabled by viewModel.englishEnabled.collectAsStateWithLifecycle()
     val textSharer = rememberTextSharer()
     val strings = LocalStrings.current
     val st = strings.settings
@@ -222,6 +224,10 @@ fun SettingsScreen(
                                 yearResult?.let { year ->
                                     Divider()
                                     LinkRow(st.yearRow(year), onClick = onOpenYear)
+                                }
+                                if (englishEnabled) {
+                                    Divider()
+                                    LinkRow(st.language, onClick = onOpenLanguage)
                                 }
                             }
 

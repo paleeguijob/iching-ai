@@ -153,6 +153,17 @@ class SettingsPersistenceTest {
     }
 
     @Test
+    fun clearKeepsTheChosenLanguage() = withStore { file ->
+        open(file) { repo ->
+            repo.update { it.copy(onboardingAccepted = true, language = AppLanguage.EN, lastEnglishEnabled = false) }
+            repo.clear()
+            val loaded = repo.settings.first()
+            assertEquals(AppLanguage.EN, loaded.language)
+            assertEquals(false, loaded.lastEnglishEnabled)
+        }
+    }
+
+    @Test
     fun newInstallGetsTheGuidesUntilSeen() = withStore { file ->
         open(file) { repo ->
             repo.update { it.copy(firstOpenEpochDay = 20_400L) }

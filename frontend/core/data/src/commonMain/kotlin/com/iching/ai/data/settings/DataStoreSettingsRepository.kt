@@ -56,12 +56,16 @@ class DataStoreSettingsRepository(
         }
     }
 
-    /** Used after deleting the account. The disclaimer stays accepted on this device. */
+    /** Used after deleting the account. The disclaimer stays accepted and the language stays chosen on this device. */
     override suspend fun clear() {
         dataStore.edit { prefs ->
             val accepted = prefs[ONBOARDING] ?: false
+            val language = prefs[LANGUAGE]
+            val englishEnabled = prefs[LAST_ENGLISH_ENABLED]
             prefs.clear()
             prefs[ONBOARDING] = accepted
+            language?.let { prefs[LANGUAGE] = it }
+            englishEnabled?.let { prefs[LAST_ENGLISH_ENABLED] = it }
         }
     }
 

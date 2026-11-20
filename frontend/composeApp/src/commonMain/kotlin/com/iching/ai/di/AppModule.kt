@@ -40,8 +40,8 @@ import com.iching.ai.session.FirebaseApiSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.map
 import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.effectiveEnglishEnabled
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import com.iching.ai.domain.oracle.bangkokEpochDay
@@ -94,7 +94,9 @@ fun platformModule(bridges: NativeBridges): Module = module {
     single {
         AppLanguageHolder(
             observeSettings = get(),
-            englishEnabled = get<AppSession>().status.map { it.englishEnabled },
+            englishAllowed = get<AppSession>().let { session ->
+                effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
+            },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
         )
     }

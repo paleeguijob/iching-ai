@@ -106,6 +106,10 @@ final class IosAnalytics: NSObject, NativeAnalytics {
         Crashlytics.crashlytics().setUserID(uid ?? "")
     }
 
+    func setUserProperty(name: String, value: String) {
+        Analytics.setUserProperty(value, forName: name)
+    }
+
     func recordError(message: String) {
         Crashlytics.crashlytics().record(error: NSError(domain: "IChing", code: 0, userInfo: [NSLocalizedDescriptionKey: message]))
     }

@@ -48,6 +48,7 @@ import com.iching.ai.ui.strings.zodiacYearLabel
 import com.iching.ai.ui.strings.stringsFor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -103,6 +104,10 @@ import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
+import com.iching.ai.feature.onboarding.LanguagePickScreen
+import com.iching.ai.feature.settings.LanguageSettingsScreen
+import com.iching.ai.domain.model.needsLanguagePick
+import com.iching.ai.navigation.LanguageSettingsRoute
 import com.iching.ai.feature.onboarding.GuideScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
@@ -134,19 +139,26 @@ fun App() {
     SideEffect { current?.let { ZenColors.useTheme(it.selectedTheme) } }
     val languageHolder = koinInject<AppLanguageHolder>()
     val language by languageHolder.language.collectAsState()
+    val englishEnabled by languageHolder.englishEnabled.collectAsState()
     ZenTheme {
       CompositionLocalProvider(LocalStrings provides stringsFor(language), LocalAppLanguage provides language) {
         val updateSettings = koinInject<UpdateSettingsUseCase>()
         val session = koinInject<AppSession>()
         val scope = rememberCoroutineScope()
+        LaunchedEffect(language) { session.setUserProperty("app_lang", language.wire) }
         when {
             current == null -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
+            current.needsLanguagePick(englishEnabled) -> LanguagePickScreen(onPick = { lang ->
+                scope.launch { updateSettings { it.copy(language = lang) } }
+                session.log("language_selected", mapOf("lang" to lang.wire, "source" to "first_launch"))
+            })
             !current.onboardingAccepted -> OnboardingScreen(onAccept = {
                 scope.launch { updateSettings { it.copy(onboardingAccepted = true) } }
             })
             else -> {
                 LaunchedEffect(Unit) { session.start() }
-                MainNavigation()
+                // A new language rebuilds everything below, which is what returns the app to Home after a switch.
+                key(language) { MainNavigation() }
             }
         }
       }
@@ -365,7 +377,11 @@ private fun MainNavigation() {
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         onOpenYear = { nav.navigate(YearRoute) },
                         onOpenGuide = { nav.navigate(GuideRoute) },
+                        onOpenLanguage = { nav.navigate(LanguageSettingsRoute) },
                     )
+                }
+                screen<LanguageSettingsRoute> { entry ->
+                    LanguageSettingsScreen(viewModel = koinViewModel(), onBack = { nav.popFrom(entry) })
                 }
                 screen<GuideRoute> { entry ->
                     GuideScreen(onClose = { nav.popFrom(entry) })

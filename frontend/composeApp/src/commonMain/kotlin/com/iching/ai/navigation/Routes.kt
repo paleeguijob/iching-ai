@@ -19,3 +19,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object PaywallRoute
 /** The how-to-use pages from first launch, opened again from settings. */
 @Serializable data object GuideRoute
+/** Settings > Language: Thai or English; choosing returns to Home in the new language. */
+@Serializable data object LanguageSettingsRoute

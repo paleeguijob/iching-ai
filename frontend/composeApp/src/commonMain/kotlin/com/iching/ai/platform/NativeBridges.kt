@@ -71,6 +71,7 @@ interface NativeAds {
 interface NativeAnalytics {
     fun logEvent(name: String, params: Map<String, String>)
     fun setUserId(uid: String?)
+    fun setUserProperty(name: String, value: String)
     fun recordError(message: String)
 }
 

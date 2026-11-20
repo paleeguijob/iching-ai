@@ -25,6 +25,9 @@ interface SettingsStrings {
     val dailyPushSubtitle: String
     fun yearRow(year: Int): String
     val theme: String
+
+    /** The Settings language row and its page title; the same bilingual text in both languages. */
+    val language: String
     fun streak(current: Int, best: Int): String
     fun lockedStreak(days: Int): String
     val lockedCampaign: String
@@ -106,6 +109,7 @@ object ThSettingsStrings : SettingsStrings {
     override val dailyPushSubtitle = "ทุกเช้าเวลา ๗ นาฬิกา"
     override fun yearRow(year: Int) = "กวาประจำปี ${formatNumber(year + 543, lang)}"
     override val theme = "ธีม"
+    override val language = LANGUAGE_TITLE
     override fun streak(current: Int, best: Int) =
         "ต่อเนื่อง ${formatNumber(current, lang)} วัน · ดีที่สุด ${formatNumber(best, lang)} วัน"
     override fun lockedStreak(days: Int) = "ปลดล็อกเมื่อเปิดดูกวาครบ ${formatNumber(days, lang)} วันต่อเนื่อง"
@@ -193,6 +197,7 @@ object EnSettingsStrings : SettingsStrings {
     override val dailyPushSubtitle = "Once a day, every morning"
     override fun yearRow(year: Int) = "Year hexagram $year"
     override val theme = "Theme"
+    override val language = LANGUAGE_TITLE
     override fun streak(current: Int, best: Int) =
         "Streak: $current ${if (current == 1) "day" else "days"} · Best: $best ${if (best == 1) "day" else "days"}"
     override fun lockedStreak(days: Int) = "Unlocks after opening the daily hexagram $days ${if (days == 1) "day" else "days"} in a row"

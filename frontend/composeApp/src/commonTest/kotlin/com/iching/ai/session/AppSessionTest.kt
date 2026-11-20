@@ -112,16 +112,21 @@ internal class FakeAds(var answer: String? = "rewarded") : NativeAds {
 
 internal class LoggedAnalytics : NativeAnalytics {
     val events = mutableListOf<Pair<String, Map<String, String>>>()
+    val userProperties = mutableMapOf<String, String>()
     override fun logEvent(name: String, params: Map<String, String>) {
         events += name to params
     }
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) {
+        userProperties[name] = value
+    }
     override fun recordError(message: String) = Unit
 }
 
 internal object NoAnalytics : NativeAnalytics {
     override fun logEvent(name: String, params: Map<String, String>) = Unit
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) = Unit
     override fun recordError(message: String) = Unit
 }
 

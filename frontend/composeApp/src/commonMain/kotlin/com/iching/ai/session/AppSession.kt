@@ -318,6 +318,20 @@ class AppSession(
         if (status != null) {
             _status.value = status
             _online.value = true
+            rememberEnglishEnabled(status.englishEnabled)
+        }
+    }
+
+    /** Kept for the next launch, which starts offline: the language must not flip before a status arrives. */
+    private fun rememberEnglishEnabled(enabled: Boolean) {
+        scope.launch {
+            try {
+                settings.update { if (it.lastEnglishEnabled == enabled) it else it.copy(lastEnglishEnabled = enabled) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                bridges.analytics.recordError("english_enabled_save: ${e.message}")
+            }
         }
     }
 
@@ -518,6 +532,8 @@ class AppSession(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    fun setUserProperty(name: String, value: String) = bridges.analytics.setUserProperty(name, value)
 
     fun log(event: String, params: Map<String, String> = emptyMap()) = bridges.analytics.logEvent(event, params)
 }

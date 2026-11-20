@@ -104,6 +104,22 @@ class NoThaiInEnglishTest {
         ) + LineType.entries.map { s.practiceLineName(it) })
     }
 
+    /**
+     * The language picker and the Settings language row are bilingual on purpose, and the same in English as in
+     * Thai: a seeker who has English switched on must still be able to find Thai. They are the only allowed Thai.
+     */
+    @Test
+    fun bilingualLanguageLabelsAreTheOneAllowedThai() {
+        listOf(EnOnboardingStrings, ThOnboardingStrings).forEach {
+            assertEquals("ภาษา / Language", it.languageTitle)
+            assertEquals("ภาษาไทย", it.languageThai)
+            assertEquals("English", it.languageEnglish)
+            assertEquals("เปลี่ยนได้ในตั้งค่า · Change anytime in Settings", it.languageHint)
+        }
+        assertEquals("ภาษา / Language", EnSettingsStrings.language)
+        assertEquals("ภาษา / Language", ThSettingsStrings.language)
+    }
+
     @Test
     fun siamsi() {
         val s = EnSiamSiStrings
