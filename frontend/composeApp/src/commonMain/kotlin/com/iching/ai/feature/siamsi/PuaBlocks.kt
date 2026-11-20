@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.iching.ai.domain.siamsi.MAX_PUA_ROUNDS
 import com.iching.ai.domain.siamsi.PuaResult
 import com.iching.ai.ui.components.ZenCard
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 
@@ -43,20 +44,6 @@ private fun PuaResult.faces(): Pair<Boolean, Boolean> = when (this) {
     PuaResult.SAK -> true to false
     PuaResult.LAUGH -> true to true
     PuaResult.NO -> false to false
-}
-
-fun PuaResult.labelTh(): String = when (this) {
-    PuaResult.SAK -> "ศักดิ์ — คว่ำหนึ่ง หงายหนึ่ง ฟ้ายืนยันใบนี้"
-    PuaResult.LAUGH -> "หัวเราะ — หงายทั้งคู่ เขย่าใหม่อีกครั้ง"
-    PuaResult.NO -> "ไม่ — คว่ำทั้งคู่ เขย่าใหม่อีกครั้ง"
-}
-
-/** The result card's headline and the two lines under it. */
-fun puaHeadline(result: PuaResult, autoConfirmed: Boolean): Pair<String, String> = when {
-    autoConfirmed -> "ครบสามรอบ · รับใบนี้" to "ไม้ปัวยังไม่ได้ศักดิ์ แต่ครบสามรอบแล้ว\nฟ้าให้ใบสุดท้ายนี้แก่คุณ"
-    result == PuaResult.SAK -> "ศักดิ์ · ใช่ใบนี้" to "ไม้ปัวคว่ำหนึ่ง หงายหนึ่ง\nฟ้ารับคำอธิษฐานของคุณแล้ว"
-    result == PuaResult.LAUGH -> "หัวเราะ · ยังไม่ใช่" to "ไม้ปัวหงายทั้งคู่\nเขย่าใหม่อีกครั้ง ไม่เสียสิทธิ์"
-    else -> "ไม่ · ไม่ใช่ใบนี้" to "ไม้ปัวคว่ำทั้งคู่\nเขย่าใหม่อีกครั้ง ไม่เสียสิทธิ์"
 }
 
 /**
@@ -72,16 +59,17 @@ fun PuaBlocks(result: PuaResult?, onToss: (() -> Unit)?, modifier: Modifier = Mo
         hop.animateTo(0f, tween(700, easing = FastOutSlowInEasing))
     }
     val (leftUp, rightUp) = result?.faces() ?: (true to false)
+    val strings = LocalStrings.current.siamsi
     Row(
         modifier
             .then(
                 if (onToss != null) {
-                    Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClickLabel = "โยนไม้ปัว", onClick = onToss)
+                    Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClickLabel = strings.tossLabel, onClick = onToss)
                 } else {
                     Modifier
                 },
             )
-            .semantics { contentDescription = result?.labelTh() ?: "ไม้ปัวสองอัน แตะเพื่อโยน" },
+            .semantics { contentDescription = result?.let(strings::puaLabel) ?: strings.blocksDescription },
         horizontalArrangement = Arrangement.spacedBy(34.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -120,8 +108,8 @@ private fun Block(up: Boolean, spin: Int, hop: Float, label: Boolean?) {
         Spacer(Modifier.height(14.dp))
         Text(
             when (label) {
-                true -> "หงาย"
-                false -> "คว่ำ"
+                true -> LocalStrings.current.siamsi.blockUp
+                false -> LocalStrings.current.siamsi.blockDown
                 null -> " "
             },
             style = MaterialTheme.typography.labelSmall,
@@ -134,7 +122,7 @@ private fun Block(up: Boolean, spin: Int, hop: Float, label: Boolean?) {
 @Composable
 fun PuaResultCard(results: List<PuaResult>, autoConfirmed: Boolean, modifier: Modifier = Modifier) {
     val last = results.lastOrNull() ?: return
-    val (headline, detail) = puaHeadline(last, autoConfirmed)
+    val (headline, detail) = LocalStrings.current.siamsi.puaHeadline(last, autoConfirmed)
     ZenCard(modifier.fillMaxWidth()) {
         Text(
             headline,

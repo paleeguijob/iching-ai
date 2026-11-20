@@ -44,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.zodiacYearLabel
 import com.iching.ai.ui.strings.stringsFor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,7 +100,6 @@ import com.iching.ai.feature.share.yearShareContent
 import com.iching.ai.feature.year.YearHexagramScreen
 import com.iching.ai.feature.year.YearUi
 import com.iching.ai.feature.year.YearViewModel
-import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
@@ -282,7 +282,7 @@ private fun MainNavigation() {
                     val result = yearState as? YearUi.Result
                     if (sharing && result != null) {
                         ShareCardSheet(
-                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year)),
+                            content = yearShareContent(result.hexagram, zodiacYearLabel(result.year, LocalAppLanguage.current), LocalStrings.current.share),
                             log = { name, params ->
                                 session.log(name, params)
                                 // The sheet reports a finished share once; the year campaign counts it as its own event.

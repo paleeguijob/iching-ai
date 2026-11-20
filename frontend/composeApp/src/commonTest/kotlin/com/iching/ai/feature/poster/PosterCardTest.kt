@@ -1,5 +1,6 @@
 package com.iching.ai.feature.poster
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.PosterCardText
 import com.iching.ai.domain.model.PosterLink
@@ -9,6 +10,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class PosterCardTest {
+    private fun posterCard(status: AccountStatus, dismissed: List<String>, nowMillis: Long) =
+        com.iching.ai.feature.poster.posterCard(status, dismissed, nowMillis, TH_STRINGS.poster)
+
     // 2026-11-21T00:00+07:00, exclusive: the last day the promo runs is 20 Nov.
     private val endsAt = 1795194000000L
     private val now = endsAt - 86_400_000

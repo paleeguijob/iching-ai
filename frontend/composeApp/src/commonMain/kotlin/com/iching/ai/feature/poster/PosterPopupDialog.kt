@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 
 /**
@@ -53,7 +54,7 @@ fun PosterPopupDialog(popup: PosterPopup, onTap: () -> Unit, onClose: () -> Unit
                     modifier = Modifier.padding(bottom = 4.dp).size(48.dp),
                 ) {
                     Box(Modifier.size(32.dp).clip(CircleShape).background(ZenColors.PaperCream), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Close, contentDescription = "ปิดประกาศนี้", tint = ZenColors.InkBlack, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Close, contentDescription = LocalStrings.current.poster.closePopup, tint = ZenColors.InkBlack, modifier = Modifier.size(18.dp))
                     }
                 }
                 val tap = popup.link?.let { Modifier.clickable(role = Role.Button, onClick = onTap) } ?: Modifier

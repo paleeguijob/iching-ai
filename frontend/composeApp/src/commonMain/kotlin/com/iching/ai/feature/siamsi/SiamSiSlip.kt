@@ -64,16 +64,12 @@ import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.SiamSiStrings
 
-const val SIAMSI_REFLECTION = "เซียมซีเพื่อการไตร่ตรองและความบันเทิง โปรดใช้วิจารณญาณ"
-
-/** "เซียมซีเจ้าแม่กวนอิม · ใบที่ ๑๗" */
-fun slipTitle(set: SiamSiSet, number: Int): String = "${set.name} · ใบที่ ${number.toThaiNumerals()}"
-
-/** The slip header's short form: "เจ้าแม่กวนอิม · ใบที่ ๑๗". */
-fun slipHeader(set: SiamSiSet, number: Int): String =
-    "${set.name.removePrefix("เซียมซี").trim()} · ใบที่ ${number.toThaiNumerals()}"
+/** The slip header's short form: the set's name without its prefix, then the slip's number. */
+private fun slipHeader(set: SiamSiSet, number: Int, strings: SiamSiStrings): String =
+    strings.slipHeader(set.nameWithoutPrefix().trim(), number)
 
 /**
  * The slip and what follows it. Before an interpretation: the full slip, the card that asks the hermit, the
@@ -96,6 +92,7 @@ fun SiamSiSlipContent(
     onShare: (() -> Unit)? = null,
     showQuestion: Boolean = false,
 ) {
+    val strings = LocalStrings.current.siamsi
     val interpreting = interpret.text.isNotEmpty() || interpret.streaming || interpret.safety != null
     var slipOpen by rememberSaveable { mutableStateOf(false) }
     var asking by rememberSaveable { mutableStateOf(false) }
@@ -118,8 +115,8 @@ fun SiamSiSlipContent(
             InterpretationCard(interpret, animateInterpretation, onReport)
             if (interpret.done && (onSendFollowUp != null || onShare != null)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(ZenSpacing.sm)) {
-                    if (onSendFollowUp != null) ZenSecondaryButton("ถามต่อ", onClick = { asking = true }, modifier = Modifier.weight(1f))
-                    if (onShare != null) ZenSecondaryButton("แชร์ใบ", onClick = onShare, modifier = Modifier.weight(1f))
+                    if (onSendFollowUp != null) ZenSecondaryButton(strings.askMore, onClick = { asking = true }, modifier = Modifier.weight(1f))
+                    if (onShare != null) ZenSecondaryButton(strings.shareSlip, onClick = onShare, modifier = Modifier.weight(1f))
                 }
             }
             if (interpret.done && onSendFollowUp != null && (asking || interpret.followUps.isNotEmpty())) {
@@ -137,7 +134,7 @@ fun SiamSiSlipContent(
         }
         TopicsCard(stick, category)
         Text(
-            "ตำรา ${set.sourceTitle} · คำแปลโดยทีมอี้จิง AI\n$SIAMSI_REFLECTION",
+            "${strings.sourceLine(set.sourceTitle)}\n${strings.reflection}",
             style = MaterialTheme.typography.labelSmall,
             color = ZenColors.InkFaint,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = ZenSpacing.xs),
@@ -148,7 +145,7 @@ fun SiamSiSlipContent(
 @Composable
 private fun SlipHeader(set: SiamSiSet, stick: SiamSiStick, grade: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        SectionLabel(slipHeader(set, stick.number), modifier = Modifier.weight(1f))
+        SectionLabel(slipHeader(set, stick.number, LocalStrings.current.siamsi), modifier = Modifier.weight(1f))
         LevelPill(stick.level)
         if (grade) {
             stick.gradeOrig?.let {
@@ -161,6 +158,8 @@ private fun SlipHeader(set: SiamSiSet, stick: SiamSiStick, grade: Boolean) {
 
 @Composable
 private fun SlipCard(set: SiamSiSet, stick: SiamSiStick) {
+    val strings = LocalStrings.current.siamsi
+    val common = LocalStrings.current.common
     var storyOpen by rememberSaveable { mutableStateOf(false) }
     val thaiOnly = stick.poemOrig == stick.poemTh
     ZenCard(accentTop = true) {
@@ -168,9 +167,9 @@ private fun SlipCard(set: SiamSiSet, stick: SiamSiStick) {
         Spacer(Modifier.height(ZenSpacing.sm))
         Text(
             buildAnnotatedString {
-                append(stick.number.toThaiNumerals())
+                append(common.number(stick.number))
                 withStyle(SpanStyle(fontSize = 15.sp, fontWeight = FontWeight.Normal, color = ZenColors.InkSoft)) {
-                    append("  / ${set.count.toThaiNumerals()}")
+                    append("  / ${common.number(set.count)}")
                 }
             },
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 30.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold),
@@ -204,10 +203,10 @@ private fun SlipCard(set: SiamSiSet, stick: SiamSiStick) {
                     Modifier.fillMaxWidth().clickable { storyOpen = !storyOpen }.padding(vertical = ZenSpacing.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("เรื่องในตำนานของใบนี้", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f))
+                    Text(strings.storyTitle, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f))
                     Icon(
                         if (storyOpen) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
-                        contentDescription = if (storyOpen) "ซ่อนเรื่องในตำนาน" else "อ่านเรื่องในตำนาน",
+                        contentDescription = if (storyOpen) strings.storyHide else strings.storyShow,
                         tint = ZenColors.InkFaint,
                         modifier = Modifier.size(20.dp),
                     )
@@ -293,28 +292,31 @@ private fun AiTag() {
 /** "ให้นักพรตแปลความหมาย…" with the credit it costs, and the button. */
 @Composable
 private fun AskHermitRow(status: AccountStatus, onInterpret: () -> Unit) {
+    val strings = LocalStrings.current.siamsi
     ZenCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("ให้นักพรตแปลความหมายตามคำถามของคุณ", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f, fill = false))
+                    Text(strings.askHermit, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkBlack, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.width(6.dp))
                     AiTag()
                 }
                 Text(
-                    if (status.readingsLeft > 0) "ใช้ ๑ สิทธิ์ · เหลือวันนี้ ${status.readingsLeft.toThaiNumerals()}" else "ใช้ ๑ สิทธิ์",
+                    if (status.readingsLeft > 0) strings.costLeft(status.readingsLeft) else strings.costOne,
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkFaint,
                 )
             }
             Spacer(Modifier.width(ZenSpacing.sm))
-            ZenPrimaryButton("แปลความหมาย", onClick = onInterpret, compact = true, showSeal = false, modifier = Modifier.widthIn(min = 112.dp))
+            ZenPrimaryButton(strings.interpret, onClick = onInterpret, compact = true, showSeal = false, modifier = Modifier.widthIn(min = 112.dp))
         }
     }
 }
 
 @Composable
 private fun InterpretationCard(ui: InterpretUi, animate: Boolean, onReport: ((String) -> Unit)?) {
+    val strings = LocalStrings.current.siamsi
+    val crisis = LocalStrings.current.divination
     val uri = LocalUriHandler.current
     var reporting by rememberSaveable { mutableStateOf(false) }
     if (reporting && onReport != null) {
@@ -327,20 +329,20 @@ private fun InterpretationCard(ui: InterpretUi, animate: Boolean, onReport: ((St
         ZenCard {
             Text(ui.safety, style = MaterialTheme.typography.bodyLarge, color = ZenColors.InkBlack)
             Spacer(Modifier.height(ZenSpacing.md))
-            ZenPrimaryButton("โทรสายด่วนสุขภาพจิต 1323", onClick = { runCatching { uri.openUri("tel:1323") } }, modifier = Modifier.fillMaxWidth())
+            ZenPrimaryButton(crisis.helplineLabel, onClick = { runCatching { uri.openUri(crisis.helplineUri) } }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(ZenSpacing.sm))
-            ZenSecondaryButton("เหตุฉุกเฉินทางการแพทย์ 1669", onClick = { runCatching { uri.openUri("tel:1669") } }, modifier = Modifier.fillMaxWidth())
+            ZenSecondaryButton(crisis.emergencyLabel, onClick = { runCatching { uri.openUri(crisis.emergencyUri) } }, modifier = Modifier.fillMaxWidth())
         }
         return
     }
     ZenCard(accentTop = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("คำแปลจากนักพรต", color = ZenColors.CinnabarRed, modifier = Modifier.weight(1f))
+            SectionLabel(strings.hermitInterpretation, color = ZenColors.CinnabarRed, modifier = Modifier.weight(1f))
             AiTag()
         }
         Spacer(Modifier.height(ZenSpacing.sm))
         if (ui.text.isEmpty()) {
-            Text("นักพรตกำลังพิจารณาใบของท่าน...", style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkFaint)
+            Text(strings.hermitConsidering, style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkFaint)
         } else {
             TypewriterText(text = ui.text, animate = animate, style = MaterialTheme.typography.bodyLarge)
         }
@@ -349,7 +351,7 @@ private fun InterpretationCard(ui: InterpretUi, animate: Boolean, onReport: ((St
                 source = InterpretationSource.AI,
                 onReport = onReport?.let { { reporting = true } },
                 reported = ui.reported,
-                label = SIAMSI_AI_LABEL,
+                label = strings.aiLabel,
             )
         }
     }
@@ -378,6 +380,3 @@ private fun TopicsCard(stick: SiamSiStick, category: QuestionCategory?) {
         }
     }
 }
-
-/** The AI label under an interpretation; the I Ching wording names the scripture, which a slip is not. */
-const val SIAMSI_AI_LABEL = "คำแปลสร้างโดย AI จากใบเซียมซี · เซียมซีเพื่อการไตร่ตรองและความบันเทิง โปรดใช้วิจารณญาณ ไม่ใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน"

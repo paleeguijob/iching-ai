@@ -11,6 +11,11 @@ interface Strings {
     val divination: DivinationStrings
     val reading: ReadingStrings
     val onboarding: OnboardingStrings
+    val siamsi: SiamSiStrings
+    val share: ShareStrings
+    val daily: DailyStrings
+    val year: YearStrings
+    val poster: PosterStrings
 }
 
 private object ThStrings : Strings {
@@ -19,6 +24,11 @@ private object ThStrings : Strings {
     override val divination = ThDivinationStrings
     override val reading = ThReadingStrings
     override val onboarding = ThOnboardingStrings
+    override val siamsi = ThSiamSiStrings
+    override val share = ThShareStrings
+    override val daily = ThDailyStrings
+    override val year = ThYearStrings
+    override val poster = ThPosterStrings
 }
 
 private object EnStrings : Strings {
@@ -27,6 +37,11 @@ private object EnStrings : Strings {
     override val divination = EnDivinationStrings
     override val reading = EnReadingStrings
     override val onboarding = EnOnboardingStrings
+    override val siamsi = EnSiamSiStrings
+    override val share = EnShareStrings
+    override val daily = EnDailyStrings
+    override val year = EnYearStrings
+    override val poster = EnPosterStrings
 }
 
 fun stringsFor(lang: AppLanguage): Strings = when (lang) {

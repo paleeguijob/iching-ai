@@ -35,6 +35,7 @@ import com.iching.ai.platform.encodePng
 import com.iching.ai.platform.rememberImageSharer
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,7 @@ private fun ShareImageSheet(onShared: () -> Unit, onDismiss: () -> Unit, card: @
     val scope = rememberCoroutineScope()
     var sharing by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    val strings = LocalStrings.current.share
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -97,15 +99,15 @@ private fun ShareImageSheet(onShared: () -> Unit, onDismiss: () -> Unit, card: @
             }
             if (failed) {
                 Text(
-                    "แชร์ไม่สำเร็จ โปรดลองใหม่",
+                    strings.failed,
                     color = ZenColors.CinnabarRed,
                     modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
                 )
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ZenSecondaryButton("ปิด", onClick = onDismiss, modifier = Modifier.weight(1f))
+                ZenSecondaryButton(strings.close, onClick = onDismiss, modifier = Modifier.weight(1f))
                 ZenPrimaryButton(
-                    text = "แชร์",
+                    text = strings.share,
                     enabled = !sharing,
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -114,7 +116,7 @@ private fun ShareImageSheet(onShared: () -> Unit, onDismiss: () -> Unit, card: @
                         scope.launch {
                             val shared = try {
                                 val png = withContext(Dispatchers.Default) { layer.toImageBitmap().encodePng() }
-                                sharer.share(png, SHARE_TEXT)
+                                sharer.share(png, strings.shareText)
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {

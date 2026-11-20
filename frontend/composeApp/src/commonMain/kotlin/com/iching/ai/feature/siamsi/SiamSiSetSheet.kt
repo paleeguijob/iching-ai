@@ -34,23 +34,31 @@ import com.iching.ai.ui.components.ZenCard
 import com.iching.ai.ui.components.ZenCardDivider
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.SiamSiStrings
 
-/** "เจ้าแม่กวนอิม · ๑๐๐ ใบ": the set row on Home. */
-fun SiamSiSet.shortLabel(): String = "${name.removePrefix("เซียมซี")} · ${count.toThaiNumerals()} ใบ"
+/** The prefix the set files put on every book's name; the screens show the name without it. */
+private const val SET_NAME_PREFIX = "เซียมซี"
+
+/** The set's name without the leading "Siam Si" word. */
+internal fun SiamSiSet.nameWithoutPrefix(): String = name.removePrefix(SET_NAME_PREFIX)
+
+/** The set row on Home: name and number of slips. */
+fun SiamSiSet.shortLabel(strings: SiamSiStrings): String = strings.setRow(nameWithoutPrefix(), count)
 
 /** Picks the set to draw from. Only the sets the server lists and the device holds appear. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SiamSiSetSheet(sets: List<SiamSiSet>, selectedId: String?, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val strings = LocalStrings.current.siamsi
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
         containerColor = ZenColors.PaperCream,
     ) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = ZenSpacing.screen).padding(bottom = 20.dp)) {
-            Text("เลือกตำราเซียมซี", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
-            Text("กลอนจากตำราดั้งเดิม · คำแปลโดยทีมอี้จิง AI", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
+            Text(strings.setSheetTitle, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)
+            Text(strings.setSheetSubtitle, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
             Spacer(Modifier.height(ZenSpacing.md))
             ZenCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
                 sets.forEachIndexed { i, set ->
@@ -67,6 +75,7 @@ fun SiamSiSetSheet(sets: List<SiamSiSet>, selectedId: String?, onSelect: (String
 
 @Composable
 private fun SetRow(set: SiamSiSet, selected: Boolean, onClick: () -> Unit) {
+    val strings = LocalStrings.current.siamsi
     Row(
         Modifier
             .fillMaxWidth()
@@ -76,9 +85,9 @@ private fun SetRow(set: SiamSiSet, selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(set.name.removePrefix("เซียมซี"), style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
+            Text(set.nameWithoutPrefix(), style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
             Text(
-                "${set.sourceTitle} · ${set.count.toThaiNumerals()} ใบ",
+                strings.setSource(set.sourceTitle, set.count),
                 style = MaterialTheme.typography.bodySmall,
                 color = ZenColors.InkSoft,
             )

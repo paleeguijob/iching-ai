@@ -1,5 +1,6 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.Hexagram
@@ -89,6 +90,7 @@ class DailyViewModelPosterTest {
             status = MutableStateFlow(WITH_CARD),
             settings = stored,
             dismissPosterCard = { id -> settings.update { it.withPosterCardDismissed(id) } },
+            languageHolder = thaiLanguageHolder(),
         )
         vm.posterCard.launchIn(scope)
         scheduler.advanceUntilIdle()

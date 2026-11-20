@@ -1,5 +1,6 @@
 package com.iching.ai.feature.siamsi
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.InterpretationSource
@@ -138,6 +139,7 @@ class SiamSiViewModelTest {
             settings = settings,
             random = ScriptedRandom(*random),
             today = { today },
+            languageHolder = thaiLanguageHolder(),
         )
         scheduler.advanceUntilIdle()
         return vm

@@ -1,7 +1,6 @@
 package com.iching.ai.feature.daily
 
-import com.iching.ai.domain.model.AppLanguage
-import com.iching.ai.ui.strings.stringsFor
+import com.iching.ai.ui.strings.AppLanguageHolder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.AccountStatus
@@ -58,6 +57,7 @@ class DailyViewModel(
     private val dismissPosterCard: suspend (String) -> Unit = {},
     /** Builds the year hexagram card on this view model's scope; null where there is none (tests). */
     yearCampaign: (CoroutineScope) -> YearCampaignCards? = { null },
+    private val languageHolder: AppLanguageHolder,
 ) : ViewModel() {
 
     private val campaign = yearCampaign(viewModelScope)
@@ -85,7 +85,7 @@ class DailyViewModel(
         // No card until settings load: an empty default would flash a card closed in an earlier launch.
         settings.map { it.dismissedPosterCardIds },
         nowMillis,
-    ) { s, dismissed, millis -> posterCard(s, dismissed, millis) }
+    ) { s, dismissed, millis -> posterCard(s, dismissed, millis, languageHolder.strings.poster) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private var loggedCardId: String? = null
@@ -127,8 +127,7 @@ class DailyViewModel(
                 it.copy(
                     hexagram = hexagram,
                     streak = update.state,
-                    // Chunk 3b moves this view model onto AppLanguageHolder; until then its streak line stays Thai.
-                    week = streakWeek(update.state, bangkokEpochDay(millis), stringsFor(AppLanguage.TH).home),
+                    week = streakWeek(update.state, bangkokEpochDay(millis), languageHolder.strings.home),
                     newlyUnlocked = it.newlyUnlocked + update.newlyUnlocked,
                     showPushPrompt = it.showPushPrompt || offerPush,
                 )

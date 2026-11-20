@@ -15,6 +15,7 @@ import com.iching.ai.domain.siamsi.SiamSiSetRef
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
 import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.ui.strings.AppLanguageHolder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +49,7 @@ class SiamSiHomeViewModel(
     status: StateFlow<AccountStatus>,
     online: StateFlow<Boolean>,
     private val log: (String, Map<String, String>) -> Unit,
+    private val languageHolder: AppLanguageHolder,
 ) : ViewModel() {
     private val settings = observeSettings()
 
@@ -83,7 +85,7 @@ class SiamSiHomeViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val drawGate: StateFlow<DrawGateUi> = gate.ui
-        .stateIn(viewModelScope, SharingStarted.Eagerly, drawGateUi(false, 1, false, false, false))
+        .stateIn(viewModelScope, SharingStarted.Eagerly, drawGateUi(false, 1, false, false, false, languageHolder.strings.siamsi))
 
     private val nav = Channel<SiamSiNav>(Channel.BUFFERED)
     val navigation: Flow<SiamSiNav> = nav.receiveAsFlow()

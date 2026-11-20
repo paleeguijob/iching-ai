@@ -1,5 +1,6 @@
 package com.iching.ai.feature.siamsi
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.QuestionCategory
@@ -90,8 +91,8 @@ class SiamSiHomeViewModelTest {
         val statusFlow = MutableStateFlow(status)
         val onlineFlow = MutableStateFlow(online)
         val log = { name: String, params: Map<String, String> -> events += name to params }
-        val gate = SiamSiDrawGate(settings, AnswerAds(ad), statusFlow, onlineFlow, log, { today })
-        val vm = SiamSiHomeViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), repository, gate, statusFlow, onlineFlow, log)
+        val gate = SiamSiDrawGate(settings, AnswerAds(ad), statusFlow, onlineFlow, log, { today }, thaiLanguageHolder())
+        val vm = SiamSiHomeViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), repository, gate, statusFlow, onlineFlow, log, thaiLanguageHolder())
         listOf(vm.mode, vm.siamsiSets, vm.selectedSet, vm.drawGate, vm.enabled).forEach { it.launchIn(scope) }
         vm.navigation.onEach { navigation += it }.launchIn(scope)
         scheduler.advanceUntilIdle()

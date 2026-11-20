@@ -245,7 +245,7 @@ fun HomeScreen(
                         isSiamSi = isSiamSi,
                         action = action,
                         onStart = start,
-                        setLabel = if (isSiamSi) selectedSet?.shortLabel() else null,
+                        setLabel = if (isSiamSi) selectedSet?.shortLabel(LocalStrings.current.siamsi) else null,
                         onOpenSet = { setSheetOpen = true },
                     )
                 }

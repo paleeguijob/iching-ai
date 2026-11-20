@@ -6,6 +6,7 @@ import com.iching.ai.ui.theme.tabContentBottomPadding
 import com.iching.ai.ui.theme.LocalTabBarHeight
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.formatThaiShortDate
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.components.ZenCardDivider
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
@@ -406,7 +407,7 @@ private fun SiamSiJournalDetail(
                 ZenSecondaryButton("แชร์ใบเซียมซี", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
             }
             if (sharing) {
-                SiamSiShareSheet(siamsiShareContent(set, stick), log = log, onDismiss = { sharing = false })
+                SiamSiShareSheet(siamsiShareContent(set, stick, LocalStrings.current.share), log = log, onDismiss = { sharing = false })
             }
         } else {
             Text(slip.label, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)

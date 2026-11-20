@@ -1,7 +1,10 @@
 package com.iching.ai.ui.strings
 
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.oracle.ReadingSection
+import com.iching.ai.domain.siamsi.PuaResult
+import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -89,6 +92,62 @@ class NoThaiInEnglishTest {
             s.practiceDone, s.practiceProgress(3, "Solid line (yang)"), s.sampleName, s.sampleJudgment,
             s.disclaimerTitle, s.terms, s.privacy,
         ) + LineType.entries.map { s.practiceLineName(it) })
+    }
+
+    @Test
+    fun siamsi() {
+        val s = EnSiamSiStrings
+        val results = PuaResult.entries
+        check("siamsi", listOf(
+            s.gateLeft(3), s.gateLimit, s.gateAdWatched, s.gateNoAd, s.gateAdDismissed, s.gateWatchAd(3),
+            s.setRow("Guanyin", 100), s.setSheetTitle, s.setSheetSubtitle, s.setSource("Guanyin Oracle", 100),
+            s.titleSiamsi, s.titleSlip, s.titlePua, s.shareSlipDescription, s.stickLabel(17), s.confirmByPua, s.tossPua,
+            s.shakeAgain, s.openSlip, s.leaveDrawTitle, s.leaveDrawBody, s.leaveInterpretTitle, s.leaveInterpretBody,
+            s.leaveResumableBody, s.stay, s.leave, s.prayInHeart, s.holdToShake, s.shakeHint, s.cylinderDescription,
+            s.stickDrawn, s.stickDrawnDescription(17), s.stickTitle(17), s.tossPrompt, s.puaRules, s.blockUp, s.blockDown,
+            s.tossLabel, s.blocksDescription, s.reflection, s.slipHeader("Guanyin", 17), s.askMore, s.shareSlip,
+            s.sourceLine("Guanyin Oracle"), s.storyTitle, s.storyHide, s.storyShow, s.askHermit, s.costOne, s.costLeft(3),
+            s.interpret, s.hermitInterpretation, s.hermitConsidering, s.aiLabel, s.offlineInterpret,
+            s.limitRateLimited(3), s.limitRateLimited(null), s.limitAiDisabled, s.limitDone, s.failNetwork, s.failBlocked,
+            s.failUnauthenticated, s.failOther, s.followUpLimit,
+        ) + results.map { s.puaLabel(it) } +
+            results.flatMap { r -> listOf(false, true).flatMap { listOf(s.puaHeadline(r, it).first, s.puaHeadline(r, it).second) } })
+    }
+
+    @Test
+    fun share() {
+        val s = EnShareStrings
+        check("share", listOf(
+            s.shareText, s.yearCardHeader(zodiacYearLabel(2027, AppLanguage.EN)), s.number(17), s.sourceLine("Guanyin Oracle"),
+            s.slipLabel, s.brand, s.brandSiamsi, s.aiLabel, s.failed, s.close, s.share,
+        ))
+    }
+
+    @Test
+    fun daily() {
+        val s = EnDailyStrings
+        check("daily", listOf(
+            s.title, s.streakLine(3), s.judgment, s.shareToday, s.readMore, s.unlockTitle("Bamboo"), s.unlockBody(7),
+            s.acknowledge, s.pushTitle, s.pushBody, s.pushAccept, s.pushLater,
+        ))
+    }
+
+    @Test
+    fun year() {
+        val s = EnYearStrings
+        check("year", listOf(
+            s.heading(zodiacYearLabel(2027, AppLanguage.EN)), s.ritualTitle, s.ritualPrompt, s.loading, s.offline,
+            s.rateLimited, s.inactive, s.retry, s.themeNotice, s.work, s.love, s.money, s.share, s.askHermit,
+            s.readScripture, s.footnote,
+        ))
+    }
+
+    @Test
+    fun poster() {
+        val s = EnPosterStrings
+        check("poster", listOf(
+            s.labelWithEnd("Special offer", 1795194000000L - 1, TimeZone.of("Asia/Bangkok")), s.closePopup, s.closeCard,
+        ))
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.iching.ai.feature.siamsi
 
+import com.iching.ai.ui.strings.TH_STRINGS
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.SiamSiStatus
@@ -64,21 +66,22 @@ class SiamSiDrawGateTest {
         online = MutableStateFlow(online),
         log = { name, params -> events += name to params },
         today = { today },
+        languageHolder = thaiLanguageHolder(),
     )
 
     private fun usage(settings: MemorySettings) = settings.flow.value.siamsiUsage
 
     @Test
     fun everyRowOfTheQuotaTable() {
-        assertEquals(DrawGateUi(DrawButton.WATCH_AD, "ดูโฆษณาสั้น ๆ ก่อนเสี่ยง · วันนี้เหลือ ๑ ครั้ง"), drawGateUi(false, 1, false, false, false))
-        assertEquals(DrawGateUi(DrawButton.WATCH_AD, "ต้องดูโฆษณาจนจบจึงจะเสี่ยงได้"), drawGateUi(false, 1, false, false, true))
-        assertEquals(DrawGateUi(DrawButton.SHAKE, "ยังไม่มีโฆษณาในตอนนี้ เสี่ยงได้เลย"), drawGateUi(false, 1, false, true, false))
-        assertEquals(DrawGateUi(DrawButton.PAYWALL, "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"), drawGateUi(false, 0, false, false, false))
-        assertEquals(DrawGateUi(DrawButton.SHAKE, "วันนี้เหลือ ๑๐ ครั้ง"), drawGateUi(true, 10, false, false, false))
-        assertEquals(DrawGateUi(DrawButton.DISABLED, "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"), drawGateUi(true, 0, false, false, false))
+        assertEquals(DrawGateUi(DrawButton.WATCH_AD, "ดูโฆษณาสั้น ๆ ก่อนเสี่ยง · วันนี้เหลือ ๑ ครั้ง"), drawGateUi(false, 1, false, false, false, TH_STRINGS.siamsi))
+        assertEquals(DrawGateUi(DrawButton.WATCH_AD, "ต้องดูโฆษณาจนจบจึงจะเสี่ยงได้"), drawGateUi(false, 1, false, false, true, TH_STRINGS.siamsi))
+        assertEquals(DrawGateUi(DrawButton.SHAKE, "ยังไม่มีโฆษณาในตอนนี้ เสี่ยงได้เลย"), drawGateUi(false, 1, false, true, false, TH_STRINGS.siamsi))
+        assertEquals(DrawGateUi(DrawButton.PAYWALL, "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"), drawGateUi(false, 0, false, false, false, TH_STRINGS.siamsi))
+        assertEquals(DrawGateUi(DrawButton.SHAKE, "วันนี้เหลือ ๑๐ ครั้ง"), drawGateUi(true, 10, false, false, false, TH_STRINGS.siamsi))
+        assertEquals(DrawGateUi(DrawButton.DISABLED, "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"), drawGateUi(true, 0, false, false, false, TH_STRINGS.siamsi))
         // A draw already paid for is never asked for again, even with nothing left today.
-        assertEquals(DrawButton.SHAKE, drawGateUi(false, 0, true, false, false).button)
-        assertEquals(DrawButton.SHAKE, drawGateUi(true, 0, true, false, false).button)
+        assertEquals(DrawButton.SHAKE, drawGateUi(false, 0, true, false, false, TH_STRINGS.siamsi).button)
+        assertEquals(DrawButton.SHAKE, drawGateUi(true, 0, true, false, false, TH_STRINGS.siamsi).button)
     }
 
     @Test

@@ -107,6 +107,7 @@ fun platformModule(bridges: NativeBridges): Module = module {
             online = session.online,
             log = session::log,
             today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
+            languageHolder = get(),
         )
     }
 }
@@ -116,7 +117,7 @@ val presentationModule = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel {
         val session = get<AppSession>()
-        SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log)
+        SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log, get())
     }
     viewModel {
         val session = get<AppSession>()
@@ -137,6 +138,7 @@ val presentationModule = module {
             yearCampaign = { scope ->
                 YearCampaignCards(scope, session.status, api::yearHexagram, getHexagram::invoke, session::log)
             },
+            languageHolder = get(),
         )
     }
     viewModel {
@@ -179,6 +181,7 @@ val presentationModule = module {
             settings = get(),
             random = secureRandom(),
             today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
+            languageHolder = get(),
         )
     }
     viewModelOf(::JournalViewModel)

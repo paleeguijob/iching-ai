@@ -7,7 +7,8 @@ import com.iching.ai.domain.siamsi.grant
 import com.iching.ai.platform.NativeAds
 import com.iching.ai.platform.NativeException
 import com.iching.ai.platform.awaitNative
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.SiamSiStrings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,18 +27,24 @@ sealed interface DrawOutcome {
     data object LimitReached : DrawOutcome
 }
 
-private const val LIMIT_LINE = "วันนี้เสี่ยงครบแล้ว กลับมาใหม่พรุ่งนี้"
 private const val PLACEMENT = "siamsi_draw"
 
 /** The quota line and main button of the Siam Si home, per spec table 2.2. */
-fun drawGateUi(premium: Boolean, left: Int, pending: Boolean, adUnavailable: Boolean, lastAdDismissed: Boolean): DrawGateUi = when {
-    premium && (pending || left > 0) -> DrawGateUi(DrawButton.SHAKE, "วันนี้เหลือ ${left.toThaiNumerals()} ครั้ง")
-    premium -> DrawGateUi(DrawButton.DISABLED, LIMIT_LINE)
-    pending -> DrawGateUi(DrawButton.SHAKE, "ดูโฆษณาไว้แล้ว เสี่ยงได้เลย")
-    left <= 0 -> DrawGateUi(DrawButton.PAYWALL, LIMIT_LINE)
-    adUnavailable -> DrawGateUi(DrawButton.SHAKE, "ยังไม่มีโฆษณาในตอนนี้ เสี่ยงได้เลย")
-    lastAdDismissed -> DrawGateUi(DrawButton.WATCH_AD, "ต้องดูโฆษณาจนจบจึงจะเสี่ยงได้")
-    else -> DrawGateUi(DrawButton.WATCH_AD, "ดูโฆษณาสั้น ๆ ก่อนเสี่ยง · วันนี้เหลือ ${left.toThaiNumerals()} ครั้ง")
+fun drawGateUi(
+    premium: Boolean,
+    left: Int,
+    pending: Boolean,
+    adUnavailable: Boolean,
+    lastAdDismissed: Boolean,
+    strings: SiamSiStrings,
+): DrawGateUi = when {
+    premium && (pending || left > 0) -> DrawGateUi(DrawButton.SHAKE, strings.gateLeft(left))
+    premium -> DrawGateUi(DrawButton.DISABLED, strings.gateLimit)
+    pending -> DrawGateUi(DrawButton.SHAKE, strings.gateAdWatched)
+    left <= 0 -> DrawGateUi(DrawButton.PAYWALL, strings.gateLimit)
+    adUnavailable -> DrawGateUi(DrawButton.SHAKE, strings.gateNoAd)
+    lastAdDismissed -> DrawGateUi(DrawButton.WATCH_AD, strings.gateAdDismissed)
+    else -> DrawGateUi(DrawButton.WATCH_AD, strings.gateWatchAd(left))
 }
 
 /**
@@ -51,6 +58,7 @@ class SiamSiDrawGate(
     private val online: StateFlow<Boolean>,
     private val log: (String, Map<String, String>) -> Unit,
     private val today: () -> Long,
+    private val languageHolder: AppLanguageHolder,
 ) {
     private val lastAdUnavailable = MutableStateFlow(false)
     private val lastAdDismissed = MutableStateFlow(false)
@@ -58,11 +66,14 @@ class SiamSiDrawGate(
 
     /** Today, re-read when Home comes back ([refreshDay]): a process kept alive past midnight sees the new day. */
     private val day = MutableStateFlow(today())
-    private val lastAd = combine(lastAdUnavailable, lastAdDismissed) { unavailable, dismissed -> unavailable to dismissed }
+    private val lastAd = combine(lastAdUnavailable, lastAdDismissed, languageHolder.language) { unavailable, dismissed, _ -> unavailable to dismissed }
 
     val ui: Flow<DrawGateUi> = combine(settings.settings, status, online, lastAd, day) { s, st, on, (unavailable, dismissed), d ->
         val usage = s.siamsiUsage.on(d)
-        drawGateUi(st.premium, drawsLeft(usage, d, st.siamsi.drawsPerDay), usage.pendingDraw, unavailable || !on, dismissed)
+        drawGateUi(
+            st.premium, drawsLeft(usage, d, st.siamsi.drawsPerDay), usage.pendingDraw, unavailable || !on, dismissed,
+            languageHolder.strings.siamsi,
+        )
     }
 
     fun refreshDay() {

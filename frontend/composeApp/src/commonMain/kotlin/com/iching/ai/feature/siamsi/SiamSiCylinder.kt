@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenPalette
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
 
 private const val KNOCK_MILLIS = 180
 
@@ -66,6 +66,7 @@ private val STICKS = listOf(
 @Composable
 fun SiamSiCylinder(shaking: Boolean, onHoldChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     val palette = ZenColors.current
+    val strings = LocalStrings.current.siamsi
     val haptics = LocalHapticFeedback.current
     val tilt = remember { Animatable(0f) }
     LaunchedEffect(shaking) {
@@ -84,7 +85,7 @@ fun SiamSiCylinder(shaking: Boolean, onHoldChange: (Boolean) -> Unit, modifier: 
         modifier
             .fillMaxWidth()
             .height(TUBE_H + 150.dp)
-            .semantics { contentDescription = "กระบอกเซียมซี กดค้างเพื่อเขย่า" }
+            .semantics { contentDescription = strings.cylinderDescription }
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -132,17 +133,19 @@ fun SiamSiCylinder(shaking: Boolean, onHoldChange: (Boolean) -> Unit, modifier: 
 @Composable
 fun FallenStage(number: Int, modifier: Modifier = Modifier) {
     val palette = ZenColors.current
+    val strings = LocalStrings.current.siamsi
+    val common = LocalStrings.current.common
     val drop = remember(number) { Animatable(0f) }
     LaunchedEffect(number) { drop.animateTo(1f, tween(520, easing = FastOutSlowInEasing)) }
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        SectionLabel("ไม้ที่ได้")
+        SectionLabel(strings.stickDrawn)
         Text(
-            number.toThaiNumerals(),
+            common.number(number),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 56.sp, lineHeight = 64.sp, fontWeight = FontWeight.Bold),
             color = palette.cinnabarRed,
-            modifier = Modifier.semantics { contentDescription = "ได้ไม้หมายเลข $number" },
+            modifier = Modifier.semantics { contentDescription = strings.stickDrawnDescription(number) },
         )
-        Text("ไม้เซียมซีที่ ${number.toThaiNumerals()}", style = MaterialTheme.typography.titleSmall, color = palette.inkBlack)
+        Text(strings.stickTitle(number), style = MaterialTheme.typography.titleSmall, color = palette.inkBlack)
         Box(Modifier.fillMaxWidth().height(TUBE_H + 40.dp), contentAlignment = Alignment.BottomCenter) {
             ShadowRing(Modifier.padding(bottom = 30.dp))
             Box(

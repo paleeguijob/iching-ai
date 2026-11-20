@@ -4,9 +4,7 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.oracle.stripMarkup
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiStick
-import com.iching.ai.ui.toThaiNumerals
-
-const val SHARE_TEXT = "เสี่ยงทายกับคัมภีร์อี้จิงได้ที่ https://play.google.com/store/apps/details?id=com.iching.ai"
+import com.iching.ai.ui.strings.ShareStrings
 
 /** The look of a card: the sepia oracle card, or the cinnabar-and-gold one of the new-year campaign. */
 enum class CardStyle { CLASSIC, NEW_YEAR }
@@ -54,14 +52,14 @@ fun readingShareContent(hexagram: Hexagram, summary: String?, newYear: Boolean =
 }
 
 /** The new-year card: the year hexagram's blessing. Pre-written, so no AI label, and no question. */
-fun yearShareContent(hexagram: Hexagram, yearLabel: String) = ShareCardContent(
+fun yearShareContent(hexagram: Hexagram, yearLabel: String, strings: ShareStrings) = ShareCardContent(
     hexagram = hexagram,
     body = hexagram.yearMessage?.blessing.orEmpty(),
     judgment = null,
     aiLabel = false,
     source = "year",
     style = CardStyle.NEW_YEAR,
-    yearLabel = "กวาประจำปี$yearLabel",
+    yearLabel = strings.yearCardHeader(yearLabel),
 )
 
 /** What goes on a Siam Si share card: the slip and where it comes from. Like every card, never the question. */
@@ -77,13 +75,13 @@ data class SiamSiShareContent(
     val source: String,
 )
 
-fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick) = SiamSiShareContent(
+fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick, strings: ShareStrings) = SiamSiShareContent(
     setId = set.id,
     setName = set.name,
-    number = stick.number.toThaiNumerals(),
+    number = strings.number(stick.number),
     level = listOfNotNull(stick.level.labelTh, stick.gradeOrig).joinToString(" · "),
     poemOrig = if (stick.poemOrig == stick.poemTh) emptyList() else stick.poemOrig,
     poemTh = stick.poemTh,
     labelOrig = stick.labelOrig,
-    source = "ตำรา ${set.sourceTitle}",
+    source = strings.sourceLine(set.sourceTitle),
 )

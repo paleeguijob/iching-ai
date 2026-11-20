@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 
@@ -58,7 +59,7 @@ fun PosterCardRow(card: PosterCard, onClick: () -> Unit, onDismiss: () -> Unit) 
             Text(card.cta, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
         }
         IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.Top)) {
-            Icon(Icons.Outlined.Close, contentDescription = "ปิดโปรนี้", tint = ZenColors.InkFaint, modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.Close, contentDescription = LocalStrings.current.poster.closeCard, tint = ZenColors.InkFaint, modifier = Modifier.size(18.dp))
         }
     }
 }

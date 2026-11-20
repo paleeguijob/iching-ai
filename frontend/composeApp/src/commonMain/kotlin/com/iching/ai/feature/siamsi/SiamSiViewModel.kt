@@ -33,6 +33,11 @@ import com.iching.ai.feature.home.preCastOffer
 import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
 import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.CommonStrings
+import com.iching.ai.ui.strings.DivinationStrings
+import com.iching.ai.ui.strings.HomeStrings
+import com.iching.ai.ui.strings.SiamSiStrings
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
@@ -113,8 +118,6 @@ fun siamsiLeaveWarning(stage: SiamSiStage, interpret: InterpretUi): SiamSiLeaveW
     else -> null
 }
 
-const val OFFLINE_INTERPRET_MESSAGE = "ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อแปลความหมาย"
-
 /** Shake, toss the pua, read the slip, and (for one reading credit) ask the hermit to interpret it. */
 class SiamSiViewModel(
     private val route: SiamSiRoute,
@@ -125,7 +128,13 @@ class SiamSiViewModel(
     private val settings: SettingsRepository,
     private val random: Random,
     private val today: () -> Long,
+    private val languageHolder: AppLanguageHolder,
 ) : ViewModel() {
+    private val strings: SiamSiStrings get() = languageHolder.strings.siamsi
+    private val common: CommonStrings get() = languageHolder.strings.common
+    private val divination: DivinationStrings get() = languageHolder.strings.divination
+    private val home: HomeStrings get() = languageHolder.strings.home
+
     val category: QuestionCategory? = QuestionCategory.fromWire(route.category)
 
     private val _stage = MutableStateFlow<SiamSiStage>(SiamSiStage.Loading)
@@ -269,7 +278,7 @@ class SiamSiViewModel(
         val status = session.status.value
         session.log("siamsi_interpret_tap", mapOf("set" to route.setId, "source" to paidBy(status)))
         if (!session.online.value) {
-            _interpret.update { it.copy(message = OFFLINE_INTERPRET_MESSAGE) }
+            _interpret.update { it.copy(message = strings.offlineInterpret) }
             return
         }
         when (preCastOffer(status, online = true)) {
@@ -338,16 +347,16 @@ class SiamSiViewModel(
     }
 
     private fun limitMessage(reason: LimitReason, retryAfter: Int?) = when (reason) {
-        LimitReason.RATE_LIMITED -> "โปรดเว้นจังหวะหายใจสักครู่${retryAfter?.let { " (${it} วินาที)" } ?: ""} แล้วจึงขอให้นักพรตแปลอีกครั้ง"
-        LimitReason.AI_DISABLED -> "นักพรตปลีกวิเวกชั่วคราว ท่านยังอ่านใบเซียมซีด้านบนได้ โปรดกลับมาใหม่ภายหลัง"
-        else -> "คำแปลจากนักพรตสำหรับวันนี้ครบแล้ว ท่านยังอ่านใบเซียมซีด้านบนได้เสมอ"
+        LimitReason.RATE_LIMITED -> strings.limitRateLimited(retryAfter)
+        LimitReason.AI_DISABLED -> strings.limitAiDisabled
+        else -> strings.limitDone
     }
 
     private fun failureMessage(reason: FailureReason) = when (reason) {
-        FailureReason.NETWORK -> "การเชื่อมต่อขาดหาย แตะแปลความหมายอีกครั้งได้ โดยไม่เสียสิทธิ์ซ้ำ"
-        FailureReason.BLOCKED -> "คำถามนี้ไม่อาจแปลความได้ สิทธิ์ของท่านยังไม่ถูกใช้"
-        FailureReason.UNAUTHENTICATED -> "ยืนยันตัวตนกับระบบไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
-        else -> "การติดต่อนักพรตขัดข้องชั่วคราว สิทธิ์ของท่านยังไม่ถูกใช้ โปรดลองใหม่อีกครั้ง"
+        FailureReason.NETWORK -> strings.failNetwork
+        FailureReason.BLOCKED -> strings.failBlocked
+        FailureReason.UNAUTHENTICATED -> strings.failUnauthenticated
+        else -> strings.failOther
     }
 
     // ---------- the sheet that pays for an interpretation ----------
@@ -383,12 +392,12 @@ class SiamSiViewModel(
         viewModelScope.launch {
             when (session.watchAdForReading()) {
                 is AdResult.Granted -> streamFromSheet()
-                AdResult.NotCompleted -> updateSheet { it.copy(busy = false, message = "ต้องชมโฆษณาจนจบจึงจะได้รับสิทธิ์") }
-                is AdResult.Error -> updateSheet { it.copy(busy = false, message = "ยังไม่มีโฆษณาพร้อมแสดง โปรดลองใหม่อีกครู่") }
+                AdResult.NotCompleted -> updateSheet { it.copy(busy = false, message = common.adMustFinish) }
+                is AdResult.Error -> updateSheet { it.copy(busy = false, message = common.adUnavailable) }
                 AdResult.LimitReached -> {
                     _interpret.update { it.copy(sheet = null) }
                     openSheet(PreCastSheetKind.UPSELL)
-                    updateSheet { it.copy(message = "วันนี้ใช้สิทธิ์ชมโฆษณาครบแล้ว") }
+                    updateSheet { it.copy(message = common.adLimitReached) }
                 }
             }
         }
@@ -402,7 +411,7 @@ class SiamSiViewModel(
         viewModelScope.launch {
             val coins = sh.coins ?: runCatching { session.products() }.getOrNull()?.firstOrNull { it.kind == ProductKind.COINS }
             if (coins == null) {
-                updateSheet { it.copy(busy = false, message = "ยังโหลดแพ็กเกจจากร้านค้าไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่") }
+                updateSheet { it.copy(busy = false, message = home.productsFailed) }
                 return@launch
             }
             when (session.purchase(coins)) {
@@ -410,7 +419,7 @@ class SiamSiViewModel(
                 PurchaseResult.Cancelled -> updateSheet { it.copy(busy = false) }
                 PurchaseResult.Pending -> updateSheet { it.copy(busy = false, message = PENDING_MESSAGE) }
                 PurchaseResult.AwaitingPayment -> updateSheet { it.copy(busy = false, message = AWAITING_PAYMENT_MESSAGE) }
-                is PurchaseResult.Error -> updateSheet { it.copy(busy = false, message = "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง") }
+                is PurchaseResult.Error -> updateSheet { it.copy(busy = false, message = common.paymentFailed) }
             }
         }
     }
@@ -451,9 +460,9 @@ class SiamSiViewModel(
                         }
                         is DivinationEvent.Done -> setAnswer(answer.toString().trim(), false)
                         is DivinationEvent.Safety -> setAnswer(event.message, false)
-                        is DivinationEvent.Limited -> drop("ถามต่อครบจำนวนครั้งของคำแปลนี้แล้ว")
+                        is DivinationEvent.Limited -> drop(strings.followUpLimit)
                         is DivinationEvent.Failed -> drop(
-                            if (event.reason == FailureReason.PREMIUM_REQUIRED) "การถามต่อเป็นสิทธิ์ของสมาชิก Premium" else "นักพรตยังไม่อาจตอบได้ในตอนนี้ โปรดลองใหม่อีกครั้ง",
+                            if (event.reason == FailureReason.PREMIUM_REQUIRED) divination.followUpNeedsPremium else divination.followUpFailed,
                         )
                         is DivinationEvent.Created, is DivinationEvent.Cast -> Unit
                     }
@@ -461,7 +470,7 @@ class SiamSiViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                drop("ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้")
+                drop(divination.followUpNoNetwork)
             }
             _interpret.update { st -> st.copy(followUpBusy = false, followUps = st.followUps.map { if (it.streaming) it.copy(streaming = false) else it }) }
             persist { r ->
@@ -477,7 +486,7 @@ class SiamSiViewModel(
         viewModelScope.launch {
             val ok = runCatching { api.report(id, reason, "") }.isSuccess
             _interpret.update {
-                it.copy(reported = ok, message = if (ok) "ขอบคุณ เราได้รับรายงานแล้วและจะตรวจสอบ" else "ส่งรายงานไม่สำเร็จ โปรดลองใหม่")
+                it.copy(reported = ok, message = if (ok) divination.reportThanks else divination.reportFailed)
             }
             if (ok) session.log("report_sent", mapOf("reason" to reason, "placement" to "siamsi"))
         }

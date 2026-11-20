@@ -1,5 +1,6 @@
 package com.iching.ai.feature.share
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.YearMessage
 import kotlin.test.Test
@@ -48,12 +49,12 @@ class ShareContentTest {
 
     @Test
     fun shareTextLinksToTheStore() {
-        assertTrue("https://play.google.com/store/apps/details?id=com.iching.ai" in SHARE_TEXT)
+        assertTrue("https://play.google.com/store/apps/details?id=com.iching.ai" in TH_STRINGS.share.shareText)
     }
 
     @Test
     fun yearCardShowsTheBlessingWithoutAnAiLabelOrAQuestion() {
-        val card = yearShareContent(hexagram, "มะแม ๒๕๗๐")
+        val card = yearShareContent(hexagram, "มะแม ๒๕๗๐", TH_STRINGS.share)
         assertEquals("ขอให้ปีนี้ฟ้าเปิดทาง", card.body)
         assertNull(card.judgment)
         assertFalse(card.aiLabel)
@@ -63,7 +64,7 @@ class ShareContentTest {
 
     @Test
     fun yearCardSourceIsYear() {
-        assertEquals("year", yearShareContent(hexagram, "มะแม ๒๕๗๐").source)
+        assertEquals("year", yearShareContent(hexagram, "มะแม ๒๕๗๐", TH_STRINGS.share).source)
     }
 
     @Test

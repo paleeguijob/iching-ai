@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.components.CinnabarSeal
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.InkPaperPalette
 
 /**
@@ -49,7 +50,7 @@ fun SiamSiShareCard(content: SiamSiShareContent, modifier: Modifier = Modifier) 
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(content.setName, style = MaterialTheme.typography.titleMedium, color = p.inkBlack)
-                Text("ใบที่", style = MaterialTheme.typography.labelMedium, color = p.inkSoft)
+                Text(LocalStrings.current.share.slipLabel, style = MaterialTheme.typography.labelMedium, color = p.inkSoft)
                 Text(content.number, fontSize = 64.sp, lineHeight = 70.sp, color = p.cinnabarRed)
                 content.labelOrig?.let { Text(it, fontFamily = FontFamily.Serif, fontSize = 18.sp, color = p.inkSoft) }
             }
@@ -81,7 +82,7 @@ fun SiamSiShareCard(content: SiamSiShareContent, modifier: Modifier = Modifier) 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CinnabarSeal(text = "籤", size = 28.dp, tilt = -6f, color = p.cinnabarRed, glyphColor = p.paperCream)
                 Spacer(Modifier.width(8.dp))
-                Text("อี้จิง AI · เซียมซี", style = MaterialTheme.typography.titleMedium, color = p.inkBlack)
+                Text(LocalStrings.current.share.brandSiamsi, style = MaterialTheme.typography.titleMedium, color = p.inkBlack)
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.iching.ai.feature.share
 
+import com.iching.ai.ui.strings.TH_STRINGS
 import com.iching.ai.domain.siamsi.SiamSiLevel
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiStick
@@ -16,7 +17,7 @@ class SiamSiShareContentTest {
 
     @Test
     fun theCardCarriesTheSlipAndItsSource() {
-        val card = siamsiShareContent(set, stick)
+        val card = siamsiShareContent(set, stick, TH_STRINGS.share)
         assertEquals("เซียมซีเจ้าแม่กวนอิม", card.setName)
         assertEquals("๑๗", card.number)
         assertEquals("ปานกลาง · 中吉", card.level)
@@ -29,14 +30,14 @@ class SiamSiShareContentTest {
     @Test
     fun theCardHasNoRoomForTheQuestion() {
         // Every field the card shows comes from the set; the seeker's question is not an input at all.
-        val shown = siamsiShareContent(set, stick).toString()
+        val shown = siamsiShareContent(set, stick, TH_STRINGS.share).toString()
         assertFalse("story" in shown || "summary" in shown)
     }
 
     @Test
     fun aThaiSetShowsItsPoemOnce() {
         val thai = stick.copy(gradeOrig = null, poemOrig = stick.poemTh)
-        val card = siamsiShareContent(set, thai)
+        val card = siamsiShareContent(set, thai, TH_STRINGS.share)
         assertEquals(emptyList(), card.poemOrig)
         assertEquals("ปานกลาง", card.level)
     }

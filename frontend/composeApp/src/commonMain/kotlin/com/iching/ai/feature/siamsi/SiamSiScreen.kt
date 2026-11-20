@@ -71,7 +71,6 @@ import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
-import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
@@ -85,6 +84,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
     val interpret by viewModel.interpret.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val soundEnabled by viewModel.soundEnabled.collectAsStateWithLifecycle()
+    val strings = LocalStrings.current.siamsi
 
     LaunchedEffect(stage) { if (stage == SiamSiStage.Unpaid) onBack() }
     LaunchedEffect(interpret.message) {
@@ -133,7 +133,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
     val set = viewModel.set
     val slip = stage as? SiamSiStage.Slip
     if (sharing && set != null && slip != null) {
-        SiamSiShareSheet(siamsiShareContent(set, slip.stick), log = viewModel::logEvent, onDismiss = { sharing = false })
+        SiamSiShareSheet(siamsiShareContent(set, slip.stick, LocalStrings.current.share), log = viewModel::logEvent, onDismiss = { sharing = false })
     }
 
     PaperBackground(showMountains = stage !is SiamSiStage.Slip) {
@@ -146,18 +146,18 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
             }
             TopBar(
                 title = when {
-                    slip != null -> "ใบเซียมซี"
-                    puaNumber != null -> "เสี่ยงไม้ปัว"
-                    else -> "เซียมซี"
+                    slip != null -> strings.titleSlip
+                    puaNumber != null -> strings.titlePua
+                    else -> strings.titleSiamsi
                 },
                 onBack = requestBack,
                 trailing = {
                     when {
                         slip != null && set != null -> IconButton(onClick = { sharing = true }) {
-                            Icon(Icons.Outlined.IosShare, contentDescription = "แชร์ใบเซียมซี", tint = ZenColors.InkSoft)
+                            Icon(Icons.Outlined.IosShare, contentDescription = strings.shareSlipDescription, tint = ZenColors.InkSoft)
                         }
                         puaNumber != null -> Text(
-                            "ไม้ที่ ${puaNumber.toThaiNumerals()}",
+                            strings.stickLabel(puaNumber),
                             style = MaterialTheme.typography.bodySmall,
                             color = ZenColors.InkSoft,
                             modifier = Modifier.padding(end = ZenSpacing.screen),
@@ -169,7 +169,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                 SiamSiStage.Loading, SiamSiStage.Unpaid -> Unit
                 is SiamSiStage.Safety -> SafetyStage(s.message, onDone = onBack)
                 SiamSiStage.Shaking -> ShakeStage(viewModel, soundEnabled)
-                is SiamSiStage.Fallen -> DrawStep(progress = 0.75f, button = "เสี่ยงไม้ปัวยืนยัน", onButton = viewModel::onStartPua) {
+                is SiamSiStage.Fallen -> DrawStep(progress = 0.75f, button = strings.confirmByPua, onButton = viewModel::onStartPua) {
                     Spacer(Modifier.weight(1f))
                     FallenStage(s.number)
                     Spacer(Modifier.weight(1f))
@@ -178,7 +178,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                     results = s.results,
                     shown = null,
                     autoConfirmed = false,
-                    button = "โยนไม้ปัว",
+                    button = strings.tossPua,
                     onButton = viewModel::onTossPua,
                     onToss = viewModel::onTossPua,
                 )
@@ -186,7 +186,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                     results = s.progress.rounds.mapNotNull { it.result },
                     shown = s.progress.rounds.last().result,
                     autoConfirmed = false,
-                    button = "เขย่าใหม่",
+                    button = strings.shakeAgain,
                     onButton = viewModel::onReshake,
                     onToss = null,
                 )
@@ -194,7 +194,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
                     results = s.progress.rounds.mapNotNull { it.result },
                     shown = s.progress.rounds.last().result,
                     autoConfirmed = s.autoConfirmed,
-                    button = "เปิดใบเซียมซี",
+                    button = strings.openSlip,
                     onButton = viewModel::onOpenSlip,
                     onToss = null,
                 )
@@ -228,28 +228,27 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
 
 @Composable
 private fun LeaveDrawDialog(warning: SiamSiLeaveWarning, onStay: () -> Unit, onLeave: () -> Unit) {
+    val strings = LocalStrings.current.siamsi
     val (title, body) = when (warning) {
-        SiamSiLeaveWarning.DRAW -> "ยังเสี่ยงไม่จบ ออกตอนนี้?" to
-            "ไม้ที่เสี่ยงได้และผลไม้ปัวจะไม่ถูกเก็บไว้ สิทธิ์เสี่ยงครั้งนี้ยังอยู่ แต่เมื่อกลับมาจะต้องเขย่าใหม่และได้ไม้ใหม่"
-        SiamSiLeaveWarning.INTERPRETING -> "นักพรตยังแปลไม่จบ ออกตอนนี้?" to
-            "ใบเซียมซีนี้บันทึกในบันทึกชะตาแล้ว แต่คำแปลครั้งนี้จะไม่ถูกเก็บไว้"
-        SiamSiLeaveWarning.INTERPRETING_RESUMABLE -> "นักพรตยังแปลไม่จบ ออกตอนนี้?" to
-            "ใบเซียมซีนี้บันทึกในบันทึกชะตาแล้ว ท่านกลับมารับคำแปลจากนักพรตต่อได้ที่บันทึกชะตา โดยไม่เสียสิทธิ์ซ้ำ"
+        SiamSiLeaveWarning.DRAW -> strings.leaveDrawTitle to strings.leaveDrawBody
+        SiamSiLeaveWarning.INTERPRETING -> strings.leaveInterpretTitle to strings.leaveInterpretBody
+        SiamSiLeaveWarning.INTERPRETING_RESUMABLE -> strings.leaveInterpretTitle to strings.leaveResumableBody
     }
     AlertDialog(
         onDismissRequest = onStay,
         title = { Text(title, style = MaterialTheme.typography.titleMedium) },
         text = { Text(body, style = MaterialTheme.typography.bodyMedium) },
-        confirmButton = { TextButton(onClick = onStay) { Text("อยู่ต่อ", color = ZenColors.BambooDeep) } },
-        dismissButton = { TextButton(onClick = onLeave) { Text("ออก", color = ZenColors.InkSoft) } },
+        confirmButton = { TextButton(onClick = onStay) { Text(strings.stay, color = ZenColors.BambooDeep) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text(strings.leave, color = ZenColors.InkSoft) } },
     )
 }
 
 @Composable
 private fun TopBar(title: String, onBack: () -> Unit, trailing: @Composable () -> Unit) {
+    val back = LocalStrings.current.common.back
     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = back, tint = ZenColors.InkBlack)
         }
         Text(title, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack, modifier = Modifier.weight(1f))
         trailing()
@@ -300,7 +299,7 @@ private fun DrawStep(
 @Composable
 private fun QuestionLine(question: String) {
     Text(
-        if (question.isBlank()) "อธิษฐานในใจ" else "“$question”",
+        if (question.isBlank()) LocalStrings.current.siamsi.prayInHeart else "“$question”",
         style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
         color = ZenColors.InkSoft,
         textAlign = TextAlign.Center,
@@ -317,6 +316,7 @@ private fun ShakeStage(viewModel: SiamSiViewModel, soundEnabled: Boolean) {
     var lastShakeAt by remember { mutableLongStateOf(0L) }
     var now by remember { mutableLongStateOf(0L) }
     val onShaken by rememberUpdatedState(viewModel::onShaken)
+    val strings = LocalStrings.current.siamsi
     fun clock() = Clock.System.now().toEpochMilliseconds()
     fun sample(g: Float) {
         val at = clock()
@@ -351,12 +351,12 @@ private fun ShakeStage(viewModel: SiamSiViewModel, soundEnabled: Boolean) {
             delay(RATTLE_EVERY_MILLIS)
         }
     }
-    DrawStep(progress = 0.5f, button = null, onButton = {}, bottom = { HoldButton("กดค้างเพื่อเขย่า") { held = it } }) {
+    DrawStep(progress = 0.5f, button = null, onButton = {}, bottom = { HoldButton(strings.holdToShake) { held = it } }) {
         QuestionLine(viewModel.question)
         Spacer(Modifier.weight(1f))
         SiamSiCylinder(shaking = shaking, onHoldChange = { held = it })
         Spacer(Modifier.height(ZenSpacing.md))
-        Text("เขย่าโทรศัพท์ หรือ กดค้างที่กระบอก", style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
+        Text(strings.shakeHint, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft)
         Spacer(Modifier.weight(1f))
     }
 }
@@ -401,9 +401,10 @@ private fun PuaStep(
     onButton: () -> Unit,
     onToss: (() -> Unit)?,
 ) {
+    val strings = LocalStrings.current.siamsi
     DrawStep(progress = 0.9f, button = button, onButton = onButton) {
         Text(
-            "แตะเพื่อโยนไม้ปัว ถามว่าใบนี้ใช่หรือไม่",
+            strings.tossPrompt,
             style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
             color = ZenColors.InkSoft,
             textAlign = TextAlign.Center,
@@ -419,7 +420,7 @@ private fun PuaStep(
         }
         Spacer(Modifier.height(ZenSpacing.lg))
         Text(
-            "ศักดิ์ = ยืนยัน · หัวเราะ / ไม่ = เขย่าใหม่ (ไม่นับโควตา)\nรอบที่ ๓ ยืนยันใบสุดท้ายให้อัตโนมัติ",
+            strings.puaRules,
             style = MaterialTheme.typography.labelSmall,
             color = ZenColors.InkFaint,
             textAlign = TextAlign.Center,
