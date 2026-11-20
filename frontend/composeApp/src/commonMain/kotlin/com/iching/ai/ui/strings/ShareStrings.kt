@@ -34,7 +34,7 @@ object ThShareStrings : ShareStrings {
 
 object EnShareStrings : ShareStrings {
     override val shareText = "Consult the I Ching at https://play.google.com/store/apps/details?id=com.iching.ai"
-    override fun yearCardHeader(yearLabel: String) = "Year hexagram · $yearLabel"
+    override fun yearCardHeader(yearLabel: String) = "Hexagram for the $yearLabel"
     override fun number(n: Int) = formatNumber(n, AppLanguage.EN)
     override fun sourceLine(sourceTitle: String) = "Source: $sourceTitle"
     override val slipLabel = "Slip"

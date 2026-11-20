@@ -40,7 +40,7 @@ object ThYearStrings : YearStrings {
 }
 
 object EnYearStrings : YearStrings {
-    override fun heading(yearLabel: String) = "Year hexagram · $yearLabel"
+    override fun heading(yearLabel: String) = "Hexagram for the $yearLabel"
     override val ritualTitle = "Settle your mind and welcome the new year"
     override val ritualPrompt = "Settle your mind, then toss the coins"
     override val loading = "Settling your mind..."

@@ -45,7 +45,7 @@ object EnDailyStrings : DailyStrings {
     override fun unlockBody(days: Int) = "You have opened the daily hexagram $days days in a row. You can choose this theme in Settings."
     override val acknowledge = "Got it"
     override val pushTitle = "Receive the daily hexagram every morning?"
-    override val pushBody = "The hermit will send you a daily message at 7 a.m. You can turn it off any time in Settings."
+    override val pushBody = "The hermit will send you a daily message once a day. You can turn it off any time in Settings."
     override val pushAccept = "Turn on notifications"
     override val pushLater = "Not now"
 }

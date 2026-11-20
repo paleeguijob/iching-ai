@@ -85,13 +85,22 @@ class DailyViewModel(
         // No card until settings load: an empty default would flash a card closed in an earlier launch.
         settings.map { it.dismissedPosterCardIds },
         nowMillis,
-    ) { s, dismissed, millis -> posterCard(s, dismissed, millis, languageHolder.strings.poster) }
+        languageHolder.language,
+    ) { s, dismissed, millis, _ -> posterCard(s, dismissed, millis, languageHolder.strings.poster) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private var loggedCardId: String? = null
 
     init {
         refresh()
+        // A language switch rewords the week row without waiting for the next resume.
+        viewModelScope.launch {
+            languageHolder.language.collect {
+                _state.update { st ->
+                    if (st.week == null) st else st.copy(week = streakWeek(st.streak, bangkokEpochDay(nowMillis.value), languageHolder.strings.home))
+                }
+            }
+        }
     }
 
     fun onPosterCardShown(id: String) {
