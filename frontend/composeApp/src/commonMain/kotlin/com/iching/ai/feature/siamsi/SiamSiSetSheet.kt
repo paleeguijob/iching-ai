@@ -37,7 +37,7 @@ import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.strings.SiamSiStrings
 
-/** The prefix the set files put on every book's name; the screens show the name without it. */
+/** The prefix the set files put on every book's name; the screens show the name without it. Thai data key, never displayed as is. */
 private const val SET_NAME_PREFIX = "เซียมซี"
 
 /** The set's name without the leading "Siam Si" word. */

@@ -133,7 +133,7 @@ fun SiamSiScreen(viewModel: SiamSiViewModel, onBack: () -> Unit, onOpenPaywall: 
     val set = viewModel.set
     val slip = stage as? SiamSiStage.Slip
     if (sharing && set != null && slip != null) {
-        SiamSiShareSheet(siamsiShareContent(set, slip.stick, LocalStrings.current.share), log = viewModel::logEvent, onDismiss = { sharing = false })
+        SiamSiShareSheet(siamsiShareContent(set, slip.stick, LocalStrings.current.share, LocalStrings.current.common), log = viewModel::logEvent, onDismiss = { sharing = false })
     }
 
     PaperBackground(showMountains = stage !is SiamSiStage.Slip) {

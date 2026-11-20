@@ -121,7 +121,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpenHexagram: (Int) -> Unit) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(ZenSpacing.sm)) {
                     item { ZenChip(library.filterAll, state.trigram == null, onClick = { viewModel.onTrigramChange(null) }) }
                     items(Trigram.entries) { t ->
-                        ZenChip("${t.symbol} ${t.natureTh}", state.trigram == t, onClick = { viewModel.onTrigramChange(t) })
+                        ZenChip("${t.symbol} ${strings.common.trigramNature(t)}", state.trigram == t, onClick = { viewModel.onTrigramChange(t) })
                     }
                 }
                 Spacer(Modifier.height(ZenSpacing.md))
@@ -257,7 +257,7 @@ private fun TrigramChip(label: String, trigram: Trigram) {
         Spacer(Modifier.width(6.dp))
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
-            Text("${trigram.natureTh} ${trigram.nameCn}", style = MaterialTheme.typography.labelLarge, color = ZenColors.InkBlack)
+            Text("${LocalStrings.current.common.trigramNature(trigram)} ${trigram.nameCn}", style = MaterialTheme.typography.labelLarge, color = ZenColors.InkBlack)
         }
     }
 }

@@ -160,7 +160,7 @@ class SiamSiViewModel(
 
     init {
         viewModelScope.launch {
-            crisisMessage(route.question)?.let {
+            crisisMessage(route.question, languageHolder.language.value)?.let {
                 _stage.value = SiamSiStage.Safety(it)
                 return@launch
             }

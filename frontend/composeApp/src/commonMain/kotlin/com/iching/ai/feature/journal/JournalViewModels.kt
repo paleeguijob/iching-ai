@@ -19,6 +19,7 @@ import com.iching.ai.domain.usecase.SaveOutcomeUseCase
 import com.iching.ai.navigation.SiamSiRoute
 import com.iching.ai.session.AppSession
 import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.CommonStrings
 import com.iching.ai.ui.strings.JournalStrings
 import com.iching.ai.ui.strings.formatMonth
 import com.iching.ai.ui.strings.stringsFor
@@ -50,20 +51,21 @@ fun filterJournal(readings: List<Reading>, filter: JournalFilter): List<Reading>
 /** "Guanyin slip 17 · Good · Interpreted" in the language of [strings]; [level] is null when the slip itself is no longer on the device. */
 fun siamsiRowLabel(
     strings: JournalStrings,
+    common: CommonStrings,
     setName: String,
     number: Int,
     level: SiamSiLevel?,
     labelOrig: String?,
     hasInterpretation: Boolean,
-): String = strings.siamsiRow(setName, number, labelOrig, level?.labelTh, hasInterpretation)
+): String = strings.siamsiRow(setName, number, labelOrig, level?.let(common::level), hasInterpretation)
 
 /** The row for [reading], or null for a cast whose hexagram cannot be found. */
-fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<String, SiamSiSet>, strings: JournalStrings): JournalEntry? {
+fun journalEntry(reading: Reading, hexagrams: Map<Int, Hexagram>, sets: Map<String, SiamSiSet>, strings: JournalStrings, common: CommonStrings): JournalEntry? {
     val pick = reading.siamsi
     if (pick != null) {
         val set = sets[pick.setId]
         val stick = set?.sticks?.firstOrNull { it.number == pick.number }
-        val label = siamsiRowLabel(strings, set?.name ?: pick.setId, pick.number, stick?.level, stick?.labelOrig, reading.interpretation.isNotBlank())
+        val label = siamsiRowLabel(strings, common, set?.name ?: pick.setId, pick.number, stick?.level, stick?.labelOrig, reading.interpretation.isNotBlank())
         return JournalEntry(reading, primary = null, relating = null, siamsi = SiamSiJournal(pick, set, stick, label))
     }
     val primary = hexagrams[reading.primaryId] ?: return null
@@ -116,7 +118,7 @@ class JournalViewModel(
         val byId = getHexagrams().associateBy { it.id }
         val sets = setsFor(readings, siamsiSets)
         val (visible, hidden) = filterJournal(readings, status.journalDays, Clock.System.now().toEpochMilliseconds())
-        val entries = filterJournal(visible, filter).mapNotNull { journalEntry(it, byId, sets, strings) }
+        val entries = filterJournal(visible, filter).mapNotNull { journalEntry(it, byId, sets, strings, stringsFor(lang).common) }
         JournalUiState.Loaded(
             months = entries.groupBy { formatMonth(it.reading.createdAtMillis, lang) }.map { (label, list) -> JournalMonth(label, list) },
             hiddenCount = hidden,
@@ -154,7 +156,7 @@ class JournalEntryViewModel(
         viewModelScope.launch {
             val reading = getReading(id) ?: return@launch
             val byId = getHexagrams().associateBy { it.id }
-            _entry.value = journalEntry(reading, byId, setsFor(listOf(reading), siamsiSets), languageHolder.strings.journal)
+            _entry.value = journalEntry(reading, byId, setsFor(listOf(reading), siamsiSets), languageHolder.strings.journal, languageHolder.strings.common)
         }
     }
 

@@ -303,7 +303,7 @@ private fun AskVisual(active: Boolean) {
             ) { i ->
                 val sample = samples.getOrNull(i)
                 Text(
-                    sample?.sampleTh ?: strings.askBlank,
+                    sample?.let(LocalStrings.current.common::categorySample) ?: strings.askBlank,
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (sample != null) ZenColors.InkBlack else ZenColors.InkFaint,
                     maxLines = 1,
@@ -313,7 +313,7 @@ private fun AskVisual(active: Boolean) {
         }
         Spacer(Modifier.height(ZenSpacing.sm))
         AnimatedContent(
-            targetState = samples.getOrNull(index)?.labelTh,
+            targetState = samples.getOrNull(index)?.let(LocalStrings.current.common::category),
             transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(300)) },
             label = "category",
         ) { label ->

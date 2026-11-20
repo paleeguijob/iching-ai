@@ -97,7 +97,7 @@ class DailyViewModel(
         viewModelScope.launch {
             languageHolder.language.collect {
                 _state.update { st ->
-                    if (st.week == null) st else st.copy(week = streakWeek(st.streak, bangkokEpochDay(nowMillis.value), languageHolder.strings.home))
+                    if (st.week == null) st else st.copy(week = streakWeek(st.streak, bangkokEpochDay(nowMillis.value), languageHolder.strings.home, languageHolder.strings.common))
                 }
             }
         }
@@ -136,7 +136,7 @@ class DailyViewModel(
                 it.copy(
                     hexagram = hexagram,
                     streak = update.state,
-                    week = streakWeek(update.state, bangkokEpochDay(millis), languageHolder.strings.home),
+                    week = streakWeek(update.state, bangkokEpochDay(millis), languageHolder.strings.home, languageHolder.strings.common),
                     newlyUnlocked = it.newlyUnlocked + update.newlyUnlocked,
                     showPushPrompt = it.showPushPrompt || offerPush,
                 )

@@ -1,7 +1,9 @@
 package com.iching.ai.domain.safety
 
+import com.iching.ai.domain.model.AppLanguage
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class CrisisCheckTest {
@@ -21,5 +23,30 @@ class CrisisCheckTest {
         assertNull(crisisMessage("งานใหม่จะดีไหม"))
         assertNull(crisisMessage("ควรไปหาหมอเรื่องโรคกระเพาะไหม"))
         assertNull(crisisMessage(""))
+    }
+
+    @Test
+    fun englishPhrasesAreCrisisInEitherLanguage() {
+        assertEquals(SELF_HARM_MESSAGE_EN, crisisMessage("I want to die", AppLanguage.EN))
+        assertEquals(SELF_HARM_MESSAGE, crisisMessage("I want to die"))
+        assertEquals(SELF_HARM_MESSAGE_EN, crisisMessage("I'm thinking of killmyself", AppLanguage.EN))
+        assertEquals(MEDICAL_MESSAGE_EN, crisisMessage("he is unconscious", AppLanguage.EN))
+        assertEquals(MEDICAL_MESSAGE, crisisMessage("He is unconscious!"))
+        assertEquals(MEDICAL_MESSAGE_EN, crisisMessage("I can't breathe", AppLanguage.EN))
+    }
+
+    @Test
+    fun englishWordsInsideOtherWordsOrAcrossWordsAreNotCrisis() {
+        assertNull(crisisMessage("Should I spend my life with him?", AppLanguage.EN))
+        assertNull(crisisMessage("Should I spend it all on the trip?", AppLanguage.EN))
+        assertNull(crisisMessage("Will my stroke of luck last?".replace("stroke", "strokes of"), AppLanguage.EN))
+    }
+
+    @Test
+    fun englishRepliesNeverOfferThaiNumbers() {
+        for (m in listOf(SELF_HARM_MESSAGE_EN, MEDICAL_MESSAGE_EN)) {
+            assertFalse("1323" in m || "1669" in m)
+            assertFalse(Regex("[\u0E00-\u0E7F]").containsMatchIn(m))
+        }
     }
 }

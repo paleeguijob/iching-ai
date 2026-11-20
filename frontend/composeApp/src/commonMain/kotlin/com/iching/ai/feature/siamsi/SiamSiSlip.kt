@@ -267,7 +267,7 @@ private fun DashedRule() {
 private fun LevelPill(level: SiamSiLevel) {
     val tone = if (level == SiamSiLevel.CAUTION) ZenColors.CinnabarRed else ZenColors.BambooDeep
     Text(
-        level.labelTh,
+        LocalStrings.current.common.level(level),
         style = MaterialTheme.typography.labelMedium,
         color = tone,
         modifier = Modifier
@@ -373,7 +373,7 @@ private fun TopicsCard(stick: SiamSiStick, category: QuestionCategory?) {
                         Box(Modifier.size(5.dp).clip(CircleShape).background(ZenColors.CinnabarRed))
                         Spacer(Modifier.width(6.dp))
                     }
-                    Text(topic.labelTh, style = MaterialTheme.typography.labelMedium, color = ZenColors.InkBlack)
+                    Text(LocalStrings.current.common.topic(topic), style = MaterialTheme.typography.labelMedium, color = ZenColors.InkBlack)
                 }
                 Text(text, style = MaterialTheme.typography.bodySmall, color = ZenColors.InkSoft, modifier = Modifier.weight(1f))
             }

@@ -78,9 +78,9 @@ class HomeViewModel(
 
     /** The last seven days of opening the daily hexagram, shown under today's card. */
     val streakWeek: StateFlow<StreakWeek> = combine(observeSettings(), today, languageHolder.language) { settings, day, _ ->
-        streakWeek(settings.streak, day, languageHolder.strings.home)
+        streakWeek(settings.streak, day, languageHolder.strings.home, languageHolder.strings.common)
     }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value, languageHolder.strings.home))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value, languageHolder.strings.home, languageHolder.strings.common))
 
     val status: StateFlow<AccountStatus> = session.status
 

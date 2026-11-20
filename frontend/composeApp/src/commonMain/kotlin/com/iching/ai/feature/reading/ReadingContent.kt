@@ -51,7 +51,6 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.oracle.ReadingSection
-import com.iching.ai.domain.oracle.linePositionTh
 import com.iching.ai.domain.oracle.parseReading
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
@@ -307,7 +306,7 @@ fun ScriptureSection(primary: Hexagram, relating: Hexagram?, changingPositions: 
                 ScriptureBlock(strings.judgment, primary.judgment)
                 ScriptureBlock(strings.image, primary.image)
                 changingPositions.forEach { position ->
-                    ScriptureBlock(linePositionTh(position), primary.lines[position - 1], accent = ZenColors.CinnabarRed)
+                    ScriptureBlock(LocalStrings.current.library.linePosition(position), primary.lines[position - 1], accent = ZenColors.CinnabarRed)
                 }
                 if (changingPositions.size == 6) primary.allLines?.let { ScriptureBlock(strings.allLinesChange, it, ZenColors.CinnabarRed) }
                 relating?.let { ScriptureBlock(strings.relatingHeading(it.shortNameTh), it.judgment, ZenColors.BambooDeep) }

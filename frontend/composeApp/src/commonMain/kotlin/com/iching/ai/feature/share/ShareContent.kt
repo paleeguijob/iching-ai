@@ -4,6 +4,7 @@ import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.oracle.stripMarkup
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiStick
+import com.iching.ai.ui.strings.CommonStrings
 import com.iching.ai.ui.strings.ShareStrings
 
 /** The look of a card: the sepia oracle card, or the cinnabar-and-gold one of the new-year campaign. */
@@ -75,11 +76,11 @@ data class SiamSiShareContent(
     val source: String,
 )
 
-fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick, strings: ShareStrings) = SiamSiShareContent(
+fun siamsiShareContent(set: SiamSiSet, stick: SiamSiStick, strings: ShareStrings, common: CommonStrings) = SiamSiShareContent(
     setId = set.id,
     setName = set.name,
     number = strings.number(stick.number),
-    level = listOfNotNull(stick.level.labelTh, stick.gradeOrig).joinToString(" · "),
+    level = listOfNotNull(common.level(stick.level), stick.gradeOrig).joinToString(" · "),
     poemOrig = if (stick.poemOrig == stick.poemTh) emptyList() else stick.poemOrig,
     poemTh = stick.poemTh,
     labelOrig = stick.labelOrig,

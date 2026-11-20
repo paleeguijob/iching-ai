@@ -127,6 +127,7 @@ fun HomeScreen(
     onOpenLink: (PosterLink) -> Unit,
 ) {
     val strings = LocalStrings.current.home
+    val common = LocalStrings.current.common
     val daily by viewModel.dailyHexagram.collectAsStateWithLifecycle()
     val mode by siamsi.mode.collectAsStateWithLifecycle()
     val siamsiEnabled by siamsi.enabled.collectAsStateWithLifecycle()
@@ -254,11 +255,11 @@ fun HomeScreen(
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QuestionCategory.entries.filter { it.pickable }.forEach { c ->
                         val selected = category == c.wire
-                        ZenChip(c.labelTh, selected, onClick = {
+                        ZenChip(common.category(c), selected, onClick = {
                             category = if (selected) null else c.wire
                             val pickable = QuestionCategory.entries.filter { it.pickable }
-                            if (!selected && (question.isBlank() || pickable.any { it.sampleTh == question })) {
-                                question = c.sampleTh
+                            if (!selected && (question.isBlank() || pickable.any { it.sampleTh == question || common.categorySample(it) == question })) {
+                                question = common.categorySample(c)
                             }
                         })
                     }

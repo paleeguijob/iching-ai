@@ -129,7 +129,7 @@ class SiamSiHomeViewModel(
         viewModelScope.launch {
             var left = false
             try {
-                if (crisisMessage(route.question) != null) {
+                if (crisisMessage(route.question, languageHolder.language.value) != null) {
                     log("siamsi_safety_shown", emptyMap())
                     nav.send(SiamSiNav.Draw(route))
                     left = true

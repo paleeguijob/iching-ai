@@ -154,7 +154,7 @@ fun DailyScreen(
     when {
         unlocked != null -> AlertDialog(
             onDismissRequest = viewModel::unlockNoticeShown,
-            title = { Text(strings.unlockTitle(unlocked.labelTh)) },
+            title = { Text(strings.unlockTitle(LocalStrings.current.common.theme(unlocked))) },
             text = { Text(strings.unlockBody(unlocked.unlockDays)) },
             confirmButton = { TextButton(onClick = viewModel::unlockNoticeShown) { Text(strings.acknowledge) } },
         )

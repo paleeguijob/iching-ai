@@ -420,7 +420,7 @@ private fun SiamSiJournalDetail(
                 ZenSecondaryButton(journal.shareSlip, onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
             }
             if (sharing) {
-                SiamSiShareSheet(siamsiShareContent(set, stick, strings.share), log = log, onDismiss = { sharing = false })
+                SiamSiShareSheet(siamsiShareContent(set, stick, strings.share, strings.common), log = log, onDismiss = { sharing = false })
             }
         } else {
             Text(slip.label, style = MaterialTheme.typography.titleMedium, color = ZenColors.InkBlack)

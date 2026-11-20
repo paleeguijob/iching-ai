@@ -17,7 +17,7 @@ class SiamSiShareContentTest {
 
     @Test
     fun theCardCarriesTheSlipAndItsSource() {
-        val card = siamsiShareContent(set, stick, TH_STRINGS.share)
+        val card = siamsiShareContent(set, stick, TH_STRINGS.share, TH_STRINGS.common)
         assertEquals("เซียมซีเจ้าแม่กวนอิม", card.setName)
         assertEquals("๑๗", card.number)
         assertEquals("ปานกลาง · 中吉", card.level)
@@ -30,14 +30,14 @@ class SiamSiShareContentTest {
     @Test
     fun theCardHasNoRoomForTheQuestion() {
         // Every field the card shows comes from the set; the seeker's question is not an input at all.
-        val shown = siamsiShareContent(set, stick, TH_STRINGS.share).toString()
+        val shown = siamsiShareContent(set, stick, TH_STRINGS.share, TH_STRINGS.common).toString()
         assertFalse("story" in shown || "summary" in shown)
     }
 
     @Test
     fun aThaiSetShowsItsPoemOnce() {
         val thai = stick.copy(gradeOrig = null, poemOrig = stick.poemTh)
-        val card = siamsiShareContent(set, thai, TH_STRINGS.share)
+        val card = siamsiShareContent(set, thai, TH_STRINGS.share, TH_STRINGS.common)
         assertEquals(emptyList(), card.poemOrig)
         assertEquals("ปานกลาง", card.level)
     }

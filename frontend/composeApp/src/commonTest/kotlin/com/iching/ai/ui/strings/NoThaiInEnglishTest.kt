@@ -1,5 +1,10 @@
 package com.iching.ai.ui.strings
 
+import com.iching.ai.domain.model.AppTheme
+import com.iching.ai.domain.model.QuestionCategory
+import com.iching.ai.domain.model.Trigram
+import com.iching.ai.domain.siamsi.SiamSiLevel
+import com.iching.ai.domain.siamsi.SiamSiTopic
 import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.ProductKind
@@ -31,7 +36,9 @@ class NoThaiInEnglishTest {
         check("common", listOf(
             s.cancel, s.close, s.gotIt, s.back, s.number(3), s.premiumDaily, s.premiumDailyNoAds, s.coinPack, s.working,
             s.openingAd, s.comeBackTomorrow, s.adMustFinish, s.adLimitReached, s.adUnavailable, s.paymentFailed,
-        ))
+        ) + QuestionCategory.entries.flatMap { listOf(s.category(it), s.categorySample(it)) } +
+            SiamSiLevel.entries.map(s::level) + SiamSiTopic.entries.map(s::topic) +
+            AppTheme.entries.map(s::theme) + Trigram.entries.map(s::trigramNature))
     }
 
     @Test

@@ -409,6 +409,7 @@ private fun ThemePicker(
     lockedSuffix: String,
     onSelect: (AppTheme) -> Unit,
 ) {
+    val common = LocalStrings.current.common
     var hinted by remember { mutableStateOf<AppTheme?>(null) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -418,7 +419,7 @@ private fun ThemePicker(
                     Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .clickable(onClickLabel = theme.labelTh) {
+                        .clickable(onClickLabel = common.theme(theme)) {
                             if (isUnlocked) {
                                 hinted = null
                                 onSelect(theme)
@@ -427,7 +428,7 @@ private fun ThemePicker(
                             }
                         }
                         .semantics {
-                            contentDescription = theme.labelTh + if (!isUnlocked) lockedSuffix else ""
+                            contentDescription = common.theme(theme) + if (!isUnlocked) lockedSuffix else ""
                             this.selected = theme == selected
                         },
                     contentAlignment = Alignment.Center,
@@ -453,7 +454,7 @@ private fun ThemePicker(
         Spacer(Modifier.height(6.dp))
         val h = hinted
         Text(
-            if (h != null) "${h.labelTh} · ${hintFor(h)}" else selected.labelTh,
+            if (h != null) "${common.theme(h)} · ${hintFor(h)}" else common.theme(selected),
             style = MaterialTheme.typography.labelSmall,
             color = if (h != null) ZenColors.InkSoft else ZenColors.InkFaint,
         )

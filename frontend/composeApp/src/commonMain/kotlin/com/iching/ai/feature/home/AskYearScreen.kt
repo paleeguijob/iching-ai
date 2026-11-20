@@ -70,7 +70,8 @@ fun AskYearScreen(
             onDismiss = viewModel::onSheetDismissed,
         )
     }
-    var question by rememberSaveable { mutableStateOf(QuestionCategory.NEWYEAR.sampleTh) }
+    val yearSample = LocalStrings.current.common.categorySample(QuestionCategory.NEWYEAR)
+    var question by rememberSaveable { mutableStateOf(yearSample) }
 
     PaperBackground {
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().verticalScroll(rememberScrollState())) {
@@ -84,7 +85,7 @@ fun AskYearScreen(
                 Spacer(Modifier.height(24.dp))
                 QuestionField(question, onChange = { question = it })
                 Spacer(Modifier.height(12.dp))
-                ZenChip(QuestionCategory.NEWYEAR.labelTh, selected = true, onClick = {})
+                ZenChip(LocalStrings.current.common.category(QuestionCategory.NEWYEAR), selected = true, onClick = {})
                 Spacer(Modifier.height(24.dp))
                 GuidanceQuotaBar(guidanceQuota(status, LocalStrings.current.home))
                 Spacer(Modifier.height(12.dp))

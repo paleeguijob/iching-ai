@@ -10,7 +10,7 @@ class StreakWeekTest {
     private val today = 20402L
 
     private fun week(current: Int, lastBack: Long?, best: Int = current) =
-        streakWeek(StreakState(current = current, best = best, lastEpochDay = lastBack?.let { today - it }), today, TH_STRINGS.home)
+        streakWeek(StreakState(current = current, best = best, lastEpochDay = lastBack?.let { today - it }), today, TH_STRINGS.home, TH_STRINGS.common)
 
     @Test
     fun noStreakShowsDayOneAsTodayAndInvitesToStart() {
