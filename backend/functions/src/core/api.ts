@@ -405,6 +405,7 @@ export function createApi(deps: Deps) {
         cast,
         reading.category,
         reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
+        b.format === "cards",
       );
       await interpret(sse, uid, deviceHash, cfg, reading, prompt);
     }

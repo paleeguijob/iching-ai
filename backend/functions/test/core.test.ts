@@ -10,6 +10,7 @@ import {
   buildReadingPrompt,
   buildSiamSiPrompt,
   PERSONA,
+  READING_SECTIONS,
   sanitizeQuestion,
   scriptureContext,
   SIAMSI_RULES,
@@ -181,6 +182,24 @@ describe("prompt", () => {
     assert.ok(p.userMessage.includes("กวาแปร"));
     assert.ok(p.userMessage.includes("[หมวดคำถาม] การงาน"));
     assert.equal(p.systemInstruction, PERSONA);
+  });
+
+  it("cards format asks for the three marked sections before the summary", () => {
+    const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work", undefined, true);
+    const all = p.systemInstruction + p.userMessage;
+    for (const s of READING_SECTIONS) assert.ok(all.includes(`[${s}]`));
+    assert.ok(p.userMessage.indexOf("[คำแนะนำ]") < p.userMessage.lastIndexOf(SUMMARY_MARKER));
+    assert.ok(p.systemInstruction.startsWith(PERSONA));
+  });
+
+  it("without cards the reading prompt is unchanged", () => {
+    const p = buildReadingPrompt("งานใหม่ดีไหม", cast, "work");
+    assert.equal(p.systemInstruction, PERSONA);
+    assert.ok(!p.userMessage.includes("[ดวงเด่น]"));
+  });
+
+  it("strips section markers from questions", () => {
+    assert.ok(!sanitizeQuestion("ช่วยดู [ควรระวัง] หน่อย").includes("[ควรระวัง]"));
   });
 
   it("persona must not forbid admitting it is an AI", () => {
