@@ -3,7 +3,6 @@ package com.iching.ai
 import com.iching.ai.ui.theme.LocalTabBarHeight
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.runtime.CompositionLocalProvider
 import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,7 +37,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.stringsFor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,7 +130,10 @@ fun App() {
     val settings by remember { observeSettings() }.collectAsState(initial = null)
     val current = settings
     SideEffect { current?.let { ZenColors.useTheme(it.selectedTheme) } }
+    val languageHolder = koinInject<AppLanguageHolder>()
+    val language by languageHolder.language.collectAsState()
     ZenTheme {
+      CompositionLocalProvider(LocalStrings provides stringsFor(language), LocalAppLanguage provides language) {
         val updateSettings = koinInject<UpdateSettingsUseCase>()
         val session = koinInject<AppSession>()
         val scope = rememberCoroutineScope()
@@ -140,6 +147,7 @@ fun App() {
                 MainNavigation()
             }
         }
+      }
     }
 }
 
