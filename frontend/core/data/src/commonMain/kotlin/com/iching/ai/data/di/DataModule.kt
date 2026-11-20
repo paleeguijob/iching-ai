@@ -14,6 +14,10 @@ import com.iching.ai.data.journal.MIGRATION_3_4
 import com.iching.ai.data.journal.MIGRATION_4_5
 import com.iching.ai.data.journal.MIGRATION_5_6
 import com.iching.ai.data.journal.RoomJournalRepository
+import com.iching.ai.data.resources.Res
+import com.iching.ai.data.scripture.BUNDLED_ENGLISH_HEXAGRAMS
+import com.iching.ai.data.scripture.HexagramContentState
+import com.iching.ai.data.scripture.HexagramEnDownloads
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
 import com.iching.ai.data.siamsi.BundledSiamSiRepository
 import com.iching.ai.data.siamsi.SiamSiSetRepository
@@ -59,7 +63,22 @@ internal fun buildDatabase(builder: RoomDatabase.Builder<JournalDatabase>): Jour
 /** Requires an [com.iching.ai.data.api.ApiSession] binding, provided by the app module. */
 val dataModule: Module = module {
     includes(platformDataModule())
-    single<HexagramRepository> { ScriptureHexagramRepository() }
+    single { HexagramContentState() }
+    single {
+        val content: HexagramContentState = get()
+        HexagramEnDownloads(
+            bundled = { runCatching { Res.readBytes(BUNDLED_ENGLISH_HEXAGRAMS).decodeToString() }.getOrNull() },
+            client = get(),
+            baseUrl = BuildConfig.WEB_BASE_URL,
+            cache = get(),
+            serverVersion = { content.hexagramsEnVersion },
+        )
+    }
+    single<HexagramRepository> {
+        val content: HexagramContentState = get()
+        val downloads: HexagramEnDownloads = get()
+        ScriptureHexagramRepository(loadEnglish = downloads::load, language = { content.language })
+    }
     single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get()) }
     single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL, BuildConfig.WEB_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }

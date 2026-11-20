@@ -6,6 +6,9 @@ import com.iching.ai.domain.siamsi.SiamSiUsage
 
 /**
  * One of the 64 hexagrams with its classical text.
+ * [nameTh], [keywords], [judgment], [image], [description], [lines], [allLines], [dailyMessage] and [yearMessage]
+ * hold the text of the language the repository was asked for: Thai, or English once the English overlay is
+ * applied (then [nameTh] is "Name — meaning", so [shortNameTh] and [meaningTh] keep working).
  * [pattern] has six characters read bottom to top (index 0 = line 1), '1' = yang, '0' = yin.
  * [lines] holds the six line statements, bottom to top.
  */
@@ -26,6 +29,8 @@ data class Hexagram(
     val dailyMessage: String = "",
     /** Pre-written new-year reading for the Chinese New Year campaign. */
     val yearMessage: YearMessage? = null,
+    /** The English name, e.g. "Heaven"; empty while the text is Thai. */
+    val nameEn: String = "",
 ) {
     val lowerTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(0, 3))
     val upperTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(3, 6))
