@@ -66,6 +66,13 @@ class SettingsViewModel(
 
     fun onRateAppTapped() = session.log("rate_app_tap")
 
+    /** What "แชร์แอปให้เพื่อน" sends: a line about the app and its web store page; null hides the row. */
+    val shareAppText: String?
+        get() = storeUrls.firstOrNull { it.startsWith("https://") }
+            ?.let { "ลองเสี่ยงทายกับอี้จิง AI ดูสิ ทั้งอี้จิงและเซียมซี ได้คำทำนายเข้าใจง่ายจากตำราดั้งเดิม\n$it" }
+
+    fun onShareAppTapped() = session.log("share_app_tap")
+
     private val _feedback = MutableStateFlow(FeedbackUi())
     val feedback: StateFlow<FeedbackUi> = _feedback.asStateFlow()
 

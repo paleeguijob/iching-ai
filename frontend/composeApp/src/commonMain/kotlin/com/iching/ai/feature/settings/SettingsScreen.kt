@@ -1,5 +1,7 @@
 package com.iching.ai.feature.settings
 
+import com.iching.ai.platform.rememberTextSharer
+
 import androidx.compose.ui.semantics.selected
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.components.ZenTextButton
@@ -92,6 +94,7 @@ fun SettingsScreen(
     val notificationsGranted by viewModel.notificationsGranted.collectAsStateWithLifecycle()
     val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
     val feedback by viewModel.feedback.collectAsStateWithLifecycle()
+    val textSharer = rememberTextSharer()
     LifecycleResumeEffect(viewModel) {
         viewModel.refreshNotificationPermission()
         onPauseOrDispose { }
@@ -283,6 +286,13 @@ fun SettingsScreen(
                         LinkRow("ให้คะแนนแอป", subtitle = "รีวิวใน Google Play ช่วยให้คนอื่นเจอแอปนี้") {
                             viewModel.onRateAppTapped()
                             openFirst(storeUrls, uri::openUri)
+                        }
+                        Divider()
+                    }
+                    viewModel.shareAppText?.let { shareText ->
+                        LinkRow("แชร์แอปให้เพื่อน", subtitle = "ส่งลิงก์ไปให้คนที่สนใจเสี่ยงทาย") {
+                            viewModel.onShareAppTapped()
+                            textSharer.share(shareText)
                         }
                         Divider()
                     }
