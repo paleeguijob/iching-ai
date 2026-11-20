@@ -16,6 +16,7 @@ import { mergeStreaks, normalizeStreak, THEMES } from "./core/streak";
  *   devices/{sha256(deviceId)}       per-device daily free usage + lifetime welcome readings (anti account-farming)
  *   reports/{autoId}                 "report this answer" submissions
  *   feedback/{autoId}                messages sent from Settings (uid, message, appVersion, platform, premium, createdAt)
+ *   users/{uid}/meta/feedback        {day, count}: messages sent on that Bangkok day, for the daily limit
  *   config/runtime                   kill-switch and limits (see core/quota.ts RuntimeConfig)
  * Clients never touch Firestore directly (firestore.rules denies everything).
  */
@@ -147,13 +148,17 @@ export function firestoreStore(db: Firestore): Store {
       await readings(report.uid).doc(report.readingId).set({ reported: true }, { merge: true });
     },
 
-    async addFeedback(feedback) {
-      await db.collection("feedback").add(feedback);
-    },
-
-    async countFeedbackSince(uid, since) {
-      const snap = await db.collection("feedback").where("uid", "==", uid).where("createdAt", ">=", since).count().get();
-      return snap.data().count;
+    async addFeedbackWithinLimit(feedback, day, limit) {
+      const counter = users.doc(feedback.uid).collection("meta").doc("feedback");
+      const doc = db.collection("feedback").doc();
+      return db.runTransaction(async (tx) => {
+        const stored = (await tx.get(counter)).data();
+        const sent = stored?.day === day ? Number(stored.count) || 0 : 0;
+        if (sent >= limit) return false;
+        tx.set(counter, { day, count: sent + 1 });
+        tx.create(doc, feedback);
+        return true;
+      });
     },
 
     async setPremiumUntil(uid, premiumUntil) {

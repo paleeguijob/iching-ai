@@ -23,7 +23,7 @@
 | Safety | ไม่มี | คำถามทำร้ายตนเอง/ฉุกเฉินทางการแพทย์ → ข้อความคงที่ + 1323/1669 ไม่ทำนาย ไม่ตัดโควตา |
 | Store compliance | ไม่มี | Onboarding disclaimer, ป้าย "สร้างโดย AI", ปุ่มรายงานคำตอบ, Restore/Manage subscription, เงื่อนไขต่ออายุบน paywall, privacy/terms/delete-account บน Firebase Hosting, ATT + UMP consent |
 | Persona | "ห้ามบอกว่าเป็น AI" | ไม่พูดถึงเทคโนโลยีในคำทำนาย แต่ถ้าถามตรง ๆ ต้องยอมรับ |
-| ให้คะแนน / ความเห็น | ไม่มี | หน้าต่างให้ดาวของ Play ขึ้นเมื่อกลับหน้าแรกหลังทำนายครบ 3 ครั้ง ติดตั้งมาแล้ว 2 วัน เว้น 30 วัน (ไม่ถามความรู้สึกก่อน ตามนโยบาย Play) · Settings มี "ให้คะแนนแอป" และ "ส่งความเห็น" → `POST /feedback` เก็บใน `feedback/` วันละ 5 ข้อความ ต้อง deploy `firestore:indexes` ด้วย |
+| ให้คะแนน / ความเห็น | ไม่มี | หน้าต่างให้ดาวของ Play ขึ้นเมื่อกลับหน้าแรกหลังทำนายครบ 3 ครั้ง ติดตั้งมาแล้ว 2 วัน เว้น 30 วัน (ไม่ถามความรู้สึกก่อน ตามนโยบาย Play) · Settings มี "ให้คะแนนแอป" และ "ส่งความเห็น" → `POST /feedback` เก็บใน `feedback/` วันละ 5 ข้อความ (นับใน transaction ที่ `users/{uid}/meta/feedback`) |
 
 ไฟล์สำคัญ: `backend/functions/src/core/*` (logic ทั้งหมดของ server + เทสต์) · `frontend/composeApp/.../session/AppSession.kt` ·
 `frontend/composeApp/.../feature/divination/DivinationViewModel.kt` · `frontend/composeApp/.../platform/NativeBridges.kt` (สัญญากับโค้ด native) ·

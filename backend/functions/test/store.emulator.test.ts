@@ -139,20 +139,40 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     assert.equal((await userDoc("u1"))?.premiumUntil, until);
   });
 
-  it("counts feedback per day, moves it on merge and removes it on delete", async () => {
-    const f = { message: "m", appVersion: "1.4.0", platform: "android", premium: false };
-    await store.addFeedback({ uid: "anon", ...f, createdAt: 100 });
-    await store.addFeedback({ uid: "anon", ...f, createdAt: 200 });
-    await store.addFeedback({ uid: "u2", ...f, createdAt: 200 });
-    assert.equal(await store.countFeedbackSince("anon", 150), 1);
+  const fb = (uid: string, createdAt = 1) => ({ uid, message: "m", appVersion: "1.4.0", platform: "android", premium: false, createdAt });
+  const feedbackOf = async (uid: string) => (await db.collection("feedback").where("uid", "==", uid).get()).size;
+
+  it("holds the daily feedback limit even when sends race", async () => {
+    const results = await Promise.all(Array.from({ length: 8 }, () => store.addFeedbackWithinLimit(fb("u1"), "2026-11-20", 5)));
+    assert.equal(results.filter(Boolean).length, 5);
+    assert.equal(await feedbackOf("u1"), 5);
+    assert.equal(await store.addFeedbackWithinLimit(fb("u1"), "2026-11-21", 5), true, "a new Bangkok day starts a new allowance");
+  });
+
+  it("moves feedback on merge and removes it on delete", async () => {
+    await store.addFeedbackWithinLimit(fb("anon"), "2026-11-20", 5);
+    await store.addFeedbackWithinLimit(fb("anon"), "2026-11-20", 5);
+    await store.addFeedbackWithinLimit(fb("u2"), "2026-11-20", 5);
 
     await store.mergeUser("anon", "u1");
-    assert.equal(await store.countFeedbackSince("anon", 0), 0);
-    assert.equal(await store.countFeedbackSince("u1", 0), 2);
+    assert.equal(await feedbackOf("anon"), 0);
+    assert.equal(await feedbackOf("u1"), 2);
 
     await store.deleteUser("u1");
-    assert.equal(await store.countFeedbackSince("u1", 0), 0);
-    assert.equal(await store.countFeedbackSince("u2", 0), 1);
+    assert.equal(await feedbackOf("u1"), 0);
+    assert.equal(await feedbackOf("u2"), 1);
+  });
+
+  it("deletes an account with more than 500 reports and feedback messages", async () => {
+    const writer = db.bulkWriter();
+    for (let i = 0; i < 300; i++) writer.create(db.collection("feedback").doc(), fb("u1"));
+    for (let i = 0; i < 300; i++) writer.create(db.collection("reports").doc(), { uid: "u1", readingId: "r", reason: "x", note: "", createdAt: 1 });
+    await writer.close();
+
+    await store.deleteUser("u1");
+
+    assert.equal(await feedbackOf("u1"), 0);
+    assert.equal((await db.collection("reports").where("uid", "==", "u1").get()).size, 0);
   });
 
   it("deletes the user's readings, reports and purchase markers, and nobody else's", async () => {

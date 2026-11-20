@@ -84,11 +84,14 @@ class MemoryStore implements Store {
     this.reports.push(r);
   }
   feedback: { uid: string; message: string; appVersion: string; platform: string; premium: boolean; createdAt: number }[] = [];
-  async addFeedback(f: MemoryStore["feedback"][number]) {
+  private feedbackDays = new Map<string, { day: string; count: number }>();
+  async addFeedbackWithinLimit(f: MemoryStore["feedback"][number], day: string, limit: number) {
+    const stored = this.feedbackDays.get(f.uid);
+    const sent = stored?.day === day ? stored.count : 0;
+    if (sent >= limit) return false;
+    this.feedbackDays.set(f.uid, { day, count: sent + 1 });
     this.feedback.push(f);
-  }
-  async countFeedbackSince(uid: string, since: number) {
-    return this.feedback.filter((f) => f.uid === uid && f.createdAt >= since).length;
+    return true;
   }
   async setPremiumUntil(uid: string, premiumUntil: number | null) {
     if (premiumUntil === null && !this.users.has(uid)) return;
