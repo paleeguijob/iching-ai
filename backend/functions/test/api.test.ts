@@ -43,7 +43,7 @@ const enScripture = new Scripture(
         linesEn: h.lines.map((_l, n) => `EN:line${n + 1}of${h.id}`),
         allLinesEn: h.allLines ? `EN:all${h.id}` : null,
         dailyMessageEn: `EN:daily${h.id}`,
-        yearMessageEn: null,
+        yearMessageEn: { overview: `EN:overview${h.id}`, work: "EN:work", love: "EN:love", money: "EN:money", blessing: "EN:blessing" },
       };
     }),
   },
@@ -1457,6 +1457,20 @@ describe("api", () => {
       assert.match(modelPrompts[0], /Heaven|Lake|Fire|Thunder|Wind|Water|Mountain|Earth/);
       assert.match(modelPrompts[0], /EN:meaning/);
       assert.equal(hasThaiLetters(String(res.events[0].data.primary && JSON.stringify(res.events[0].data.primary))), false);
+    });
+
+    it("stores Thai when English was asked but the English data is incomplete", async () => {
+      deps.scripture = new Scripture(Array.from({ length: 64 }, (_, i) => scripture.get(i + 1)), null);
+      deps.siamsi = new Map([["guanyin100", { ...enSiamsi.get("guanyin100")!, en: null }]]);
+      handle = createApi(deps);
+      const res = await divine({ "x-app-lang": "en" });
+      assert.equal((await store.getReading("u1", res.events[0].data.readingId as string))!.lang, "th");
+      cfg = { ...cfg, siamsiEnabled: true };
+      entitlements = { premiumUntil: now + 30 * 86_400_000, coinPurchases: [] };
+      await handle(req("POST", "/purchases/sync"), new FakeRes());
+      const slip = new FakeRes();
+      await handle(req("POST", "/siamsi/interpret", { set: "guanyin100", stick: 17 }, { "x-app-lang": "en" }), slip);
+      assert.equal((await store.getReading("u1", slip.events[0].data.readingId as string))!.lang, "th");
     });
 
     it("without the header the reading is Thai", async () => {

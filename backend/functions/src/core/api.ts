@@ -395,7 +395,7 @@ export function createApi(deps: Deps) {
         outcome: null,
         outcomeNote: null,
         createdAt: deps.now(),
-        lang,
+        lang: cast.primary.lang ?? "th", // the language actually served, Thai when the English scripture is incomplete
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }
@@ -424,7 +424,7 @@ export function createApi(deps: Deps) {
     if (!cfg.siamsiEnabled) throw new HttpError(503, "siamsi_disabled");
     if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
     const b = body(req);
-    const lang = requestLang(req.get("x-app-lang"), cfg);
+    const requested = requestLang(req.get("x-app-lang"), cfg);
     const existingId = typeof b.readingId === "string" ? b.readingId : null;
     let reading: StoredReading;
 
@@ -435,9 +435,8 @@ export function createApi(deps: Deps) {
     } else {
       const setId = typeof b.set === "string" ? b.set : "";
       const stick = typeof b.stick === "number" && Number.isInteger(b.stick) ? b.stick : -1;
-      if (!cfg.siamsiSets.some((r) => r.id === setId) || !findStick(deps.siamsi, setId, stick)) {
-        throw new HttpError(400, "bad_stick");
-      }
+      const served = cfg.siamsiSets.some((r) => r.id === setId) ? findStick(deps.siamsi, setId, stick, requested) : null;
+      if (!served) throw new HttpError(400, "bad_stick");
       const question = sanitizeQuestion(b.question);
       const safety = checkSafety(question);
       if (safety.kind === "crisis") {
@@ -468,7 +467,7 @@ export function createApi(deps: Deps) {
         outcomeNote: null,
         createdAt: deps.now(),
         siamsi: { set: setId, stick },
-        lang,
+        lang: served.lang, // the language actually served, Thai when the set has no complete English file
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }

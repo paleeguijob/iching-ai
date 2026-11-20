@@ -82,6 +82,10 @@ export const trigramNature = (t: { natureTh: string; natureEn: string }, h: Hexa
  * Same text fields as the app: nameTh becomes "{nameEn} — {meaningEn}", the rest come from the *En fields.
  * Returns null when the file does not cover all 64 hexagrams with complete text (never a half-English scripture).
  */
+const YEAR_FIELDS = ["overview", "work", "love", "money", "blessing"] as const;
+const completeYear = (m: YearMessage | null | undefined): m is YearMessage =>
+  !!m && YEAR_FIELDS.every((k) => typeof m[k] === "string" && m[k].trim().length > 0);
+
 function overlayEnglish(thai: Hexagram[], en: HexagramsEnFile | null | undefined): Hexagram[] | null {
   if (!en || !Array.isArray(en.hexagrams)) return null;
   const byId = new Map(en.hexagrams.map((e) => [e.id, e]));
@@ -90,7 +94,9 @@ function overlayEnglish(thai: Hexagram[], en: HexagramsEnFile | null | undefined
     const e = byId.get(h.id);
     if (
       !e || !e.nameEn || !e.meaningEn || !e.judgmentEn || !e.imageEn || !e.descriptionEn || !e.dailyMessageEn ||
-      !Array.isArray(e.keywordsEn) || !Array.isArray(e.linesEn) || e.linesEn.length !== 6 || e.linesEn.some((l) => !l)
+      !Array.isArray(e.keywordsEn) || !Array.isArray(e.linesEn) || e.linesEn.length !== 6 || e.linesEn.some((l) => !l) ||
+      (h.allLines && !e.allLinesEn) ||
+      (h.yearMessage && !completeYear(e.yearMessageEn))
     ) {
       return null;
     }
@@ -104,7 +110,7 @@ function overlayEnglish(thai: Hexagram[], en: HexagramsEnFile | null | undefined
       lines: e.linesEn,
       allLines: e.allLinesEn,
       dailyMessage: e.dailyMessageEn,
-      yearMessage: e.yearMessageEn ?? h.yearMessage,
+      yearMessage: e.yearMessageEn as YearMessage,
       lang: "en",
     });
   }

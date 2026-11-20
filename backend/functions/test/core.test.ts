@@ -793,7 +793,7 @@ export function fixtureEnglish(thai: Scripture): HexagramsEnFile {
       linesEn: h.lines.map((_l, n) => `EN:line ${n + 1} of ${h.id}`),
       allLinesEn: h.allLines ? `EN:all lines ${h.id}` : null,
       dailyMessageEn: `EN:daily ${h.id}`,
-      yearMessageEn: null,
+      yearMessageEn: { overview: `EN:overview${h.id}`, work: "EN:work", love: "EN:love", money: "EN:money", blessing: "EN:blessing" },
     };
   });
   return { version: 1, hexagrams };
@@ -859,7 +859,14 @@ describe("scripture in English", () => {
     partial.hexagrams = partial.hexagrams.slice(0, 63);
     const gap = fixtureEnglish(scripture);
     gap.hexagrams[10].judgmentEn = "";
-    for (const en of [null, partial, gap]) {
+    const noYear = fixtureEnglish(scripture);
+    noYear.hexagrams[3].yearMessageEn = null;
+    const blankYear = fixtureEnglish(scripture);
+    blankYear.hexagrams[3].yearMessageEn!.blessing = " ";
+    const noAll = fixtureEnglish(scripture);
+    const withAll = noAll.hexagrams.find((e) => scripture.get(e.id).allLines)!;
+    withAll.allLinesEn = null;
+    for (const en of [null, partial, gap, noYear, blankYear, noAll]) {
       const s = new Scripture(thai, en as HexagramsEnFile | null);
       assert.equal(s.forLang("en"), s);
       assert.equal(s.forLang("en").get(5).judgment, scripture.get(5).judgment);
