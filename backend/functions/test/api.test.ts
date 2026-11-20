@@ -1496,6 +1496,27 @@ describe("api", () => {
       assert.equal(await get({ "x-app-lang": "en" }), null);
     });
 
+    it("SSE done statuses follow the request language, on a fresh reading and on a replay", async () => {
+      const poster = {
+        id: "p1", enabled: true, startsAt: now - 1000, endsAt: now + 1_000_000, image: "th.webp", alt: "ไทย", audience: "all" as const,
+        link: null, card: null, imageEn: "en.webp", altEn: "English",
+      };
+      cfg = { ...cfg, poster, minSecondsBetweenReadings: 0 };
+      const posterOf = (res: FakeRes) => (res.events.at(-1)!.data.status as { poster: { image: string } | null }).poster;
+      const fresh = await divine({ "x-app-lang": "en" });
+      assert.equal(posterOf(fresh)!.image, "en.webp");
+      const id = fresh.events[0].data.readingId;
+      const replay = async (headers: Record<string, string>) => {
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { readingId: id }, headers), res);
+        return res;
+      };
+      assert.equal(posterOf(await replay({ "x-app-lang": "en" }))!.image, "en.webp");
+      assert.equal(posterOf(await replay({}))!.image, "th.webp", "Thai request on an English reading gets the Thai poster");
+      cfg = { ...cfg, poster: { ...poster, imageEn: undefined, altEn: undefined } };
+      assert.equal(posterOf(await replay({ "x-app-lang": "en" })), null, "no English artwork: no poster");
+    });
+
     it("stores Thai when English was asked but the English data is incomplete", async () => {
       deps.scripture = new Scripture(Array.from({ length: 64 }, (_, i) => scripture.get(i + 1)), null);
       deps.siamsi = new Map([["guanyin100", { ...enSiamsi.get("guanyin100")!, en: null }]]);

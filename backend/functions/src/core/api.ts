@@ -261,14 +261,18 @@ export function createApi(deps: Deps) {
     }
   }
 
-  const readStatus = (uid: string, deviceHash: string | null, cfg: RuntimeConfig, lang: Lang = "th"): Promise<QuotaStatus> =>
-    deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now(), lang) }));
+  /** The status poster follows the language of the request (X-App-Lang), never the language of a stored reading. */
+  const readStatus = (req: HttpReq, uid: string, deviceHash: string | null, cfg: RuntimeConfig): Promise<QuotaStatus> => {
+    const lang = requestLang(req.get("x-app-lang"), cfg);
+    return deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now(), lang) }));
+  };
 
   /**
    * Streams an AI reading for an existing cast, charging quota first and refunding on failure.
    * [lang] is the language [prompt] was built in; it sets the share summary's length limit.
    */
   async function interpret(
+    req: HttpReq,
     sse: Sse,
     uid: string,
     deviceHash: string | null,
@@ -286,7 +290,7 @@ export function createApi(deps: Deps) {
       sse.send("limited", {
         reason: decision.reason,
         retryAfterSeconds: decision.retryAfterSeconds ?? null,
-        status: await readStatus(uid, deviceHash, cfg, lang),
+        status: await readStatus(req, uid, deviceHash, cfg),
       });
       return;
     }
@@ -333,7 +337,7 @@ export function createApi(deps: Deps) {
         tokensOut: usage.tokensOut,
         costThb: Number(estimateCostThb(decision.model, usage).toFixed(4)),
       });
-      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg, lang) });
+      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(req, uid, deviceHash, cfg) });
     } catch (e) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
@@ -417,7 +421,7 @@ export function createApi(deps: Deps) {
     if (reading.aiText) {
       // Already interpreted (e.g. the app retried after a dropped connection): replay, never re-charge.
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(req, uid, deviceHash, cfg) });
     } else {
       const served = cast.primary.lang ?? "th"; // the language of the scripture in the prompt
       const prompt = buildReadingPrompt(
@@ -432,7 +436,7 @@ export function createApi(deps: Deps) {
         b.format === "cards",
         served,
       );
-      await interpret(sse, uid, deviceHash, cfg, reading, prompt, served);
+      await interpret(req, sse, uid, deviceHash, cfg, reading, prompt, served);
     }
     sse.end();
   }
@@ -494,12 +498,12 @@ export function createApi(deps: Deps) {
     sse.send("reading", { readingId: reading.id });
     if (reading.aiText) {
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(req, uid, deviceHash, cfg) });
     } else {
       const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick, reading.lang ?? "th");
       if (!slip) throw new HttpError(404, "reading_not_found");
       const prompt = buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category, slip.lang);
-      await interpret(sse, uid, deviceHash, cfg, reading, prompt, slip.lang);
+      await interpret(req, sse, uid, deviceHash, cfg, reading, prompt, slip.lang);
     }
     sse.end();
   }
@@ -509,7 +513,7 @@ export function createApi(deps: Deps) {
     const id = typeof b.readingId === "string" ? b.readingId : "";
     const message = sanitizeQuestion(b.message, MAX_FOLLOW_UP_CHARS);
     if (!id || !message) throw new HttpError(400, "bad_request");
-    const st = await readStatus(uid, deviceHash, cfg);
+    const st = await readStatus(req, uid, deviceHash, cfg);
     if (!st.premium) throw new HttpError(403, "premium_required");
     if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
     const reading = await deps.store.getReading(uid, id);
@@ -674,7 +678,7 @@ export function createApi(deps: Deps) {
       if (route === "POST /siamsi/interpret") return await siamsiInterpret(req, res, uid, deviceHash, cfg);
 
       if (route === "GET /status") {
-        res.status(200).json(await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "POST /ad-reward") {
@@ -682,7 +686,7 @@ export function createApi(deps: Deps) {
           const g = grantAdReward(user, device, cfg, deps.now());
           return g.ok ? { user: g.user, device: g.device, result: { granted: true as const } } : { result: { granted: false as const, reason: g.reason } };
         });
-        res.status(200).json({ ...granted, status: await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)) });
+        res.status(200).json({ ...granted, status: await readStatus(req, uid, deviceHash, cfg) });
         return;
       }
       if (route === "POST /report") {
@@ -708,7 +712,7 @@ export function createApi(deps: Deps) {
       }
       if (route === "GET /readings") {
         // Free accounts get back the days their journal shows; Premium gets everything.
-        const st = await readStatus(uid, deviceHash, cfg);
+        const st = await readStatus(req, uid, deviceHash, cfg);
         const since = st.journalDays == null ? undefined : deps.now() - st.journalDays * 86_400_000;
         const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
         // Apps from before reading cards would show the markers as text; they get plain labelled lines instead.
@@ -746,7 +750,7 @@ export function createApi(deps: Deps) {
       }
       if (route === "POST /purchases/sync") {
         await syncPurchases(uid);
-        res.status(200).json(await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "GET /year-hexagram") {
@@ -762,7 +766,7 @@ export function createApi(deps: Deps) {
       if (route === "POST /account/merge") {
         if (typeof b.fromIdToken !== "string" || !b.fromIdToken) throw new HttpError(400, "bad_request");
         await mergeAnonymousAccount(uid, b.fromIdToken);
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "DELETE /account") {
