@@ -22,8 +22,8 @@ final class IosReview: NSObject, NativeReview {
         }
     }
 
-    /// Nil until the App Store id exists (docs/RELEASE.md section 9); Settings then hides the rate-app row.
-    func storeUrl() -> String? { nil }
+    /// Empty until the App Store id exists (docs/RELEASE.md section 9); Settings then hides the rate-app row.
+    func storeUrls() -> [String] { [] }
 
     func platform() -> String { "ios" }
 }

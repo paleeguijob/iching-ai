@@ -80,7 +80,7 @@ class HomeViewModelReviewTest {
         val auth = FakeAuth()
         session = AppSession(
             NativeBridges(auth, FakePurchases(), FakeAds(), analytics, NoNotifications, review),
-            FirebaseApiSession(auth), api, FakeJournal(), settings, scope,
+            FirebaseApiSession(auth), api, FakeJournal(), settings, scope, nowMillis = { now },
         )
         session.start()
         val vm = HomeViewModel(
@@ -128,6 +128,17 @@ class HomeViewModelReviewTest {
         finishReading()
         vm.resume()
         assertEquals(0, review.requests)
+    }
+
+    @Test
+    fun aFailedAskKeepsTheCooldownFree() {
+        review.error = "no foreground activity"
+        val vm = viewModel()
+        finishReading()
+        vm.resume()
+        assertEquals(1, review.requests)
+        assertEquals(null, settings.state.value.lastReviewRequestEpochDay)
+        assertEquals(0, analytics.events.count { it.first == "review_prompt_requested" })
     }
 
     @Test

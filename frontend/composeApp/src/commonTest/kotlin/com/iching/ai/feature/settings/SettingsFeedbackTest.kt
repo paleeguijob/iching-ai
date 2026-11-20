@@ -139,8 +139,20 @@ class SettingsFeedbackTest {
     @Test
     fun rateAppLogsTheTap() {
         val vm = viewModel()
-        assertEquals("https://play/app", vm.storeUrl)
+        assertEquals(listOf("market://app", "https://play/app"), vm.storeUrls)
         vm.onRateAppTapped()
         assertEquals(1, logged("rate_app_tap"))
+    }
+
+    @Test
+    fun theStorePageFallsBackToTheWebWhenThePlayAppIsMissing() {
+        val opened = mutableListOf<String>()
+        val used = openFirst(listOf("market://app", "https://play/app")) { url ->
+            if (url.startsWith("market:")) throw IllegalStateException("no Play app")
+            opened += url
+        }
+        assertEquals("https://play/app", used)
+        assertEquals(listOf("https://play/app"), opened)
+        assertEquals(null, openFirst(emptyList()) { opened += it })
     }
 }

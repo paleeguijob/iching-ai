@@ -138,7 +138,8 @@ class HomeViewModel(
 
     /**
      * Back from a finished reading: asks the store's rating sheet when [shouldRequestReview] allows. The day is saved
-     * before asking, since the store never says whether the sheet showed.
+     * once the store took the request (it never says whether the sheet showed); a request that never reached the
+     * store, e.g. with no foreground activity, leaves the cooldown free.
      */
     private fun maybeAskForReview() {
         if (!session.takeReadingFinished()) return
@@ -146,9 +147,9 @@ class HomeViewModel(
         viewModelScope.launch {
             val day = bangkokEpochDay(nowMillis())
             if (!shouldRequestReview(observeSettings().first(), day, posterThisRun)) return@launch
+            if (!session.requestReview()) return@launch
             updateSettings { it.withReviewRequested(day) }
             session.log("review_prompt_requested")
-            session.requestReview()
         }
     }
 

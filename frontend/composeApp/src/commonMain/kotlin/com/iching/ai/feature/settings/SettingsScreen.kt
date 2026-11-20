@@ -278,10 +278,11 @@ fun SettingsScreen(
 
                 SectionLabel("ความเห็นของคุณ")
                 Card {
-                    viewModel.storeUrl?.let { url ->
+                    val storeUrls = viewModel.storeUrls
+                    if (storeUrls.isNotEmpty()) {
                         LinkRow("ให้คะแนนแอป", subtitle = "รีวิวใน Google Play ช่วยให้คนอื่นเจอแอปนี้") {
                             viewModel.onRateAppTapped()
-                            runCatching { uri.openUri(url) }
+                            openFirst(storeUrls, uri::openUri)
                         }
                         Divider()
                     }

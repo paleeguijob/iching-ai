@@ -212,7 +212,7 @@
 - ☐ **Push กวาประจำวัน (v1.1)** — อัปโหลด APNs key ใน Firebase, เพิ่ม `FirebaseMessaging` ใน Xcode และทำ `IosNotifications` ใน `Bridges/IosAdsAndAnalytics.swift` ให้ทำงานจริง (ตอนนี้ `isSupported()` คืน `false` แอปจึงซ่อนสวิตช์) แล้วเรียก `PendingNavigation.requestDaily()` เมื่อแตะแจ้งเตือน
 - ☐ **สี status bar ของธีมมืด (v1.1)** — `SystemBars.ios.kt` ยังไม่ทำงาน ตัวอักษร status bar จะเป็นสีเข้มบนพื้นเข้มในธีมราตรีหมึก
 - ☐ **เขย่าเซียมซีด้วยเซ็นเซอร์ (v1.4)** — `ShakeDetector.ios.kt` ยังไม่ต่อ CoreMotion ตอนนี้บน iOS เขย่าได้ด้วยการกดค้างที่กระบอกเท่านั้น
-- ☐ **ปุ่ม "ให้คะแนนแอป" (v1.4)** — ได้ App Store id แล้วให้ `IosReview.storeUrl()` ใน `Bridges/IosReview.swift` คืน `https://apps.apple.com/app/id<id>?action=write-review` (ตอนนี้คืน `nil` แอปจึงซ่อนแถวนี้บน iOS; หน้าต่างให้ดาวในแอปทำงานแล้ว)
+- ☐ **ปุ่ม "ให้คะแนนแอป" (v1.4)** — ได้ App Store id แล้วให้ `IosReview.storeUrls()` ใน `Bridges/IosReview.swift` คืน `["https://apps.apple.com/app/id<id>?action=write-review"]` (ตอนนี้คืนรายการว่าง แอปจึงซ่อนแถวนี้บน iOS; หน้าต่างให้ดาวในแอปทำงานแล้ว)
 - ☐ แยก RevenueCat test key ของ debug ออกจาก release แบบเดียวกับ Android และตรวจว่า SDK เป็น 5.43.0 ขึ้นไป
 
 **Firebase**

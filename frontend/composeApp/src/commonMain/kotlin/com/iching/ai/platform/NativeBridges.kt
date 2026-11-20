@@ -91,8 +91,11 @@ interface NativeReview {
     /** Asks the store's own rating sheet; value = "ok". The store may decide not to show it, and never says. */
     fun requestReview(callback: ResultCallback)
 
-    /** Store page for the rate-app row; null where there is none yet (iOS until the App Store id exists). */
-    fun storeUrl(): String?
+    /**
+     * Store page links for the rate-app row, best first (Android: the Play app, then the web page). Empty where there
+     * is none yet (iOS until the App Store id exists), which hides the row.
+     */
+    fun storeUrls(): List<String>
 
     /** "android" or "ios", sent with feedback. */
     fun platform(): String
@@ -101,7 +104,7 @@ interface NativeReview {
 /** No store to ask; used where a platform has no review bridge (and in tests). */
 object NoReview : NativeReview {
     override fun requestReview(callback: ResultCallback) = callback.onResult("ok", null)
-    override fun storeUrl(): String? = null
+    override fun storeUrls(): List<String> = emptyList()
     override fun platform() = "unknown"
 }
 

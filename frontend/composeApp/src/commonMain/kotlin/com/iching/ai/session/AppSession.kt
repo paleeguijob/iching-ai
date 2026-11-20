@@ -19,6 +19,7 @@ import com.iching.ai.platform.NativeException
 import com.iching.ai.platform.awaitNative
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,6 +100,9 @@ enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
  * App-wide account state: who is signed in, what they may do today, and the actions that change
  * it (ads, purchases, linking Apple/Google, deleting the account). Screens observe [status].
  */
+/** How long after a reading finishes a return to Home still counts as coming back from it. */
+const val READING_FRESH_MILLIS = 30 * 60 * 1000L
+
 class AppSession(
     private val bridges: NativeBridges,
     private val apiSession: FirebaseApiSession,
@@ -106,6 +110,7 @@ class AppSession(
     private val journal: JournalRepository,
     private val settings: SettingsRepository,
     private val scope: CoroutineScope,
+    private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val _status = MutableStateFlow(AccountStatus.UNKNOWN_FREE)
     val status: StateFlow<AccountStatus> = _status.asStateFlow()
@@ -129,10 +134,10 @@ class AppSession(
     val supportsApple: Boolean get() = bridges.auth.supportsApple()
     val supportsGoogle: Boolean get() = bridges.auth.supportsGoogle()
     val manageSubscriptionsUrl: String get() = bridges.purchases.manageSubscriptionsUrl()
-    val storeUrl: String? get() = bridges.review.storeUrl()
+    val storeUrls: List<String> get() = bridges.review.storeUrls()
 
-    /** Set when a reading finishes; Home takes it on its next resume to decide whether to ask for a rating. */
-    private var readingFinished = false
+    /** When the last reading finished; Home takes it on its next resume to decide whether to ask for a rating. */
+    private var readingFinishedAt: Long? = null
 
     /**
      * A reading's interpretation finished: counts it, and lets Home consider asking for a rating. Called from the
@@ -147,21 +152,28 @@ class AppSession(
         } catch (e: Exception) {
             bridges.analytics.recordError("reading_count: ${e.message}")
         }
-        readingFinished = true
+        readingFinishedAt = nowMillis()
     }
 
-    /** True once after each finished reading. */
-    fun takeReadingFinished(): Boolean = readingFinished.also { readingFinished = false }
+    /**
+     * True once after each finished reading, and only within [READING_FRESH_MILLIS] of it: a seeker who went from the
+     * reading to the Journal and only came Home much later is not asked out of the blue.
+     */
+    fun takeReadingFinished(): Boolean {
+        val at = readingFinishedAt ?: return false
+        readingFinishedAt = null
+        return nowMillis() - at <= READING_FRESH_MILLIS
+    }
 
-    /** Asks the store's rating sheet; a failure is only recorded, the seeker never sees it. */
-    suspend fun requestReview() {
-        try {
-            awaitNative(bridges.review::requestReview)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            bridges.analytics.recordError("review_request: ${e.message}")
-        }
+    /** Asks the store's rating sheet; true when the store took the request. A failure is only recorded. */
+    suspend fun requestReview(): Boolean = try {
+        awaitNative(bridges.review::requestReview)
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        bridges.analytics.recordError("review_request: ${e.message}")
+        false
     }
 
     suspend fun sendFeedback(message: String) =

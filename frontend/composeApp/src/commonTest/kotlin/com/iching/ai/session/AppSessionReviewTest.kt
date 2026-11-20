@@ -25,21 +25,26 @@ internal class CountingSettings(initial: AppSettings = AppSettings()) : Settings
 }
 
 /** Records review requests; [error] makes the store's call fail. */
-internal class FakeReview(var error: String? = null, private val url: String? = "https://play/app") : NativeReview {
+internal class FakeReview(var error: String? = null, private val urls: List<String> = listOf("market://app", "https://play/app")) : NativeReview {
     var requests = 0
     override fun requestReview(callback: ResultCallback) {
         requests++
         callback.onResult(if (error == null) "ok" else null, error)
     }
-    override fun storeUrl(): String? = url
+    override fun storeUrls(): List<String> = urls
     override fun platform() = "android"
 }
 
 class AppSessionReviewTest {
     private val api = FakeApi()
 
+    private var now = 1_000_000L
+
     private fun session(scope: CoroutineScope, settings: SettingsRepository, review: NativeReview) = FakeAuth().let { auth ->
-        AppSession(NativeBridges(auth, FakePurchases(), NoAds, NoAnalytics, NoNotifications, review), FirebaseApiSession(auth), api, FakeJournal(), settings, scope)
+        AppSession(
+            NativeBridges(auth, FakePurchases(), NoAds, NoAnalytics, NoNotifications, review), FirebaseApiSession(auth), api,
+            FakeJournal(), settings, scope, nowMillis = { now },
+        )
     }
 
     @Test
@@ -64,10 +69,19 @@ class AppSessionReviewTest {
     }
 
     @Test
-    fun reviewFailureIsSwallowed() = runTest {
-        val review = FakeReview(error = "no activity")
-        session(backgroundScope, CountingSettings(), review).requestReview()
-        assertEquals(1, review.requests)
+    fun aReadingFinishedLongAgoNoLongerAsks() = runTest {
+        val session = session(backgroundScope, CountingSettings(), FakeReview())
+        session.onReadingCompleted()
+        now += READING_FRESH_MILLIS + 1
+        assertFalse(session.takeReadingFinished(), "a later, unrelated return to Home must not ask")
+    }
+
+    @Test
+    fun requestReviewSaysWhetherTheStoreWasAsked() = runTest {
+        assertTrue(session(backgroundScope, CountingSettings(), FakeReview()).requestReview())
+        val failing = FakeReview(error = "no activity")
+        assertFalse(session(backgroundScope, CountingSettings(), failing).requestReview())
+        assertEquals(1, failing.requests)
     }
 
     @Test
@@ -77,8 +91,8 @@ class AppSessionReviewTest {
     }
 
     @Test
-    fun storeUrlComesFromTheBridge() = runTest {
-        assertEquals("https://play/app", session(backgroundScope, CountingSettings(), FakeReview()).storeUrl)
-        assertEquals(null, session(backgroundScope, CountingSettings(), FakeReview(url = null)).storeUrl)
+    fun storeUrlsComeFromTheBridge() = runTest {
+        assertEquals(listOf("market://app", "https://play/app"), session(backgroundScope, CountingSettings(), FakeReview()).storeUrls)
+        assertEquals(emptyList(), session(backgroundScope, CountingSettings(), FakeReview(urls = emptyList())).storeUrls)
     }
 }

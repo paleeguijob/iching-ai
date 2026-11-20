@@ -21,7 +21,11 @@ class AndroidReview(private val context: Context, private val activities: Activi
         }
     }
 
-    override fun storeUrl(): String = "https://play.google.com/store/apps/details?id=${context.packageName}"
+    /** The Play app's own page first (straight to the review box), the web page where Play is missing. */
+    override fun storeUrls(): List<String> = listOf(
+        "market://details?id=${context.packageName}",
+        "https://play.google.com/store/apps/details?id=${context.packageName}",
+    )
 
     override fun platform() = "android"
 }

@@ -33,11 +33,11 @@
 
 ตัวเลข 3 ครั้ง / 2 วัน / 30 วัน เป็นค่าเริ่มต้นที่ผู้ช่วยเสนอ เจ้าของปรับได้
 
-**รูปแบบ:** ฟังก์ชันล้วนแบบเดียวกับ `posterPopup(...)` ตัดสินว่าควรขอหรือไม่ (`shouldRequestReview(settings, today, nowMillis)`) ทดสอบได้ใน `commonTest` · เก็บใน `AppSettings`: `completedReadings: Int`, `lastReviewRequestEpochDay: Long?` · บันทึกวันที่ขอ ทันทีที่เรียก API (เพราะแอปไม่รู้ว่าหน้าต่างขึ้นจริงหรือไม่)
+**รูปแบบ:** ฟังก์ชันล้วนแบบเดียวกับ `posterPopup(...)` ตัดสินว่าควรขอหรือไม่ (`shouldRequestReview(settings, today, nowMillis)`) ทดสอบได้ใน `commonTest` · เก็บใน `AppSettings`: `completedReadings: Int`, `lastReviewRequestEpochDay: Long?` · บันทึกวันที่ขอ เมื่อ store รับคำขอแล้ว (แอปไม่รู้ว่าหน้าต่างขึ้นจริงหรือไม่ แต่ถ้าคำขอไปไม่ถึง store เช่นไม่มีหน้าจอเปิดอยู่ ไม่นับ cooldown) · นับเป็น "กลับมาจากการทำนาย" เฉพาะภายใน 30 นาทีหลังทำนายจบ
 
 **ฝั่ง native:** เพิ่ม `NativeReview` ใน `NativeBridges` (ตามรูปแบบเดิม)
 - `requestReview(callback)` — Android: Play In-App Review (`com.google.android.play:review-ktx`) · iOS: `AppStore.requestReview` / `SKStoreReviewController`
-- `storeUrl()` — Android: `market://details?id=…` (fallback เป็นลิงก์ https) · iOS: ลิงก์ App Store ใส่ทีหลังเมื่อได้ app id (ระหว่างนี้ซ่อนปุ่ม "ให้คะแนนแอป" บน iOS)
+- `storeUrls()` — Android: `market://details?id=…` ก่อน แล้ว fallback เป็นลิงก์ https เมื่อไม่มีแอป Play · iOS: ลิงก์ App Store ใส่ทีหลังเมื่อได้ app id (ระหว่างนี้ซ่อนปุ่ม "ให้คะแนนแอป" บน iOS)
 
 ## 4. Settings: สองปุ่มใหม่
 

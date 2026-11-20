@@ -27,6 +27,10 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 const val FEEDBACK_MAX_CHARS = 1000
+
+/** Opens the first of [urls] that [open] accepts (it throws when nothing handles a link); returns it, or null. */
+internal fun openFirst(urls: List<String>, open: (String) -> Unit): String? =
+    urls.firstOrNull { url -> runCatching { open(url) }.isSuccess }
 internal const val FEEDBACK_THANKS = "ขอบคุณสำหรับความเห็น"
 internal const val FEEDBACK_FAILED = "ส่งไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
 internal const val FEEDBACK_LIMIT = "วันนี้ส่งความเห็นครบแล้ว ลองใหม่พรุ่งนี้นะ"
@@ -57,8 +61,8 @@ class SettingsViewModel(
     val supportsGoogle: Boolean get() = session.supportsGoogle
     val manageSubscriptionsUrl: String get() = session.manageSubscriptionsUrl
 
-    /** Store page for "ให้คะแนนแอป"; null hides the row (iOS until the App Store id exists). */
-    val storeUrl: String? get() = session.storeUrl
+    /** Store page links for "ให้คะแนนแอป", best first; empty hides the row (iOS until the App Store id exists). */
+    val storeUrls: List<String> get() = session.storeUrls
 
     fun onRateAppTapped() = session.log("rate_app_tap")
 
