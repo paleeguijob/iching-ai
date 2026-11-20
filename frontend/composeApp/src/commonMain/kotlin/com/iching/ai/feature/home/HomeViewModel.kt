@@ -20,6 +20,9 @@ import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.feature.poster.PosterImages
 import com.iching.ai.feature.poster.PosterPopup
 import com.iching.ai.feature.poster.posterPopup
+import kotlinx.coroutines.flow.first
+import com.iching.ai.domain.model.withReviewRequested
+import com.iching.ai.feature.review.shouldRequestReview
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.PurchaseResult
@@ -61,7 +64,7 @@ private const val PRODUCTS_FAILED_MESSAGE = "ยังโหลดแพ็ก�
 
 class HomeViewModel(
     private val getDaily: GetDailyHexagramUseCase,
-    observeSettings: ObserveSettingsUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     private val session: AppSession,
     private val updateSettings: UpdateSettingsUseCase,
     private val images: PosterImages,
@@ -133,6 +136,22 @@ class HomeViewModel(
         viewModelScope.launch { updateSettings { it.withPosterSeen(id) } }
     }
 
+    /**
+     * Back from a finished reading: asks the store's rating sheet when [shouldRequestReview] allows. The day is saved
+     * before asking, since the store never says whether the sheet showed.
+     */
+    private fun maybeAskForReview() {
+        if (!session.takeReadingFinished()) return
+        val posterThisRun = displayedId != null || _popup.value != null
+        viewModelScope.launch {
+            val day = bangkokEpochDay(nowMillis())
+            if (!shouldRequestReview(observeSettings().first(), day, posterThisRun)) return@launch
+            updateSettings { it.withReviewRequested(day) }
+            session.log("review_prompt_requested")
+            session.requestReview()
+        }
+    }
+
     fun onPopupClosed() {
         val shown = _popup.value ?: return
         _popup.value = null
@@ -197,6 +216,7 @@ class HomeViewModel(
     fun onResumed() {
         castSent = false
         refreshDay()
+        maybeAskForReview()
         // Retries an image that failed to load, e.g. offline when the status arrived.
         session.status.value.poster?.imageUrl?.let(::preload)
     }
