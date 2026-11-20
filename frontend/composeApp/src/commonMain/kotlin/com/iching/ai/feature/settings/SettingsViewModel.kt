@@ -24,6 +24,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+
+const val FEEDBACK_MAX_CHARS = 1000
+internal const val FEEDBACK_THANKS = "ขอบคุณสำหรับความเห็น"
+internal const val FEEDBACK_FAILED = "ส่งไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
+internal const val FEEDBACK_LIMIT = "วันนี้ส่งความเห็นครบแล้ว ลองใหม่พรุ่งนี้นะ"
+
+/** The feedback sheet. Closing keeps the draft, so a seeker who taps away mid-sentence loses nothing. */
+data class FeedbackUi(val open: Boolean = false, val text: String = "", val sending: Boolean = false, val error: String? = null) {
+    val canSend: Boolean get() = text.isNotBlank() && !sending
+}
 
 class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
@@ -45,6 +56,40 @@ class SettingsViewModel(
     val supportsApple: Boolean get() = session.supportsApple
     val supportsGoogle: Boolean get() = session.supportsGoogle
     val manageSubscriptionsUrl: String get() = session.manageSubscriptionsUrl
+
+    /** Store page for "ให้คะแนนแอป"; null hides the row (iOS until the App Store id exists). */
+    val storeUrl: String? get() = session.storeUrl
+
+    fun onRateAppTapped() = session.log("rate_app_tap")
+
+    private val _feedback = MutableStateFlow(FeedbackUi())
+    val feedback: StateFlow<FeedbackUi> = _feedback.asStateFlow()
+
+    fun openFeedback() = _feedback.update { it.copy(open = true) }
+
+    fun closeFeedback() = _feedback.update { if (it.sending) it else it.copy(open = false, error = null) }
+
+    fun onFeedbackText(text: String) = _feedback.update { it.copy(text = text.take(FEEDBACK_MAX_CHARS), error = null) }
+
+    fun sendFeedback() {
+        val draft = _feedback.value
+        if (!draft.canSend) return
+        _feedback.update { it.copy(sending = true, error = null) }
+        viewModelScope.launch {
+            try {
+                session.sendFeedback(draft.text.trim())
+                _feedback.value = FeedbackUi()
+                _message.value = FEEDBACK_THANKS
+                session.log("feedback_sent")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val limit = e is ApiException && e.reason == FailureReason.FEEDBACK_LIMIT
+                _feedback.update { it.copy(sending = false, error = if (limit) FEEDBACK_LIMIT else FEEDBACK_FAILED) }
+                session.log("feedback_failed", mapOf("reason" to if (limit) "limit" else "error"))
+            }
+        }
+    }
 
     private val _yearResult = MutableStateFlow<Int?>(null)
 

@@ -23,6 +23,7 @@
 | Safety | ไม่มี | คำถามทำร้ายตนเอง/ฉุกเฉินทางการแพทย์ → ข้อความคงที่ + 1323/1669 ไม่ทำนาย ไม่ตัดโควตา |
 | Store compliance | ไม่มี | Onboarding disclaimer, ป้าย "สร้างโดย AI", ปุ่มรายงานคำตอบ, Restore/Manage subscription, เงื่อนไขต่ออายุบน paywall, privacy/terms/delete-account บน Firebase Hosting, ATT + UMP consent |
 | Persona | "ห้ามบอกว่าเป็น AI" | ไม่พูดถึงเทคโนโลยีในคำทำนาย แต่ถ้าถามตรง ๆ ต้องยอมรับ |
+| ให้คะแนน / ความเห็น | ไม่มี | หน้าต่างให้ดาวของ Play ขึ้นเมื่อกลับหน้าแรกหลังทำนายครบ 3 ครั้ง ติดตั้งมาแล้ว 2 วัน เว้น 30 วัน (ไม่ถามความรู้สึกก่อน ตามนโยบาย Play) · Settings มี "ให้คะแนนแอป" และ "ส่งความเห็น" → `POST /feedback` เก็บใน `feedback/` วันละ 5 ข้อความ ต้อง deploy `firestore:indexes` ด้วย |
 
 ไฟล์สำคัญ: `backend/functions/src/core/*` (logic ทั้งหมดของ server + เทสต์) · `frontend/composeApp/.../session/AppSession.kt` ·
 `frontend/composeApp/.../feature/divination/DivinationViewModel.kt` · `frontend/composeApp/.../platform/NativeBridges.kt` (สัญญากับโค้ด native) ·
@@ -158,7 +159,7 @@
 
 ## 6. ข้อมูลแอปใน Play Console
 
-- ☐ Data safety: เก็บ User IDs, Device IDs, App interactions, Crash logs, Purchase history, User-generated content (คำถาม) · เข้ารหัสระหว่างส่ง: Yes · ผู้ใช้ขอลบได้: Yes → URL `https://<project-id>.web.app/delete-account`
+- ☐ Data safety: เก็บ User IDs, Device IDs, App interactions, Crash logs, Purchase history, User-generated content (คำถาม และข้อความ "ส่งความเห็น" จากหน้าตั้งค่า) · เข้ารหัสระหว่างส่ง: Yes · ผู้ใช้ขอลบได้: Yes → URL `https://<project-id>.web.app/delete-account`
 - ☐ Privacy Policy URL: `https://<project-id>.web.app/privacy`
 - ☐ Content rating (IARC) → ได้ Teen · Target audience 13+
 - ☐ ประกาศ **Ads: Yes** และ **AI-generated content** (นโยบาย Generative AI: มีปุ่มรายงานในแอปแล้ว)
@@ -211,6 +212,7 @@
 - ☐ **Push กวาประจำวัน (v1.1)** — อัปโหลด APNs key ใน Firebase, เพิ่ม `FirebaseMessaging` ใน Xcode และทำ `IosNotifications` ใน `Bridges/IosAdsAndAnalytics.swift` ให้ทำงานจริง (ตอนนี้ `isSupported()` คืน `false` แอปจึงซ่อนสวิตช์) แล้วเรียก `PendingNavigation.requestDaily()` เมื่อแตะแจ้งเตือน
 - ☐ **สี status bar ของธีมมืด (v1.1)** — `SystemBars.ios.kt` ยังไม่ทำงาน ตัวอักษร status bar จะเป็นสีเข้มบนพื้นเข้มในธีมราตรีหมึก
 - ☐ **เขย่าเซียมซีด้วยเซ็นเซอร์ (v1.4)** — `ShakeDetector.ios.kt` ยังไม่ต่อ CoreMotion ตอนนี้บน iOS เขย่าได้ด้วยการกดค้างที่กระบอกเท่านั้น
+- ☐ **ปุ่ม "ให้คะแนนแอป" (v1.4)** — ได้ App Store id แล้วให้ `IosReview.storeUrl()` ใน `Bridges/IosReview.swift` คืน `https://apps.apple.com/app/id<id>?action=write-review` (ตอนนี้คืน `nil` แอปจึงซ่อนแถวนี้บน iOS; หน้าต่างให้ดาวในแอปทำงานแล้ว)
 - ☐ แยก RevenueCat test key ของ debug ออกจาก release แบบเดียวกับ Android และตรวจว่า SDK เป็น 5.43.0 ขึ้นไป
 
 **Firebase**

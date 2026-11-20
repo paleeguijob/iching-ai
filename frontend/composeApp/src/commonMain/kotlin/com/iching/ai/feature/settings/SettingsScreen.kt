@@ -91,6 +91,7 @@ fun SettingsScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     val notificationsGranted by viewModel.notificationsGranted.collectAsStateWithLifecycle()
     val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
+    val feedback by viewModel.feedback.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
         viewModel.refreshNotificationPermission()
         onPauseOrDispose { }
@@ -275,6 +276,18 @@ fun SettingsScreen(
                     )
                 }
 
+                SectionLabel("ความเห็นของคุณ")
+                Card {
+                    viewModel.storeUrl?.let { url ->
+                        LinkRow("ให้คะแนนแอป", subtitle = "รีวิวใน Google Play ช่วยให้คนอื่นเจอแอปนี้") {
+                            viewModel.onRateAppTapped()
+                            runCatching { uri.openUri(url) }
+                        }
+                        Divider()
+                    }
+                    LinkRow("ส่งความเห็น", subtitle = "บอกเราว่าชอบอะไร อยากให้ปรับตรงไหน", onClick = viewModel::openFeedback)
+                }
+
                 SectionLabel("ว่าด้วยแอปนี้")
                 Text(
                     "อี้จิง AI ใช้การโยนเหรียญสามเหรียญหกครั้งตามตำราดั้งเดิม แล้วอ้างอิงตัวบทคัมภีร์อี้จิง ๖๔ กวา ๓๘๔ เส้น " +
@@ -294,6 +307,15 @@ fun SettingsScreen(
                 Spacer(Modifier.height(32.dp))
             }
         }
+    }
+
+    if (feedback.open) {
+        FeedbackSheet(
+            ui = feedback,
+            onTextChange = viewModel::onFeedbackText,
+            onSend = viewModel::sendFeedback,
+            onDismiss = viewModel::closeFeedback,
+        )
     }
 
     if (confirmDelete) {
@@ -399,12 +421,24 @@ private fun Divider() {
 }
 
 @Composable
-private fun LinkRow(text: String, color: Color = ZenColors.InkBlack, enabled: Boolean = true, onClick: () -> Unit) {
+private fun LinkRow(
+    text: String,
+    color: Color = ZenColors.InkBlack,
+    enabled: Boolean = true,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+) {
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = if (subtitle == null) 14.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (enabled) color else color.copy(alpha = 0.4f), modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = if (enabled) color else color.copy(alpha = 0.4f))
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+        }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = ZenColors.InkFaint)
     }
 }
