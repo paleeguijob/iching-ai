@@ -35,16 +35,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -68,6 +71,7 @@ import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DivinationScreen(
@@ -338,9 +342,19 @@ private fun ReadingStage(
             },
         )
     }
-    // Keep the newest words in view while the scroll unrolls.
+    // Keep the newest words in view while the scroll unrolls, until the seeker scrolls on their own: never
+    // pull the page out from under a finger, or back down once they have scrolled up to reread.
+    var following by remember { mutableStateOf(true) }
+    val nearBottomPx = with(LocalDensity.current) { 64.dp.toPx() }
+    LaunchedEffect(scroll) {
+        launch { scroll.interactionSource.interactions.collect { if (it is DragInteraction.Start) following = false } }
+        snapshotFlow { !scroll.isScrollInProgress && scroll.maxValue - scroll.value < nearBottomPx }
+            .collect { settledAtBottom -> if (settledAtBottom) following = true }
+    }
     LaunchedEffect(state.interpretation.length / 120) {
-        if (state.phase == DivinationPhase.INTERPRETING && scroll.maxValue > 0) scroll.animateScrollTo(scroll.maxValue)
+        if (state.phase == DivinationPhase.INTERPRETING && following && !scroll.isScrollInProgress && scroll.maxValue > 0) {
+            scroll.animateScrollTo(scroll.maxValue)
+        }
     }
 }
 
