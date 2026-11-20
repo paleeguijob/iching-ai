@@ -30,18 +30,25 @@ data class SiamSiStick(
     /** Extra label from the source, e.g. the stem-branch pair 甲子 of the sixty-stick set. */
     val labelOrig: String?,
     val poemOrig: List<String>,
+    /** The poem in the language the seeker chose: Thai, or the English translation when the app is in English. */
     val poemTh: List<String>,
+    /** In the chosen language; empty for every slip so far. */
     val story: String,
+    /** In the chosen language. */
     val summary: String,
+    /** In the chosen language. */
     val topics: Map<SiamSiTopic, String>,
+    /** In the chosen language. */
     val keywords: List<String>,
 )
 
 data class SiamSiSet(
     val id: String,
+    /** In the chosen language. */
     val name: String,
     val count: Int,
     val sourceTitle: String,
+    /** In the chosen language. */
     val sourceNote: String,
     val sticks: List<SiamSiStick>,
     /** The file's version; the server lists the current one, and a newer one replaces a bundled copy. */

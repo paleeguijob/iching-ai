@@ -22,7 +22,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -97,6 +99,35 @@ class SiamSiHomeViewModelTest {
         vm.navigation.onEach { navigation += it }.launchIn(scope)
         scheduler.advanceUntilIdle()
         return vm
+    }
+
+    @Test
+    fun switchingToEnglishReloadsTheSetsInEnglish() {
+        val language = MutableStateFlow(com.iching.ai.domain.model.AppLanguage.TH)
+        val byLanguage = object : SiamSiRepository {
+            override suspend fun available(refs: List<SiamSiSetRef>) = refs.map {
+                sampleSet(it.id).copy(name = if (language.value == com.iching.ai.domain.model.AppLanguage.EN) "English ${it.id}" else it.id)
+            }
+            override suspend fun set(id: String) = sampleSet(id)
+        }
+        settings = HomeSettings(AppSettings())
+        val statusFlow = MutableStateFlow(statusWith(enabled = true))
+        val onlineFlow = MutableStateFlow(true)
+        val log = { name: String, params: Map<String, String> -> events += name to params }
+        val holder = com.iching.ai.ui.strings.AppLanguageHolder(
+            ObserveSettingsUseCase(object : SettingsRepository by settings {
+                override val settings: Flow<AppSettings> = language.map { AppSettings(language = it) }
+            }),
+            flowOf(true), scope,
+        )
+        val gate = SiamSiDrawGate(settings, AnswerAds("rewarded"), statusFlow, onlineFlow, log, { today }, holder)
+        val vm = SiamSiHomeViewModel(ObserveSettingsUseCase(settings), UpdateSettingsUseCase(settings), byLanguage, gate, statusFlow, onlineFlow, log, holder)
+        vm.siamsiSets.launchIn(scope)
+        scheduler.advanceUntilIdle()
+        assertEquals(listOf("guanyin100", "jiazi60"), vm.siamsiSets.value.map { it.name })
+        language.value = com.iching.ai.domain.model.AppLanguage.EN
+        scheduler.advanceUntilIdle()
+        assertEquals(listOf("English guanyin100", "English jiazi60"), vm.siamsiSets.value.map { it.name })
     }
 
     @Test

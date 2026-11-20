@@ -1,5 +1,7 @@
 package com.iching.ai.data.siamsi
 
+import com.iching.ai.data.resources.Res
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.repository.SiamSiRepository
 import com.iching.ai.domain.siamsi.SiamSiSet
 import com.iching.ai.domain.siamsi.SiamSiSetRef
@@ -48,6 +50,9 @@ class FileSiamSiCache(private val dir: Path, private val fs: FileSystem) : SiamS
 
 private val SET_ID = Regex("[a-z0-9_]{1,40}")
 
+/** Cache key of a set's English file: `{id}.en.json` + `{id}.en.version`, next to the Thai copy. */
+private fun englishCacheId(id: String) = "$id.en"
+
 /**
  * The bundled sets, plus sets the server switches on later (or newer versions of bundled ones), downloaded
  * from Hosting at `{baseUrl}/content/siamsi/{id}.json?v={version}` and kept on the device. A version already
@@ -61,18 +66,96 @@ class SiamSiSetRepository(
     private val baseUrl: String,
     private val cache: SiamSiCache,
     private val fetchTimeoutMillis: Long = 15_000,
+    private val content: SiamSiContentState = SiamSiContentState(),
+    private val loadBundledEnglish: suspend (String) -> String? = { Res.readBytes("files/siamsi/$it.en.json").decodeToString() },
 ) : SiamSiRepository {
     private val mutex = Mutex()
     private val parsed = mutableMapOf<String, Pair<Int, SiamSiSet>>()
 
+    /** An English set already applied: the Thai set's version and the English version it was built from. */
+    private class EnglishCopy(val thaiVersion: Int, val enVersion: Int, val set: SiamSiSet)
+    private val english = mutableMapOf<String, EnglishCopy>()
+
+    /**
+     * In English a set shows only when its English file is complete, so the seeker never meets a mix of the two
+     * languages; in Thai the English files are never read.
+     */
     override suspend fun available(refs: List<SiamSiSetRef>): List<SiamSiSet> = coroutineScope {
-        refs.map { ref -> async { resolve(ref, fetch = true) } }.awaitAll().filterNotNull()
+        val lang = content.language
+        refs.map { ref -> async { resolve(ref, fetch = true).inLanguage(lang, ref.enVersion, fetch = true) } }.awaitAll().filterNotNull()
     }
 
-    override suspend fun local(refs: List<SiamSiSetRef>): List<SiamSiSet> = refs.mapNotNull { resolve(it, fetch = false) }
+    override suspend fun local(refs: List<SiamSiSetRef>): List<SiamSiSet> {
+        val lang = content.language
+        return refs.mapNotNull { resolve(it, fetch = false).inLanguage(lang, it.enVersion, fetch = false) }
+    }
 
-    /** For the journal and the draw: the newest copy on the device, bundled or downloaded, whatever its version. */
-    override suspend fun set(id: String): SiamSiSet? = newest(bundled.set(id), onDevice(id))
+    /**
+     * For the journal and the draw: the newest copy on the device, bundled or downloaded, whatever its version.
+     * In English, the English text when the device has a complete copy; otherwise the Thai set, so a reading
+     * drawn earlier still opens.
+     */
+    override suspend fun set(id: String): SiamSiSet? {
+        val th = newest(bundled.set(id), onDevice(id))
+        return if (content.language == AppLanguage.EN) th?.let { englishFor(it, content.enVersion(id), fetch = false) ?: it } else th
+    }
+
+    private suspend fun SiamSiSet?.inLanguage(lang: AppLanguage, enVersion: Int, fetch: Boolean): SiamSiSet? =
+        if (this == null || lang != AppLanguage.EN) this else englishFor(this, enVersion, fetch)
+
+    /**
+     * The English copy of [th]: a complete downloaded or cached file first, then a complete bundled one, else
+     * null. A newer [wanted] version than the one on the device is downloaded once. A file is checked against
+     * [th] before it is cached, and a failure is never remembered, so the next call tries again.
+     */
+    private suspend fun englishFor(th: SiamSiSet, wanted: Int, fetch: Boolean): SiamSiSet? {
+        if (!SET_ID.matches(th.id)) return null
+        mutex.withLock { english[th.id] }?.takeIf { it.thaiVersion == th.version && it.enVersion >= wanted }?.let { return it.set }
+        val inApp = applied(th, runCatchingNotCancel { loadBundledEnglish(th.id) })
+        val device = runCatchingNotCancel { cache.read(englishCacheId(th.id)) }?.let { cached ->
+            applied(th, cached.raw)?.let { cached.version to it.second }
+        }
+        val best = when {
+            inApp != null && inApp.first >= wanted -> inApp
+            device != null && device.first >= wanted -> device
+            else -> (if (fetch) downloadEnglish(th, wanted) else null)
+                ?: if (device != null && device.first > (inApp?.first ?: 0)) device else inApp
+        } ?: return null
+        mutex.withLock { english[th.id] = EnglishCopy(th.version, best.first, best.second) }
+        return best.second
+    }
+
+    /** The version recorded in [raw] and [th] with it applied, or null when [raw] is not a complete English file for [th]. */
+    private suspend fun applied(th: SiamSiSet, raw: String?): Pair<Int, SiamSiSet>? {
+        if (raw == null) return null
+        return withContext(Dispatchers.Default) {
+            runCatching { parseSiamSiEnglish(raw).let { en -> applyEnglish(th, en)?.let { en.version to it } } }.getOrNull()
+        }
+    }
+
+    private suspend fun downloadEnglish(th: SiamSiSet, version: Int): Pair<Int, SiamSiSet>? {
+        val raw = try {
+            withTimeoutOrNull(fetchTimeoutMillis) {
+                val response = client.get("${baseUrl.trimEnd('/')}/content/siamsi/${th.id}.en.json?v=$version")
+                if (response.status.isSuccess()) response.bodyAsText() else null
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        } ?: return null
+        val set = applied(th, raw) ?: return null
+        runCatching { cache.write(englishCacheId(th.id), version, raw) }
+        return version to set.second
+    }
+
+    private suspend inline fun <T> runCatchingNotCancel(block: () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
 
     private suspend fun resolve(ref: SiamSiSetRef, fetch: Boolean): SiamSiSet? {
         val inApp = bundled.set(ref.id)

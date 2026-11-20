@@ -78,6 +78,23 @@ internal object SiamSiParser {
     }
 }
 
+/**
+ * What the Siam Si sets need from the running app: the language in force and each set's English file version.
+ * The app updates it as settings and status change; until then the sets stay Thai.
+ */
+class SiamSiContentState {
+    /** Set by the app to read its language holder; Thai until then. */
+    @kotlin.concurrent.Volatile
+    var languageSource: () -> com.iching.ai.domain.model.AppLanguage = { com.iching.ai.domain.model.AppLanguage.TH }
+
+    /** Set by the app to read the latest status: the server's `enVersion` for a set id; 1 until then. */
+    @kotlin.concurrent.Volatile
+    var enVersionSource: (String) -> Int = { 1 }
+
+    val language: com.iching.ai.domain.model.AppLanguage get() = languageSource()
+    fun enVersion(id: String): Int = enVersionSource(id)
+}
+
 /** The set chosen on Home while the server still offers it, otherwise the first one it offers. */
 fun resolveSelectedSet(selected: String?, available: List<SiamSiSet>): SiamSiSet? =
     available.firstOrNull { it.id == selected } ?: available.firstOrNull()

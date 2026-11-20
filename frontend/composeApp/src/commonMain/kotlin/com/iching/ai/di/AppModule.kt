@@ -41,6 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import com.iching.ai.data.scripture.HexagramContentState
+import com.iching.ai.data.siamsi.SiamSiContentState
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.effectiveEnglishEnabled
 import org.koin.core.context.startKoin
@@ -105,6 +106,11 @@ fun platformModule(bridges: NativeBridges): Module = module {
             get<HexagramContentState>().apply {
                 languageSource = { holder.language.value }
                 versionSource = { session.status.value.hexagramsEnVersion }
+            }
+            // Siam Si follows the same language and each set's English file version from the status.
+            get<SiamSiContentState>().apply {
+                languageSource = { holder.language.value }
+                enVersionSource = { id -> session.status.value.siamsi.sets.firstOrNull { it.id == id }?.enVersion ?: 1 }
             }
         }
     }

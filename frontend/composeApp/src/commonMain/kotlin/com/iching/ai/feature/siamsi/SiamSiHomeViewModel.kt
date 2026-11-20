@@ -58,9 +58,11 @@ class SiamSiHomeViewModel(
         if (on || !last) s.siamsi else OFFLINE_STATUS
     }.distinctUntilChanged()
 
-    val siamsiSets: StateFlow<List<SiamSiSet>> = siamsi.map { it.enabled to it.sets }.distinctUntilChanged()
+    val siamsiSets: StateFlow<List<SiamSiSet>> = combine(siamsi, languageHolder.language) { s, lang -> Triple(s.enabled, s.sets, lang) }
+        .distinctUntilChanged()
         // The sets already on the device first, so a slow download never hides the switch; then the fresh list.
-        .flatMapLatest { (enabled, refs) ->
+        // A language change reloads them, since English shows only the sets with a complete English file.
+        .flatMapLatest { (enabled, refs, _) ->
             flow {
                 if (!enabled) {
                     emit(emptyList())

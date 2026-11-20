@@ -20,6 +20,7 @@ import com.iching.ai.data.scripture.HexagramContentState
 import com.iching.ai.data.scripture.HexagramEnDownloads
 import com.iching.ai.data.scripture.ScriptureHexagramRepository
 import com.iching.ai.data.siamsi.BundledSiamSiRepository
+import com.iching.ai.data.siamsi.SiamSiContentState
 import com.iching.ai.data.siamsi.SiamSiSetRepository
 import com.iching.ai.data.settings.DataStoreSettingsRepository
 import com.iching.ai.domain.repository.HexagramRepository
@@ -79,7 +80,8 @@ val dataModule: Module = module {
         val downloads: HexagramEnDownloads = get()
         ScriptureHexagramRepository(loadEnglish = downloads::load, language = { content.language }, englishVersion = { content.hexagramsEnVersion })
     }
-    single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get()) }
+    single { SiamSiContentState() }
+    single<SiamSiRepository> { SiamSiSetRepository(BundledSiamSiRepository(), get(), BuildConfig.WEB_BASE_URL, get(), content = get()) }
     single<OracleApi> { HttpOracleApi(get(), get(), BuildConfig.API_BASE_URL, BuildConfig.WEB_BASE_URL) }
     single<JournalRepository> { RoomJournalRepository(get<JournalDatabase>().readingDao()) }
     single<SettingsRepository> { DataStoreSettingsRepository(get()) }
