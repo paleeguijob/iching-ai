@@ -126,7 +126,7 @@ describe("daily hexagram", () => {
     assert.equal(push.body, `EN:daily ${id}`);
     assert.equal(push.hexagramId, id);
     assert.ok(!/[\u0E00-\u0E7F]/.test(push.title + push.body));
-    assert.equal(buildDailyPush(now, scripture, "en"), null, "no English file → no push, never Thai");
+    assert.equal(buildDailyPush(now, new Scripture(thai, null), "en"), null, "no English file → no push, never Thai");
   });
 
   it("the kill-switch defaults on and can be turned off", () => {

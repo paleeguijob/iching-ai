@@ -1,0 +1,2031 @@
+{
+  "version": 1,
+  "trigrams": {
+    "111": {
+      "natureEn": "Heaven"
+    },
+    "110": {
+      "natureEn": "Lake"
+    },
+    "101": {
+      "natureEn": "Fire"
+    },
+    "100": {
+      "natureEn": "Thunder"
+    },
+    "011": {
+      "natureEn": "Wind"
+    },
+    "010": {
+      "natureEn": "Water"
+    },
+    "001": {
+      "natureEn": "Mountain"
+    },
+    "000": {
+      "natureEn": "Earth"
+    }
+  },
+  "hexagrams": [
+    {
+      "id": 1,
+      "nameEn": "Heaven",
+      "meaningEn": "Heaven, creative force",
+      "keywordsEn": [
+        "Creative power",
+        "Strength",
+        "Unceasing effort",
+        "Leading",
+        "Timing"
+      ],
+      "judgmentEn": "Qian — Great from the very beginning, flourishing, and a benefit to those who hold to what is right.",
+      "imageEn": "Heaven above heaven: the turning of the heavens is strong and never stops. The wise person therefore trains themselves to be strong and keeps striving without tiring.",
+      "descriptionEn": "Six yang lines make pure creative energy, like heaven that moves without rest and gives birth to all things. This is a time of energy and wide-open chances, but success depends on honesty and a sense of timing. The six lines tell the growth of a dragon: hiding, appearing, striving, testing a leap, soaring, and finally climbing so high that regret follows. Use your strength with a sense of the right moment. Do not rush before the time has come, and do not grow proud at the peak.",
+      "linesEn": [
+        "The dragon lies hidden in the deep. Do not act yet. The strength is still being nurtured, so stay quiet, gather your power and wait for the moment.",
+        "The dragon appears in the field. It is favorable to meet a great person. Your ability is starting to show. A good time to seek a guide or supporter.",
+        "All day the wise person keeps striving, and at night stays alert as if in danger. There is peril but no fault. You are at a turning point, and diligence and care will carry you through.",
+        "Some leap up, some remain in the depths. No fault. You are choosing between rising and waiting. Testing the ground carefully is never a mistake.",
+        "The dragon flies in the sky. It is favorable to meet a great person. You have reached the place where your power blooms fully. Use this success to work with people of good character.",
+        "The dragon soars too high and will have regret. Going all the way to the end without knowing when to retreat, pride brings disappointment."
+      ],
+      "allLinesEn": "When all six lines change at once (using the nines): a flock of dragons is seen, none of them taking the lead. Good fortune. Strong power that does not grab for leadership brings harmony and good fortune.",
+      "dailyMessageEn": "Heaven never stops moving. In what area will you take a step today, even a small one?",
+      "yearMessageEn": {
+        "overview": "Heaven moves without pause. This year suits starting things and leading with steady effort. Great energy needs the right timing: know when to push and when to rest.",
+        "work": "You may begin what you set out to do. Watch the timing and do not burn out.",
+        "love": "Show sincerity steadily. Do not let strength turn into feeling superior.",
+        "money": "Plan long term with steady effort, and beware of too much confidence.",
+        "blessing": "May you have strength and good timing all year."
+      }
+    },
+    {
+      "id": 2,
+      "nameEn": "Earth",
+      "meaningEn": "Earth, the power that supports",
+      "keywordsEn": [
+        "Supporting",
+        "Gentleness",
+        "Yielding",
+        "Patience",
+        "Deep, solid virtue"
+      ],
+      "judgmentEn": "Kun — Great and flourishing, favoring the steadiness of a mare. When the wise person sets out, leading will lead them astray, while following will find a guide. In the southwest friends are gained; in the northeast friends are lost. Staying calm and steady in what is right brings good fortune.",
+      "imageEn": "Earth above earth: the nature of the land is to be humble and bear things up. The wise person therefore builds up deep, thick virtue in order to carry all things.",
+      "descriptionEn": "Six yin lines are the power of receiving and nourishing, like the land that holds up everything without choosing. This is not a time to start things or take the lead, but to support, follow the right course, and work patiently and quietly. Success comes from gentleness that stays steady, not from grabbing position. Watch for small signs of larger things to come, and do not let softness turn into a contest for power with the strong side.",
+      "linesEn": [
+        "Stepping on frost, thick ice is soon to come. Small signs show a larger trend. Notice them and prepare early.",
+        "Straight, upright and great. Without training, nothing fails to benefit. Follow your own honest nature and things will settle into place.",
+        "Keeping one's excellence within, one can hold firm. Perhaps serving the king's work, not claiming the achievement, yet seeing it through. Hide your ability, work for the common good without seeking honor, and the ending will be good.",
+        "Tie the mouth of the bag. No fault, and no praise. For now, guard your words, be careful, and do not reveal too much.",
+        "A yellow skirt-cloth. Great good fortune. Goodness held humbly in the middle position brings great fortune.",
+        "Dragons fight in the field, their blood dark and yellow. When softness tries to contend with strength to the very end, a clash follows in which both sides are hurt."
+      ],
+      "allLinesEn": "When all six lines change (using the sixes): it benefits lasting steadiness in what is right. Gentleness held firmly for a long time slowly turns into solid stability.",
+      "dailyMessageEn": "The earth holds up all things without choosing. Today, try listening more than speaking.",
+      "yearMessageEn": {
+        "overview": "The earth holds everything quietly. This year is about gentleness, patience and being a base for others. Not rushing to the front may lead you to a more suitable path.",
+        "work": "Be a supporter people can trust. Listening first keeps work smooth.",
+        "love": "Gentleness and listening make a relationship steadier, slowly.",
+        "money": "Build up steadily. Consistency matters more than hurry.",
+        "blessing": "May your heart be wide and steady like the earth."
+      }
+    },
+    {
+      "id": 3,
+      "nameEn": "Sprouting",
+      "meaningEn": "Hardship at the start",
+      "keywordsEn": [
+        "Beginnings",
+        "Confusion",
+        "Laying foundations",
+        "Finding helpers",
+        "Patience"
+      ],
+      "judgmentEn": "Zhun — Great and flourishing, favoring what is right. Do not rush forward yet. It is favorable to appoint helpers or lay a foundation.",
+      "imageEn": "Clouds above thunder: the first hardship of beginnings. The wise person therefore puts things in order, like a weaver sorting out threads.",
+      "descriptionEn": "Picture a seedling pushing up through the soil, or a storm where rain clouds and thunder churn. Starting something new is confusing and gets stuck, yet inside it is full of life. The advice is not to rush ahead alone. Stop, organize, build a structure, and find helpers you can trust. This tangle will ease when the time is ripe.",
+      "linesEn": [
+        "Hesitating and circling. It is favorable to stay firm in what is right, and favorable to appoint helpers. When a start is stuck, do not force it. Hold to your principles and build allies.",
+        "Stuck and winding, the rider's horses turn back. The visitor is no robber but a suitor. The young woman stays firm and does not accept the betrothal; after ten years she does. Help that is offered may come at the wrong time. Waiting honestly, however long, brings the right thing.",
+        "Chasing deer without a guide, one wanders into the middle of the forest. The wise person sees the sign and lets go; pressing on brings shame. Do not chase goals in what you do not truly know. Knowing when to stop is wisdom.",
+        "The rider's horses turn back. Go and ask for the union. Going brings good fortune; nothing fails to benefit. You cannot succeed alone, but if you are willing to approach partners, all goes well.",
+        "Rich provision is held back. In small matters, staying firm brings good fortune; in big matters, staying firm brings misfortune. Resources or influence are not yet flowing. Small things can be done step by step, but do not force big ones.",
+        "The rider's horses turn back, and bloody tears flow. Hardship has reached its limit and despair. Know that this suffering will not last if you are willing to change your attitude."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A seedling breaks through the soil with difficulty. The mess of beginnings does not mean the path is wrong.",
+      "yearMessageEn": {
+        "overview": "A seedling must struggle up through the soil. This year may begin in confusion, but that is the nature of new things. Lay foundations step by step and do not hesitate to ask for help.",
+        "work": "New work may stick. Build the foundation slowly and find helpers you trust.",
+        "love": "A new relationship needs time. Be patient and do not jump to conclusions.",
+        "money": "Sort out income and spending clearly first. Small steady steps beat big ones.",
+        "blessing": "May every beginning of yours take strong root."
+      }
+    },
+    {
+      "id": 4,
+      "nameEn": "Novice",
+      "meaningEn": "Youthful ignorance, learning",
+      "keywordsEn": [
+        "Not knowing",
+        "Learning",
+        "Teacher and student",
+        "Sincerity",
+        "Instruction"
+      ],
+      "judgmentEn": "Meng — Flourishing. I do not go looking for the untaught child; the untaught child comes looking for me. The first casting gives an answer. To ask a second or third time is disrespect, and disrespect gets no answer. It favors what is right.",
+      "imageEn": "A spring bubbles out at the foot of a mountain: youth without experience. The wise person therefore acts decisively and nurtures virtue.",
+      "descriptionEn": "Like a spring that has just come out of the mountain and does not yet know where to flow, this is a state of lacking knowledge or experience. The way out is to learn with sincerity and humility. The learner must be the one to seek the teacher, and once an answer comes, listen with care and do not ask over and over just because the answer is unwelcome. The teacher should be patient, disciplined, and kind in due measure.",
+      "linesEn": [
+        "Opening up ignorance. It is favorable to use punishment as an example and to remove the shackles. If strictness goes on and on, there will be shame. Learning begins with discipline, but too harsh a discipline turns into chains.",
+        "Embracing the ignorant with patience: good fortune. Taking a wife: good fortune. The son can manage the household. Generosity toward those with less brings harmony and lets duties be passed on.",
+        "Do not take this woman. Seeing a man of wealth, she loses herself. Nothing is favorable. Do not trust someone swayed by outside gain, and do not become that person yourself.",
+        "Trapped in ignorance: shame. Shutting yourself away from those who know and from the truth, you stay sunk in not knowing.",
+        "A child still untaught: good fortune. A mind that is open, innocent and ready to learn receives good guidance.",
+        "Striking at ignorance. It is not favorable to act as a robber, but favorable to guard against robbers. Punishing wrongs should aim to protect, not to hurt in anger."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Those who admit they do not yet know have opened the door to learning. What do you want to know today?",
+      "yearMessageEn": {
+        "overview": "Whoever admits not knowing has opened the door to learning. This year suits sincere questions, finding a good teacher, and studying with an open mind, without hurrying for ready-made answers.",
+        "work": "Open your mind to new things, ask when unsure, and listen to the experienced.",
+        "love": "Not understanding each other is solved by asking and listening sincerely.",
+        "money": "Understand money matters before you decide. Do not rely on feelings alone.",
+        "blessing": "May you stay curious and find a good teacher."
+      }
+    },
+    {
+      "id": 5,
+      "nameEn": "Waiting",
+      "meaningEn": "Waiting",
+      "keywordsEn": [
+        "Waiting",
+        "Patience",
+        "Confidence",
+        "Timing",
+        "Nourishing oneself"
+      ],
+      "judgmentEn": "Xu — With sincerity, it will be bright and flourishing. Holding to what is right brings good fortune. It is favorable to cross the great river.",
+      "imageEn": "Clouds rise to the sky: waiting for rain. The wise person therefore eats, drinks and rests in good cheer.",
+      "descriptionEn": "Clouds hang in the sky but the rain has not fallen. Danger lies ahead like water blocking the way, while inside there is strong energy. This is a time for waiting with confidence, not anxiously. Nourish body and mind to be ready, hold to sincerity, and when the time comes you will cross the great obstacle. Charging in before the time only invites trouble.",
+      "linesEn": [
+        "Waiting in the outskirts. It is favorable to keep steadiness. No fault. Danger is still far away. Live normally and steadily, and do not panic.",
+        "Waiting on the sandbank. A little gossip, but in the end good fortune. Nearer the problem now, there is talk, but if you stay calm it will pass well.",
+        "Waiting in the mud, drawing robbers to come. You have stepped too close to danger and become vulnerable. Take extra care.",
+        "Waiting amid bloodshed. Climb out of the hole. You are in the midst of danger. Be still and calm, go along with the situation, and find a way to withdraw.",
+        "Waiting amid wine and food. Holding to what is right brings good fortune. In the calm during the wait, rest and rebuild your strength, but do not be careless.",
+        "Entering the pit, three guests come unasked. Treat them with respect, and in the end there is good fortune. When waiting reaches its end, something unexpected may come. If you receive it openly and with honor, it turns into help."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Clouds gather before the rain. Waiting calmly is also a way of preparing.",
+      "yearMessageEn": {
+        "overview": "Clouds gather before rain. This year, calm waiting is preparation. Look after yourself, trust the timing that is coming, and act when the moment arrives.",
+        "work": "Wait for the moment with awareness, and prepare as well as you can meanwhile.",
+        "love": "A good relationship needs no hurry. Let time and trust grow slowly.",
+        "money": "Be patient and unhurried. Keep what you have steady while you wait.",
+        "blessing": "May your patience bear flowers and fruit."
+      }
+    },
+    {
+      "id": 6,
+      "nameEn": "Dispute",
+      "meaningEn": "Conflict, lawsuit",
+      "keywordsEn": [
+        "Conflict",
+        "Dispute",
+        "Restraint",
+        "Mediator",
+        "Think before starting"
+      ],
+      "judgmentEn": "Song — Though sincere, you are obstructed. Be on guard. Stopping halfway brings good fortune; pushing on to the end is dangerous. It is favorable to meet a great person; not favorable to cross the great river.",
+      "imageEn": "Heaven and water move in opposite directions: conflict. The wise person therefore plans carefully from the very start of any undertaking.",
+      "descriptionEn": "Heaven rises high and water flows low; the two part ways. This is the picture of conflict from intentions that do not match. Even if you are partly in the right, fighting to the end brings only damage. The advice is to be willing to stop halfway, find a neutral elder to help decide, and not begin a large project now. Best of all is to prevent conflict from the start by agreeing things clearly.",
+      "linesEn": [
+        "Not dragging the matter out. A little gossip, but in the end good fortune. Stop the conflict while it is small. You may lose some face but it ends well.",
+        "Unable to win the case, he goes back and hides. The three hundred households of his town are spared trouble. Knowing you cannot win and stepping back protects both yourself and those around you.",
+        "Living on old merit and goodness, holding firm despite danger, in the end good fortune. Perhaps serving the king's work, not claiming the achievement. Be content with what is rightfully yours, do not grab more, and do not show off.",
+        "Unable to win the case, he returns and accepts his fate, turning toward calm steadiness: good fortune. Give up the thought of winning, turn back to what is right, and you will find peace.",
+        "Judging the dispute: great good fortune. A fair judge is present and the conflict is settled justly.",
+        "Perhaps one is granted a ceremonial belt, but within a single day it is taken away three times. A victory won by fighting does not last, and keeps bringing enmity back."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Before arguing to win, ask yourself what you really want.",
+      "yearMessageEn": {
+        "overview": "Conflict often comes from wanting to win more than wanting to solve the problem. This year, hold back, think before starting, and make room for a mediator. Every win may cost something more important.",
+        "work": "Watch for disputes. Negotiate with reason and stop before conflict grows.",
+        "love": "Before arguing to win, ask what you truly want, then speak plainly.",
+        "money": "Take care with contracts and agreements. Always put them clearly in writing.",
+        "blessing": "May your new year be calm and free of conflict."
+      }
+    },
+    {
+      "id": 7,
+      "nameEn": "Army",
+      "meaningEn": "Army",
+      "keywordsEn": [
+        "Army",
+        "Discipline",
+        "Seasoned leader",
+        "Organization",
+        "Righteousness"
+      ],
+      "judgmentEn": "Shi — Holding to what is right, with a senior and respected leader: good fortune, no fault.",
+      "imageEn": "Within the earth there is water: an army. The wise person therefore embraces the people and nurtures the masses.",
+      "descriptionEn": "Water hidden underground is like the strength that lies among the people. This situation calls for the strength of a group united under discipline and a just aim. Success depends on a leader who is experienced and trusted, not one who merely wants power. Organize clearly, give tasks to the right people, and take care that several people do not give overlapping orders.",
+      "linesEn": [
+        "The army sets out with order. Without order, even what looks good ends in misfortune. Whatever you begin needs clear rules, or it will fail.",
+        "In the midst of the army: good fortune, no fault. The king gives orders three times. A leader who stays close to the group and is trusted from above will succeed.",
+        "The army may have to carry corpses home: misfortune. Leadership by someone unable, or by several people fighting over command, brings loss.",
+        "The army withdraws to camp: no fault. When circumstances are against you, an orderly retreat is wisdom, not defeat.",
+        "There is game in the field. It is favorable to call for its capture. No fault. Let the elder son lead the army; if the younger son leads, corpses will be carried home. Even holding firm, there is danger. You may protect yourself when attacked, but authority must be given to one suitable person only.",
+        "The great ruler gives orders, founding states and establishing families. Do not employ petty people. When the task is done, reward those who deserve it, but do not hand governing power to people without virtue."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "As water gathers underground, disciplined strength stays quiet. What can you put in order today?",
+      "yearMessageEn": {
+        "overview": "As water collects underground, disciplined strength stays calm. This year suits organizing, a rightful leader, and discipline for you and your team, without excess authority.",
+        "work": "Organize your team and plans. Discipline and fairness are your key strengths.",
+        "love": "Care responsibly, but do not use strictness to control a loved one.",
+        "money": "Set clear financial discipline with a budget and rules of your own.",
+        "blessing": "May you have firm discipline and good companions."
+      }
+    },
+    {
+      "id": 8,
+      "nameEn": "Closeness",
+      "meaningEn": "Closeness, union of hearts",
+      "keywordsEn": [
+        "Unity",
+        "Gathering",
+        "Loyalty",
+        "Choosing a leader",
+        "Not hesitating"
+      ],
+      "judgmentEn": "Bi — Good fortune. Examine your own heart once more: is it great, lasting and upright? Then there is no fault. Those not yet at ease will come to you; one who arrives too late meets misfortune.",
+      "imageEn": "Water on the earth: close and tightly joined. The kings of old therefore established the many states and made friendly ties with the lords.",
+      "descriptionEn": "Water seeping over the land clings close with no gaps, a picture of hearts joining around one center. This is a good time to join a group or build good relationships, but first look into whether you are sincere and steady enough. If you are the center, welcome others with a wide heart. If you are the one choosing, choose people worth committing to, and do not hesitate so long that the chance is lost.",
+      "linesEn": [
+        "Being sincere in drawing close: no fault. Sincerity brimming like a full jar, in the end other good fortune comes. A relationship that starts in sincerity brings unexpected good things.",
+        "Closeness comes from within. Holding firm brings good fortune. Bind yourself with a true heart without losing yourself; this is not flattery for gain.",
+        "Drawing close to the wrong people. Keeping the wrong company brings damage. Step back politely.",
+        "Drawing close to one outside. Holding firm brings good fortune. It is right to show openly your loyalty to a person of virtue above you.",
+        "Open closeness. The king hunts with three sides surrounded, letting the game ahead escape. The townspeople are not alarmed. Good fortune. A good leader compels no one: whoever wants to come may come, whoever wants to go is let go, and so people trust such a leader.",
+        "Drawing close without a head: misfortune. A gathering with no beginning or anchor, or joining when it is too late, has no good result."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Water rests naturally against the earth. Who would you like to be closer to today?",
+      "yearMessageEn": {
+        "overview": "Water rests naturally against the earth. This year, relationships and joining hearts are central. Choose people you trust, approach sincerely, and do not wait so long that you miss the chance.",
+        "work": "Work with the right people and build a team sincerely, without long hesitation.",
+        "love": "Open your heart to stay close to those you love. Bonds come from steady care.",
+        "money": "Helping each other among trusted people brings more stability.",
+        "blessing": "May you be warmed by friends and loved ones all year."
+      }
+    },
+    {
+      "id": 9,
+      "nameEn": "Small Store",
+      "meaningEn": "Small restraint, gathering bit by bit",
+      "keywordsEn": [
+        "Temporary restraint",
+        "Gathering little by little",
+        "Gentleness",
+        "Waiting",
+        "Refining oneself"
+      ],
+      "judgmentEn": "Xiao Chu — Flourishing. Dense clouds but no rain yet, drifting from our western outskirts.",
+      "imageEn": "Wind blows across the sky: a slight restraint. The wise person therefore refines the beauty of their virtue and cultured manner.",
+      "descriptionEn": "A single yin line holds back the five yang lines, like a soft wind passing over the sky that cannot yet gather clouds into rain. What you wish for is near but the time has not come. The obstacle is small yet cannot be pushed aside by force. Use gentleness, patience and attention to detail in developing yourself. Gather little by little, and the rain will fall in its own time.",
+      "linesEn": [
+        "Returning to your own way, what fault could there be? Good fortune. When held back, going back to your own basic course is the right path.",
+        "Drawn back along the way: good fortune. Turn back together with companions of the same mind; do not push ahead alone.",
+        "The spokes come off the cart; husband and wife turn away from each other. Pushing ahead while being restrained causes a break in the relationship.",
+        "With sincerity, bloodshed is avoided and fear departs. No fault. Sincerity eases danger and tension.",
+        "Sincerity that binds closely, sharing wealth with the neighbors. Honesty that is shared lets everyone prosper together.",
+        "The rain has fallen; rest now. Virtue is stored up to a full load, but a woman who holds firm is still in danger. The moon is nearly full. If the wise person sets out, there will be misfortune. The goal is reached. Be content and stop; do not push further than is right."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Thick clouds, no rain yet. Gather bit by bit for now. Small things done today still matter.",
+      "yearMessageEn": {
+        "overview": "Thick clouds but no rain yet. This year is for gathering little by little. Small, gentle efforts repeated steadily will slowly add up to great strength when the time comes.",
+        "work": "Big work may still stall. Build skills and small achievements for now.",
+        "love": "Care for small things daily. A little gentleness has more power than you think.",
+        "money": "Save little by little, steadily. Do not hurry for a big sum.",
+        "blessing": "May the small things you do slowly grow into good."
+      }
+    },
+    {
+      "id": 10,
+      "nameEn": "Treading",
+      "meaningEn": "Stepping, conduct",
+      "keywordsEn": [
+        "Conduct",
+        "Manners",
+        "Caution",
+        "Knowing one's place",
+        "Walking near risk"
+      ],
+      "judgmentEn": "Lu — Treading on the tiger's tail, but the tiger does not bite. Flourishing.",
+      "imageEn": "Heaven above, lake below: walking with order. The wise person therefore tells high from low clearly and steadies the hearts of the people.",
+      "descriptionEn": "The gentle lake lies below the strong heaven, like a weak person who must walk behind the powerful, as if treading on a tiger's tail. This situation is risky but safe if you act with good manners, humility and knowledge of your place. Sincere politeness means even a fierce one does not harm us. Beware of rating yourself too high.",
+      "linesEn": [
+        "Walking simply. Setting out brings no fault. Follow your own way purely, without ambition beyond your size, and there will be no trouble.",
+        "Walking on a smooth, level road. A recluse holding firm: good fortune. A calm mind that grasps at nothing walks the middle path steadily.",
+        "A one-eyed man thinks he can see; a lame man thinks he can walk. Treading on the tiger's tail, the tiger bites: misfortune. A warrior acts as a king. Overrating yourself and charging into danger brings misfortune.",
+        "Treading on the tiger's tail, with deep fear and caution. In the end good fortune. You are in a dangerous situation, but care brings you through.",
+        "Walking with resolve. Holding firm, but there is danger. You can decide firmly, but know that too much confidence brings risk.",
+        "Look back on your steps and examine the omens. If it comes full circle, great good fortune. Looking back on past actions, if they are complete and good, good results follow."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Every step on the path shows who we are. Today, try stepping with awareness and courtesy.",
+      "yearMessageEn": {
+        "overview": "Every step on the path shows who we are. This year stresses courteous conduct and knowing your place. Even when walking near something risky, care will see you through.",
+        "work": "Courtesy opens the way for you. Know what should and should not be done.",
+        "love": "Speak and behave with respect. Attention to detail makes love last.",
+        "money": "Be careful before deciding. Check the details every time.",
+        "blessing": "May every step of yours be steady and graceful."
+      }
+    },
+    {
+      "id": 11,
+      "nameEn": "Harmony",
+      "meaningEn": "Peace, prosperity",
+      "keywordsEn": [
+        "Peace",
+        "Harmony",
+        "Prosperity",
+        "Communication",
+        "Staying alert"
+      ],
+      "judgmentEn": "Tai — The small go away, the great arrive. Good fortune. Flourishing.",
+      "imageEn": "Heaven and earth join: peace. The ruler therefore shapes and completes the way of heaven and earth, and supports what suits them, in order to help the people.",
+      "descriptionEn": "Earth is above, heaven is below. The energy of heaven rises and that of earth sinks, so the two meet and nourish each other. This is an age of harmony: communication flows, elders and juniors understand each other, good things grow and bad things withdraw. Use this time to build what lasts and share it with others. But remember that everything turns in cycles, and prosperity needs vigilance.",
+      "linesEn": [
+        "Pulling up couch grass, the roots come up together in a clump. Setting out brings good fortune. Good people draw good people along. A good time to act with like-minded people.",
+        "Embracing even the neglected, bold enough to wade the river, not forgetting those far away, not favoring one's own clique, so one fits the middle path. Generous, brave, far-sighted and free of cliques.",
+        "No plain without a slope, no going without a return. Holding firm in hardship, no fault. Do not worry; sincerity brings good fortune. Prosperity will change one day. Keep your honesty and you will not lack.",
+        "Fluttering down, not relying on wealth but on neighbors, sincere with one another without needing warning. Those above lower themselves to those below with a true heart, and cooperation arises naturally.",
+        "King Di Yi marries off his daughter. There is blessing. Great good fortune. A person of high standing lowers themselves to create harmony, bringing real happiness.",
+        "The city wall collapses into the moat. Do not use the army. Give orders only within your own town. Even holding firm, there is shame. Prosperity has reached its end. Do not resist by force; look after what is near and accept the change."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Heaven and earth are connected. Smooth times are a good time to care for relationships.",
+      "yearMessageEn": {
+        "overview": "Heaven and earth are connected. This year, harmony and communication open the way for good things. But smooth times are when to tend your foundation and stay alert.",
+        "work": "Communication is smooth. Build cooperation now, but do not get complacent.",
+        "love": "The relationship is in harmony. Care for each other and speak clearly.",
+        "money": "Timing is good, but keep some in reserve. Prudence keeps good times lasting.",
+        "blessing": "May your new year be peaceful, harmonious and prosperous."
+      }
+    },
+    {
+      "id": 12,
+      "nameEn": "Blockage",
+      "meaningEn": "Stagnation, being shut off",
+      "keywordsEn": [
+        "Stagnation",
+        "No contact",
+        "Stepping back to regroup",
+        "Quiet reserve",
+        "Waiting for change"
+      ],
+      "judgmentEn": "Pi — This blockage comes from the wrong people. It does not favor the steadfastness of the wise person. The great go away, the small arrive.",
+      "imageEn": "Heaven and earth do not join: stagnation. The wise person therefore keeps virtue simply hidden to avoid harm, and does not accept honor through wealth and rank.",
+      "descriptionEn": "Heaven is above and rises higher; earth is below and sinks lower. The two part and do not reach each other. This is an age when communication is cut off, small people hold power and good people are pushed aside. What you do may not bear fruit. In such times do not scramble for position or gain. Stay humble, keep your heart pure, and wait for the day heaven and earth join again, because stagnation cannot last forever.",
+      "linesEn": [
+        "Pulling up couch grass, the roots come up together in a clump. Holding firm brings good fortune. Flourishing. In dark times, good people should withdraw together and keep their principles together.",
+        "Putting up with it and flattering. The small gain; the great person accepts the blockage, and it becomes flourishing. Ordinary people may profit by going along, but a person of virtue should accept hardship rather than abandon principle.",
+        "Bearing disgrace. Someone who gained position wrongly begins to feel ashamed of themselves.",
+        "There is a command from above. No fault. Companions all receive blessing. As circumstances start to change, following what is right benefits both oneself and the group.",
+        "The blockage stops. Good fortune for the great person. Remember: it may be lost, it may be lost. Then tie yourself to a firm mulberry clump. The dark age begins to ease, but do not be careless. Constant watchfulness keeps you secure.",
+        "The blockage is overturned. First blockage, then joy. When darkness reaches its limit it turns over, and happiness is about to come."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Some days the door is closed. Stepping back calmly to regroup is not defeat.",
+      "yearMessageEn": {
+        "overview": "At times the door is shut. This year may feel stalled or misunderstood. Stepping back calmly and keeping your worth is not defeat, but waiting for heaven to open again.",
+        "work": "Work may not progress as hoped. Step back to regroup and wait for a change.",
+        "love": "If you feel apart, do not force it. Give time and stay yourself.",
+        "money": "Spend only what is necessary and keep quiet until things clear.",
+        "blessing": "May you stay calm and soon see a new door open."
+      }
+    },
+    {
+      "id": 13,
+      "nameEn": "Companions",
+      "meaningEn": "Friendship, joining hearts with people",
+      "keywordsEn": [
+        "Friendship",
+        "Cooperation",
+        "Openness",
+        "No cliques",
+        "Shared aim"
+      ],
+      "judgmentEn": "Tong Ren — Joining hearts with people in the open field. Flourishing. It is favorable to cross the great river, and favors the steadfastness of the wise person.",
+      "imageEn": "Heaven and fire: joining hearts with people. The wise person therefore sorts people into groups and tells things apart.",
+      "descriptionEn": "Fire flares up toward heaven; both aim the same way. It is the picture of people joined by a shared ideal. True cooperation must be open like a wide field, not limited to a clique, relatives or private gain. United transparently, people can get through big tasks. But a good group also knows how to tell differences apart, not blend everything into sameness.",
+      "linesEn": [
+        "Joining with people at the gate. No fault. Start the relationship openly from the first step, with no personal obligations yet.",
+        "Joining only within one's own clan: shame. Binding yourself to a narrow circle or cliques loses legitimacy.",
+        "Hiding troops in the thick grass, climbing a high mound; for three years unable to rise. Suspicion and hidden intent stop cooperation from forming. The longer you wait, the fewer chances there are.",
+        "Climbing the wall but not attacking: good fortune. You thought of using force but held back in time, realizing it was not right. Changing your mind brings good fortune.",
+        "The people joined in heart first weep, later laugh. The great army wins and they meet. Those whose hearts match but who were kept apart will meet joyfully after hardship.",
+        "Joining with people in the outskirts. No regret. A bond that is far off, though not complete, leaves nothing to regret."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "An open heart turns strangers into friends. Today, try finding common ground with someone.",
+      "yearMessageEn": {
+        "overview": "An open heart turns strangers into friends. This year cooperation and shared aims are your strength. Stop choosing sides and you may find unexpected companions.",
+        "work": "Cooperate with many kinds of people toward one goal. Avoid closed circles.",
+        "love": "Find common ground with your loved one. Openness brings you closer.",
+        "money": "Sharing and cooperating openly bring stability.",
+        "blessing": "May you find true friends and good companions."
+      }
+    },
+    {
+      "id": 14,
+      "nameEn": "Great Wealth",
+      "meaningEn": "Great abundance",
+      "keywordsEn": [
+        "Abundance",
+        "Success",
+        "Humility",
+        "Encouraging good",
+        "Heaven's decree"
+      ],
+      "judgmentEn": "Da You — Great and flourishing.",
+      "imageEn": "Fire above heaven: great wealth. The wise person therefore restrains evil, promotes good, follows heaven and accepts its good decree.",
+      "descriptionEn": "The sun shines brightly high in the sky and shows everything clearly. A single yin line sits in the leader's place and is supported by the five yang lines. It is an age of abundance and success, but true wealth must come with humility and rightness. Use what you have to promote good and to share, not to boast or take advantage.",
+      "linesEn": [
+        "Having no dealings with what is harmful, so no fault. Keep the hardship in mind always and there will be no fault. Wealth has just begun and there is no problem, but remember difficulty always.",
+        "A big cart carries the load. There is somewhere to go. No fault. You have the ability and resources to bear a big task. Go ahead with the work.",
+        "A lord presents an offering to the Son of Heaven; a small person cannot do this. Wealth should be offered for the common good; a narrow-minded person will hold it as their own.",
+        "Not boasting of one's greatness. No fault. Though having much, you do not overpower others. Knowing to be humble, you stay safe.",
+        "Sincerity that connects people, together with dignity that inspires awe: good fortune. A sincere and dignified leader receives both love and respect.",
+        "Protected by heaven: good fortune. Nothing fails to benefit. One who is complete in goodness and honors heaven receives full blessing."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "When you have much, be more humble. What do you feel grateful for today?",
+      "yearMessageEn": {
+        "overview": "When you have much, be more humble. This year you may find abundance in many areas. Keep the light in your heart, be grateful, and use wealth in ways that promote good.",
+        "work": "Your results stand out more. Stay humble and open chances for others too.",
+        "love": "Thank those at your side. Warmth matters more than gifts.",
+        "money": "You may be steadier, but share and do not show off what you have.",
+        "blessing": "May you be rich in kindness and gratitude."
+      }
+    },
+    {
+      "id": 15,
+      "nameEn": "Humility",
+      "meaningEn": "Humility",
+      "keywordsEn": [
+        "Humility",
+        "Moderation",
+        "Sharing",
+        "Consistency",
+        "A good ending"
+      ],
+      "judgmentEn": "Qian — Flourishing. The wise person has a complete ending.",
+      "imageEn": "A mountain within the earth: humility. The wise person therefore takes from what is too much to add to what is too little, weighs things, and shares fairly.",
+      "descriptionEn": "A great tall mountain hides beneath the earth, a picture of someone able who does not show off. Humility is the one virtue for which every line of this hexagram brings good fortune, because heaven, earth, people and spirits all lessen what overflows and fill what is lacking. Work without seeking praise, balance yourself with others, and success will come to last.",
+      "linesEn": [
+        "The wise person who is humble and humble again can cross the great river. Good fortune. Deep humility lets you pass even a hard task.",
+        "Humility that becomes known. Holding firm brings good fortune. True humility comes from the heart so that others sense it themselves.",
+        "The wise person who works hard yet stays humble has a good ending: good fortune. You achieve much without boasting, so people accept you sincerely.",
+        "Nothing fails to benefit. Spread humility outward. Humility should show in actions in every area, not only in words.",
+        "Not relying on wealth but on neighbors. It is favorable to use force against those who do not submit. Nothing fails to benefit. Humility is not weakness. Sometimes one must be decisive toward those who break the peace.",
+        "Humility that becomes known. It is favorable to send the army to subdue one's own towns and state. Use that accepted humility to put things near you in order and correct your own faults."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "The mountain hides under the earth. True humility does not need announcing.",
+      "yearMessageEn": {
+        "overview": "A mountain hides beneath the earth. True humility needs no announcing. This year, moderation, consistency and sharing will lead you to a good ending, without grabbing or hurrying.",
+        "work": "Work steadily without boasting. Your results will speak for you.",
+        "love": "Humility and respect keep love warm and lasting.",
+        "money": "Spend in moderation, within your means, and share as you can.",
+        "blessing": "May you be calm, humble and complete in the end."
+      }
+    },
+    {
+      "id": 16,
+      "nameEn": "Delight",
+      "meaningEn": "Delight, eager enthusiasm",
+      "keywordsEn": [
+        "Delight",
+        "Enthusiasm",
+        "Inspiration",
+        "Music",
+        "Not getting carried away"
+      ],
+      "judgmentEn": "Yu — It is favorable to appoint helpers and send the army out.",
+      "imageEn": "Thunder bursts out of the earth with a roar: delight. The kings of old therefore made music to honor virtue, offered it grandly to the gods above, and dedicated it to their ancestors.",
+      "descriptionEn": "The first thunder of spring bursts from the ground and wakes all things. It is a picture of eager energy that makes people ready to move together. This is a good time to rally people, form a team and begin work, because people are ready to follow. But delight must rest on a steady base and be in tune with nature. If it turns into indulgence, happiness turns into regret.",
+      "linesEn": [
+        "Delight that is announced loudly: misfortune. Boasting of your joy or advantage invites trouble.",
+        "Firm as a rock, not waiting for the day to end. Holding firm brings good fortune. You are not drawn into fun, and on seeing the signs you can decide at once.",
+        "Looking up to others for delight brings regret; hesitating too long also brings regret. Depending on the powerful for happiness, or hesitating to change, both bring regret.",
+        "The source of delight. Great gains. Do not doubt. Friends gather as a hairpin gathers hair. You are the center that sparks people. If sincere and not hesitating, people will join you.",
+        "Chronic illness, yet holding firm. Lasting long, not dying. Though pressed and not free, if you hold yourself up you will not collapse.",
+        "Lost in the intoxication of delight. If what has been done can be changed, no fault. Stuck in infatuation, but it is not too late if you wake up and turn back."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Delight has the power to draw people in. What makes you want to move today?",
+      "yearMessageEn": {
+        "overview": "Delight draws people in. This year eagerness and inspiration will carry you forward, but do not get carried away and forget to prepare. Let happiness be a drive with principles.",
+        "work": "Use enthusiasm to motivate the team, but have a plan, not just momentum.",
+        "love": "Joy brings hearts close. Have fun together, but do not forget to be sincere.",
+        "money": "Some fun spending is fine, but keep discipline. Do not follow moods.",
+        "blessing": "May your new year be joyful and full of inspiration."
+      }
+    },
+    {
+      "id": 17,
+      "nameEn": "Following",
+      "meaningEn": "Going along, following",
+      "keywordsEn": [
+        "Going along",
+        "Adapting to the time",
+        "Following what is right",
+        "Resting in rhythm"
+      ],
+      "judgmentEn": "Following is great and flourishing. It is favorable when one holds to what is right, and then there is no fault.",
+      "imageEn": "Thunder hidden in the middle of a lake is the image of following. So the wise person, as evening comes, goes home to rest in stillness.",
+      "descriptionEn": "Moving thunder yields beneath the gentle lake, like a strong one who steps down so that others are glad to follow. True following is not drifting with the current without principle. It is knowing what to follow and what to let go. One who wants others to follow must first learn to follow well, and must know when to rest, like thunder falling quiet in winter. If what is right remains the guide, following brings prosperity without blame.",
+      "linesEn": [
+        "Duties and positions are changing. Holding to what is right brings good fortune. Going out the gate to meet people brings results. When things around you change, open your heart and meet many people. Do not stay inside your own small circle.",
+        "Tying yourself to the small child, you lose the grown man. If you cling to small things close at hand, you will miss what is worth more.",
+        "Tying yourself to the grown man, you leave the small child behind. Following like this, you find whatever you seek. It is good to stay on the right path. Choosing to follow something greater means giving up something else, but you must keep your own integrity.",
+        "Following that brings gain is unfortunate, even if you hold firm. If you are sincere and on the right path, and act with clarity, what fault could there be? When people begin to follow you, perhaps even more than they follow your superior, keep your sincerity and your intentions open and clear.",
+        "Being sincere toward what is good brings good fortune. Following goodness with an honest heart brings success.",
+        "Bind it tight, then wind another cord around it. The king offers sacrifice on the Western Mountain. The deepest bond becomes devotion, which reaches to what is sacred."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "One who follows the times does not struggle against the current in vain. What will you let flow away today?",
+      "yearMessageEn": {
+        "overview": "One who follows the times does not struggle in vain. This year, adapting and choosing what is right helps you move smoothly. Rest in rhythm and let go of what is not yours.",
+        "work": "Adapt to the situation, but follow what is right, not just the crowd.",
+        "love": "Give way to each other fittingly, and know when to stand by your own view.",
+        "money": "Adjust plans as things change, but do not follow others without thinking.",
+        "blessing": "May you find a fitting path and follow it with ease."
+      }
+    },
+    {
+      "id": 18,
+      "nameEn": "Repair",
+      "meaningEn": "Mending decay, restoring what spoiled",
+      "keywordsEn": [
+        "Mending decay",
+        "Restoring",
+        "Inheritance from the past",
+        "Reflecting before and after"
+      ],
+      "judgmentEn": "Mending decay is great and flourishing. It is favorable to cross the great river. Reflect for three days before the jia day, and take care for three days after it.",
+      "imageEn": "Wind blowing beneath the mountain is the image of decay that needs mending. So the wise person rouses the people and nourishes virtue so it can grow.",
+      "descriptionEn": "The character 蠱 shows worms in a vessel. It means something left neglected until it spoils, often a problem inherited from earlier generations or built up from long inertia. Wind trapped beneath the mountain cannot pass through, so things turn stale. Yet decay that shows plainly is also a chance to begin anew. Mending takes courage to act, like crossing a great river. But study the cause before acting, and watch the result afterward. Do not blame the past. Take responsibility for the repair with diligence and care.",
+      "linesEn": [
+        "Mending the decay left by the father. With a child like this, the late father has no fault. There is danger, but in the end good fortune. The fault has only just begun. If you correct it quickly and with purpose, even hardship will pass well.",
+        "Mending the decay left by the mother. Do not be too strict or harsh. A delicate problem must be mended with gentleness and flexibility.",
+        "Mending the decay left by the father. There is a little regret, but no great fault. You may act too forcefully and cause some friction, but your intention is right, so no serious harm is done.",
+        "Letting the decay left by the father go unmended. If this goes on, shame will follow. Putting up silently with an old problem only lets it spread until it is too hard to fix.",
+        "Mending the decay left by the father, and earning praise. Restoring with virtue and knowing how to use good people brings honor.",
+        "Not serving the king or the nobles, and holding one's own affairs in high regard. When worldly duties are done, the wise step back to keep their mind and ideals pure."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "What is left alone for long decays. Today, choose to mend one small thing that has weighed on you.",
+      "yearMessageEn": {
+        "overview": "What is left alone for long decays, but it can be mended. This year suits repairing what is unfinished: habits, work and relationships. Reflect before and after you act, then restore it well.",
+        "work": "Deal with old unfinished work. Fix the root cause and work will go better.",
+        "love": "Heal what lingers in your hearts with honest conversation.",
+        "money": "Review old burdens and poor spending habits, then sort them out gradually.",
+        "blessing": "May you repair the old and begin anew with grace."
+      }
+    },
+    {
+      "id": 19,
+      "nameEn": "Approach",
+      "meaningEn": "Drawing near, arrival",
+      "keywordsEn": [
+        "Drawing near",
+        "Growing strength",
+        "Caring for others",
+        "Knowing the change of seasons"
+      ],
+      "judgmentEn": "Approach is great and flourishing. It is favorable to hold to what is right. But when the eighth month comes, there will be misfortune.",
+      "imageEn": "Earth above the lake is the image of approach. So the wise person teaches and cares for people without end, embracing and protecting them without limit.",
+      "descriptionEn": "Two yang lines are growing from below, like spring drawing near. It is a time when luck and opportunity move toward you, and those in high positions come down to care for those beneath them. Yet all prosperity has its cycle. At its peak it begins to decline, which is why the eighth month is a warning. Use this good time with awareness. Approach people with sincerity and kindness, and prepare your mind for change to come.",
+      "linesEn": [
+        "Approaching together in harmony. Holding to what is right brings good fortune. As you first step toward others in a spirit of accord, keep your honesty.",
+        "Approaching together in harmony brings good fortune. Nothing is unfavorable. Strength that holds the middle way and is welcomed can go in any direction.",
+        "Approaching with sweet words. Nothing is favorable. If you feel uneasy and correct it, there will be no fault. Pleasing with sweet words but no sincerity cannot last. Reflect and adjust early.",
+        "Approaching in the fullest way. No fault. Coming down to others truly and willingly brings no fault.",
+        "Approaching with wisdom. This is fitting for a great ruler, and brings good fortune. A wise leader entrusts work to capable people and does not have to do everything personally.",
+        "Approaching with generous, steady kindness. Good fortune, no fault. An elder who is still willing to come down and help others with an open heart gains good results."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Good things are drawing near. Prepare your heart, and care for those around you with kindness.",
+      "yearMessageEn": {
+        "overview": "Good things are drawing near and strength is growing. This year suits readying your heart, caring for those around you with kindness, and knowing that good times do not last forever. Use them well.",
+        "work": "Opportunity is coming. Prepare yourself and care for your team with kindness.",
+        "love": "Love is growing. Keep tending it steadily so that it lasts.",
+        "money": "The trend is improving, but plan for a time when it may shift.",
+        "blessing": "May good things come toward you, one step at a time."
+      }
+    },
+    {
+      "id": 20,
+      "nameEn": "Observing",
+      "meaningEn": "Looking closely, being an example",
+      "keywordsEn": [
+        "Close observation",
+        "Being an example",
+        "Devotion",
+        "Looking back at oneself"
+      ],
+      "judgmentEn": "The hands are washed, but the offering is not yet made. There is sincere devotion, worthy of awe and respect.",
+      "imageEn": "Wind passing over the earth is the image of observing. So the kings of old toured every direction to observe how the people lived, and set up teachings to suit them.",
+      "descriptionEn": "This scene is the sacred moment of a ritual offering. The hands have been washed, but the gift is not yet given. The calm and reverence of that moment are stronger than any ceremony. Those in high places are watched by the people, so they must be examples through sincerity, not show. At the same time they must look back at themselves and view the world broadly, like wind passing across the whole land. Deep understanding comes from looking calmly, not from rushing to judge.",
+      "linesEn": [
+        "Looking like a child. For ordinary people there is no fault, but for the wise it is shameful. A shallow view of the world may be forgiven in common people, but one who should have wisdom must look deeper.",
+        "Peeping through a crack in the door. This is good only for the faithful woman who stays at home. Looking from one narrow angle shows only part of the picture. Widen your view.",
+        "Observing your own life to decide whether to advance or to retreat. Before deciding, review your actions and their results honestly.",
+        "Observing the glory of the land. It is favorable to be a guest of the king. Having seen the goodness of the leader, you should bring your abilities to serve.",
+        "Observing your own life. The wise person is free of fault. Those in high positions must measure their virtue by how the people they care for are living.",
+        "Observing their lives. The wise person is free of fault. Even when free of worldly duties, keep examining yourself, because people still look to you as an example."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Wind passes evenly over the land. Today, pause and observe before you judge anything.",
+      "yearMessageEn": {
+        "overview": "Wind passes evenly over the land. This year suits pausing to observe before judging, looking back at yourself, and being a good example, because others see what you quietly do.",
+        "work": "Observe the whole picture before acting, and be an example others can trust.",
+        "love": "See yourself and your loved one with an open heart. Understand before judging.",
+        "money": "Study the facts from all sides before any important decision.",
+        "blessing": "May you have clear sight and a calm heart."
+      }
+    },
+    {
+      "id": 21,
+      "nameEn": "Closing Jaws",
+      "meaningEn": "Biting down, clearing obstacles",
+      "keywordsEn": [
+        "Clearing obstacles",
+        "Justice",
+        "Decisive judgment",
+        "Rules and order"
+      ],
+      "judgmentEn": "Closing the jaws is flourishing. It is favorable to judge legal cases.",
+      "imageEn": "Thunder and lightning arriving together is the image of closing jaws. So the kings of old made punishments clear and set the laws in order.",
+      "descriptionEn": "The picture is a mouth held open with something stuck between the teeth. It must be bitten apart before the mouth can close. When an obstacle or a person with bad intent blocks a relationship, it will not simply go away. It must be dealt with decisively, like powerful thunder and lightning that shows the truth. Decisiveness must come with clarity and fairness, not with anger or excessive force.",
+      "linesEn": [
+        "Stocks on the feet hide the toes. No fault. A light penalty while the wrong is still small is a warning to stop before going far astray.",
+        "Biting into soft meat so deep the nose is buried. No fault. Dealing with an easy matter, perhaps using a little too much force, is no fault, because the intention is right.",
+        "Chewing old dried meat, one meets poison. A little shame, but no fault. When dealing with an old problem that has built up over a long time, you may meet resistance and be hurt a little, but what you do is proper.",
+        "Biting into dried meat on the bone, one finds a bronze arrowhead. It is favorable to hold firm in hardship. Good fortune. The obstacle is strong, so it takes the hardness of metal and the straightness of an arrow to get through.",
+        "Biting into dried meat, one finds yellow gold. Hold firm with awareness of danger. No fault. One who holds the power to judge must keep to the middle way and impartiality, and always remember the weight of the duty.",
+        "A cangue on the neck hides the ears. Misfortune. One who will not heed warnings until faults pile up beyond repair suffers serious harm."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "What blocks the way will not vanish by itself. Is there a matter to settle firmly and fairly today?",
+      "yearMessageEn": {
+        "overview": "What blocks the way will not go away by itself. This year, settle unfinished matters firmly and fairly, without harshness. Decide clearly, follow the rules, and the way opens.",
+        "work": "Clear the obstacles blocking your work. Decide firmly and fairly.",
+        "love": "Speak plainly about what is unresolved, in a tone that does not hurt each other.",
+        "money": "Put debts or lingering burdens in order, with honesty.",
+        "blessing": "May every obstacle of yours be resolved fairly."
+      }
+    },
+    {
+      "id": 22,
+      "nameEn": "Adornment",
+      "meaningEn": "Decorative beauty, embellishment",
+      "keywordsEn": [
+        "Beauty",
+        "Adorning",
+        "Form and substance",
+        "Simplicity"
+      ],
+      "judgmentEn": "Adornment is flourishing. There is some small benefit in going forward.",
+      "imageEn": "Fire burning beneath the mountain is the image of adornment. So the wise person makes the affairs of daily life clear, but does not dare use it to decide great legal cases.",
+      "descriptionEn": "Firelight at the foot of the mountain makes it look beautiful, but it cannot shine far. Beauty, manners and form give life refinement and help people live together in harmony. Yet they are only a covering around the essence. So they suit small matters better than deciding large ones. Use beauty to support the truth, not to hide it, and remember that the highest beauty is pure simplicity.",
+      "linesEn": [
+        "Adorning one's own feet. Leaving the carriage to walk on foot. One in a low position is content with simplicity and does not accept comforts that do not suit them.",
+        "Adorning the beard. Beauty that is only an accessory must follow what is essential, like a beard that moves with the chin.",
+        "Adorned splendidly, glossy as if moist. Holding firmly to what is right to the end brings good fortune. When everything is lovely and pleasant, take care not to sink into the pleasure and forget your principles.",
+        "Adorned splendidly or in pure white. A white horse gallops as if it had wings. It is no robber, but comes to ask for marriage. You must choose between luxury and simplicity. What looks suspicious at first may be a true friend who comes with honest intent.",
+        "Adornment in a garden on the hillside. The silk brought as a gift is very little, which seems embarrassing, but in the end there is good fortune. Simple sincerity is worth more than a lavish gift.",
+        "Plain white beauty. No fault. When adornment reaches its limit, it returns to simplicity, which is true beauty."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Outer beauty lifts the heart, but do not forget to ask whether the core within is still well.",
+      "yearMessageEn": {
+        "overview": "Outer beauty lifts the heart, but the core within matters more. This year you may attend to form and presentation, as long as you keep simplicity and sincerity, which are the essence.",
+        "work": "Care about presentation and detail, but put substance and sincerity first.",
+        "love": "Small, lovely gestures please the heart, but they need sincerity behind them.",
+        "money": "Spend moderately on beautiful things, and be clear about what is truly needed.",
+        "blessing": "May your life be beautiful, outside and within."
+      }
+    },
+    {
+      "id": 23,
+      "nameEn": "Peeling Away",
+      "meaningEn": "Wearing away, stripping off",
+      "keywordsEn": [
+        "Decline",
+        "Erosion",
+        "Patient waiting",
+        "Guarding the foundation"
+      ],
+      "judgmentEn": "In a time of wearing away, it is not favorable to undertake anything.",
+      "imageEn": "The mountain resting on the earth is the image of peeling away. So those above strengthen the foundation below, so that the home will be secure and calm.",
+      "descriptionEn": "Five yin lines are eating upward until only one yang line remains at the top, like a mountain eroded until only the peak is left, or leaves falling at the end of the season. At this time what is inferior has the upper hand over what is good. Pushing forward or resisting directly will only do more harm. Stay still, accept the passing of time, strengthen your own foundation and look after those beneath you. When decline reaches its limit, recovery follows.",
+      "linesEn": [
+        "The leg of the bed is gnawed away. What is right is destroyed. Misfortune. Decline begins at the lowest foundation. Notice the first signs and be careful.",
+        "The frame of the bed is gnawed away. What is right is destroyed. Misfortune. Decline has crept closer to you, and no one has yet come to help.",
+        "In the midst of wearing away. No fault. Though among those in decline, you still keep ties with the good above. Separating from those of little worth is no fault.",
+        "The bed is gnawed away to the skin. Misfortune. Harm reaches you directly and can no longer be avoided.",
+        "A string of fish, and the palace ladies brought in turn to receive favor. Nothing is unfavorable. When yin yields to order and obeys the good, the situation turns for the better.",
+        "A great fruit not yet eaten. The wise person gains a carriage. The petty person tears down even the roof over their own head. The seed of goodness remains and will grow again. Those of virtue will be supported, but destroyers destroy their own shelter."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Leaves fall so the tree can rest. Whatever is fading, try letting it go calmly.",
+      "yearMessageEn": {
+        "overview": "Leaves fall so the tree can rest. This year some things may fade, but it is a chance to guard your foundation, be patient, stay steady in what matters, and calmly release the rest.",
+        "work": "Do not force expansion now. Protect what is fundamental first.",
+        "love": "If something in the relationship is changing, stay calm and keep its core.",
+        "money": "Cut needless spending and keep what matters secure.",
+        "blessing": "May you have firm roots even when the leaves fall."
+      }
+    },
+    {
+      "id": 24,
+      "nameEn": "Return",
+      "meaningEn": "Coming back, a turning point to recovery",
+      "keywordsEn": [
+        "Returning",
+        "Turning point",
+        "Starting anew",
+        "Back to the right path"
+      ],
+      "judgmentEn": "Return is flourishing. Going out and coming in bring no illness. Friends come and there is no fault. Turning back to one's own way, it comes again on the seventh day. It is favorable to undertake anything.",
+      "imageEn": "Thunder within the earth is the image of return. So the kings of old closed the passes at the winter solstice. Merchants and travelers did not journey, and the ruler did not inspect the realm.",
+      "descriptionEn": "After the darkness has reached its limit, the first yang light has come back to the bottom, like the winter solstice when daylight begins to grow again. The new energy is still young, so it must be treated gently and calmly, without haste, like closing the passes so the seedling of life can grow. This is a time to return to your true self, correct what went astray, and begin again in step with nature's rhythm. Those with the same purpose will slowly gather again.",
+      "linesEn": [
+        "Returning from not far away. No cause for deep regret. Great good fortune. Realizing you were wrong and turning back while you have not strayed far is the best way.",
+        "A beautiful return. Good fortune. Turning back by learning from a virtuous person nearby goes smoothly.",
+        "Returning again and again. Danger, but no fault. Straying and returning over and over is worrying, but as long as you keep trying to return, it is not quite a fault.",
+        "In the middle of the crowd, one turns back alone. Even if those around go another way, you dare to choose the right path by yourself.",
+        "Returning with a firm heart. No regret. Honest and steady self-examination makes the return firm and unshaken.",
+        "Lost on the way back. Misfortune and disaster. If you send out an army, in the end it will suffer great defeat, and it is unfortunate for the ruler too. For ten years it cannot recover enough to fight. One who misses the chance to turn back and persists brings lasting harm on themselves and others."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "After the longest night, light begins to return. It is not too late to begin again today.",
+      "yearMessageEn": {
+        "overview": "After the longest night, light begins to return. This year is a good turning point. You can always return to the right path and start again, even if the first step is small and the light is faint.",
+        "work": "Begin again, or return to what you set aside. A small step counts as a start.",
+        "love": "A relationship that grew distant may become warm again if you reach out first.",
+        "money": "Start a new, healthy money habit and recover step by step.",
+        "blessing": "May the new year be a bright beginning for you."
+      }
+    },
+    {
+      "id": 25,
+      "nameEn": "No Pretense",
+      "meaningEn": "Without illusion, natural purity",
+      "keywordsEn": [
+        "Pure heart",
+        "Without expectation",
+        "Natural way",
+        "The unexpected"
+      ],
+      "judgmentEn": "No pretense is great and flourishing. It is favorable to hold to what is right. Whoever is not in the right meets danger, and it is not favorable to undertake anything.",
+      "imageEn": "Thunder moving across all under heaven, and all things awaken without pretense. So the kings of old acted fully in accord with the seasons and nourished all things to grow.",
+      "descriptionEn": "Thunder moves beneath heaven. This is action in harmony with heaven, with no scheming or hidden greed. No pretense is an upright heart like nature, which does not calculate gain and loss. When the heart is pure, everything flows. But if there is a hidden intent to twist things, trouble follows on its own. This scene also warns that sometimes unexpected misfortune visits those who did nothing wrong. Meet it calmly, without panic and without trying to force the outcome.",
+      "linesEn": [
+        "No pretense. Going forward brings good fortune. Action that comes from a truly pure heart fulfills its wish.",
+        "Plow without thinking of the harvest; clear new land without thinking of the third-year field. Then it is favorable to undertake things. Do what is in front of you as well as you can, without clinging to the reward.",
+        "Misfortune that one did not cause. Someone ties up an ox, a traveler leads it away, and the villagers are the ones suspected. Sometimes harm falls on the innocent for no reason. Meet it with calm.",
+        "One can hold firm. No fault. Keep your integrity steady and there is nothing to worry about.",
+        "Illness that one did not cause. Without medicine there will be cause for joy. A problem not caused by your own fault will clear up by itself. Do not hurry to use a remedy that is misplaced or wrong.",
+        "Even without pretense, if you move there is danger. Nothing is favorable. When you have reached the end of the road, even good intentions should not push on. Stand still and wait for the right moment."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Do what should be done with an honest heart, and loosen your expectations of the result a little.",
+      "yearMessageEn": {
+        "overview": "A natural, pure heart is your guide. This year the unexpected may happen. Do what is right without hoping too much for reward, and do not force what is unnatural.",
+        "work": "Work with honesty and no scheming. Be ready for the unexpected.",
+        "love": "Sincerity with no expectation is the best foundation for love.",
+        "money": "Expect no windfalls. Do what is right and keep a reserve for surprises.",
+        "blessing": "May your heart be pure and good things come unexpectedly."
+      }
+    },
+    {
+      "id": 26,
+      "nameEn": "Great Storing",
+      "meaningEn": "Great accumulation, restraining strength",
+      "keywordsEn": [
+        "Storing strength",
+        "Restraint",
+        "Learning from the past",
+        "Cultivating virtue"
+      ],
+      "judgmentEn": "Great storing is favorable when one holds to what is right. Not eating at home brings good fortune. It is favorable to cross the great river.",
+      "imageEn": "Heaven within the mountain is the image of great storing. So the wise person studies the words and deeds of the sages of the past in depth, in order to store up their own virtue.",
+      "descriptionEn": "The mountain holds the strength of heaven within it, like a treasure gathered in a valley. Powerful creative energy is restrained and nurtured until it becomes deep knowledge and virtue. This is a time to learn, patiently gather strength, and, when ready, go out to serve society, not keeping your ability only at home. Restraint today is the base for going far tomorrow.",
+      "linesEn": [
+        "There is danger, so it is favorable to stop. When checked from the start, forcing ahead would be dangerous. Stopping to wait for the right moment is wise.",
+        "The carriage has its axle removed. Knowing how to stop on your own, in the middle way, there is no error.",
+        "Good horses gallop after one another. It is favorable to hold firm in hardship. Practice driving and defense every day, and then it is favorable to undertake things. When the road opens, go forward carefully and always be prepared.",
+        "A board fixed on the horns of a young calf. Great good fortune. Restraining strength while it is still young is easy and gives the best result.",
+        "The tusks of a gelded pig. Good fortune. Fix the cause of the fierceness instead of fighting the symptoms, and the violence fades by itself.",
+        "The road of heaven lies open. Flourishing. Storing has reached its limit. Every road opens, and the strength you nurtured can now spread freely."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "The mountain holds great strength within. Today, try storing up more than rushing to use.",
+      "yearMessageEn": {
+        "overview": "Great storing calls for restraint. This year suits learning from the past and nurturing virtue and knowledge. Let strength stay within until it is ready, then release it with direction.",
+        "work": "Build up knowledge and experience. No need to show all your strength yet.",
+        "love": "Learn from the past of the relationship, and use it to grow.",
+        "money": "Save with discipline. Keep your strength and resources for the right moment.",
+        "blessing": "May you gather what is good and be ready to go far."
+      }
+    },
+    {
+      "id": 27,
+      "nameEn": "Nourishment",
+      "meaningEn": "Nourishing, the jaws",
+      "keywordsEn": [
+        "Nourishing",
+        "Guarding speech",
+        "Moderate eating",
+        "Self-reliance"
+      ],
+      "judgmentEn": "Nourishment that holds to what is right brings good fortune. Observe who nourishes what, and observe what one seeks to feed one's own mouth.",
+      "imageEn": "Thunder beneath the mountain is the image of nourishment. So the wise person is careful with words and moderate in eating and drinking.",
+      "descriptionEn": "The picture is an open mouth. The lower jaw moves like thunder, and the upper jaw stays still like a mountain. What goes into the mouth nourishes the body. What comes out of the mouth nourishes or harms others. To know someone, see what they nourish and how they nourish themselves. Nourish both body and mind with what is right, rely mainly on yourself, and use your ability to nourish others as is fitting.",
+      "linesEn": [
+        "You set aside your sacred tortoise and watch me chew with open jaws. Misfortune. One who gives up their own worth and ability and envies what others have brings trouble on themselves.",
+        "Nourishment turned upside down, against the proper way, turning to the high hill for support. Going forward brings misfortune. Relying on the wrong person or the wrong way leads you away from what is right.",
+        "Going against the principle of nourishment. Even holding firm brings misfortune. For ten years it cannot be used. Nothing is favorable. Feeding yourself with endless craving destroys you for a long time.",
+        "Nourishment turned upside down, but good fortune. Eyes fixed like a tiger's, desire chasing without pause. No fault. One in a high position who earnestly seeks help from below in order to nourish the people is not at fault.",
+        "Against the proper way, but holding to what is right brings good fortune. One cannot cross the great river. When your own strength is not enough, rely on the wise and do not risk a great undertaking.",
+        "The source of nourishment. There is danger, but good fortune. It is favorable to cross the great river. One on whom everyone relies must be aware of the heavy burden, and only then dares to take on a great undertaking."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "What we eat, say and think all feed our life. What are you nourishing today?",
+      "yearMessageEn": {
+        "overview": "The jaws remind us of nourishment, in what we eat and what we say. This year, guard your words, be moderate in taking and giving, and choose what truly feeds body and mind.",
+        "work": "Mind your words at work, and nourish yourself with what has real value.",
+        "love": "Kind words feed love. Beware of words that hurt.",
+        "money": "Spend moderately, and rely on yourself before waiting on others.",
+        "blessing": "May you be nourished in body and mind all year."
+      }
+    },
+    {
+      "id": 28,
+      "nameEn": "Great Excess",
+      "meaningEn": "Great excess, a burden too heavy",
+      "keywordsEn": [
+        "Overloaded",
+        "Sagging beam",
+        "Standing alone",
+        "A time of crisis"
+      ],
+      "judgmentEn": "The roof beam bends. It is favorable to undertake anything. Flourishing.",
+      "imageEn": "The lake flooding until it drowns the trees is the image of great excess. So the wise person can stand alone without fear and can withdraw from the world without resentment.",
+      "descriptionEn": "Four yang lines are packed in the middle, while both ends are weak yin, like a beam bearing so much weight that it sags. This is a special time when the burden is heavier than usual. Ordinary methods do not work, so one must dare to do something unusual to ease the situation. But it must be done gently and with understanding, not with stubborn force. The wise in such a time need a steady heart and the courage to stand firm even with no one beside them.",
+      "linesEn": [
+        "White thatch grass laid beneath. No fault. When the burden is heavy, careful attention from the very start prevents damage.",
+        "A withered willow sprouts new shoots. An old man takes a young wife. Nothing is unfavorable. What was fading is fed by new strength and regains life.",
+        "The roof beam bends. Misfortune. One who stubbornly carries the load and will not accept help will collapse.",
+        "The roof beam bows upward and holds. Good fortune. But if there is some other motive, it brings shame. One who carries a burden steadily must not be swayed by temptation or self-interest.",
+        "A withered willow bears flowers. An old woman takes a young husband. No fault, but no merit either. A brief blooming of what is nearly spent cannot build anything lasting.",
+        "Wading through deep water until it covers the head. Misfortune, but no fault. Sacrificing oneself for what is right, even if it brings ruin, brings no fault."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A sagging beam says the load is too much. Is there a burden to set down today, or help to ask for?",
+      "yearMessageEn": {
+        "overview": "A beam sags when the load is too heavy. This year you may have much to carry. Stand firm inside, do not carry everything alone, and take care not to break before it passes.",
+        "work": "The workload is heavy. Set priorities and ask for help before you fall.",
+        "love": "Do not let stress drive you apart. Tell your loved one what you need.",
+        "money": "Expenses may weigh heavily. Review them and cut what is beyond your means.",
+        "blessing": "May you stand firm and find a hand to steady you."
+      }
+    },
+    {
+      "id": 29,
+      "nameEn": "Water",
+      "meaningEn": "Deep pit, danger upon danger",
+      "keywordsEn": [
+        "Layered danger",
+        "Deep pit",
+        "Steady heart",
+        "Flowing like water"
+      ],
+      "judgmentEn": "A deep pit within a deep pit. If you are sincere, the heart flourishes, and your actions will be honored.",
+      "imageEn": "Water flowing on without end is the image of pit upon pit. So the wise person keeps virtue constant and practices teaching without pause.",
+      "descriptionEn": "Water upon water, danger upon danger, like one who has fallen into a gorge and finds another pit beneath. But water teaches us how to pass through danger. It flows forward without stopping, fills every hollow before moving on, and never loses its nature wherever it is. In hard times, keep sincerity as your core. Do not panic. Make your way through one step at a time, patiently and steadily, and the way out will appear on its own.",
+      "linesEn": [
+        "Pit upon pit. Falling into the bottom of the deep pit. Misfortune. Growing used to danger until you lose your way, you only sink deeper and deeper.",
+        "There is danger within the pit. Seeking a little, you may gain a little. You cannot yet escape fully. Be content with progress a little at a time.",
+        "Coming or going, it is all pit. Dangerous and deep. Fallen to the bottom of the pit, do nothing. When every way is dangerous, struggling makes things worse. Stay still and wait for the situation to ease.",
+        "One flask of wine and two bowls of rice in plain clay ware, handed through the window. In the end, no fault. In hard times, simple sincerity and meeting without ceremony are worth more than any formality.",
+        "The pit is not yet full, only leveled off. No fault. Danger is nearly past, but it is not yet time to be ambitious. Be content with having come through.",
+        "Bound with a triple-twisted rope and kept in a thicket of thorns. For three years there is no escape. Misfortune. One who loses the way to the end of the road in danger stays entangled for a long time."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Water passes through deep pits without losing itself. The way is hard, yet a steady heart is still yours.",
+      "yearMessageEn": {
+        "overview": "Danger upon danger is like a deep pit, but water never stops flowing or loses itself. This year a steady heart and a gentle flow will see you through hard times.",
+        "work": "Get through the hard stretch with honesty and steady effort. Keep learning.",
+        "love": "In uncertainty, being sincere and staying side by side helps most.",
+        "money": "Take special care, check every time, and do not risk beyond your means.",
+        "blessing": "May your heart be steady like water passing every obstacle."
+      }
+    },
+    {
+      "id": 30,
+      "nameEn": "Fire",
+      "meaningEn": "Fire, clinging and brightness",
+      "keywordsEn": [
+        "Brightness",
+        "Clinging",
+        "Wisdom",
+        "Humility"
+      ],
+      "judgmentEn": "Brightness is favorable when one holds to what is right. Flourishing. Raising a cow brings good fortune.",
+      "imageEn": "Brightness arising twice over is the image of fire. So the great person carries on the light without break and shines to all four directions.",
+      "descriptionEn": "Fire cannot blaze by itself. It must cling to fuel to give light, like the sun clinging to the sky and plants clinging to the earth. So light and wisdom must cling to what is right. Gentle, docile humility, like a cow, helps the fire of wisdom burn lastingly without consuming itself. Know what you depend on, and let your light guide others steadily.",
+      "linesEn": [
+        "Footsteps in confusion. With reverence and care there is no fault. At the beginning, when many matters come at once, steady your mind before you step.",
+        "Yellow light. Great good fortune. Brightness resting fittingly in the middle way, like the gentle light of the midday sun, is perfection.",
+        "Light of the setting sun. If one does not beat the clay jar and sing, one will lament old age. Misfortune. Every life comes to its time of fading. Accept it with a cheerful heart instead of grieving and fearing.",
+        "It rushes in all at once: it flares, it burns out, it is abandoned. Violence that comes suddenly burns out quickly and cannot last.",
+        "Tears pouring, sorrowful lament, but good fortune. True sorrow and deep awareness in a time of crisis lead to a good change.",
+        "The king marches out to put down rebels and wins. He strikes down the ringleader and takes only the chiefs captive, not their followers. No fault. Remove the root of the evil, but be merciful to those who were led along."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Fire shines because it has fuel. What is the fuel that keeps a light in your heart today?",
+      "yearMessageEn": {
+        "overview": "Fire needs fuel to burn bright. This year wisdom and clarity lead the way. Cling to what is right and keep your humility, so that the light is warm and does not scorch.",
+        "work": "Your thinking grows clearer. Let wisdom lead your work and stay humble.",
+        "love": "Give warmth without scorching. Gentleness keeps love bright and lasting.",
+        "money": "Hold to sound principles and see clearly before deciding about money.",
+        "blessing": "May wisdom and warmth light your path through the new year."
+      }
+    },
+    {
+      "id": 31,
+      "nameEn": "Sensing",
+      "meaningEn": "Feeling, mutual attraction",
+      "keywordsEn": [
+        "Attraction",
+        "Mutual awareness",
+        "Love",
+        "An open heart"
+      ],
+      "judgmentEn": "Sensing is flourishing. It is favorable to hold to what is right. Taking a wife brings good fortune.",
+      "imageEn": "A lake on top of the mountain is the image of sensing. So the wise person keeps the heart empty in order to receive others.",
+      "descriptionEn": "The mountain, like a young man, lowers himself beneath the lake, like a young woman. The lake's moisture seeps down to nourish the mountain. This is the picture of natural attraction and mutual awareness, in love, in friendship, and in winning others over. True sensing comes from an empty, humble heart, not from force or hidden intent. Listen with the heart, be open to others, and let the relationship grow naturally.",
+      "linesEn": [
+        "Feeling in the big toe. The impulse has only just begun to stir and shows no result yet. It is only an intention not yet acted on.",
+        "Feeling in the calf. Misfortune. Staying still brings good fortune. Rushing to move on an impulse without waiting for the right moment leads to mistakes. Be patient and wait.",
+        "Feeling in the thigh. Clinging to following others. If you go forward, there will be shame. Running after other people's wishes with no principle loses your own self.",
+        "Holding firm to what is right brings good fortune, and regret disappears. If the heart is restless, going back and forth, only close friends will follow your thoughts. Influence from a pure heart spreads widely, but deliberate calculation reaches only a narrow circle.",
+        "Feeling in the back. No regret. Steadiness that is not shaken may not touch deeply, but it will not bring regret.",
+        "Feeling in the jaw, cheeks and tongue. Persuading with shallow words and no sincerity cannot touch anyone's heart."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A still heart can sense others. Today, try feeling what the people close to you are feeling.",
+      "yearMessageEn": {
+        "overview": "Mountain and lake attract each other naturally. This year feelings and mutual awareness are strong. Open your heart gently, but do not let emotion run so fast that you forget sincerity.",
+        "work": "Listen openly to colleagues. Understanding each other keeps work smooth.",
+        "love": "Attraction and understanding are strong. Open your heart gently and sincerely.",
+        "money": "Do not decide about money on a passing mood. Balance feeling with reason.",
+        "blessing": "May you find understanding hearts and a warm love."
+      }
+    },
+    {
+      "id": 32,
+      "nameEn": "Constancy",
+      "meaningEn": "Lasting, steady consistency",
+      "keywordsEn": [
+        "Endurance",
+        "Consistency",
+        "Holding to principle",
+        "Patience"
+      ],
+      "judgmentEn": "Constancy is flourishing. No fault. It is favorable to hold to what is right. It is favorable to undertake anything.",
+      "imageEn": "Thunder and wind together are the image of constancy. So the wise person stands firm and does not change direction.",
+      "descriptionEn": "Thunder and wind never stop moving, yet they stay together for all time, like a husband and wife who stay together for many years. Constancy is not standing still. It is moving steadily by a principle that does not change, like the seasons that turn and the sun and moon that travel without end. Hold a steady goal. You may adjust your methods to the situation, but do not abandon your core, and do not rush to expect quick results.",
+      "linesEn": [
+        "Digging deep in search of constancy. Even if you hold firm, misfortune. Nothing is favorable. Demanding deep stability from the very start, without giving time to build it gradually, leads to error.",
+        "Regret disappears. Even if the position is not suitable, keeping steadily to the middle way keeps you free of error.",
+        "Not constant in one's own virtue. One may meet disgrace. Even holding firm brings shame. One who changes principles with the mood is trusted by no one.",
+        "Hunting in the field but catching no game at all. Striving for a long time in the wrong place or by the wrong method brings no result, however hard you try.",
+        "Constant in one's own virtue, holding to what is right. For a woman, good fortune. For a man, misfortune. Obeying and following faithfully suits a follower, but a leader must know how to decide and adapt as fitting.",
+        "Constancy that keeps shaking. Misfortune. Restlessness that keeps changing back and forth destroys everything that was built."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "What lasts comes from steady repetition. Which small habit do you want to keep today?",
+      "yearMessageEn": {
+        "overview": "Constancy comes from steadily holding to principle. This year there is no need to hurry or change direction often. Keep to what is right, be patient, and walk on evenly. Results will come.",
+        "work": "Keep doing what is right, steadily. Consistency beats haste.",
+        "love": "Keep the relationship going with steadiness, not with grand gestures.",
+        "money": "Keep your discipline and long-term plan. Do not switch about with the trend.",
+        "blessing": "May you stay steady and lasting in the good you hold to."
+      }
+    },
+    {
+      "id": 33,
+      "nameEn": "Retreat",
+      "meaningEn": "Stepping back, withdrawing",
+      "keywordsEn": [
+        "Retreat with good timing",
+        "Protect yourself",
+        "Keep away from the unworthy",
+        "Know the moment"
+      ],
+      "judgmentEn": "Retreat is flourishing. In small matters it still helps to hold firmly to what is right.",
+      "imageEn": "Beneath the sky stands a mountain: the picture of retreat. The wise person keeps away from petty people, not out of hatred, but with dignity and strict discipline toward themselves.",
+      "descriptionEn": "The dark force is rising from below, like long shadows at dusk. Pushing against it now would only bring loss. Retreat is not defeat but the wisdom of knowing heaven's timing. Step back calmly, without anger, and do not shut the door so hard that relationships break. Keep your strength for the day when the times favor you again.",
+      "linesEn": [
+        "Retreating at the very tail of the line is dangerous. Do not start anything or go anywhere. When you are in the slowest place to withdraw, stay still for now. Hasty movement only exposes you to harm.",
+        "Bound with yellow ox hide, which no one can loosen. A steady will that stays true to what is right holds so firmly that nothing can pull it away.",
+        "Retreating while ties still hold you back brings distress and danger. Yet caring for servants and household brings good results. Concern keeps you from leaving cleanly, so spend that attachment on small matters at home, not on great ones.",
+        "Retreating while the heart still holds affection. This brings good fortune to the wise person, but not to the petty. A person with inner discipline can let go of what they love, while one who follows their own wishes is dragged back by attachment.",
+        "A graceful retreat. Holding to what is right brings good fortune. A retreat that is well timed and courteous offends no one, and so keeps both oneself and goodwill intact.",
+        "A retreat that is full and carefree. Nothing fails to help. One who has fully let go, with no bond holding them back, departs lightly and in happiness."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Stepping back at the right time is wisdom. Is there something today you do not need to get involved in?",
+      "yearMessageEn": {
+        "overview": "Retreating with good timing is not running away. This year, keep yourself apart from what does not suit you. Step back when it is right, save your strength, and return when the time is ready.",
+        "work": "Step back from tasks that are not yours and from unsuitable people.",
+        "love": "Give each other some space. A fitting distance lets the heart breathe.",
+        "money": "Pull back from spending or commitments beyond your means. Look after yourself.",
+        "blessing": "May you know when to step back and return strong."
+      }
+    },
+    {
+      "id": 34,
+      "nameEn": "Great Strength",
+      "meaningEn": "Great power, vigor",
+      "keywordsEn": [
+        "Strong force",
+        "Righteousness",
+        "Restraint",
+        "No excess force"
+      ],
+      "judgmentEn": "Great strength. It helps to hold firmly to what is right.",
+      "imageEn": "Thunder rolls above the sky: the picture of great strength. The wise person therefore takes no step that goes against propriety and rightness.",
+      "descriptionEn": "Yang energy has grown to its fullest and overflows, like thunder shaking the whole sky. You have a great deal of strength now, but true strength is controlled and rests on what is right. One who charges at everything, like a ram against a fence, gets stuck, unable to retreat or advance. Use your power within limits, know when to stop, and let rightness lead your strength.",
+      "linesEn": [
+        "Strength in the toes. Pushing ahead brings danger. Even when confidence is full, a power that has only just begun is not yet steady, and rushing forward invites misfortune.",
+        "Holding to what is right brings good fortune. You stand in the balanced middle, with strength but no excess. This balance is what brings good results.",
+        "The petty use force; the wise do not. Even holding firm, there is danger. The ram butts the fence and gets caught. Showing off your power traps you, so the wise keep their strength in reserve and do not display it carelessly.",
+        "Holding to what is right brings good fortune. Regret fades. The fence opens and nothing holds you. Strength lies in the axle of a great cart. Move ahead steadily and on the right path, and obstacles open the way by themselves.",
+        "Losing the ram easily on the plain. No regret. When you can set down stubbornness and hardness, there is nothing left to regret.",
+        "The ram butts the fence: it cannot retreat and cannot advance. Nothing helps. But if you recognize the difficulty, there is good fortune. Pushing stubbornly to the end leads to a dead end. Accepting the truth and cooling down is the way out."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "True strength knows how to hold back. Before you push today, ask whether you should.",
+      "yearMessageEn": {
+        "overview": "Strength that serves what is right is beautiful. This year you have much power, but show restraint and do not use force beyond what is fitting. Real strength is knowing when to stop.",
+        "work": "You have energy to push work forward. Use it fairly and do not pressure others.",
+        "love": "Show your steadiness gently. Do not let strength turn into control.",
+        "money": "Your earning power is strong, but spend with thought and within your means.",
+        "blessing": "May you be strong and kind through the new year."
+      }
+    },
+    {
+      "id": 35,
+      "nameEn": "Advance",
+      "meaningEn": "Rising, moving forward",
+      "keywordsEn": [
+        "Progress",
+        "Being recognized",
+        "Dawn light",
+        "Shining virtue"
+      ],
+      "judgmentEn": "Advance. The lord who brings peace to the land is rewarded with many horses, and is received in audience three times in one day.",
+      "imageEn": "The sun rises above the earth: the picture of advance. The wise person therefore polishes the bright virtue within until it shines by itself.",
+      "descriptionEn": "The sun climbs from the horizon, and its light spreads everywhere without hurry. This is a time of progress and of earning the trust of those above you. Success comes from loyal service and from bringing calm to the people around you. Let your light shine from inner virtue, not from boasting, and do not worry about small gains and losses along the way.",
+      "linesEn": [
+        "Advancing and being blocked. Holding to what is right brings good fortune. Even if you are not yet trusted, keep a generous heart and you will be without fault. At the start, when no one yet sees your worth, do not be anxious. Staying calm will carry you through.",
+        "Advancing with sorrow. Holding to what is right brings good fortune. You will receive a great blessing from the royal grandmother. The worry of having no support will ease when a kind elder reaches out a hand.",
+        "All the people agree. Regret fades. When the trust of the group is yours, progress is smooth and free of heavy burden.",
+        "Advancing like a field rat. Even holding firm, there is danger. One who climbs through greed and hides in a high place without real ability stands on risky ground.",
+        "Regret fades. Do not fret over gain or loss. Going forward brings good fortune, and nothing fails to help. In a high position with an open heart, let go of worry about gains and losses and simply do what is right.",
+        "Advancing to the very horns. It serves only for subduing one's own town. There is danger but good fortune, and no fault. But clinging to it brings shame. Hardness at its extreme should be used only to curb the faults in oneself or one's household. Used on others, it goes too far."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Dawn rises slowly from the earth. Progress comes in the open. Let your virtue be your light.",
+      "yearMessageEn": {
+        "overview": "The sun rises over the land. This year brings progress and recognition. Your virtue shines brighter. Move forward with humility and do not forget those who helped you along the way.",
+        "work": "Your work is recognized. Advance through good character and humility.",
+        "love": "The relationship moves ahead brightly. Thank the people who stand beside you.",
+        "money": "The trend is forward. Spend carefully and keep your security in mind.",
+        "blessing": "May your light grow brighter every day of the new year."
+      }
+    },
+    {
+      "id": 36,
+      "nameEn": "Hidden Light",
+      "meaningEn": "Light dimmed, darkness",
+      "keywordsEn": [
+        "Hide your light",
+        "Endure the dark",
+        "Guard the heart",
+        "Watch for danger"
+      ],
+      "judgmentEn": "The light is dimmed. It helps to hold firmly to what is right amid hardship.",
+      "imageEn": "The sun sinks beneath the earth: the picture of dimmed light. The wise person therefore governs people by keeping their cleverness inside, using darkness as a cloak while the heart stays bright.",
+      "descriptionEn": "Now the sun has gone from the sky, and the virtuous fall under the power of the blind. Showing your ability or your rightness openly may bring danger on yourself. Be like Jizi, who made himself unnoticed to preserve his life and his ideals. On the outside, be gentle and yielding. Inside, stay bright and steady. The darkness does not last forever, and the light will return in its own time.",
+      "linesEn": [
+        "Light dimmed while in flight, wings drooping. The wise person sets out, going three days without eating, and wherever they go, their hosts speak ill of them. When you see danger from far off, withdraw quickly, even at the cost of hardship and being misunderstood. That is better than being caught in danger.",
+        "Light dimmed. Wounded in the left thigh. Using a strong horse to help brings good fortune. Though hurt, the wound is not deadly. Hurry to help yourself and others with the strength you have.",
+        "Light dimmed while hunting in the south, and the great leader is caught. Do not rush to fix everything at once. Even when there is a chance to remove the root of the darkness, change must come gradually.",
+        "Entering the left side of the belly, you grasp the heart of the one who dims the light, then leave through the gate of the house. When you understand the true nature of the situation, depart before it is too late.",
+        "Light dimmed, like Jizi. It helps to hold firmly to what is right. Jizi pretended to be mad to escape the tyrant, yet his heart kept hold of what is right. Hide your light inside in just this way.",
+        "No light, only darkness. At first rising to the sky, later falling to the ground. One who dims the light of others may flourish for a while, but in the end brings about their own ruin."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "In dark times, keep the light in your heart quietly. Not everyone needs to see it right now.",
+      "yearMessageEn": {
+        "overview": "Dimmed light still burns within. This year you may need to hide your light, endure the dark, watch for danger and keep your heart true without standing out. In time, the light returns.",
+        "work": "Work quietly, mind your words and protect what matters to you.",
+        "love": "Support each other through hard times. Being there matters more than words.",
+        "money": "Be careful and low-key. Do not show off what you have. Protect what matters.",
+        "blessing": "May the light in your heart stay warm and never go out."
+      }
+    },
+    {
+      "id": 37,
+      "nameEn": "Household",
+      "meaningEn": "Family, people of the home",
+      "keywordsEn": [
+        "Family",
+        "Roles and duties",
+        "Warmth",
+        "Setting an example"
+      ],
+      "judgmentEn": "The family. It helps when the woman holds firmly to what is right.",
+      "imageEn": "Wind comes out from fire: the picture of the family. The wise person therefore speaks with substance and acts with steady consistency.",
+      "descriptionEn": "The family is the foundation of everything. When each person keeps to their own role rightly, the home is steady and warm, like a fire in the hearth sending warmth out on the wind. Influence outside begins with order inside. Set an example with sincere words and steady actions. Love with limits and firmness with kindness make the home a refuge for everyone.",
+      "linesEn": [
+        "Set rules in the household from the start. Regret fades. Setting clear boundaries at the beginning prevents problems that would come later.",
+        "She does not go off to do as she pleases but stays to see to the food in the kitchen. Holding to what is right brings good fortune. Doing your duty with care and without self-will is the heart that holds a home together.",
+        "The household is sternly rebuked. Though there is regret and danger, there is good fortune. If wife and children laugh and play without limits, in the end there is shame. Too much strictness may feel stifling, but it is still better than neglect that leaves no order.",
+        "Making the household prosper. Great good fortune. One who looks after the family's wealth and livelihood with care brings flourishing to everyone.",
+        "The king comes to his own family. Do not worry. Good fortune. A leader who cares for the family with love and virtue is loved in return and has nothing to fear.",
+        "Having sincerity and a dignified bearing brings good fortune in the end. The respect that comes from one's own sincerity keeps the family at peace for the long run."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Peace at home starts with small words. Today, try saying one kind thing to someone in your household.",
+      "yearMessageEn": {
+        "overview": "Family is the base of everything. This year, pay attention to your roles at home and to those close to you. Warmth, honest words and setting an example will do good in every part of life.",
+        "work": "Do your duties well and set an example. Stability at home supports your work.",
+        "love": "Care for the people at home in word and deed. Warmth begins with what is near.",
+        "money": "Plan family finances together. Talk openly and honestly.",
+        "blessing": "May your home be warm and full of smiles."
+      }
+    },
+    {
+      "id": 38,
+      "nameEn": "Divergence",
+      "meaningEn": "Conflict, opposite poles",
+      "keywordsEn": [
+        "Differences",
+        "Misunderstanding",
+        "Small things succeed",
+        "Find common ground"
+      ],
+      "judgmentEn": "Divergence. In small matters there is still good fortune.",
+      "imageEn": "Fire above, a lake below: the picture of divergence. The wise person therefore walks together with others, yet keeps their own character.",
+      "descriptionEn": "Fire climbs upward while lake water runs downward, each going its own way, like people who live together but are not of one mind. This is no time to expect great success, but small matters can still go well. Difference need not mean enmity if you can find common ground without giving up your principles. What looks frightening is often only a misunderstanding. When suspicion eases, friends appear.",
+      "linesEn": [
+        "Regret fades. If a horse is lost, do not chase it. It will return by itself. Meeting a bad person brings no fault. What is yours comes back without your grasping, and not turning away those you disagree with lessens the bitterness.",
+        "Meeting the master in a narrow lane. No fault. When the proper channels are blocked, a chance meeting outside the usual way can still lead to understanding.",
+        "Seeing the cart dragged back and the ox held, the driver's hair shaved and his nose cut. A bad start but a good end. At first everything seems stuck and shameful, but with patience the final result is good.",
+        "Alone in opposition, you meet a worthy person, and each deals sincerely with the other. There is danger but no fault. In loneliness there is someone who understands. Sincerity will bring you a true ally.",
+        "Regret fades. Your kin bite through the soft flesh with ease. What fault could there be in going to them? When you meet someone of like mind, the barrier between you is thin and easy to pass. Step toward them without hesitation.",
+        "Alone in opposition, you see a pig covered in mud and a cart full of ghosts. First you draw the bow, later you lay it down. They are not robbers but suitors. Going on and meeting rain brings good fortune. Suspicion makes everything look like an enemy. When you see clearly, you find a friend. The tension eases like rain washing away the dust."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Fire rises, water sinks. We can differ without being enemies. Today, respect someone's difference.",
+      "yearMessageEn": {
+        "overview": "Fire and lake move apart, yet difference is also where cooperation begins. This year you may meet misunderstandings or clashing views. Start with small things and look for common ground.",
+        "work": "You may disagree. Start with small points you can settle, then expand.",
+        "love": "Difference is no enemy. Listen and seek common ground before blaming anyone.",
+        "money": "Talk money through clearly with those involved. Do not guess each other's minds.",
+        "blessing": "May you understand difference and find common ground."
+      }
+    },
+    {
+      "id": 39,
+      "nameEn": "Obstruction",
+      "meaningEn": "Obstacles, hardship",
+      "keywordsEn": [
+        "Obstacles",
+        "Look inward",
+        "Ask for advice",
+        "Wait for the moment"
+      ],
+      "judgmentEn": "Obstruction. It helps to go southwest, not northeast. It helps to meet a great person. Holding firmly to what is right brings good fortune.",
+      "imageEn": "Water on top of a mountain: the picture of obstruction. The wise person therefore turns back to examine themselves and cultivate virtue.",
+      "descriptionEn": "Ahead lies rushing water and behind stands a steep mountain. Pushing straight through only meets blockage. Southwest means the level, easy road, while northeast is the mountain path, harder still. At this time, choose the easier way, seek a wise person to guide you, and use the obstacle as a chance to turn back and mend yourself. When you are ready, the way will open.",
+      "linesEn": [
+        "Going forward meets obstruction; coming back brings praise. Knowing to stop and wait when you see an obstacle earns respect as a wise person.",
+        "The king's minister meets obstruction upon obstruction, but not through any fault of his own. When duty requires pushing through hardship, give it your all and do not blame yourself.",
+        "Going forward meets obstruction, so he comes back. Returning to those close to you and to your own base brings warmth and encouragement.",
+        "Going forward meets obstruction; coming back, he forms a bond. On your own you cannot go on. Join forces with others first.",
+        "Great obstruction, and friends come to help. In the most critical time, one who stands firm on what is right will have people come to join hands.",
+        "Going forward meets obstruction; coming back brings a great result. Good fortune. It helps to meet a great person. Even after you break free, turn back to help others and rely on the advice of the wise."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "When the road ahead is blocked, turn and look at yourself, and do not hesitate to ask for advice.",
+      "yearMessageEn": {
+        "overview": "A mountain lies ahead and water behind. If you meet obstacles this year, look at yourself, ask advice from someone you trust, and wait for the moment. Pausing to think may be the best way out.",
+        "work": "When stuck, pause and review yourself. Ask for advice from an expert or mentor.",
+        "love": "When stuck in a relationship, look at yourself first, then talk together.",
+        "money": "Do not push on with what you are unsure of. Ask for advice before deciding.",
+        "blessing": "May you find a helping hand and a path that opens."
+      }
+    },
+    {
+      "id": 40,
+      "nameEn": "Release",
+      "meaningEn": "Resolving, letting go",
+      "keywordsEn": [
+        "Easing",
+        "Forgiveness",
+        "Starting anew",
+        "Act in time"
+      ],
+      "judgmentEn": "Release. It helps to go southwest. If there is nothing to be done, returning to normal brings good fortune. If there is something to be done, acting early brings good fortune.",
+      "imageEn": "Thunder rolls and rain comes down: the picture of release. The wise person therefore forgives mistakes and eases the punishment of wrongdoers.",
+      "descriptionEn": "After a thunderstorm the air turns clear. Tension that built up for a long time has eased. This is a time to recover and return to simplicity. Do not dig up old matters or seek revenge. Forgive and begin again. If anything is still unfinished, settle it as soon as possible before it comes back to cause trouble.",
+      "linesEn": [
+        "No fault. When trouble has just passed, resting and living quietly is the right thing to do.",
+        "Hunting three foxes in the field and getting a yellow arrow. Holding to what is right brings good fortune. Removing the cunning with fairness and the middle way brings good results.",
+        "Carrying a load while riding in a cart invites robbers to come. Even holding firm, there is shame. Showing off beyond your station or displaying what is not yours invites harm.",
+        "Release your big toe, and then friends will come in sincerity. Shake off those who cling to you insincerely, and true friends will draw near.",
+        "The wise person can free themselves. Good fortune. Even the petty come to trust them. When you truly cut what is bad out of yourself, even those who were once a problem accept it and step away.",
+        "The lord shoots a hawk on a high wall and gets it. Nothing fails to help. When the time is right, dealing with the last root of the trouble decisively and completely releases everything."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "After the storm the air clears. Is there something today you are ready to forgive and let go?",
+      "yearMessageEn": {
+        "overview": "Thunder and rain relieve the tightness. This year is a time of easing, forgiveness and new starts. Once trouble eases, act in good time and do not drag old matters back.",
+        "work": "Lingering problems ease. Hurry to settle them, then move on.",
+        "love": "Forgive and let old things go. The relationship becomes lighter and warmer.",
+        "money": "Financial burdens begin to lighten. Tidy up what remains.",
+        "blessing": "May every tightness in your life ease in the new year."
+      }
+    },
+    {
+      "id": 41,
+      "nameEn": "Reduction",
+      "meaningEn": "Reducing, simple sufficiency",
+      "keywordsEn": [
+        "Let go of excess",
+        "Simplicity",
+        "Give for the common good",
+        "Calm emotions"
+      ],
+      "judgmentEn": "Reduction with sincerity brings great good fortune. No fault. You may hold firm. It helps to go forward. What to use for the offering? Two simple bowls are enough.",
+      "imageEn": "Beneath the mountain lies a lake: the picture of reduction. The wise person therefore restrains anger and blocks desire.",
+      "descriptionEn": "The lake below evaporates to nourish the mountain above. The lower part gives itself up so the upper part may flourish. This is a time to live simply and reduce excess, in wealth and in the heart. Sincerity matters more than luxury. A small offering is enough if the heart is pure. Reducing anger and craving is the reduction that bears the most fruit.",
+      "linesEn": [
+        "Finishing your own tasks, you hurry to help. No fault. But consider how much to reduce yourself. Helping others is good, but know the measure so that you are not used up.",
+        "Holding firm to what is right helps. Pressing on brings danger. You can add to others without reducing yourself. Keeping your steadiness and dignity is a more valuable gift than giving up your self.",
+        "When three walk together, one must be reduced. When one walks alone, he finds a companion. Deep bonds form between two. The one who is extra is reduced, and the one who is alone finds a partner.",
+        "Reducing your own ailment. Acting quickly brings joy. No fault. When you drop your faults fast, people come near with gladness.",
+        "Someone adds to you with a precious tortoise shell worth ten strings of shells. It cannot be refused. Great good fortune. When you reduce yourself and receive with humility, good fortune comes with nothing able to stand in its way.",
+        "Adding to others without reducing yourself. No fault. Holding to what is right brings good fortune. It helps to go forward. You gain helpers who do not think of their own households. One who gives to the community without making anyone lose wins the loyalty of people everywhere."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Sometimes less is more. Today, try letting go of one excess in your life.",
+      "yearMessageEn": {
+        "overview": "Reducing in the right measure adds beauty. This year suits letting go of excess, living simply, calming emotions and giving for the common good. You will see that few things truly matter.",
+        "work": "Drop some needless burdens and keep only what has real effect.",
+        "love": "Lower unrealistic expectations of each other. Simple and sincere is enough.",
+        "money": "Live simply and with enough. Cut excess without stress.",
+        "blessing": "May you be content with what you have and light at heart."
+      }
+    },
+    {
+      "id": 42,
+      "nameEn": "Benefit",
+      "meaningEn": "Increase, advantage",
+      "keywordsEn": [
+        "Increase",
+        "Sharing",
+        "Improving yourself",
+        "A golden time"
+      ],
+      "judgmentEn": "Benefit. It helps to go forward. It helps to cross the great river.",
+      "imageEn": "Wind and thunder strengthen each other: the picture of benefit. The wise person therefore follows the good when they see it, and corrects themselves when they find a fault.",
+      "descriptionEn": "Those above lower themselves so that those below may flourish. This is a time of abundance, like wind and thunder that grow stronger by supporting each other. It is a good moment to undertake great matters and to cross hardship, for heaven opens the way. But such a time does not last, so use it well, both in helping others and in improving yourself.",
+      "linesEn": [
+        "It helps to undertake a great work. Great good fortune. No fault. With support from above, use the chance to build something great, but do it fully well so that no fault follows.",
+        "Someone adds to you with a precious tortoise shell worth ten strings of shells. It cannot be refused. Holding firm to what is right for the long term brings good fortune. The king offers sacrifice to heaven. Good fortune. Luck that comes through humility is steady. Accept it with gratitude and honesty.",
+        "Benefit comes through bad events. No fault. With sincerity and the middle way, you carry a jade token to report to the lord. Even if gain comes through hardship, being open and sincere earns trust.",
+        "Walking the middle way, you report to the lord and he follows. It helps to be relied on when a city is moved. One who is impartial and trusted can be a bridge in a great change.",
+        "Sincere and kind of heart. No need to ask: great good fortune. People will sincerely repay your virtue. True kindness needs no confirmation, for its results show in people's hearts.",
+        "No one adds to you, and instead someone attacks. The heart is not steady. Danger. One who only takes without giving, and keeps changing their mind, will be abandoned, and people will turn against them."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Wind and thunder lift each other. When you see goodness in others, learn from it and pass it on.",
+      "yearMessageEn": {
+        "overview": "Wind and thunder strengthen each other. This year brings more benefit. When you receive, share. Improve yourself and use this golden time to bring your good intentions to fruition.",
+        "work": "There is room to grow. Improve yourself and do the good you planned.",
+        "love": "When you receive love, return it with care. Sharing makes it grow.",
+        "money": "Good timing. Use it well and share a part with others.",
+        "blessing": "May you increase in both good things and kindness."
+      }
+    },
+    {
+      "id": 43,
+      "nameEn": "Resolution",
+      "meaningEn": "Decisive break, pushing through",
+      "keywordsEn": [
+        "Decisive",
+        "Reveal the truth",
+        "No violence",
+        "Stay careful"
+      ],
+      "judgmentEn": "Resolution. It must be proclaimed openly at court. Cry out in sincerity that there is danger. Announce it to your own town. It does not help to use weapons, but it helps to go forward.",
+      "imageEn": "The lake rises high above the sky: the picture of resolution. The wise person therefore shares rank and reward with those below and takes care not to sit alone on their virtue.",
+      "descriptionEn": "The force of what is right has grown nearly full, leaving just one dark line at the top. It is time to remove what is bad decisively, but openly and fairly, not with violence or anger. Show everyone the truth. Begin by preparing your own house, and do not be careless, for what is about to lose often struggles dangerously.",
+      "linesEn": [
+        "Strength in the toes that step forward. Going, you do not win, and it becomes a fault. Rushing ahead without enough strength brings failure on yourself.",
+        "A cry of warning, with caution. Even if enemies come in the night, there is no need to worry. When you are prepared and always alert, a danger that comes unexpected cannot harm you.",
+        "Strength in the cheekbones. Danger. The wise person is decisive. Walking alone, he meets rain, gets soaked and is blamed, but there is no fault. Showing fury on the face is dangerous, but one with steady purpose, even if misunderstood for a time, is without fault.",
+        "The buttocks have no skin and he walks haltingly. If he lets others lead him like a sheep, regret fades, but hearing advice he does not believe it. Stubbornness leaves him unable to sit or walk with ease. If he will listen and follow those who know, he will be free of trouble.",
+        "Pulling out the weeds decisively. Walking the middle way brings no fault. What is bad and rooted near you must be pulled out completely, but with balance and fairness.",
+        "No cry of warning. In the end there is danger. When no one warns and you are not careful, the bad that remains leads to the end."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A truth spoken calmly has more power than anger. What do you need to say clearly today?",
+      "yearMessageEn": {
+        "overview": "Clouds gather until rain must fall. This year it is time to reveal the truth and decide firmly, but without violence. Mind the details and do not be careless, even when the goal is near.",
+        "work": "Decide the matters left hanging. Speak the truth politely and with care.",
+        "love": "Say what has been left unsaid, directly but gently. Do not be harsh.",
+        "money": "Cut the unnecessary firmly, but check carefully first.",
+        "blessing": "May you dare to speak the truth and find a clear path."
+      }
+    },
+    {
+      "id": 44,
+      "nameEn": "Encounter",
+      "meaningEn": "Meeting, a chance clash",
+      "keywordsEn": [
+        "Meeting",
+        "Small things taking shape",
+        "Watch influences",
+        "Stop it early"
+      ],
+      "judgmentEn": "Encounter. This woman has a strong and forceful nature. Do not marry her.",
+      "imageEn": "Beneath the sky wind blows: the picture of encounter. The ruler therefore issues commands and proclaims teachings to the four directions.",
+      "descriptionEn": "The first dark line quietly appears beneath five bright ones, like a small thing that seems harmless but will grow until it takes over. A chance meeting brings both opportunity and risk. Do not get bound to what looks gentle but hides a force that eats away. Stop what is bad while it is still small, and let what is right spread everywhere, like wind blowing in every direction.",
+      "linesEn": [
+        "Tied to a metal brake. Holding to what is right brings good fortune. If let go, it will meet danger, like a lean pig that looks weak but is ready to leap and struggle. Stop what is bad at the very start, for though it looks weak now, it will become a great problem.",
+        "A fish in the bag. No fault. But it does not help the guests. Once you have the matter under control in your hands, keep it and do not let it spread to others.",
+        "The buttocks have no skin and he walks haltingly. There is danger but no great fault. Hesitating to approach what tempts you, though uneasy, helps you escape a major mistake.",
+        "No fish in the bag. Acting brings danger. When you have grown distant from those below and no one supports you, any action will not succeed.",
+        "Wrapping the melon with wolfberry leaves. Hide its beauty within, and good things will fall from heaven. One who protects what is fragile with patience, and does not show off their virtue, will receive heaven's blessing at the right time.",
+        "Meeting with the horns. Shame, but no fault. Holding yourself high and harsh so that no one comes near may look proud, but it protects you from what is bad."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A small meeting can change direction. Today, notice what is coming into your life.",
+      "yearMessageEn": {
+        "overview": "A chance meeting may be the start of something big. This year, beware small influences taking shape. Stop them early if they do not suit you, and choose well whom you open your heart to.",
+        "work": "Watch for people or small matters creeping in. Check well before taking them on.",
+        "love": "A chance meeting has charm, but get to know each other before bonding deeply.",
+        "money": "Beware offers that look too easy. Check them carefully.",
+        "blessing": "May you find fitting good things when you least expect them."
+      }
+    },
+    {
+      "id": 45,
+      "nameEn": "Gathering",
+      "meaningEn": "Coming together, assembly",
+      "keywordsEn": [
+        "Joining forces",
+        "A fair leader",
+        "Shared faith",
+        "Prepare for the unexpected"
+      ],
+      "judgmentEn": "Gathering. Flourishing. The king comes to the ancestral temple. It helps to meet a great person. Flourishing. It helps when one holds firmly to what is right. A great sacrifice brings good fortune. It helps to go forward.",
+      "imageEn": "The lake lies above the earth: the picture of gathering. The wise person therefore repairs weapons to be ready for the unexpected.",
+      "descriptionEn": "Water flows together into a lake on the land, and people assemble around a leader of virtue. This is a time to join strength. A lasting gathering needs a spiritual center, such as shared faith or a fair leader, and it is right to give fully to what matters. But when many people and much wealth come together, conflict arises easily, so always be ready for the unexpected.",
+      "linesEn": [
+        "Sincere but not lasting, so confusion arises in the gathering. If you call out, a clasp of hands brings back a smile. Do not worry. Going on is without fault. Hesitation unsettles the heart, but if you open up and call to the true leader, sorrow turns into a smile.",
+        "Being drawn in brings good fortune. No fault. With sincerity, even a small offering helps. A gathering that arises from natural attraction and sincerity does not need elaborate ceremony.",
+        "Gathering with sighing. Nothing helps. Going on is without fault, but there is a little shame. When no group welcomes you, step toward the one that fits, even if you lose a little face.",
+        "Great good fortune. No fault. One who draws many people together while in a secondary position must act with real rightness to have good fortune and no fault.",
+        "Gathering while holding a position. No fault. If some still do not trust you, hold to great virtue for a long time. Regret fades. A leader with a post but not yet people's hearts must win them through steady virtue.",
+        "Sighing and weeping, tears streaming down the face. No fault. When the wish to join a group goes unfulfilled, sincere sorrow opens the way back to connection with others."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Water becomes a lake because there is a place to hold it. Today, who would you like to walk with?",
+      "yearMessageEn": {
+        "overview": "People gather through faith and a fair leader. This year suits joining forces, building a group you trust, and preparing for the unexpected, for a large gathering needs good care.",
+        "work": "Bring the team together toward a shared goal. A fair leader matters most.",
+        "love": "Gather family and friends. Bonds grow from being together.",
+        "money": "Keep some reserve for the unexpected. Being ready is security.",
+        "blessing": "May your new year be full of people you love and trust."
+      }
+    },
+    {
+      "id": 46,
+      "nameEn": "Ascending",
+      "meaningEn": "Rising, growing",
+      "keywordsEn": [
+        "Grow little by little",
+        "Perseverance",
+        "Receive support",
+        "Never standing still"
+      ],
+      "judgmentEn": "Ascending. Supremely flourishing. Go and meet a great person. Do not worry. Traveling south brings good fortune.",
+      "imageEn": "A tree grows up from within the earth: the picture of ascending. The wise person therefore follows virtue with humility, gathering small things until they become great.",
+      "descriptionEn": "A seedling pushes its shoot up from the soil. It does not hurry, but grows a little every day without stopping. This is a time of steady progress. The road is open and elders stand ready to support you. Success comes from humility and steady perseverance, not from leaping over steps. Gather goodness bit by bit, and it will grow tall by itself.",
+      "linesEn": [
+        "Rising with trust. Great good fortune. When those above accept you, growth is smooth.",
+        "With sincerity, even a small offering helps. No fault. Honesty matters more than ceremony or gifts.",
+        "Ascending into an empty city. The road ahead is open with nothing in the way. Go forward, but do not be careless.",
+        "The king makes an offering at Mount Qi. Good fortune. No fault. One who serves with loyalty and respect for what is sacred earns honor and security.",
+        "Holding to what is right brings good fortune. Ascending by steps. Growth that follows order and rightness will carry you steadily to the highest point.",
+        "Rising in the dark. It helps to hold to what is right without rest. Climbing blindly, never knowing when enough is enough, is dangerous. If you are to go on, turn to patient care for what is right instead of reaching for more."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A tree grows from under the ground bit by bit. Do not look down on the small steps you are taking.",
+      "yearMessageEn": {
+        "overview": "A tree sprouts from the soil and slowly rises. This year suits growing little by little, with perseverance and the support of elders, never standing still and never rushing past the steps.",
+        "work": "Advance step by step with perseverance, and accept support from your seniors.",
+        "love": "The relationship grows slowly and steadily. Do not rush beyond its pace.",
+        "money": "Grow gradually. Plan in steps and keep at it.",
+        "blessing": "May you grow taller, one steady step at a time."
+      }
+    },
+    {
+      "id": 47,
+      "nameEn": "Hemmed In",
+      "meaningEn": "Blockage, being surrounded",
+      "keywordsEn": [
+        "Hard straits",
+        "Stay true to your ideals",
+        "An unyielding heart",
+        "Speak little"
+      ],
+      "judgmentEn": "Hemmed in, yet still flourishing. Holding firmly to what is right, the great person has good fortune. No fault. There are words, but no one believes them.",
+      "imageEn": "A lake without water: the picture of being hemmed in. The wise person therefore is willing to stake their life to fulfill their purpose.",
+      "descriptionEn": "The water of the lake seeps down and the lake runs dry, like a person pressed until they have no strength, and no one listens. Yet hardship is a test of the heart. One who holds to principle passes through and comes out stronger. At this time words carry no weight. Speak less, and let actions and patience be your proof. Do not let outer conditions destroy the calm within.",
+      "linesEn": [
+        "The buttocks are pressed beneath a tree stump. He enters a dark valley and for three years sees no one. When discouraged until you sink into your own darkness, the suffering drags on. Do not give in to gloom.",
+        "Pressed by wine and food. The one in the red sash is arriving. It helps to make an offering. Pushing ahead brings danger, but no fault. Though the body is comfortable, the heart is unfulfilled. Wait for the one who will help, with a calm heart and faith. Do not hurry.",
+        "Pressed by stone, clinging to thorns. Returning home, he does not find his wife. Danger. Struggling the wrong way hurts more and loses even the support nearest to you.",
+        "Coming slowly, pressed by a golden cart. Shame, but it ends in success. Help comes late because wealth and power are in the way, but good intent will arrive in the end.",
+        "His nose and feet are cut. Pressed by the one in the red sash. Joy slowly returns. It helps to make an offering. Though pressed from above and below, calm and faith will slowly lead the way out.",
+        "Pressed by creepers, on a swaying, unsteady place. He tells himself that moving brings regret. If he repents, going forward brings good fortune. The bonds left are only fear in the heart. Once you see it, dare to step out."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Even if the lake dries up, the heart need not dry with it. You can always choose how to respond.",
+      "yearMessageEn": {
+        "overview": "Water dries up beneath the tree. You may feel blocked or surrounded this year, but holding to your ideals with an unyielding heart, you will get through. Speak less, as words may not be heard now.",
+        "work": "In a stuck time, do not waste energy explaining. Do good work and wait.",
+        "love": "Even if misunderstood, stay steady and stay together. Time will show the truth.",
+        "money": "Be thrifty and careful. Use patience to pass through the lean time.",
+        "blessing": "May your heart never give up and always find a way out."
+      }
+    },
+    {
+      "id": 48,
+      "nameEn": "Well",
+      "meaningEn": "A well, a source of nourishment",
+      "keywordsEn": [
+        "The true source",
+        "Nourish others",
+        "Refine yourself",
+        "See it through"
+      ],
+      "judgmentEn": "The well. A town may be moved but the well cannot. It neither empties nor fills. People come and go and draw from it without end. If the rope nearly reaches the water but not quite, and the jar breaks first, there is danger.",
+      "imageEn": "Water above wood: the picture of the well. The wise person therefore encourages people in their work and urges them to help one another.",
+      "descriptionEn": "The well is a source of nourishment that never moves. Anyone may draw from it, and it never dries nor overflows, like true human nature and the virtue deep in the heart. Though the world outside changes, this remains. The trouble is usually not a lack of water, but keeping the well clean and drawing all the way to the water. Refine yourself until you are clear and clean, and carry your work through to the end. Do not stop halfway.",
+      "linesEn": [
+        "The well is only mud and cannot be drunk from. An old well that not even birds visit. When you neglect yourself until you decay, no one comes to rely on you any more.",
+        "At the bottom of the well water seeps, good only for shooting small fish. The bucket is rotten and leaks. You have ability but spend it on trivial things, and lack the tool to bring it out to be useful.",
+        "The well has been cleared of silt, but no one drinks. It makes my heart sad. This water can be drawn. If the king is wise, all will receive blessing. A capable person not yet seen for their worth must wait for a leader who notices, so that their ability can be used.",
+        "The well is lined with bricks. No fault. A time of pausing your service to others to repair and refine yourself is the right kind of preparation.",
+        "The well is clear and clean, with cold spring water to drink. One with pure virtue who is ready to give becomes a true refuge who nourishes people.",
+        "The water is drawn up. Do not cover the well. With sincerity, great good fortune. When a source of nourishment is open to everyone equally and can be trusted, its value is complete."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "The well stays in its place and nourishes all who come to draw. What is your source of strength today?",
+      "yearMessageEn": {
+        "overview": "A well nourishes people without choosing, but it must be kept clean. This year, return to your true source, refine yourself and nourish others. See things through rather than doing them halfway.",
+        "work": "Go back to the basics of your work. Sharpen your skills and see it through.",
+        "love": "Nourish the relationship with small, steady acts of care.",
+        "money": "Look after your income sources and foundations well. They sustain you.",
+        "blessing": "May you be a well of kindness that never runs dry."
+      }
+    },
+    {
+      "id": 49,
+      "nameEn": "Reform",
+      "meaningEn": "Shedding the old, reform",
+      "keywordsEn": [
+        "Change",
+        "Reform",
+        "Timing",
+        "Trust"
+      ],
+      "judgmentEn": "When the day is ripe, people come to believe in the change. Great and flourishing. It favors staying steady on the right path. Regret fades away.",
+      "imageEn": "Fire within the lake: water and fire overcome each other, and so change arises. The wise person therefore sets the calendar in order and makes the seasons clear.",
+      "descriptionEn": "What has outlived its time must be shed, as an animal sheds its coat with the season. But change succeeds only when the time is ripe and people agree and trust it. Rushing ahead too early brings resistance and damage. Examine the reasons for change again and again, and act with a pure heart, not for your own gain. Then the reform will be accepted and will last.",
+      "linesEn": [
+        "Bound with the hide of a yellow ox. It is not yet time to change. Hold to the middle way and wait patiently until conditions are ready.",
+        "When the day is ripe, then act to change. Going forward brings good fortune, and there is no fault. The time is ready, and change made at the right moment will be supported.",
+        "Pressing ahead brings danger, and holding stubbornly is also perilous. When talk of change has been weighed three times, it earns trust. Do not rush and do not stand still. Listen and review until all sides agree.",
+        "Regret fades away. Sincerity is trusted, so the mandate can be changed. Good fortune. A great change succeeds when it rests on honesty that people can see.",
+        "The great person changes like a tiger's stripes. Before any divining, he is already trusted. A true leader changes with dignity and clarity, so that people believe without needing proof.",
+        "The wise person changes like a leopard's spots, while the petty person only changes his expression. Pushing on brings danger, and staying steady brings good fortune. Once the great change is done, stop and tidy the details. Do not keep changing without end."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Good change waits for its time. Today, what in your life is ready to shed its leaves?",
+      "yearMessageEn": {
+        "overview": "Flame and lake transform each other. This is a season for renewal and adjustment, but change when the time is right, with credibility, and explain your reasons to those involved.",
+        "work": "Change how you work when the time comes. Explain why, so your team trusts you.",
+        "love": "Change in a relationship needs conversation. Do not decide alone.",
+        "money": "Adjust financial plans when things change, but do it carefully.",
+        "blessing": "May your changes be graceful and lasting."
+      }
+    },
+    {
+      "id": 50,
+      "nameEn": "Cauldron",
+      "meaningEn": "Three-legged pot, nourishment",
+      "keywordsEn": [
+        "Nourishment",
+        "Institutions",
+        "Cultivation",
+        "Rightful position"
+      ],
+      "judgmentEn": "The three-legged cauldron. Great good fortune. Flourishing.",
+      "imageEn": "Fire burning above wood: the picture of the cauldron cooking. The wise person therefore takes the proper position and makes the mandate of life firm and steady.",
+      "descriptionEn": "The three-legged cauldron is a sacred vessel used to cook offerings for the spirits and to feed the wise. It stands for nourishing what is valuable: body, spirit and the order of society. After a change, the new must be cultivated until it ripens and takes firm hold. Take your proper place, stay steady, and use your abilities to feed others. Then good fortune will come on its own.",
+      "linesEn": [
+        "The cauldron is turned over with its legs up, which helps to pour out the waste. He takes a concubine for the sake of her son. No fault. What looks like an upset actually clears out the old. Even a humble position can create value.",
+        "There is food in the cauldron. My rivals are envious but cannot harm me. Good fortune. When there is substance within, the envy of others cannot reach it.",
+        "The handles of the cauldron are changed, so it cannot be lifted. The fine pheasant meat is eaten by no one. When rain falls, regret fades. In the end, good fortune. You have ability but no one yet sees its worth. Wait patiently, and one day the tension will ease.",
+        "The legs of the cauldron break, and the master's meal is spilled. His body is soiled. Danger. Carrying a burden beyond your strength, or trusting the wrong person, ruins great work and damages your name.",
+        "The cauldron has yellow handles and golden carrying rings. It favors staying steady on the right path. Someone in a high position who is humble and open to advice draws capable people to help.",
+        "The cauldron has jade carrying rings. Great good fortune. Nothing is unfavorable. Strength joined with gentleness, like jade, brings complete success."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A cauldron turns raw ingredients into a meal. What would you like to nurture until it ripens today?",
+      "yearMessageEn": {
+        "overview": "The three-legged cauldron stands firm and nourishes everyone. This year suits cultivating people and what is valuable, holding your proper place, and preparing good things that nourish others too.",
+        "work": "Hold firm in your role and help your team grow. Build what will last.",
+        "love": "Nurture love like cooking a meal, with time and care.",
+        "money": "Allocate with balance. Use resources for what truly nourishes growth.",
+        "blessing": "May you stand firm and nourish the good around you."
+      }
+    },
+    {
+      "id": 51,
+      "nameEn": "Thunder",
+      "meaningEn": "Thunder, shaking awake",
+      "keywordsEn": [
+        "Alarm",
+        "Awakening",
+        "Reverence",
+        "Inner calm"
+      ],
+      "judgmentEn": "Flourishing. When thunder comes, people are startled, and then they laugh and talk cheerfully. Thunder shakes for a hundred li, yet the one performing the rite does not drop the ladle or the offering wine.",
+      "imageEn": "Thunder upon thunder, one peal after another. The wise person therefore feels reverence and fear, then refines themselves and examines their conduct.",
+      "descriptionEn": "Sudden events shake life like a thunderbolt and frighten us. Yet that alarm wakes us up and makes us careful. One whose heart is steady loses nothing that matters, even when the world outside is in turmoil. When it has passed, we can laugh again. Use the shock as a chance to reflect on yourself, and do not let it take over your mind.",
+      "linesEn": [
+        "When thunder comes, people are startled, and afterward they laugh and talk cheerfully. Good fortune. The first fright leads to care and ends in relief.",
+        "Thunder comes with danger. Much property is lost. Climb up to the nine hills and do not chase what was lost. Within seven days it will return. In a crisis, protect yourself first. What was lost will come back by itself in time.",
+        "Thunder leaves one bewildered and confused. If the alarm spurs you to act and put things right, there will be no harm. Turn fright into driving energy instead of standing still without direction.",
+        "Thunder sinks into the mud. The force that should awaken is stuck in the mire. The surroundings hold you back, and nothing you do has any effect.",
+        "Thunder goes and returns. Danger, but nothing is lost. There is still a task to carry out. Even if the shocks come again and again, if you hold to your own center you can still do your duty completely.",
+        "Thunder leaves one trembling, eyes darting. Pressing ahead is dangerous. If the thunder has not reached you but has reached your neighbor, take care in advance and there will be no fault, though those close to you may gossip. When you see harm befall others, step back and prepare early, even if you are thought timid."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Thunder wakes us and then passes. When something startles you, take a deep breath before you react.",
+      "yearMessageEn": {
+        "overview": "Thunder wakes us up. It is a shock, but also a chance to grow stronger inside. Something may shake you this year. Steady yourself, stay wisely respectful and calm. Thunder passes, and calm returns.",
+        "work": "The unexpected may happen. Stay steady and keep doing the right thing.",
+        "love": "Feelings may waver. Breathe deeply and talk once you are calm.",
+        "money": "If something shakes you, do not make financial decisions in a panic.",
+        "blessing": "May your heart stay still, even on days of thunder."
+      }
+    },
+    {
+      "id": 52,
+      "nameEn": "Mountain",
+      "meaningEn": "Mountain, stillness",
+      "keywordsEn": [
+        "Stillness",
+        "Meditation",
+        "Knowing limits",
+        "Calm"
+      ],
+      "judgmentEn": "Keep still at the back, until the self is no longer felt. Walk in the courtyard and see no one. No fault.",
+      "imageEn": "Mountain upon mountain: the picture of stillness. The wise person therefore does not let their thoughts wander beyond their own position.",
+      "descriptionEn": "The mountain stands unmoved. It teaches us to stop when it is time to stop and to move when it is time to move. True stillness is not holding yourself down. It is a mind so calm that neither the self nor outside stimulation pulls it away. Now is a good time for meditation, reflection, and staying within the limits of your duties. Do not let your thoughts run beyond your strength or station.",
+      "linesEn": [
+        "Keeping the toes still. No fault. It favors lasting steadiness. Stopping at the very first step, before an error, means no harm is done.",
+        "Keeping the calves still, but unable to help the one he follows. His heart is not at ease. He knows he should stop, but is carried along by others and cannot hold back, so he feels uneasy.",
+        "Keeping the hips still, so that the spine is nearly torn. Danger scorches the heart. Forcing yourself rigidly to be still goes against nature and brings suffering and pressure to the mind.",
+        "Keeping the torso still. No fault. The self begins to grow quiet. Though not yet complete, it is practice on the right path.",
+        "Keeping the jaw still, so that words come in order. Regret fades away. When you guard your speech and speak at the right time and in good order, you will not regret it later.",
+        "Keeping still with firm steadiness. Good fortune. Calm that is complete from within is the height of stillness and brings true happiness."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A mountain is still without effort. Today, pause a moment and notice where it is time to say: this is enough.",
+      "yearMessageEn": {
+        "overview": "The mountain stops and stands firm. This year suits pausing to see clearly, knowing your limits, and practicing meditation. When the mind is still, your actions land at the right place and time.",
+        "work": "Know the limits of your job and focus on one thing until it is done well.",
+        "love": "A still mind listens more deeply. There is no need to fill every silence.",
+        "money": "Know your spending limits and stop before going beyond your means.",
+        "blessing": "May you be steady and calm like a mountain."
+      }
+    },
+    {
+      "id": 53,
+      "nameEn": "Step by Step",
+      "meaningEn": "Gradual progress",
+      "keywordsEn": [
+        "Progress step by step",
+        "Patience",
+        "Marriage",
+        "Growth"
+      ],
+      "judgmentEn": "A young woman marries by the proper steps. Good fortune. It favors staying steady on the right path.",
+      "imageEn": "A tree grows upon the mountain. The wise person therefore holds to excellent virtue in order to improve the customs of the people.",
+      "descriptionEn": "A tree on a mountain grows slowly but roots firmly, like wild geese that land one stage at a time. Lasting growth must follow its steps. It cannot be hurried or skipped, just as a marriage must go through every step properly. Be patient and slowly build influence through virtue. The result will be steady and accepted.",
+      "linesEn": [
+        "The wild goose slowly settles on the shore. The young man is in danger and there is gossip, but no fault. Beginnings are fragile and criticized. Step carefully and no harm is done.",
+        "The wild goose slowly settles on a rock. It eats and drinks in comfort and joy. Good fortune. You have found firm ground. Share your abundance with others, gladly.",
+        "The wild goose slowly settles on the high plain. The husband goes away and does not return. The wife is with child but does not give birth. Danger, but it favors defending against robbers. Pushing out beyond your limits brings damage. Stay on the defensive and protect what you have.",
+        "The wild goose slowly settles in a tree. Perhaps it finds a flat branch to rest on. No fault. You are in a place that does not suit you, but if you adapt and find shelter humbly, you are safe.",
+        "The wild goose slowly settles on the hilltop. The wife has no child for three years, but in the end nothing can stop her. Good fortune. Even if a relationship or work is blocked and delayed, honesty wins in the end.",
+        "The wild goose slowly rises into the great sky. Its feathers can be used as ornament in ceremony. Good fortune. One who has gone beyond worldly tasks can still be a fine example to others."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A tree on a mountain grows slowly but steadily. What matters most need not be rushed to the finish.",
+      "yearMessageEn": {
+        "overview": "A tree on a mountain grows one step at a time. This year, gradual progress is the right way. Be patient and do not skip steps, especially in relationships, which need ceremony and time.",
+        "work": "Move forward one step at a time. Do not skip the steps that should be done.",
+        "love": "Good love moves in order. Do not rush it. Let time help.",
+        "money": "Build security step by step. Plan in stages and keep at it.",
+        "blessing": "May you advance steadily, one step at a time."
+      }
+    },
+    {
+      "id": 54,
+      "nameEn": "Secondary Bride",
+      "meaningEn": "A young bride of lesser rank",
+      "keywordsEn": [
+        "Unsuitable position",
+        "Relationships",
+        "Knowing your place",
+        "Lasting"
+      ],
+      "judgmentEn": "A young woman goes to be married. Pushing ahead is dangerous. Nothing is favorable.",
+      "imageEn": "Thunder above the lake. The wise person therefore looks to what will last to the very end and sees clearly what will decay.",
+      "descriptionEn": "A younger sister who marries as a secondary wife must live in a place she did not choose. A relationship that begins from a passing impulse or from unequal standing is often fragile. Pressing ahead or making demands brings bad results. Know your standing, conduct yourself quietly and modestly, and look at the relationship in the long term, instead of clinging to what pleases you for the moment.",
+      "linesEn": [
+        "A young woman marries as a secondary wife, like a lame person who can still walk. Going forward brings good fortune. Even in a lesser position, if you do your duty humbly and faithfully, you can still be of use.",
+        "Like a one-eyed person who can still see. It favors the steadiness of one who lives in solitude. Even if ignored or disappointed in a partner, keep your loyalty and virtue, quietly and gracefully.",
+        "A young woman goes to marry as one who waits and serves, and then returns as a secondary wife. Ambition beyond her station means no one accepts her, and in the end she must accept a lower place than before.",
+        "The young woman delays her wedding day. A marriage that is late has its proper time. She does not lower her worth for convenience. Waiting for what is right will bear fruit at the right time.",
+        "The sovereign Di Yi gives his daughter in marriage. The princess's robes are not as splendid as those of the secondary wife. The moon is nearly full. Good fortune. A noble person who is humble and does not show off has a complete inner beauty.",
+        "A woman holds a basket with no fruit in it. A man slaughters a sheep but there is no blood. Nothing is favorable. A rite that is only an outer shell, without sincerity, produces no result."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Sometimes we are not in the position we hoped for. Knowing your place can make the heart lighter.",
+      "yearMessageEn": {
+        "overview": "Be careful of relationships that do not suit your standing or timing. This year, know your place, do not rush what is not ready, and look closely at what can truly last.",
+        "work": "Know your role. Do not overreach or step into others' areas.",
+        "love": "Be clear whether this relationship can last before committing deeply.",
+        "money": "Spend according to your real situation. Do not compare or rush.",
+        "blessing": "May you find what is right and truly lasting."
+      }
+    },
+    {
+      "id": 55,
+      "nameEn": "Abundance",
+      "meaningEn": "Glory and abundance",
+      "keywordsEn": [
+        "Peak of prosperity",
+        "Abundance",
+        "Clarity",
+        "Impermanence"
+      ],
+      "judgmentEn": "Abundance. Flourishing. A king reaches this state. Do not worry. Be like the sun at noon.",
+      "imageEn": "Thunder and lightning come together: the picture of abundance. The wise person therefore decides cases and applies penalties decisively.",
+      "descriptionEn": "This is a time of plenty and power at its peak, like the sun at midday. But a sun at its zenith begins to sink, so prosperity does not last. Do not worry about the decline to come. Use this time to shine on everyone with clarity and decisiveness. Beware of what hides the truth and of those who flatter.",
+      "linesEn": [
+        "He meets a leader who is his match. Even staying together ten days is no fault. Going forward will be honored. Abilities that complement each other create prosperity when they work together.",
+        "The screen is so thick that the Dipper can be seen at noon. If you press ahead you will be met with suspicion, but if you rouse him with sincerity, it brings good fortune. When a leader is clouded and blind, do not force things. Let sincerity gradually help him to see.",
+        "The thicket is so dense that tiny stars can be seen at noon. His right arm is broken, but no fault. Darkness blocks you so that you cannot act. Even if you must stop, it is not your own fault.",
+        "The screen is so thick that the Dipper can be seen at noon, but he meets a leader of like mind. Good fortune. In dark times, meeting someone who shares your ideals will lead you out into the light.",
+        "He draws capable people in. There is both joy and fame. Good fortune. A humble leader who welcomes talent gains honor, and prosperity is shared.",
+        "A grand and spacious house, but a screen is drawn across it. Looking through the door, it is silent and empty of people. For three years no one is seen. Danger. Pride in wealth leaves you isolated and cut off from people, with only emptiness left."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "The midday sun will soon begin to sink. When all is thriving, use this time with clear eyes.",
+      "yearMessageEn": {
+        "overview": "Abundance is like the midday sun. This year everything may be bright and plentiful, but know that prosperity does not last. Use the good time wisely and prepare your heart too.",
+        "work": "Your work shines. Use this time for what matters and do not be careless.",
+        "love": "A bright time for the relationship. Enjoy the happiness and give thanks fully.",
+        "money": "There is plenty. Use it wisely and keep reserves for times of change.",
+        "blessing": "May your new year be bright and full of joy."
+      }
+    },
+    {
+      "id": 56,
+      "nameEn": "Traveler",
+      "meaningEn": "The traveler, journeying",
+      "keywordsEn": [
+        "Travel",
+        "Strangers",
+        "Courtesy",
+        "Caution"
+      ],
+      "judgmentEn": "The traveler flourishes in small matters. Staying steady on the right path brings the traveler good fortune.",
+      "imageEn": "Fire burning upon the mountain: the picture of the traveler. The wise person therefore applies penalties clearly and with care, and lets no case linger unsettled.",
+      "descriptionEn": "Fire on a mountain spreads on and does not stay in one place, like a traveler in a strange land with no home to rest in. In such a situation, be courteous, humble and careful. Do not show off or get involved in petty matters. Choose your lodging and your company well. Success comes in small things if you keep your honesty.",
+      "linesEn": [
+        "The traveler fusses over trivial matters and so brings trouble upon himself. In a strange place, narrow-mindedness and lowering yourself without dignity bring contempt and problems.",
+        "The traveler reaches his lodging. He has money with him and gains a faithful young servant. When you conduct yourself calmly and courteously, you find shelter, resources and a helper you can trust.",
+        "The traveler burns down his lodging and loses his servant. Pressing on is dangerous. Pride and harshness toward others in a foreign land cost him every place of refuge.",
+        "The traveler finds temporary lodging. He gains money and an ax to defend himself, but his heart is not at ease. He has enough to get by, but it is not yet his true place, so he feels wary and unsettled.",
+        "He shoots a pheasant and loses one arrow. In the end he receives praise and a post. Be willing to give up a little to show your ability at the right moment, and even in a foreign place you will be accepted.",
+        "The bird burns its own nest. The traveler laughs first and then weeps. He loses his ox through carelessness. Danger. Arrogance and carelessness lose him his shelter and what matters. Brief joy turns to sorrow."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A traveler carries only what is needed and is courteous to people. Today, what no longer needs to be carried?",
+      "yearMessageEn": {
+        "overview": "A traveler must be courteous and careful. This year may bring travel or a change of place, a new home, new faces. Keep goodwill, do not ask too much, and remember you are a guest in a new place.",
+        "work": "In a new setting, be courteous, observe, and do the small things well first.",
+        "love": "A distant or new relationship needs courtesy and steady communication.",
+        "money": "Watch your spending when you travel and keep valuables secure.",
+        "blessing": "May your journey be safe, with friends all along the way."
+      }
+    },
+    {
+      "id": 57,
+      "nameEn": "Wind",
+      "meaningEn": "Wind, gentle penetration",
+      "keywordsEn": [
+        "Gentleness",
+        "Penetrating",
+        "Persistence",
+        "Persuasion"
+      ],
+      "judgmentEn": "Gentleness flourishes in small matters. It favors having a direction to go. It favors meeting the great person.",
+      "imageEn": "Wind follows wind, one after another. The wise person therefore repeats the command so that it is clear, and then carries out the work.",
+      "descriptionEn": "Wind has no shape yet slips into every corner. Gentle but steady influence therefore changes things more deeply than force. Have a clear goal, persuade slowly and persistently, and seek a wise leader as your adviser. But take care that gentleness does not turn into hesitation and indecision.",
+      "linesEn": [
+        "Advancing and then retreating. It favors the firm steadiness of a warrior. Wavering back and forth must be cured by the discipline and resolve of the brave.",
+        "Creeping in under the bed, using many diviners and shamans. Good fortune. No fault. You must trace hidden influences to their source and bring them out into the open.",
+        "Creeping in again and again. Shameful. Going round and round in thought and refusing to decide lose opportunities and bring disgrace.",
+        "Regret fades away. On the hunt he catches three kinds of game. Humility joined with eagerness makes work succeed and brings benefit in many ways.",
+        "Staying steady on the right path brings good fortune. Regret fades away. Nothing is unfavorable. There is no good beginning but there is a good ending. Three days before the change and three days after: good fortune. Correcting what went wrong needs thought before acting, and careful follow-up afterward.",
+        "Creeping in under the bed, he loses his money and his ax. Pressing on is dangerous. Searching too far, or yielding until your strength is gone, loses the tools that protect you."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Wind is gentle yet reaches everywhere. Steady gentleness can change things.",
+      "yearMessageEn": {
+        "overview": "Wind gets through because it is gentle and continuous. This year, soft persuasion is stronger than force. Repeat steadily and listen for a clear direction, and your influence will spread.",
+        "work": "Use gentle, steady persuasion instead of orders or pressure.",
+        "love": "Steady gentleness sinks deeper than sweet words. Do it slowly, from the heart.",
+        "money": "Change money habits a little at a time, steadily. No need to rush.",
+        "blessing": "May your gentleness reach into people's hearts."
+      }
+    },
+    {
+      "id": 58,
+      "nameEn": "Lake",
+      "meaningEn": "Lake, joy",
+      "keywordsEn": [
+        "Joy",
+        "Friendship",
+        "Communication",
+        "Sincerity"
+      ],
+      "judgmentEn": "Joy. Flourishing. It favors staying steady on the right path.",
+      "imageEn": "Two lakes joined together: the picture of joy. The wise person therefore gathers with friends to talk and study together.",
+      "descriptionEn": "Two lakes feed each other so neither runs dry, like the happiness that comes from sharing and learning together. True joy must rest on sincerity and inner steadiness, and be shown with gentleness, not shallow fun or flattery to please. Beware of pleasure that lures you off the path.",
+      "linesEn": [
+        "Joy that is calm and harmonious. Good fortune. Happiness that does not depend on outside things and asks nothing is pure and steady.",
+        "Joy that comes from sincerity. Good fortune. Regret fades away. Even amid temptations, if the heart is honest, you will not go astray.",
+        "Joy sought from outside. Danger. Chasing fun and satisfaction with no principle in your heart leads to decline.",
+        "Weighing joys until the mind is unsettled. If you can cut yourself off from what leads to decline, there will be gladness. When torn between a higher and a lower pleasure, choose what is right, decisively.",
+        "Trusting what corrodes. Danger. Even someone in a high position can be led astray by a destructive influence. Be wary of those who approach with sweet words.",
+        "Joy that is lured out by others. One who is fascinated by pleasure and pulled along by temptation loses self-control."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "True gladness comes from a sincere heart. Today, try talking openly with a friend.",
+      "yearMessageEn": {
+        "overview": "Two lakes support each other. This year, joy, friendship and honest communication are your strength. Beware of empty sweet words, and let your happiness rest on honesty.",
+        "work": "Communicate openly and cheerfully. Build a good atmosphere for working together.",
+        "love": "Laugh and talk often, but let sincerity stand behind the words.",
+        "money": "Spend on happiness and friends in moderation. Beware offers that sound too good.",
+        "blessing": "May your new year be full of smiles and true friends."
+      }
+    },
+    {
+      "id": 59,
+      "nameEn": "Dispersing",
+      "meaningEn": "Dispersing, melting what is rigid",
+      "keywordsEn": [
+        "Dissolving",
+        "Uniting hearts",
+        "Faith",
+        "Letting go"
+      ],
+      "judgmentEn": "Dispersing. Flourishing. The king goes to the ancestral temple. It favors crossing the great river. It favors staying steady on the right path.",
+      "imageEn": "Wind blows over water, melting the ice and scattering what has set. The kings of old therefore made offerings to Heaven and built the ancestral temple.",
+      "descriptionEn": "Wind passing over water melts what has frozen and sends it scattering. What divides people, such as selfishness, rigidity and prejudice, must be dissolved, and then hearts unite around something higher than the self, like a ceremony that makes people one. This is a time to let go of clinging and to use shared faith to cross a great obstacle.",
+      "linesEn": [
+        "Lending a hand with the strength of a sturdy horse. Good fortune. When a split has only just begun, deal with it firmly before it spreads.",
+        "In the scattering, hurry to a support. Regret fades away. When you feel estranged, return to the anchor in your heart or to someone you can rely on.",
+        "Dissolving attachment to the self. No regret. Setting selfishness aside for a larger goal means you have nothing to regret.",
+        "Dispersing his own faction. Great good fortune. The scattering leads to a great gathering, like a hill, which ordinary people would not imagine. Giving up small cliques for the common good builds a unity greater than before.",
+        "A great royal command goes out and spreads like sweat pouring forth. He distributes the stores of the royal treasury. No fault. In a time of division, a leader needs a clear idea to rally hearts, and must share what there is widely.",
+        "Dispersing the blood of quarrels. Go far away and leave the danger. No fault. Withdrawing from danger to protect yourself and those you love is the right thing."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Wind passes over water and the ice melts. Whatever in your heart has gone rigid, let it soften today.",
+      "yearMessageEn": {
+        "overview": "Wind blows over water and breaks the ice. This year suits dissolving rigidity, letting go of clinging, and uniting hearts through faith. What was apart will begin to flow together again.",
+        "work": "Release strictness or conflict in the team and unite around a shared goal.",
+        "love": "Let go of resentment, and hearts will flow back toward each other.",
+        "money": "Ease the tension around money and handle the flow in an orderly way.",
+        "blessing": "May your tension melt and hearts come together again."
+      }
+    },
+    {
+      "id": 60,
+      "nameEn": "Moderation",
+      "meaningEn": "Moderation, limits",
+      "keywordsEn": [
+        "Balance",
+        "Limits",
+        "Discipline",
+        "Thrift"
+      ],
+      "judgmentEn": "Moderation. Flourishing. But a limit that is too bitter should not be held to permanently.",
+      "imageEn": "Water above the lake. The lake holds water within limits. The wise person therefore fixes numbers and measures, and examines virtue and conduct.",
+      "descriptionEn": "A lake holds only as much as its size, and what exceeds it overflows. Life too needs limits in spending, in words and in emotions, like the joints of bamboo that make the stalk strong. But restraint so strict that it is bitter goes against nature and cannot last. Find a balance that feels comfortable, and you will be an example to others.",
+      "linesEn": [
+        "Not going out of the inner door and courtyard. No fault. When the time is not right, knowing how to stay within limits and guard your words is wisdom.",
+        "Not going out of the outer door and courtyard. Danger. When the opportunity has come and you still do nothing, restricting yourself too much makes you miss the crucial moment.",
+        "One who does not know moderation will have cause to lament. No one is to blame but oneself. Indulging beyond limits brings suffering. If you realize this, it can still be mended.",
+        "Moderation that is calm and easy. Flourishing. When limits become second nature and need no force, success comes without wasted effort.",
+        "Moderation that is sweet. Good fortune. Going forward will be honored. A leader who sets limits on their own conduct before asking it of others makes people glad to follow.",
+        "Moderation that is bitter. Pressing on is dangerous, but regret fades away. Extreme strictness cannot last. It may sometimes be needed to keep what is right, but it should not become a permanent way."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Bamboo is strong because it has joints. Fitting limits help life go on for a long time.",
+      "yearMessageEn": {
+        "overview": "Bamboo has joints at fitting intervals. This year, knowing your limits is freedom. Keep discipline without being too strict, because rules that are too bitter cannot be borne long.",
+        "work": "Set fitting limits and discipline, not so loose or so tight you cannot continue.",
+        "love": "Balance in the relationship. Keep space and rules both sides can live with.",
+        "money": "Spend and save in moderation. A discipline you can keep beats a plan too strict.",
+        "blessing": "May your life be balanced, with graceful limits and freedom."
+      }
+    },
+    {
+      "id": 61,
+      "nameEn": "Sincerity",
+      "meaningEn": "Inner truth, sincerity",
+      "keywordsEn": [
+        "Sincerity",
+        "Trust",
+        "An empty heart",
+        "Reaching deep"
+      ],
+      "judgmentEn": "Sincerity from within reaches even pigs and fish. Good fortune. It favors crossing the great river. It favors staying steady on the right path.",
+      "imageEn": "Wind above the lake, stirring the surface of the water. The wise person therefore examines legal cases thoroughly and eases the death penalty.",
+      "descriptionEn": "Wind blows over a lake, and the water moves with it, though the wind itself cannot be seen. True sincerity has the power to reach even those hard to communicate with, like pigs and fish that have no understanding. In the lines of this symbol, the two yin lines in the middle are like a heart empty of prejudice, enclosed by firm yang lines. Listen with an open mind and understand others from their side, and trust will carry you across great obstacles.",
+      "linesEn": [
+        "Being steadily prepared. Good fortune. If the heart leans elsewhere, there will be no peace. Sincerity must be firm from the start. If the mind wanders and secretly relies on others, calm is lost.",
+        "A crane calls from the shade, and its young answer. I have a fine cup of wine and will share it with you. Deep sincerity does not need to be announced. Those of like heart will answer on their own.",
+        "He finds a rival or a partner. One beats the drum, one stops, one weeps, one sings. One who leaves his joys and sorrows in the hands of others has moods that rise and fall with them, with no anchor.",
+        "The moon is nearly full. One of a pair of horses is lost. No fault. When near completion, being willing to leave your companions to strive toward something higher is no mistake.",
+        "He has a sincerity that binds everyone together. No fault. A leader whose truthfulness is the center can bind people's hearts closely.",
+        "The crowing of the rooster rises to the sky. Pressing on is dangerous. A rooster cannot fly up to the sky. Boasting beyond the truth, with empty confidence behind it, brings decline."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "An empty and sincere heart reaches others even without words. Today, try being sincere with yourself first.",
+      "yearMessageEn": {
+        "overview": "Wind over a lake touches the water without force. This year, sincerity and a mind free of prejudice are power. Trust that comes from within will reach others, even without much explanation.",
+        "work": "Work with sincerity and transparency. Trust builds lasting results.",
+        "love": "Be honest with your own heart and each other. Trust is built by consistency.",
+        "money": "Be honest and transparent about money. Trust is valuable capital.",
+        "blessing": "May your heart be sincere and find deep trust."
+      }
+    },
+    {
+      "id": 62,
+      "nameEn": "Small Excess",
+      "meaningEn": "A slight excess",
+      "keywordsEn": [
+        "Humility",
+        "Caution",
+        "Small matters",
+        "Staying low"
+      ],
+      "judgmentEn": "A slight excess. Flourishing. It favors staying steady on the right path. Small matters can be done, but great matters should not be. A bird in flight leaves behind only its call. It should not fly up high but should come down low. Great good fortune.",
+      "imageEn": "Thunder upon the mountain. The wise person therefore is humble beyond the usual, mourns with sorrow beyond the usual, and spends thriftily beyond the usual.",
+      "descriptionEn": "Thunder on a mountain is loud but does not travel far. This is a time of little strength, so only small things can be done, and it is unwise to be ambitious in large ones, like a bird that should fly low and return to its nest rather than force itself high. Go beyond the usual in humility, thrift and care, instead of going too far in pride or extravagance.",
+      "linesEn": [
+        "A bird that flies up before its time meets misfortune. Impatience that soars before you are ready leads to a mistake that cannot be put right.",
+        "Passing by the grandfather and meeting the grandmother. Not reaching the ruler and meeting the minister. No fault. Not overstepping the ranks, and humbly accepting the lower path, is no fault.",
+        "If you do not take extra precautions, someone may follow and do harm. Danger. Do not be careless because you think you are right. An unexpected enemy may strike from behind.",
+        "No fault. He does not overstep, and meets it just right. Pressing on is dangerous, so be careful. Do not hold stubbornly to your course forever. Know how to hold back, do not force an advance, and adapt to the situation.",
+        "Dense clouds but no rain, coming from the western outskirts. The prince shoots with a corded arrow and takes a creature in its cave. You have ability but cannot yet do great things. Find the hidden capable people and bring them in to work with you.",
+        "Not meeting him, but passing beyond. The bird flies away and is caught in the net. Danger. This is called calamity and disaster. Soaring beyond bounds without knowing when to stop brings a disaster of your own making."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "A small bird should not fly beyond its strength. Today, care for small things and leave the big ones.",
+      "yearMessageEn": {
+        "overview": "A bird flying low is safe. This year small matters go well but great ones need care. Be humble, stay low and mind the details. A slight excess in courtesy is better than excess in arrogance.",
+        "work": "Focus on small things you do well. Avoid big tasks beyond your strength.",
+        "love": "Care for each other's small things. Humility brings hearts close.",
+        "money": "Spend carefully, with small necessities before big things.",
+        "blessing": "May you live humbly, full of small joys."
+      }
+    },
+    {
+      "id": 63,
+      "nameEn": "Already Across",
+      "meaningEn": "Already done, already crossed",
+      "keywordsEn": [
+        "Success",
+        "Keeping it",
+        "Preparing ahead",
+        "Not being careless"
+      ],
+      "judgmentEn": "Already across. Flourishing in small matters. It favors staying steady on the right path. The beginning brings good fortune, but the end will be confusion and disorder.",
+      "imageEn": "Water above fire: the picture of what is already done. The wise person therefore thinks of the troubles that may arise and guards against them early.",
+      "descriptionEn": "Every line is in its right position, like water over fire that cooks the food just right. This is the point of balance in success. But completeness is fragile. If the water boils over, it puts out the fire, and if the fire is strong, the water dries up. When everything has fallen into place, people tend to become careless, and disorder follows. Keep your success with attention to detail and prepare for trouble before it arrives.",
+      "linesEn": [
+        "He holds back the wheels of the cart. His tail gets wet. No fault. When everyone is rushing forward, knowing how to slow yourself, even at a small loss, is no mistake.",
+        "The woman loses the curtain of her carriage. Do not chase it. Within seven days it will be found. When you are not recognized, do not struggle to seek it. What is yours will come back by itself in time.",
+        "King Gaozong attacked the land of Guifang and took three years to conquer it. Do not use petty people. Following up on a success takes long effort, and you must choose only people of virtue.",
+        "Fine clothes turn into rags. Be on guard all day. Even in prosperous times, always keep rags ready to stop the leaks, and do not be careless even for a moment.",
+        "The neighbor to the east slaughters an ox for the offering, which is not as good as the small offering of the neighbor to the west, who truly receives the blessing. Sincerity in small things is worth more than grand ritual without heart.",
+        "His head gets wet. Danger. One who has crossed but looks back, or plunges on out of overconfidence, will sink into the deep water."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Even after crossing the water safely, stay careful. What is done must be tended to last.",
+      "yearMessageEn": {
+        "overview": "Water over fire is already done, but success must be kept. This year, guard ahead of time, do not be careless, and check small things before they become big problems. Even good things need care.",
+        "work": "Keep the work you have done well. Check small weak points before problems arise.",
+        "love": "Do not assume a good relationship will stay good by itself. Give daily care.",
+        "money": "Keep the stability you have. Guard ahead and do not be careless.",
+        "blessing": "May your success be steady and lasting."
+      }
+    },
+    {
+      "id": 64,
+      "nameEn": "Not Yet Across",
+      "meaningEn": "Not yet done, not yet crossed",
+      "keywordsEn": [
+        "Before success",
+        "Transition",
+        "Care",
+        "Hope"
+      ],
+      "judgmentEn": "Not yet across. Flourishing. The little fox has almost crossed the river, but his tail gets wet. Nothing is favorable.",
+      "imageEn": "Fire above water, each going its own way. The wise person therefore examines things carefully and sorts them, so that each is in its proper place.",
+      "descriptionEn": "The final symbol of the I Ching is not an ending but a new beginning. Every line is still in the wrong position, yet each has a partner that answers it, so order is possible, like the spring that is about to arrive. The situation is near success but still needs great care, like the little fox so eager that his tail gets wet at the very end. Think it through, set everything in its place, and go on with hope.",
+      "linesEn": [
+        "His tail gets wet. Shameful. Rushing before understanding the situation leads to error from the very start.",
+        "He holds back the wheels of the cart. Staying steady on the right path brings good fortune. It is not yet time to act. Be patient and gather strength, without giving up the goal.",
+        "Not yet across. Pressing ahead is dangerous, but it favors crossing the great river. Your own strength alone is not enough to break through, but if you change the situation by finding helpers or a new path, you will get across.",
+        "Staying steady on the right path brings good fortune. Regret fades away. He uses a force like thunder to subdue Guifang, and after three years is rewarded by the great state. It is time to fight with full strength to make the transition. Long effort will be rewarded.",
+        "Staying steady on the right path brings good fortune. No regret. The radiance of the wise person shines with sincerity. Good fortune. Victory has come. A light that comes from true virtue shines for people to see and believe.",
+        "Drinking wine in confidence in what is to come. No fault. But if he drinks until drunk and his head gets wet, that confidence loses its rightness. Celebrating while waiting for a new time is good, but indulging beyond limits ruins everything."
+      ],
+      "allLinesEn": null,
+      "dailyMessageEn": "Before the shore, the little fox must be most careful. It is not far now. Step steadily, little by little.",
+      "yearMessageEn": {
+        "overview": "The young fox is about to cross the river. This year you are close but not at the end. Be careful, not hasty, prepare for the transition, and keep hope. The time before success is a key one.",
+        "work": "Nearly there. Be careful in the final stretch and do not rush into a mistake.",
+        "love": "The relationship is moving to a new stage. Be patient and give each other hope.",
+        "money": "Not at the target yet, but close. Keep discipline and do not tire early.",
+        "blessing": "May you cross to the shore you hope for, with care."
+      }
+    }
+  ]
+}
