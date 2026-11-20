@@ -179,6 +179,13 @@ internal class FakeApi : OracleApi {
     override suspend fun report(readingId: String, reason: String, note: String) {
         reports += readingId to reason
     }
+    /** Each sent message with its app version and platform. */
+    val feedbackSent = mutableListOf<Triple<String, String, String>>()
+    var feedbackFailure: FailureReason? = null
+    override suspend fun sendFeedback(message: String, appVersion: String, platform: String) {
+        feedbackFailure?.let { throw ApiException(it, "failed") }
+        feedbackSent += Triple(message, appVersion, platform)
+    }
     var saveOutcomeFailure: FailureReason? = null
     val outcomesSaved = mutableListOf<String>()
     override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) {

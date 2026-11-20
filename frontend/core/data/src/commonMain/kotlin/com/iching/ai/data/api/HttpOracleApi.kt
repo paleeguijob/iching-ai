@@ -192,6 +192,7 @@ internal fun failureReason(code: String) = when (code) {
     "reading_not_found", "year_hexagram_not_found" -> FailureReason.NOT_FOUND
     "campaign_inactive" -> FailureReason.CAMPAIGN_INACTIVE
     "no_year_hexagram" -> FailureReason.NO_YEAR_HEXAGRAM
+    "feedback_limit" -> FailureReason.FEEDBACK_LIMIT
     else -> FailureReason.UNKNOWN
 }
 
@@ -277,6 +278,14 @@ class HttpOracleApi(
             put("readingId", readingId)
             put("reason", reason)
             put("note", note)
+        })
+    }
+
+    override suspend fun sendFeedback(message: String, appVersion: String, platform: String) {
+        call(HttpMethod.Post, "/feedback", buildJsonObject {
+            put("message", message)
+            put("appVersion", appVersion)
+            put("platform", platform)
         })
     }
 

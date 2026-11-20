@@ -82,6 +82,24 @@ class HttpOracleApiTest {
     }
 
     @Test
+    fun sendFeedbackPostsMessageVersionAndPlatform() = runTest {
+        var sent = ""
+        val engine = MockEngine { r ->
+            sent = "${r.method.value} ${r.url.encodedPath} ${(r.body as TextContent).text}"
+            respond("""{"ok":true}""", HttpStatusCode.OK)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api", "https://w/").sendFeedback("ชอบมาก", "1.4.0", "android")
+        assertEquals("""POST /api/feedback {"message":"ชอบมาก","appVersion":"1.4.0","platform":"android"}""", sent)
+    }
+
+    @Test
+    fun sendFeedbackSurfacesTheDailyLimit() = runTest {
+        val api = apiAnswering(HttpStatusCode.TooManyRequests, """{"error":"feedback_limit"}""")
+        val failure = assertFailsWith<ApiException> { api.sendFeedback("m", "1.4.0", "android") }
+        assertEquals(FailureReason.FEEDBACK_LIMIT, failure.reason)
+    }
+
+    @Test
     fun mergeAccountSendsTheLeftBehindAccountsToken() = runTest {
         var sent = ""
         val engine = MockEngine { r ->

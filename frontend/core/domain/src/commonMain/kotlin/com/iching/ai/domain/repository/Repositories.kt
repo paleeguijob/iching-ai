@@ -25,7 +25,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, RATE_LIMITED, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, RATE_LIMITED, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, FEEDBACK_LIMIT, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {
@@ -71,6 +71,8 @@ interface OracleApi {
     /** Returns true when the server granted the ad credit. */
     suspend fun claimAdReward(): Pair<Boolean, AccountStatus>
     suspend fun report(readingId: String, reason: String, note: String)
+    /** Sends a message from Settings; fails with FEEDBACK_LIMIT after the day's allowance. */
+    suspend fun sendFeedback(message: String, appVersion: String, platform: String)
     suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?)
     /** The server copy of the journal, newest first: the free journal window, or everything for Premium. */
     suspend fun readings(): List<Reading>
