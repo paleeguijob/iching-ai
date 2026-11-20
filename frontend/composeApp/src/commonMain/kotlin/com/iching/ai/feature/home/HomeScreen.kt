@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,7 +43,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.offset
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -200,20 +205,25 @@ fun HomeScreen(
     }
     val action = if (isSiamSi) siamsiAction(drawGate.button) else ichingAction(deciding)
     var focused by remember { mutableStateOf(false) }
-    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    // The keyboard inset changes on every frame while the keyboard slides. Home only recomposes when it comes up
+    // or goes away; the padding that follows it is read in the layout phase below.
+    val ime = WindowInsets.ime
+    val density = LocalDensity.current
+    val imeUp by remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
     // Typing while the keyboard is up; a keyboard closed with Back leaves the field focused but brings the coins back.
-    val typing = focused && imeBottom > 0.dp
+    val typing = focused && imeUp
     val showChips = !isSiamSi && (typing || category != null)
 
     PaperBackground(showMountains = true) {
         // The bottom group sits a gap above the tab bar or the keyboard, whichever is taller; the max() keeps
         // it from dipping behind the bar while the keyboard animates in or out.
-        val bottom = ctaBottomPadding(imeBottom = imeBottom, tabBarHeight = LocalTabBarHeight.current)
+        val tabBarHeight = LocalTabBarHeight.current
         Column(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(start = ZenSpacing.screen, end = ZenSpacing.screen, bottom = bottom),
+                .padding(start = ZenSpacing.screen, end = ZenSpacing.screen)
+                .bottomPaddingInLayout { ctaBottomPadding(imeBottom = ime.getBottom(this).toDp(), tabBarHeight = tabBarHeight) },
         ) {
             HomeTopBar(
                 siamsiEnabled = siamsiEnabled,
@@ -273,6 +283,13 @@ fun HomeScreen(
             )
         }
     }
+}
+
+/** Bottom padding worked out in the layout phase, so a value that changes every frame never recomposes. */
+private fun Modifier.bottomPaddingInLayout(bottom: Density.() -> Dp): Modifier = layout { measurable, constraints ->
+    val bottomPx = bottom().roundToPx().coerceAtLeast(0)
+    val placeable = measurable.measure(constraints.offset(vertical = -bottomPx))
+    layout(placeable.width, constraints.constrainHeight(placeable.height + bottomPx)) { placeable.place(0, 0) }
 }
 
 /** The seal and name, the I Ching / Siam Si switch when Siam Si is on, and settings. */

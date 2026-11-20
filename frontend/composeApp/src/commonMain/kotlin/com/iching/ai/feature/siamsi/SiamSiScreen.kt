@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -341,7 +342,8 @@ private fun ShakeStage(viewModel: SiamSiViewModel, soundEnabled: Boolean) {
             delay(100)
         }
     }
-    val shaking = held || now - lastShakeAt < SHAKE_VISIBLE_MILLIS
+    // Derived, so the 100 ms clock above only recomposes this step when shaking starts or stops.
+    val shaking by remember { derivedStateOf { held || now - lastShakeAt < SHAKE_VISIBLE_MILLIS } }
     LaunchedEffect(shaking, soundEnabled) {
         while (shaking && soundEnabled) {
             sound.play(ZenSound.STICK_RATTLE)

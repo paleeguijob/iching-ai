@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -21,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -104,12 +106,23 @@ fun SiamSiCylinder(shaking: Boolean, onHoldChange: (Boolean) -> Unit, modifier: 
                 },
             contentAlignment = Alignment.BottomCenter,
         ) {
-            Canvas(Modifier.matchParentSize()) {
-                val left = (size.width - TUBE_W.toPx()) / 2
-                val rim = size.height - TUBE_H.toPx()
-                drawSticks(palette, left, rim, sway = tilt.value)
-                drawTube(palette, Offset(left, rim), Size(TUBE_W.toPx(), TUBE_H.toPx()))
-            }
+            // Gradients are built once per size: the shake redraws this every frame.
+            Spacer(
+                Modifier.matchParentSize().drawWithCache {
+                    val left = (size.width - TUBE_W.toPx()) / 2
+                    val rim = size.height - TUBE_H.toPx()
+                    val tube = Size(TUBE_W.toPx(), TUBE_H.toPx())
+                    val tubeBrush = tubeBrush(palette, left, tube.width)
+                    val foot = rim + 40.dp.toPx()
+                    val stickBrushes = STICKS.map { (_, h, _) ->
+                        Brush.verticalGradient(listOf(palette.stickLight, palette.stickDeep), startY = foot - (h.dp.toPx() + 40.dp.toPx()), endY = foot)
+                    }
+                    onDrawBehind {
+                        drawSticks(palette, left, rim, sway = tilt.value, stickBrushes)
+                        drawTube(palette, Offset(left, rim), tube, tubeBrush)
+                    }
+                },
+            )
             TubeLabel(Modifier.padding(bottom = TUBE_H * 0.52f))
         }
     }
@@ -144,7 +157,7 @@ fun FallenStage(number: Int, modifier: Modifier = Modifier) {
                     },
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Canvas(Modifier.matchParentSize()) { drawTube(palette, Offset.Zero, size) }
+                Canvas(Modifier.matchParentSize()) { drawTube(palette, Offset.Zero, size, tubeBrush(palette, 0f, size.width)) }
                 TubeLabel(Modifier.padding(bottom = TUBE_H * 0.52f))
             }
             Canvas(
@@ -191,14 +204,13 @@ private fun ShadowRing(modifier: Modifier) {
     }
 }
 
-private fun DrawScope.drawTube(p: ZenPalette, at: Offset, tube: Size) {
-    drawRoundRect(
-        Brush.horizontalGradient(
-            0f to p.woodDeep, 0.3f to p.wood, 0.5f to p.woodLight, 0.7f to p.wood, 1f to p.woodDeep,
-            startX = at.x, endX = at.x + tube.width,
-        ),
-        at, tube, CornerRadius(14.dp.toPx()),
-    )
+private fun tubeBrush(p: ZenPalette, left: Float, width: Float) = Brush.horizontalGradient(
+    0f to p.woodDeep, 0.3f to p.wood, 0.5f to p.woodLight, 0.7f to p.wood, 1f to p.woodDeep,
+    startX = left, endX = left + width,
+)
+
+private fun DrawScope.drawTube(p: ZenPalette, at: Offset, tube: Size, brush: Brush) {
+    drawRoundRect(brush, at, tube, CornerRadius(14.dp.toPx()))
     val band = 9.dp.toPx()
     listOf(0.22f, 0.80f).forEach { f ->
         drawRoundRect(p.woodDeep, Offset(at.x - 2.dp.toPx(), at.y + tube.height * f), Size(tube.width + 4.dp.toPx(), band), CornerRadius(4.dp.toPx()))
@@ -206,7 +218,7 @@ private fun DrawScope.drawTube(p: ZenPalette, at: Offset, tube: Size) {
 }
 
 /** Each stick leans from its foot inside the tube; [sway] jostles them a little while shaking. */
-private fun DrawScope.drawSticks(p: ZenPalette, tubeLeft: Float, rim: Float, sway: Float) {
+private fun DrawScope.drawSticks(p: ZenPalette, tubeLeft: Float, rim: Float, sway: Float, brushes: List<Brush>) {
     val w = 8.dp.toPx()
     val foot = rim + 40.dp.toPx()
     STICKS.forEachIndexed { i, (x, h, lean) ->
@@ -215,7 +227,7 @@ private fun DrawScope.drawSticks(p: ZenPalette, tubeLeft: Float, rim: Float, swa
         val jostle = if (i % 2 == 0) sway * 0.6f else -sway * 0.4f
         rotate(lean + jostle, pivot = Offset(left + w / 2, foot)) {
             val top = foot - height
-            drawRoundRect(Brush.verticalGradient(listOf(p.stickLight, p.stickDeep), startY = top, endY = foot), Offset(left, top), Size(w, height), CornerRadius(w / 2))
+            drawRoundRect(brushes[i], Offset(left, top), Size(w, height), CornerRadius(w / 2))
             drawRoundRect(p.cinnabarRed.copy(alpha = 0.85f), Offset(left, top), Size(w, 13.dp.toPx()), CornerRadius(w / 2))
         }
     }
