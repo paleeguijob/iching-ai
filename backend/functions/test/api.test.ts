@@ -83,6 +83,13 @@ class MemoryStore implements Store {
   async addReport(r: unknown) {
     this.reports.push(r);
   }
+  feedback: { uid: string; message: string; appVersion: string; platform: string; premium: boolean; createdAt: number }[] = [];
+  async addFeedback(f: MemoryStore["feedback"][number]) {
+    this.feedback.push(f);
+  }
+  async countFeedbackSince(uid: string, since: number) {
+    return this.feedback.filter((f) => f.uid === uid && f.createdAt >= since).length;
+  }
   async setPremiumUntil(uid: string, premiumUntil: number | null) {
     if (premiumUntil === null && !this.users.has(uid)) return;
     const u = normalizeUser(this.users.get(uid), bangkokDay(this.now()));
@@ -382,6 +389,46 @@ describe("api", () => {
       await handle(req("POST", "/year-hexagram"), res);
       assert.deepEqual([res.code, res.payload], [429, { error: "rate_limited", retryAfterSeconds: 5 }]);
       assert.equal(await store.getYearHexagram("u1", 2027), null);
+    });
+  });
+
+  describe("feedback", () => {
+    it("stores feedback with the app version and premium flag", async () => {
+      const res = new FakeRes();
+      await handle(req("POST", "/feedback", { message: "  ชอบมาก  ", appVersion: "1.4.0", platform: "android" }), res);
+      assert.equal(res.code, 200);
+      assert.equal(store.feedback.length, 1);
+      const { createdAt, ...rest } = store.feedback[0];
+      assert.deepEqual(rest, { uid: "u1", message: "ชอบมาก", appVersion: "1.4.0", platform: "android", premium: false });
+      assert.equal(createdAt, now);
+    });
+
+    it("rejects empty or whitespace-only feedback", async () => {
+      const res = new FakeRes();
+      await handle(req("POST", "/feedback", { message: "   " }), res);
+      assert.equal(res.code, 400);
+      assert.equal(store.feedback.length, 0);
+    });
+
+    it("cuts feedback at 1000 characters", async () => {
+      await handle(req("POST", "/feedback", { message: "ก".repeat(1500) }), new FakeRes());
+      assert.equal(store.feedback[0].message.length, 1000);
+    });
+
+    it("refuses the sixth feedback of the day", async () => {
+      for (let i = 0; i < 5; i++) {
+        const ok = new FakeRes();
+        await handle(req("POST", "/feedback", { message: `m${i}` }), ok);
+        assert.equal(ok.code, 200);
+      }
+      const sixth = new FakeRes();
+      await handle(req("POST", "/feedback", { message: "m5" }), sixth);
+      assert.deepEqual([sixth.code, sixth.payload], [429, { error: "feedback_limit" }]);
+      assert.equal(store.feedback.length, 5);
+      now += 24 * 3_600_000;
+      const nextDay = new FakeRes();
+      await handle(req("POST", "/feedback", { message: "m6" }), nextDay);
+      assert.equal(nextDay.code, 200);
     });
   });
 

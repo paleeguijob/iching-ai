@@ -31,6 +31,7 @@ import {
   chargeReading,
   DeviceDoc,
   grantAdReward,
+  isPremium,
   MAX_FREE_RESUMES,
   QuotaStatus,
   refundReading,
@@ -65,6 +66,13 @@ export interface HttpRes {
   headersSent: boolean;
   writableEnded: boolean;
 }
+
+/** Feedback from Settings: at most this many characters, and this many messages per seeker per Bangkok day. */
+const FEEDBACK_MAX_CHARS = 1000;
+const FEEDBACK_PER_DAY = 5;
+
+/** Epoch ms of the most recent Bangkok midnight (UTC+7, no DST). */
+const bangkokDayStart = (now: number): number => now - ((now + 7 * 3600_000) % 86_400_000);
 
 export class HttpError extends Error {
   constructor(readonly status: number, readonly code: string, message = code, readonly extra: Record<string, unknown> = {}) {
@@ -132,6 +140,9 @@ export interface Store {
   /** Newest first; only readings made at or after [since] (epoch ms) when it is given. */
   listReadings(uid: string, limit: number, since?: number): Promise<StoredReading[]>;
   addReport(report: { uid: string; readingId: string; reason: string; note: string; createdAt: number }): Promise<void>;
+  addFeedback(feedback: { uid: string; message: string; appVersion: string; platform: string; premium: boolean; createdAt: number }): Promise<void>;
+  /** How many feedback messages [uid] sent at or after [since] (epoch ms). */
+  countFeedbackSince(uid: string, since: number): Promise<number>;
   setPremiumUntil(uid: string, premiumUntil: number | null): Promise<void>;
   /** Adds coins once per transaction id, across all accounts; returns false if it was already granted. */
   grantCoins(uid: string, transactionId: string, coins: number): Promise<boolean>;
@@ -639,6 +650,18 @@ export function createApi(deps: Deps) {
         const note = typeof b.note === "string" ? b.note.slice(0, 500) : "";
         if (!readingId) throw new HttpError(400, "bad_request");
         await deps.store.addReport({ uid, readingId, reason, note, createdAt: deps.now() });
+        res.status(200).json({ ok: true });
+        return;
+      }
+      if (route === "POST /feedback") {
+        const message = typeof b.message === "string" ? b.message.trim().slice(0, FEEDBACK_MAX_CHARS) : "";
+        if (!message) throw new HttpError(400, "bad_request");
+        const now = deps.now();
+        if ((await deps.store.countFeedbackSince(uid, bangkokDayStart(now))) >= FEEDBACK_PER_DAY) throw new HttpError(429, "feedback_limit");
+        const appVersion = typeof b.appVersion === "string" ? b.appVersion.slice(0, 20) : "";
+        const platform = typeof b.platform === "string" ? b.platform.slice(0, 20) : "";
+        const premium = await deps.store.quotaTx(uid, null, (user) => ({ result: isPremium(user, now) }));
+        await deps.store.addFeedback({ uid, message, appVersion, platform, premium, createdAt: now });
         res.status(200).json({ ok: true });
         return;
       }

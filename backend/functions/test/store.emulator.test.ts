@@ -139,6 +139,22 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     assert.equal((await userDoc("u1"))?.premiumUntil, until);
   });
 
+  it("counts feedback per day, moves it on merge and removes it on delete", async () => {
+    const f = { message: "m", appVersion: "1.4.0", platform: "android", premium: false };
+    await store.addFeedback({ uid: "anon", ...f, createdAt: 100 });
+    await store.addFeedback({ uid: "anon", ...f, createdAt: 200 });
+    await store.addFeedback({ uid: "u2", ...f, createdAt: 200 });
+    assert.equal(await store.countFeedbackSince("anon", 150), 1);
+
+    await store.mergeUser("anon", "u1");
+    assert.equal(await store.countFeedbackSince("anon", 0), 0);
+    assert.equal(await store.countFeedbackSince("u1", 0), 2);
+
+    await store.deleteUser("u1");
+    assert.equal(await store.countFeedbackSince("u1", 0), 0);
+    assert.equal(await store.countFeedbackSince("u2", 0), 1);
+  });
+
   it("deletes the user's readings, reports and purchase markers, and nobody else's", async () => {
     await store.grantCoins("u1", "GPA.1", 10);
     await store.grantCoins("u2", "GPA.2", 10);
