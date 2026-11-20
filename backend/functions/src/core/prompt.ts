@@ -1,5 +1,5 @@
 import { Cast, changingPositions } from "./cast";
-import { Hexagram, lowerTrigram, upperTrigram } from "./hexagrams";
+import { Hexagram, lowerTrigram, trigramNature, upperTrigram } from "./hexagrams";
 import { LEVEL_TH, SiamSiSet, SiamSiStick, TOPIC_TH } from "./siamsi";
 import { SUMMARY_MARKER } from "./summary";
 
@@ -90,7 +90,7 @@ export const FOLLOW_UP_RULES = `
 function hexagramBlock(label: string, h: Hexagram, includeDescription = true): string {
   const rows = [
     `${label}: กวาที่ ${h.id} ${h.nameCn} (${h.pinyin}) — ${h.nameTh}`,
-    `ตรีแกรม: บน ${upperTrigram(h).natureTh} / ล่าง ${lowerTrigram(h).natureTh}`,
+    `ตรีแกรม: บน ${trigramNature(upperTrigram(h), h)} / ล่าง ${trigramNature(lowerTrigram(h), h)}`,
     `คำตัดสิน: ${h.judgment}`,
     `ภาพลักษณ์: ${h.image}`,
   ];

@@ -16,14 +16,53 @@ import {
   YearHexagram,
 } from "../src/core/api";
 import { GeminiError, Usage } from "../src/core/gemini";
-import { loadScripture } from "../src/core/hexagrams";
-import { loadSiamSiSets } from "../src/core/siamsi";
+import { loadScripture, Scripture } from "../src/core/hexagrams";
+import { loadSiamSiSets, SiamSiSet } from "../src/core/siamsi";
 import { EMPTY_STREAK, mergeStreaks, StreakDoc } from "../src/core/streak";
 import { DEFAULT_CAMPAIGN } from "../src/core/campaign";
 import { bangkokDay, DEFAULT_CONFIG, DeviceDoc, normalizeDevice, normalizeUser, RuntimeConfig, UserDoc } from "../src/core/quota";
 
 const scripture = loadScripture(resolve(__dirname, "../data/hexagrams.json"));
 const siamsi = loadSiamSiSets(resolve(__dirname, "../data/siamsi"));
+
+/** Controller ruling R2: synthetic complete English (the Thai file with "EN:" prefixes), not the real files. */
+const enScripture = new Scripture(
+  Array.from({ length: 64 }, (_, i) => scripture.get(i + 1)),
+  {
+    version: 1,
+    hexagrams: Array.from({ length: 64 }, (_, i) => {
+      const h = scripture.get(i + 1);
+      return {
+        id: h.id,
+        nameEn: `EN:name${h.id}`,
+        meaningEn: "EN:meaning",
+        keywordsEn: ["EN:k"],
+        judgmentEn: `EN:judgment${h.id}`,
+        imageEn: `EN:image${h.id}`,
+        descriptionEn: `EN:description${h.id}`,
+        linesEn: h.lines.map((_l, n) => `EN:line${n + 1}of${h.id}`),
+        allLinesEn: h.allLines ? `EN:all${h.id}` : null,
+        dailyMessageEn: `EN:daily${h.id}`,
+        yearMessageEn: null,
+      };
+    }),
+  },
+);
+const enSiamsi = new Map<string, SiamSiSet>(
+  [...siamsi].map(([id, set]) => [
+    id,
+    {
+      ...set,
+      en: {
+        id,
+        version: 1,
+        name: "EN:set",
+        source: { note: "EN:note" },
+        sticks: set.sticks.map((st) => ({ number: st.number, poem_en: [`EN:poem${st.number}`], story: "EN:story", summary: "EN:summary", topics: { work: "EN:work" }, keywords: ["EN"] })),
+      },
+    },
+  ]),
+);
 
 class MemoryStore implements Store {
   users = new Map<string, UserDoc>();
@@ -1323,7 +1362,7 @@ describe("api", () => {
         const res = await ask(body);
         assert.deepEqual([res.code, res.payload], [400, { error: "bad_stick" }], JSON.stringify(body));
       }
-      cfg = { ...cfg, siamsiSets: [{ id: "jiazi60", version: 1 }] };
+      cfg = { ...cfg, siamsiSets: [{ id: "jiazi60", version: 1, enVersion: 1 }] };
       const disabledSet = await ask({ set: "guanyin100", stick: 17 });
       assert.equal(disabledSet.code, 400);
       assert.deepEqual(modelCalls, []);
@@ -1390,6 +1429,97 @@ describe("api", () => {
       const res = new FakeRes();
       await handle(req("POST", "/divine", { readingId: first.events[0].data.readingId }), res);
       assert.deepEqual([res.code, res.payload], [409, { error: "wrong_method" }]);
+    });
+  });
+
+  describe("language", () => {
+    const hasThaiLetters = (t: string) => /[\u0E00-\u0E7F]/.test(t);
+    const divine = async (headers: Record<string, string> = {}, body: Record<string, unknown> = { question: "q" }) => {
+      const res = new FakeRes();
+      await handle(req("POST", "/divine", body, headers), res);
+      return res;
+    };
+    const makePremium = async () => {
+      entitlements = { premiumUntil: now + 30 * 86_400_000, coinPurchases: [] };
+      await handle(req("POST", "/purchases/sync"), new FakeRes());
+    };
+    beforeEach(() => {
+      deps.scripture = enScripture;
+      deps.siamsi = enSiamsi;
+      handle = createApi(deps);
+    });
+
+    it("stores lang en and puts the English scripture in the prompt when the header says en", async () => {
+      const res = await divine({ "x-app-lang": "en" });
+      const stored = await store.getReading("u1", res.events[0].data.readingId as string);
+      assert.equal(stored!.lang, "en");
+      assert.match(modelPrompts[0], /EN:judgment/);
+      assert.match(modelPrompts[0], /Heaven|Lake|Fire|Thunder|Wind|Water|Mountain|Earth/);
+      assert.match(modelPrompts[0], /EN:meaning/);
+      assert.equal(hasThaiLetters(String(res.events[0].data.primary && JSON.stringify(res.events[0].data.primary))), false);
+    });
+
+    it("without the header the reading is Thai", async () => {
+      const res = await divine();
+      const stored = await store.getReading("u1", res.events[0].data.readingId as string);
+      assert.equal(stored!.lang, "th");
+      assert.doesNotMatch(modelPrompts[0], /EN:/);
+    });
+
+    it("English asked while switched off is Thai", async () => {
+      cfg = { ...cfg, englishEnabled: false };
+      const res = await divine({ "x-app-lang": "en" });
+      assert.equal((await store.getReading("u1", res.events[0].data.readingId as string))!.lang, "th");
+      assert.doesNotMatch(modelPrompts[0], /EN:/);
+    });
+
+    it("a follow-up keeps the language of the reading, not the header", async () => {
+      await makePremium();
+      const th = await divine();
+      const thId = th.events[0].data.readingId as string;
+      await handle(req("POST", "/follow-up", { readingId: thId, message: "x" }, { "x-app-lang": "en" }), new FakeRes());
+      assert.doesNotMatch(modelPrompts.at(-1)!, /EN:/);
+
+      now += 60_000;
+      const en = await divine({ "x-app-lang": "en" });
+      const enId = en.events[0].data.readingId as string;
+      cfg = { ...cfg, englishEnabled: false };
+      await handle(req("POST", "/follow-up", { readingId: enId, message: "x" }), new FakeRes());
+      assert.match(modelPrompts.at(-1)!, /EN:judgment/);
+    });
+
+    it("an old reading with no lang is Thai in a follow-up", async () => {
+      await makePremium();
+      const th = await divine();
+      const id = th.events[0].data.readingId as string;
+      const old = store.readings.get(`u1/${id}`)!;
+      delete old.lang;
+      await handle(req("POST", "/follow-up", { readingId: id, message: "x" }, { "x-app-lang": "en" }), new FakeRes());
+      assert.doesNotMatch(modelPrompts.at(-1)!, /EN:/);
+    });
+
+    it("status carries englishEnabled, hexagramsEnVersion and the sets' enVersion", async () => {
+      cfg = { ...cfg, hexagramsEnVersion: 3, siamsiSets: [{ id: "guanyin100", version: 1, enVersion: 2 }] };
+      const st = new FakeRes();
+      await handle(req("GET", "/status"), st);
+      const p = st.payload as { englishEnabled: boolean; hexagramsEnVersion: number; siamsi: { sets: { enVersion: number }[] } };
+      assert.deepEqual([p.englishEnabled, p.hexagramsEnVersion, p.siamsi.sets[0].enVersion], [true, 3, 2]);
+    });
+
+    it("a Siam Si reading in English uses the English slip; a set without an English file uses Thai", async () => {
+      cfg = { ...cfg, siamsiEnabled: true };
+      await makePremium();
+      const res = new FakeRes();
+      await handle(req("POST", "/siamsi/interpret", { set: "guanyin100", stick: 17 }, { "x-app-lang": "en" }), res);
+      assert.equal((await store.getReading("u1", res.events[0].data.readingId as string))!.lang, "en");
+      assert.match(modelPrompts[0], /EN:poem17/);
+      assert.match(modelPrompts[0], /EN:story/);
+
+      deps.siamsi = new Map([["guanyin100", { ...enSiamsi.get("guanyin100")!, en: null }]]);
+      handle = createApi(deps);
+      now += 60_000;
+      await handle(req("POST", "/siamsi/interpret", { set: "guanyin100", stick: 17 }, { "x-app-lang": "en" }), new FakeRes());
+      assert.doesNotMatch(modelPrompts.at(-1)!, /EN:/);
     });
   });
 });

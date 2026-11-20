@@ -42,11 +42,17 @@ export interface RuntimeConfig {
   siamsiPremiumPerDay: number;
   /** The one poster (home popup + optional daily-page card); null when unset or malformed (= none). */
   poster: Poster | null;
+  /** Kill-switch for English: false → every new reading is Thai whatever the app asks for. */
+  englishEnabled: boolean;
+  /** Version of hexagrams.en.json (bumped to make apps download it again). */
+  hexagramsEnVersion: number;
 }
 
 export interface SiamSiSetRef {
   id: string;
   version: number;
+  /** Version of the set's English file ({id}.en.json). */
+  enVersion: number;
 }
 
 export const DEFAULT_CONFIG: RuntimeConfig = {
@@ -68,18 +74,22 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   campaign: DEFAULT_CAMPAIGN,
   siamsiEnabled: false,
   siamsiSets: [
-    { id: "guanyin100", version: 1 },
-    { id: "jiazi60", version: 1 },
+    { id: "guanyin100", version: 1, enVersion: 1 },
+    { id: "jiazi60", version: 1, enVersion: 1 },
   ],
   siamsiAdDrawsPerDay: 2,
   siamsiPremiumPerDay: 3,
   poster: null,
+  englishEnabled: true,
+  hexagramsEnVersion: 1,
 };
 
-const isSetRef = (v: unknown): v is SiamSiSetRef =>
+/** enVersion is optional in stored config (older docs have none) and defaults to 1. */
+const isSetRef = (v: unknown): v is Omit<SiamSiSetRef, "enVersion"> & { enVersion?: number } =>
   typeof v === "object" && v !== null &&
   typeof (v as SiamSiSetRef).id === "string" && (v as SiamSiSetRef).id.length > 0 &&
-  typeof (v as SiamSiSetRef).version === "number";
+  typeof (v as SiamSiSetRef).version === "number" &&
+  ((v as SiamSiSetRef).enVersion === undefined || typeof (v as SiamSiSetRef).enVersion === "number");
 
 /** Merges the Firestore config/runtime doc over the defaults, ignoring fields of the wrong type. */
 export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeConfig {
@@ -93,7 +103,7 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
     } else if (key === "poster") {
       if (v !== undefined) out.poster = parsePoster(v);
     } else if (key === "siamsiSets") {
-      if (Array.isArray(v) && v.every(isSetRef)) out.siamsiSets = v.map((r) => ({ id: r.id, version: r.version }));
+      if (Array.isArray(v) && v.every(isSetRef)) out.siamsiSets = v.map((r) => ({ id: r.id, version: r.version, enVersion: r.enVersion ?? 1 }));
     } else if (key === "forceModel") {
       if (v === null || (typeof v === "string" && v.length > 0)) out.forceModel = v as string | null;
     } else if (v !== undefined && typeof v === typeof def) {
@@ -183,6 +193,8 @@ export interface QuotaStatus {
   aiEnabled: boolean;
   campaign: { id: string; year: number; active: boolean; endsAt: number } | null;
   siamsi: { enabled: boolean; sets: SiamSiSetRef[]; drawsPerDay: number };
+  englishEnabled: boolean;
+  hexagramsEnVersion: number;
   poster: StatusPoster | null;
 }
 
@@ -219,6 +231,8 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
       drawsPerDay: premium ? cfg.siamsiPremiumPerDay : cfg.siamsiAdDrawsPerDay,
     },
     poster: posterFor(cfg.poster, premium, now),
+    englishEnabled: cfg.englishEnabled,
+    hexagramsEnVersion: cfg.hexagramsEnVersion,
   };
 }
 

@@ -11,6 +11,7 @@ import { campaignActive, DEFAULT_CAMPAIGN } from "./campaign";
 import { Cast, castHexagram, Coin, LineValue, resolveLines } from "./cast";
 import { estimateCostThb, GeminiError, Usage } from "./gemini";
 import { Scripture } from "./hexagrams";
+import { Lang, requestLang } from "./lang";
 import {
   buildFollowUpPrompt,
   buildReadingPrompt,
@@ -108,6 +109,8 @@ export interface StoredReading {
   createdAt: number;
   /** Set on a Siam Si reading, which has no cast (lines/coins empty, primaryId 0). */
   siamsi?: { set: string; stick: number } | null;
+  /** Language the reading was made in; readings from before 2.0 have none and are Thai. */
+  lang?: Lang;
 }
 
 /** The one hexagram an account keeps for a campaign year; cast once on the server, never recast. */
@@ -341,6 +344,7 @@ export function createApi(deps: Deps) {
 
   async function divine(req: HttpReq, res: HttpRes, uid: string, deviceHash: string | null, cfg: RuntimeConfig) {
     const b = body(req);
+    let lang = requestLang(req.get("x-app-lang"), cfg);
     const existingId = typeof b.readingId === "string" ? b.readingId : null;
     let reading: StoredReading;
     let cast: Cast;
@@ -350,7 +354,8 @@ export function createApi(deps: Deps) {
       if (!found) throw new HttpError(404, "reading_not_found");
       if (found.siamsi) throw new HttpError(409, "wrong_method");
       reading = found;
-      cast = castFromStored(deps.scripture, found);
+      lang = found.lang ?? "th";
+      cast = castFromStored(deps.scripture.forLang(lang), found);
     } else {
       const question = sanitizeQuestion(b.question);
       const safety = checkSafety(question);
@@ -365,10 +370,10 @@ export function createApi(deps: Deps) {
       if (b.mode === "year") {
         const year = await deps.store.getYearHexagram(uid, cfg.campaign?.year ?? DEFAULT_CAMPAIGN.year);
         if (!year) throw new HttpError(409, "no_year_hexagram");
-        cast = resolveLines(deps.scripture, year.lines, year.coins);
+        cast = resolveLines(deps.scripture.forLang(lang), year.lines, year.coins);
         yearOf = year.year;
       } else {
-        cast = castHexagram(deps.scripture);
+        cast = castHexagram(deps.scripture.forLang(lang));
       }
       const data: Omit<StoredReading, "id"> = {
         question,
@@ -390,6 +395,7 @@ export function createApi(deps: Deps) {
         outcome: null,
         outcomeNote: null,
         createdAt: deps.now(),
+        lang,
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }
@@ -418,6 +424,7 @@ export function createApi(deps: Deps) {
     if (!cfg.siamsiEnabled) throw new HttpError(503, "siamsi_disabled");
     if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
     const b = body(req);
+    const lang = requestLang(req.get("x-app-lang"), cfg);
     const existingId = typeof b.readingId === "string" ? b.readingId : null;
     let reading: StoredReading;
 
@@ -461,6 +468,7 @@ export function createApi(deps: Deps) {
         outcomeNote: null,
         createdAt: deps.now(),
         siamsi: { set: setId, stick },
+        lang,
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }
@@ -471,7 +479,7 @@ export function createApi(deps: Deps) {
       sse.send("delta", { text: reading.aiText });
       sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
     } else {
-      const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick);
+      const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick, reading.lang ?? "th");
       if (!slip) throw new HttpError(404, "reading_not_found");
       await interpret(sse, uid, deviceHash, cfg, reading, buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category));
     }
@@ -588,8 +596,10 @@ export function createApi(deps: Deps) {
   }
 
   function followUpContext(reading: StoredReading): string {
-    if (!reading.siamsi) return scriptureContext(castFromStored(deps.scripture, reading));
-    const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick);
+    // A reading keeps the language it was made in, whatever the header or config say now.
+    const lang = reading.lang ?? "th";
+    if (!reading.siamsi) return scriptureContext(castFromStored(deps.scripture.forLang(lang), reading));
+    const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick, lang);
     if (!slip) throw new HttpError(404, "reading_not_found");
     return siamsiContext(slip.set, slip.stick);
   }
@@ -609,6 +619,7 @@ export function createApi(deps: Deps) {
     outcomeNote: r.outcomeNote,
     createdAt: r.createdAt,
     siamsi: r.siamsi ?? null,
+    lang: r.lang ?? "th",
   });
 
   /** The year hexagram stays viewable after the campaign; only a new cast needs it to be active. */
