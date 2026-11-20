@@ -470,6 +470,18 @@ class HttpOracleApiTest {
     }
 
     @Test
+    fun statusReadsEnglishFlagsAndDefaultsOn() = runTest {
+        val s = apiAnswering(HttpStatusCode.OK, """{"englishEnabled":false,"hexagramsEnVersion":3,"siamsi":{"sets":[{"id":"guanyin100","version":2,"enVersion":4}]}}""").status()
+        assertEquals(false, s.englishEnabled)
+        assertEquals(3, s.hexagramsEnVersion)
+        assertEquals(SiamSiSetRef("guanyin100", 2, 4), s.siamsi.sets.single())
+        val old = apiAnswering(HttpStatusCode.OK, """{"siamsi":{"sets":[{"id":"a","version":1}]}}""").status()
+        assertEquals(true, old.englishEnabled)
+        assertEquals(1, old.hexagramsEnVersion)
+        assertEquals(1, old.siamsi.sets.single().enVersion)
+    }
+
+    @Test
     fun readingsCarryTheSiamSiSlip() = runTest {
         val list = apiAnswering(HttpStatusCode.OK, 
             """{"readings":[{"id":"r9","question":"q","lines":[],"primaryId":0,"aiText":"t","createdAt":5,"siamsi":{"set":"jiazi60","stick":3}},

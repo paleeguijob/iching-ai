@@ -8,9 +8,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
+import com.iching.ai.domain.model.migrateLanguage
 import com.iching.ai.domain.repository.SettingsRepository
 import com.iching.ai.domain.siamsi.DivinationMode
 import com.iching.ai.domain.siamsi.SiamSiUsage
@@ -42,6 +44,8 @@ class DataStoreSettingsRepository(
             prefs[SIAMSI_USED] = next.siamsiUsage.used
             prefs[SIAMSI_PENDING] = next.siamsiUsage.pendingDraw
             prefs[SIAMSI_LAST_ENABLED] = next.siamsiLastEnabled
+            next.language?.let { prefs[LANGUAGE] = it.wire } ?: prefs.remove(LANGUAGE)
+            prefs[LAST_ENGLISH_ENABLED] = next.lastEnglishEnabled
             // One string, newline-joined: a string-set key would lose the order that decides which ids drop first.
             prefs[SEEN_POSTERS] = next.seenPosterIds.joinToString("\n")
             prefs[DISMISSED_POSTER_CARDS] = next.dismissedPosterCardIds.joinToString("\n")
@@ -61,7 +65,10 @@ class DataStoreSettingsRepository(
         }
     }
 
-    private fun Preferences.toSettings() = AppSettings(
+    // Migration runs on every read, so an old install reads as Thai at once; the next update writes it back.
+    private fun Preferences.toSettings() = migrateLanguage(readSettings())
+
+    private fun Preferences.readSettings() = AppSettings(
         soundEnabled = this[SOUND] ?: true,
         onboardingAccepted = this[ONBOARDING] ?: false,
         // Installs from before the guides already know the app: with the disclaimer accepted and no key yet,
@@ -87,6 +94,8 @@ class DataStoreSettingsRepository(
             pendingDraw = this[SIAMSI_PENDING] ?: false,
         ),
         siamsiLastEnabled = this[SIAMSI_LAST_ENABLED] ?: false,
+        language = this[LANGUAGE]?.takeIf { it.isNotEmpty() }?.let(AppLanguage::fromWire),
+        lastEnglishEnabled = this[LAST_ENGLISH_ENABLED] ?: true,
         seenPosterIds = this[SEEN_POSTERS].lines(),
         dismissedPosterCardIds = this[DISMISSED_POSTER_CARDS].lines(),
         firstOpenEpochDay = this[FIRST_OPEN_DAY],
@@ -126,6 +135,8 @@ class DataStoreSettingsRepository(
         val SIAMSI_USED = intPreferencesKey("siamsi_used")
         val SIAMSI_PENDING = booleanPreferencesKey("siamsi_pending")
         val SIAMSI_LAST_ENABLED = booleanPreferencesKey("siamsi_last_enabled")
+        val LANGUAGE = stringPreferencesKey("language")
+        val LAST_ENGLISH_ENABLED = booleanPreferencesKey("last_english_enabled")
 
         // Left over from builds that called Gemini directly; dropped on the next settings write.
         val LEGACY_API_KEY = stringPreferencesKey("gemini_api_key")

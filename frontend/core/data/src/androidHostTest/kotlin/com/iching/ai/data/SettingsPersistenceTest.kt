@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.iching.ai.data.settings.DataStoreSettingsRepository
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.siamsi.DivinationMode
@@ -178,5 +179,29 @@ class SettingsPersistenceTest {
         val loaded = open(file) { it.settings.first() }
         assertEquals(true, loaded.castGuideSeen)
         assertEquals(true, loaded.readingGuideSeen)
+    }
+
+    @Test
+    fun languageSurvivesReload() = withStore { file ->
+        assertEquals(null, open(file) { it.settings.first() }.language)
+        open(file) { repo -> repo.update { it.copy(language = AppLanguage.EN, lastEnglishEnabled = false) } }
+        Thread.sleep(100)
+        val loaded = open(file) { it.settings.first() }
+        assertEquals(AppLanguage.EN, loaded.language)
+        assertEquals(false, loaded.lastEnglishEnabled)
+    }
+
+    @Test
+    fun installsFromBeforeLanguageReadAsThai() = withStore { file ->
+        open(file) { repo -> repo.update { it.copy(onboardingAccepted = true) } }
+        Thread.sleep(100)
+        // Simulate the old data: no language key at all.
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val store = PreferenceDataStoreFactory.create(scope = scope) { file }
+            store.edit { it.remove(stringPreferencesKey("language")) }
+        } finally { scope.cancel() }
+        Thread.sleep(100)
+        assertEquals(AppLanguage.TH, open(file) { it.settings.first() }.language)
     }
 }

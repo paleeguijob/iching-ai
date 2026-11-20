@@ -85,18 +85,21 @@ internal data class StatusDto(
     val campaign: CampaignDto? = null,
     val siamsi: SiamSiStatusDto? = null,
     val poster: PosterDto? = null,
+    val englishEnabled: Boolean = true,
+    val hexagramsEnVersion: Int = 1,
 ) {
     fun toDomain(webBaseUrl: String) = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
         adCreditsLeft = adCreditsLeft, adsWatchableLeft = adsWatchableLeft, readingsLeft = readingsLeft,
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
         campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
-        siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version) }, s.drawsPerDay) } ?: SiamSiStatus(),
+        siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version, it.enVersion) }, s.drawsPerDay) } ?: SiamSiStatus(),
         poster = poster?.toDomain(webBaseUrl),
+        englishEnabled = englishEnabled, hexagramsEnVersion = hexagramsEnVersion,
     )
 }
 
-@Serializable internal data class SiamSiSetRefDto(val id: String, val version: Int)
+@Serializable internal data class SiamSiSetRefDto(val id: String, val version: Int, val enVersion: Int = 1)
 @Serializable internal data class SiamSiStatusDto(val enabled: Boolean = false, val sets: List<SiamSiSetRefDto> = emptyList(), val drawsPerDay: Int = 1)
 @Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
 /** Tells the server this app splits I Ching readings into cards; older apps send nothing and get paragraphs. */

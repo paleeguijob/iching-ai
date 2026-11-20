@@ -54,7 +54,7 @@ data class SiamSiSet(
 data class SiamSiPick(val setId: String, val number: Int)
 
 /** A set the server has switched on, with the version of its file. */
-data class SiamSiSetRef(val id: String, val version: Int)
+data class SiamSiSetRef(val id: String, val version: Int, val enVersion: Int = 1)
 
 /** The two crescent blocks: ศักดิ์ (one up, one down) confirms; หัวเราะ and ไม่ ask for a new stick. */
 enum class PuaResult { SAK, LAUGH, NO }

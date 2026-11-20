@@ -125,6 +125,10 @@ data class AppSettings(
     val siamsiUsage: SiamSiUsage = SiamSiUsage(),
     /** Whether the server last said Siam Si is on, so an offline launch can still offer it. */
     val siamsiLastEnabled: Boolean = false,
+    /** The seeker's chosen language; null until picked (or migrated for installs from before 2.0). */
+    val language: AppLanguage? = null,
+    /** Whether the server last said English is on, so an offline launch keeps the seeker's choice. */
+    val lastEnglishEnabled: Boolean = true,
     /** Posters whose popup already showed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */
     val seenPosterIds: List<String> = emptyList(),
     /** Posters whose daily-page card the seeker closed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */

@@ -70,6 +70,10 @@ data class AccountStatus(
     val siamsi: SiamSiStatus = SiamSiStatus(),
     /** The poster while one runs; the server leaves it out outside its window, and a free-only one for Premium. */
     val poster: PosterStatus? = null,
+    /** The server's switch for English; off sends everyone back to Thai. */
+    val englishEnabled: Boolean = true,
+    /** Version of the English hexagram texts the server serves. */
+    val hexagramsEnVersion: Int = 1,
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)
