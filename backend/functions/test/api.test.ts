@@ -1459,6 +1459,43 @@ describe("api", () => {
       assert.equal(hasThaiLetters(String(res.events[0].data.primary && JSON.stringify(res.events[0].data.primary))), false);
     });
 
+    it("English year readings use yearContextEn and leave the year context out when it is missing", async () => {
+      now = Date.parse("2027-02-01T12:00:00+07:00");
+      for (const yearContextEn of ["Fire Goat year, English context", undefined]) {
+        cfg = { ...cfg, campaign: { ...DEFAULT_CAMPAIGN, enabled: true, yearContextEn }, minSecondsBetweenReadings: 8 };
+        modelPrompts.length = 0;
+        await handle(req("POST", "/year-hexagram", {}, { "x-app-lang": "en" }), new FakeRes());
+        now += 60_000;
+        const res = new FakeRes();
+        await handle(req("POST", "/divine", { mode: "year", question: "q" }, { "x-app-lang": "en" }), res);
+        assert.equal(res.events.at(-1)!.event, "done");
+        const prompt = modelPrompts[0];
+        assert.equal(prompt.includes("[Year context]"), yearContextEn !== undefined);
+        if (yearContextEn) assert.ok(prompt.includes("[Year context] " + yearContextEn));
+        assert.equal(hasThaiLetters(prompt.replace(/\[[^\]]*\]/g, "")), false);
+        now += 86_400_000;
+        store.years.clear();
+      }
+    });
+
+    it("/status carries the poster in the request language", async () => {
+      const start = now;
+      const poster = {
+        id: "p1", enabled: true, startsAt: start - 1000, endsAt: start + 1_000_000, image: "th.webp", alt: "ไทย", audience: "all" as const,
+        link: null, card: null, imageEn: "en.webp", altEn: "English",
+      };
+      cfg = { ...cfg, poster };
+      const get = async (headers: Record<string, string>) => {
+        const res = new FakeRes();
+        await handle(req("GET", "/status", undefined, headers), res);
+        return (res.payload as { poster: { image: string } | null }).poster;
+      };
+      assert.equal((await get({}))!.image, "th.webp");
+      assert.equal((await get({ "x-app-lang": "en" }))!.image, "en.webp");
+      cfg = { ...cfg, poster: { ...poster, imageEn: undefined, altEn: undefined } };
+      assert.equal(await get({ "x-app-lang": "en" }), null);
+    });
+
     it("stores Thai when English was asked but the English data is incomplete", async () => {
       deps.scripture = new Scripture(Array.from({ length: 64 }, (_, i) => scripture.get(i + 1)), null);
       deps.siamsi = new Map([["guanyin100", { ...enSiamsi.get("guanyin100")!, en: null }]]);

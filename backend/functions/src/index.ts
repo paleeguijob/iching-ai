@@ -12,6 +12,7 @@ import { dueCampaignPush } from "./core/campaign";
 import { buildDailyPush } from "./core/daily";
 import { streamGemini } from "./core/gemini";
 import { loadScripture } from "./core/hexagrams";
+import type { Lang } from "./core/lang";
 import { loadSiamSiSets } from "./core/siamsi";
 import { configWarnings, mergeConfig, RuntimeConfig } from "./core/quota";
 import { firestoreStore } from "./store";
@@ -87,53 +88,74 @@ export const api = onRequest(
   },
 );
 
-/** Sends the daily hexagram to everyone who opted in. No retries: a repeat is worse than a miss. */
+/** Sends the daily hexagram to everyone who opted in, in each topic's language. No retries: a repeat is worse than a miss. */
 export const dailyPush = onSchedule(
   { schedule: "0 7 * * *", timeZone: "Asia/Bangkok", region: REGION, retryCount: 0, maxInstances: 1 },
   async () => {
     try {
-      if (!(await runtimeConfig()).dailyPushEnabled) {
+      const cfg = await runtimeConfig();
+      if (!cfg.dailyPushEnabled) {
         logger.info("daily_push_skipped");
         return;
       }
-      const push = buildDailyPush(Date.now(), loadScripture());
-      await getMessaging().send({
-        topic: push.topic,
-        notification: { title: push.title, body: push.body },
-        data: { type: "daily", hexagramId: String(push.hexagramId) },
-        android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
-      });
-      logger.info("daily_push_sent", { hexagramId: push.hexagramId });
+      const scripture = loadScripture();
+      const langs: Lang[] = cfg.englishEnabled ? ["th", "en"] : ["th"];
+      for (const lang of langs) {
+        // One language failing must not stop the other.
+        try {
+          const push = buildDailyPush(Date.now(), scripture, lang);
+          if (!push) {
+            // English text incomplete: never send Thai to the English topic.
+            logger.warn("daily_push_skipped_incomplete", { lang });
+            continue;
+          }
+          await getMessaging().send({
+            topic: push.topic,
+            notification: { title: push.title, body: push.body },
+            data: { type: "daily", hexagramId: String(push.hexagramId) },
+            android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
+          });
+          logger.info("daily_push_sent", { hexagramId: push.hexagramId, lang });
+        } catch (e) {
+          logger.error("daily_push_failed", { lang, error: String(e) });
+        }
+      }
     } catch (e) {
       logger.error("daily_push_failed", { error: String(e) });
     }
   },
 );
 
-/** Sends each campaign push once: the dedupe doc is created before sending. No retries. */
+/** Sends each campaign push once per language: the dedupe doc is created before sending. No retries. */
 export const campaignPush = onSchedule(
   { schedule: "0 * * * *", timeZone: "Asia/Bangkok", region: REGION, retryCount: 0, maxInstances: 1 },
   async () => {
     try {
-      const push = dueCampaignPush((await runtimeConfig()).campaign, Date.now());
-      if (!push) return;
-      try {
-        await getFirestore().collection("campaignPushes").doc(push.key).create({ sentAt: new Date().toISOString() });
-      } catch (e) {
-        const code = (e as { code?: unknown }).code;
-        if (code === 6 || code === "ALREADY_EXISTS") {
-          logger.info("campaign_push_skipped", { key: push.key });
-          return;
+      const cfg = await runtimeConfig();
+      for (const push of dueCampaignPush(cfg.campaign, Date.now())) {
+        if (push.lang === "en" && !cfg.englishEnabled) continue;
+        try {
+          try {
+            await getFirestore().collection("campaignPushes").doc(push.key).create({ sentAt: new Date().toISOString() });
+          } catch (e) {
+            const code = (e as { code?: unknown }).code;
+            if (code === 6 || code === "ALREADY_EXISTS") {
+              logger.info("campaign_push_skipped", { key: push.key });
+              continue;
+            }
+            throw e;
+          }
+          await getMessaging().send({
+            topic: push.topic,
+            notification: { title: push.title, body: push.body },
+            data: push.data,
+            android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
+          });
+          logger.info("campaign_push_sent", { key: push.key });
+        } catch (e) {
+          logger.error("campaign_push_failed", { key: push.key, error: String(e) });
         }
-        throw e;
       }
-      await getMessaging().send({
-        topic: push.topic,
-        notification: { title: push.title, body: push.body },
-        data: push.data,
-        android: { ttl: push.ttlMs, priority: "high", notification: { channelId: "daily" } },
-      });
-      logger.info("campaign_push_sent", { key: push.key });
     } catch (e) {
       logger.error("campaign_push_failed", { error: String(e) });
     }

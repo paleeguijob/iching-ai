@@ -8,6 +8,7 @@
  */
 
 import { Campaign, campaignActive, DEFAULT_CAMPAIGN, parseCampaign } from "./campaign";
+import type { Lang } from "./lang";
 import { parsePoster, Poster, posterFor, StatusPoster } from "./poster";
 
 export interface RuntimeConfig {
@@ -198,7 +199,7 @@ export interface QuotaStatus {
   poster: StatusPoster | null;
 }
 
-export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number): QuotaStatus {
+export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number, lang: Lang = "th"): QuotaStatus {
   const premium = isPremium(user, now);
   const u = user.usage;
   const deviceFreeLeft = device ? Math.max(0, cfg.freeReadingsPerDevice - device.usage.free) : cfg.freeDailyReadings;
@@ -230,7 +231,7 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
       sets: cfg.siamsiSets,
       drawsPerDay: premium ? cfg.siamsiPremiumPerDay : cfg.siamsiAdDrawsPerDay,
     },
-    poster: posterFor(cfg.poster, premium, now),
+    poster: posterFor(cfg.poster, premium, now, lang),
     englishEnabled: cfg.englishEnabled,
     hexagramsEnVersion: cfg.hexagramsEnVersion,
   };

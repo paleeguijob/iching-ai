@@ -106,7 +106,7 @@ describe("daily hexagram", () => {
 
   it("builds the 07:00 push from the scripture", () => {
     const now = Date.UTC(2026, 10, 1, 0, 0);
-    const push = buildDailyPush(now, scripture);
+    const push = buildDailyPush(now, scripture)!;
     const h = scripture.get(dailyHexagramId(bangkokEpochDay(now)));
     assert.equal(push.topic, "daily-hexagram-th");
     assert.equal(push.title, `${h.nameCn} ${shortNameTh(h)}`);
@@ -114,6 +114,19 @@ describe("daily hexagram", () => {
     assert.ok(push.body.length > 0);
     assert.equal(push.hexagramId, h.id);
     assert.equal(push.ttlMs, 12 * 3600_000);
+  });
+
+  it("builds the English push on its own topic, and none while the English text is incomplete", () => {
+    const now = Date.UTC(2026, 10, 1, 0, 0);
+    const thai = Array.from({ length: 64 }, (_, i) => scripture.get(i + 1));
+    const s = new Scripture(thai, fixtureEnglish(scripture));
+    const push = buildDailyPush(now, s, "en")!;
+    const id = dailyHexagramId(bangkokEpochDay(now));
+    assert.equal(push.topic, "daily-hexagram-en");
+    assert.equal(push.body, `EN:daily ${id}`);
+    assert.equal(push.hexagramId, id);
+    assert.ok(!/[\u0E00-\u0E7F]/.test(push.title + push.body));
+    assert.equal(buildDailyPush(now, scripture, "en"), null, "no English file → no push, never Thai");
   });
 
   it("the kill-switch defaults on and can be turned off", () => {
@@ -372,6 +385,13 @@ describe("safety", () => {
     for (const q of ["Will I spend my life with him?", "Should I upskill myself?", "Tickets to see the Strokes", "Will my band, Heart Attackers, get signed?"]) {
       assert.equal(checkSafety(q).kind, "ok", q);
       assert.equal(checkSafety(q, "en").kind, "ok", q);
+    }
+  });
+
+  it("English emergency list matches 'unconsciousness' as well as 'unconscious'", () => {
+    for (const q of ["He is unconscious", "she fell into unconsciousness"]) {
+      const v = checkSafety(q, "en");
+      assert.equal(v.kind === "crisis" && v.topic, "medical_emergency", q);
     }
   });
 
@@ -681,12 +701,22 @@ describe("campaign", () => {
   });
   it("campaign push is due only during its hour and only while enabled", () => {
     const c = { ...parseCampaign(raw)!, pushes: [Date.parse("2027-02-05T19:00:00+07:00"), Date.parse("2027-02-06T08:00:00+07:00")] };
-    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T18:59:00+07:00")), null);
-    const eve = dueCampaignPush(c, Date.parse("2027-02-05T19:00:30+07:00"))!;
+    assert.deepEqual(dueCampaignPush(c, Date.parse("2027-02-05T18:59:00+07:00")), []);
+    const [eve, eveEn] = dueCampaignPush(c, Date.parse("2027-02-05T19:00:30+07:00"));
     assert.deepEqual([eve.key, eve.title, eve.topic, eve.data.type], ["cny-2027-0", "คืนส่งท้ายปีมะเมีย", "daily-hexagram-th", "campaign"]);
-    assert.equal(dueCampaignPush(c, Date.parse("2027-02-05T20:00:00+07:00")), null);
-    assert.equal(dueCampaignPush(c, Date.parse("2027-02-06T08:10:00+07:00"))!.title, "ซินเจียยู่อี่ ซินนี้ฮวดไช้");
-    assert.equal(dueCampaignPush({ ...c, enabled: false }, c.pushes[0]), null);
+    assert.deepEqual([eveEn.key, eveEn.topic, eveEn.lang], ["cny-2027-0-en", "daily-hexagram-en", "en"]);
+    assert.deepEqual(dueCampaignPush(c, Date.parse("2027-02-05T20:00:00+07:00")), []);
+    assert.equal(dueCampaignPush(c, Date.parse("2027-02-06T08:10:00+07:00"))[0].title, "ซินเจียยู่อี่ ซินนี้ฮวดไช้");
+    assert.deepEqual(dueCampaignPush({ ...c, enabled: false }, c.pushes[0]), []);
+    for (const t of [0, 1]) {
+      const en = dueCampaignPush(c, c.pushes[t] + 1000)[1];
+      assert.ok(en.title && en.body && !/[\u0E00-\u0E7F]/.test(en.title + en.body));
+    }
+  });
+  it("campaign keeps an optional English year context", () => {
+    assert.equal(parseCampaign(raw)!.yearContextEn, undefined);
+    assert.equal(parseCampaign({ ...raw, yearContextEn: "Fire Goat" })!.yearContextEn, "Fire Goat");
+    assert.equal(parseCampaign({ ...raw, yearContextEn: 5 })!.yearContextEn, undefined);
   });
 });
 
@@ -877,6 +907,19 @@ describe("poster", () => {
     assert.equal(posterFor({ ...p, enabled: false }, false, start), null);
     const all = parsePoster(minimal)!;
     assert.equal(posterFor(all, true, start)?.id, valid.id);
+  });
+
+  it("posterFor in English needs imageEn and altEn", () => {
+    const p = parsePoster(valid)!;
+    assert.equal(posterFor(p, false, start, "en"), null);
+    const en = parsePoster({ ...valid, imageEn: "en.webp", altEn: "English alt" })!;
+    const sent = posterFor(en, false, start, "en")!;
+    assert.deepEqual([sent.image, sent.alt, sent.card], ["en.webp", "English alt", null], "card without English copy is left out");
+    assert.equal(posterFor(en, false, start)!.image, valid.image, "Thai request keeps the Thai poster");
+    assert.equal(parsePoster({ ...valid, imageEn: "en.webp" })!.imageEn, undefined, "imageEn without altEn is ignored");
+    const withCard = parsePoster({ ...valid, imageEn: "en.webp", altEn: "A", card: { ...card, labelEn: "NEW", titleEn: "Hello", ctaEn: "Open" } })!;
+    assert.deepEqual(posterFor(withCard, false, start, "en")!.card, { label: "NEW", title: "Hello", cta: "Open", showEndDate: card.showEndDate });
+    assert.deepEqual(posterFor(withCard, false, start)!.card, card);
   });
 
   it("status carries the poster", () => {

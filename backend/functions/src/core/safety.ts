@@ -34,7 +34,7 @@ export const SELF_HARM_EN = [
 ];
 
 export const MEDICAL_EMERGENCY_EN = [
-  "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack", "stroke", "unconscious",
+  "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack", "stroke", "unconscious(ness)?",
   "severe bleeding", "bleeding (heavily|badly)", "wont stop bleeding", "seizures?", "overdos(e|ed|ing)",
   "anaphyla(xis|ctic)", "snake bite", "bitten by a snake",
 ];

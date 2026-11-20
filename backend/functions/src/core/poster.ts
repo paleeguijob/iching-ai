@@ -1,3 +1,4 @@
+import type { Lang } from "./lang";
 /**
  * One time-boxed poster: an artwork popup on the app's home, optionally with a small card on the daily page.
  * Times are epoch ms; Firestore stores ISO strings. The image is a bare file name under Hosting's content/posters/.
@@ -10,6 +11,10 @@ export interface PosterCard {
   title: string;
   cta: string;
   showEndDate: boolean;
+  /** English card copy; all three or none. Without them the English card is left out. */
+  labelEn?: string;
+  titleEn?: string;
+  ctaEn?: string;
 }
 
 export interface Poster {
@@ -19,6 +24,9 @@ export interface Poster {
   endsAt: number;
   image: string;
   alt: string;
+  /** English artwork and its alt text; both or neither. Without them English seekers see no poster. */
+  imageEn?: string;
+  altEn?: string;
   audience: PosterAudience;
   link: PosterLink | null;
   card: PosterCard | null;
@@ -31,7 +39,7 @@ export interface StatusPoster {
   alt: string;
   audience: PosterAudience;
   link: PosterLink | null;
-  card: PosterCard | null;
+  card: { label: string; title: string; cta: string; showEndDate: boolean } | null;
   endsAt: number;
 }
 
@@ -57,7 +65,14 @@ function parseCard(raw: unknown): PosterCard | null {
   const r = raw as Record<string, unknown>;
   if (!text(r.label, MAX_LABEL) || !text(r.title, MAX_TITLE) || !text(r.cta, MAX_CTA)) return null;
   if (typeof r.showEndDate !== "boolean") return null;
-  return { label: r.label, title: r.title, cta: r.cta, showEndDate: r.showEndDate };
+  const card: PosterCard = { label: r.label, title: r.title, cta: r.cta, showEndDate: r.showEndDate };
+  // The English copy is optional and only counts when complete; a bad English field never voids the Thai card.
+  if (text(r.labelEn, MAX_LABEL) && text(r.titleEn, MAX_TITLE) && text(r.ctaEn, MAX_CTA)) {
+    card.labelEn = r.labelEn;
+    card.titleEn = r.titleEn;
+    card.ctaEn = r.ctaEn;
+  }
+  return card;
 }
 
 /** Parses the Firestore shape; null (= no poster) when any field is missing, mistyped, too long or inconsistent. */
@@ -83,11 +98,24 @@ export function parsePoster(raw: unknown): Poster | null {
     // A card that leads nowhere is no use.
     if (card === null || link === null) return null;
   }
-  return { id: r.id, enabled: r.enabled, startsAt, endsAt, image: r.image, alt: r.alt, audience: r.audience, link, card };
+  const english =
+    typeof r.imageEn === "string" && IMAGE.test(r.imageEn) && text(r.altEn, MAX_ALT)
+      ? { imageEn: r.imageEn, altEn: r.altEn }
+      : {};
+  return { id: r.id, enabled: r.enabled, startsAt, endsAt, image: r.image, alt: r.alt, ...english, audience: r.audience, link, card };
 }
 
-export function posterFor(p: Poster | null, premium: boolean, now: number): StatusPoster | null {
+/** The poster in [lang]. English needs its own artwork (imageEn + altEn); without it there is no poster for English seekers. */
+export function posterFor(p: Poster | null, premium: boolean, now: number, lang: Lang = "th"): StatusPoster | null {
   if (p === null || !p.enabled || now < p.startsAt || now >= p.endsAt) return null;
   if (p.audience === "free" && premium) return null;
-  return { id: p.id, image: p.image, alt: p.alt, audience: p.audience, link: p.link, card: p.card, endsAt: p.endsAt };
+  const base = { id: p.id, audience: p.audience, link: p.link, endsAt: p.endsAt };
+  if (lang !== "en") {
+    const card = p.card && { label: p.card.label, title: p.card.title, cta: p.card.cta, showEndDate: p.card.showEndDate };
+    return { id: base.id, image: p.image, alt: p.alt, audience: base.audience, link: base.link, card, endsAt: base.endsAt };
+  }
+  if (!p.imageEn || !p.altEn) return null;
+  const c = p.card;
+  const card = c && c.labelEn && c.titleEn && c.ctaEn ? { label: c.labelEn, title: c.titleEn, cta: c.ctaEn, showEndDate: c.showEndDate } : null;
+  return { id: base.id, image: p.imageEn, alt: p.altEn, audience: base.audience, link: base.link, card, endsAt: base.endsAt };
 }

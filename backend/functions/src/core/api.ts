@@ -261,8 +261,8 @@ export function createApi(deps: Deps) {
     }
   }
 
-  const readStatus = (uid: string, deviceHash: string | null, cfg: RuntimeConfig): Promise<QuotaStatus> =>
-    deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now()) }));
+  const readStatus = (uid: string, deviceHash: string | null, cfg: RuntimeConfig, lang: Lang = "th"): Promise<QuotaStatus> =>
+    deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now(), lang) }));
 
   /**
    * Streams an AI reading for an existing cast, charging quota first and refunding on failure.
@@ -286,7 +286,7 @@ export function createApi(deps: Deps) {
       sse.send("limited", {
         reason: decision.reason,
         retryAfterSeconds: decision.retryAfterSeconds ?? null,
-        status: await readStatus(uid, deviceHash, cfg),
+        status: await readStatus(uid, deviceHash, cfg, lang),
       });
       return;
     }
@@ -333,7 +333,7 @@ export function createApi(deps: Deps) {
         tokensOut: usage.tokensOut,
         costThb: Number(estimateCostThb(decision.model, usage).toFixed(4)),
       });
-      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg, lang) });
     } catch (e) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
@@ -424,7 +424,11 @@ export function createApi(deps: Deps) {
         reading.question,
         cast,
         reading.category,
-        reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
+        reading.yearOf != null
+          ? served === "en"
+            ? (cfg.campaign ?? DEFAULT_CAMPAIGN).yearContextEn // none → English prompts leave it out, never Thai
+            : (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext)
+          : undefined,
         b.format === "cards",
         served,
       );
@@ -670,7 +674,7 @@ export function createApi(deps: Deps) {
       if (route === "POST /siamsi/interpret") return await siamsiInterpret(req, res, uid, deviceHash, cfg);
 
       if (route === "GET /status") {
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)));
         return;
       }
       if (route === "POST /ad-reward") {
@@ -678,7 +682,7 @@ export function createApi(deps: Deps) {
           const g = grantAdReward(user, device, cfg, deps.now());
           return g.ok ? { user: g.user, device: g.device, result: { granted: true as const } } : { result: { granted: false as const, reason: g.reason } };
         });
-        res.status(200).json({ ...granted, status: await readStatus(uid, deviceHash, cfg) });
+        res.status(200).json({ ...granted, status: await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)) });
         return;
       }
       if (route === "POST /report") {
@@ -742,7 +746,7 @@ export function createApi(deps: Deps) {
       }
       if (route === "POST /purchases/sync") {
         await syncPurchases(uid);
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(uid, deviceHash, cfg, requestLang(req.get("x-app-lang"), cfg)));
         return;
       }
       if (route === "GET /year-hexagram") {
