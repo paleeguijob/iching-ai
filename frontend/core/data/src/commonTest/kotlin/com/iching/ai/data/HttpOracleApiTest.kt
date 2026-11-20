@@ -43,6 +43,7 @@ private class FakeSession : ApiSession {
     override suspend fun appCheckToken(): String = "ac"
     override val deviceId = "device-123456"
     override val appVersion = "1.0.0"
+    override var language = "th"
 }
 
 class HttpOracleApiTest {
@@ -51,6 +52,35 @@ class HttpOracleApiTest {
 
     private fun apiAnswering(status: HttpStatusCode, body: String) =
         HttpOracleApi(HttpClient(MockEngine { respond(body, status) }), FakeSession(), "https://x/api", "https://w/")
+
+    @Test
+    fun everyRequestCarriesTheAppLanguage() = runTest {
+        val session = FakeSession().apply { language = "en" }
+        val seen = mutableListOf<String?>()
+        val engine = MockEngine { r ->
+            seen += r.headers["X-App-Lang"]
+            if (r.url.encodedPath.endsWith("/divine")) respond("event: done\ndata: {}\n\n", HttpStatusCode.OK, sse)
+            else respond("{}", HttpStatusCode.OK)
+        }
+        val api = HttpOracleApi(HttpClient(engine), session, "https://x/api", "https://w/")
+        api.status()
+        api.syncPurchases()
+        api.deleteAccount()
+        api.divine("q", null).toList()
+        assertEquals(listOf<String?>("en", "en", "en", "en"), seen)
+    }
+
+    @Test
+    fun aLanguageSwitchShowsOnTheNextRequest() = runTest {
+        val session = FakeSession().apply { language = "en" }
+        val seen = mutableListOf<String?>()
+        val engine = MockEngine { r -> seen += r.headers["X-App-Lang"]; respond("{}", HttpStatusCode.OK) }
+        val api = HttpOracleApi(HttpClient(engine), session, "https://x/api", "https://w/")
+        api.status()
+        session.language = "th"
+        api.status()
+        assertEquals(listOf<String?>("en", "th"), seen)
+    }
 
     @Test
     fun syncPurchasesReadsTheEntitlementsTheServerReturns() = runTest {

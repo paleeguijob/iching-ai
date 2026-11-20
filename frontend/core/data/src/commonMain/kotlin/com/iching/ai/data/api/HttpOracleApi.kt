@@ -66,6 +66,9 @@ interface ApiSession {
     /** Stable per-install id (hashed on the server) for the per-device free limit. */
     val deviceId: String
     val appVersion: String
+
+    /** The effective app language on the wire ("th" or "en"); read on every request, so a switch shows on the next one. */
+    val language: String
 }
 
 // ---------- wire format (see functions/src/core/api.ts) ----------
@@ -373,6 +376,7 @@ class HttpOracleApi(
         c.appCheck?.let { header("X-Firebase-AppCheck", it) }
         header("X-Device-Id", session.deviceId)
         header("X-App-Version", session.appVersion)
+        header("X-App-Lang", session.language)
     }
 
     private suspend fun errorOf(response: HttpResponse): ApiException {

@@ -32,7 +32,11 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 /** Supplies Firebase credentials to the HTTP client, signing in anonymously on first use. */
-class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
+class FirebaseApiSession(
+    private val auth: NativeAuth,
+    /** The wire code of the language in force, looked up per request. */
+    private val languageCode: () -> String = { "th" },
+) : ApiSession {
     private val signInLock = Mutex()
 
     suspend fun ensureSignedIn(): String = signInLock.withLock {
@@ -58,6 +62,7 @@ class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
 
     override val deviceId: String get() = auth.deviceId()
     override val appVersion: String get() = auth.appVersion()
+    override val language: String get() = languageCode()
 }
 
 sealed interface PurchaseResult {

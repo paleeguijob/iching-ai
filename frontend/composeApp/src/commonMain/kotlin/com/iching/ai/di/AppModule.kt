@@ -81,7 +81,8 @@ val domainModule = module {
 fun platformModule(bridges: NativeBridges): Module = module {
     single { bridges }
     single { bridges.auth }
-    single { FirebaseApiSession(get()) }
+    // The holder is built after AppSession, which needs this; so it is looked up per request, not here.
+    single { FirebaseApiSession(get(), languageCode = { get<AppLanguageHolder>().language.value.wire }) }
     single<ApiSession> { get<FirebaseApiSession>() }
     single {
         AppSession(
