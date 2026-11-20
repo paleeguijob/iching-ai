@@ -703,6 +703,19 @@ describe("api", () => {
     assert.equal(readings[0].outcomeNote, "ได้งานจริง");
   });
 
+  it("journal sync turns card markers into plain lines unless the app reads cards", async () => {
+    const first = new FakeRes();
+    await handle(req("POST", "/divine", { question: "a", format: "cards" }), first);
+    const id = first.events[0].data.readingId;
+    store.readings.get(`u1/${id}`)!.aiText = "ข้อความ\n[ดวงเด่น] ก";
+    const old = new FakeRes();
+    await handle(req("GET", "/readings"), old);
+    assert.equal((old.payload as { readings: { aiText: string }[] }).readings[0].aiText, "ข้อความ\nดวงเด่น: ก");
+    const cards = new FakeRes();
+    await handle({ ...req("GET", "/readings"), query: { format: "cards" } }, cards);
+    assert.equal((cards.payload as { readings: { aiText: string }[] }).readings[0].aiText, "ข้อความ\n[ดวงเด่น] ก");
+  });
+
   it("keeps the streak per account so a reinstall gets it back", async () => {
     const today = Math.floor((now + 7 * 3_600_000) / 86_400_000);
     const sent = new FakeRes();

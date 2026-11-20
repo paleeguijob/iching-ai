@@ -63,6 +63,13 @@ export const READING_SECTIONS = ["ดวงเด่น", "ควรระวั
 
 const SECTION_LINES = READING_SECTIONS.map((x) => `[${x}]`);
 
+const SECTION_MARKER = new RegExp(`\\[(${READING_SECTIONS.join("|")})\\]\\s*`, "g");
+
+/** "[ดวงเด่น] ก" → "ดวงเด่น: ก", for readers that don't split cards: older apps and the follow-up prompt. */
+export function sectionsAsPlainText(text: string): string {
+  return text.replace(SECTION_MARKER, "$1: ");
+}
+
 /** Only for app versions that send format "cards"; it replaces the 2-paragraph format above. */
 export const CARDS_RULES = `
 [รูปแบบการ์ด — ใช้แทนรูปแบบ 2 ย่อหน้าด้านบน]
@@ -70,6 +77,7 @@ export const CARDS_RULES = `
 - จากนั้นเขียนหัวข้อทั้งสามตามลำดับ แต่ละหัวข้อขึ้นบรรทัดใหม่ เริ่มด้วยป้ายตามด้วยเนื้อความ 1-2 ประโยค:
 ${SECTION_LINES.map((m, i) => `  ${m} ${["สิ่งที่กำลังเด่นหรือเป็นผลดีในเรื่องนี้", "สิ่งที่ควรระวัง", "สิ่งที่ควรทำต่อไป"][i]}`).join("\n")}
 - เขียนป้ายตรงตามนี้ทุกตัวอักษร ห้ามใช้ป้ายหรือหัวข้ออื่น ห้ามใช้ markdown
+- ข้อห้ามเรื่องหัวข้อด้านบนยังใช้อยู่ ยกเว้นป้ายหัวข้อการ์ดทั้งสามนี้ซึ่งต้องมีเสมอ
 `.trim();
 
 export const FOLLOW_UP_RULES = `
@@ -172,9 +180,9 @@ export function buildFollowUpPrompt(
     question.trim() || "(อธิษฐานในใจ)",
     "",
     "[สรุปคำทำนายเดิม]",
-    clip(firstReading.trim(), 700),
+    clip(sectionsAsPlainText(firstReading.trim()), 700),
     ...(previous.length
-      ? ["", "[บทสนทนาก่อนหน้า (ย่อ)]", ...previous.map((t) => `ผู้แสวงหา: ${clip(t.q, 150)}\nนักพรต: ${clip(t.a, 220)}`)]
+      ? ["", "[บทสนทนาก่อนหน้า (ย่อ)]", ...previous.map((t) => `ผู้แสวงหา: ${clip(t.q, 150)}\nนักพรต: ${clip(sectionsAsPlainText(t.a), 220)}`)]
       : []),
     "",
     "[คำถามต่อเนื่อง]",

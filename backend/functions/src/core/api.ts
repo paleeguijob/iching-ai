@@ -14,6 +14,7 @@ import { Scripture } from "./hexagrams";
 import {
   buildFollowUpPrompt,
   buildReadingPrompt,
+  sectionsAsPlainText,
   buildSiamSiPrompt,
   Category,
   FollowUpTurn,
@@ -675,7 +676,12 @@ export function createApi(deps: Deps) {
         const st = await readStatus(uid, deviceHash, cfg);
         const since = st.journalDays == null ? undefined : deps.now() - st.journalDays * 86_400_000;
         const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
-        res.status(200).json({ readings: (await deps.store.listReadings(uid, limit, since)).map(toClientReading) });
+        // Apps from before reading cards would show the markers as text; they get plain labelled lines instead.
+        const cards = req.query.format === "cards";
+        const readings = (await deps.store.listReadings(uid, limit, since)).map(toClientReading);
+        res.status(200).json({
+          readings: cards ? readings : readings.map((r) => ({ ...r, aiText: r.aiText && sectionsAsPlainText(r.aiText) })),
+        });
         return;
       }
       const outcome = route.match(/^POST \/readings\/([A-Za-z0-9_-]{1,64})\/outcome$/);

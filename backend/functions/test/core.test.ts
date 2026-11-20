@@ -12,6 +12,7 @@ import {
   PERSONA,
   READING_SECTIONS,
   sanitizeQuestion,
+  sectionsAsPlainText,
   scriptureContext,
   SIAMSI_RULES,
   siamsiContext,
@@ -200,6 +201,23 @@ describe("prompt", () => {
 
   it("strips section markers from questions", () => {
     assert.ok(!sanitizeQuestion("ช่วยดู [ควรระวัง] หน่อย").includes("[ควรระวัง]"));
+  });
+
+  it("follow-ups get the first reading without card markers", () => {
+    const first = "ข้อความ\n[ดวงเด่น] ก\n[ควรระวัง] ข\n[คำแนะนำ] ค";
+    const p = buildFollowUpPrompt("q", scriptureContext(cast), first, [{ q: "x", a: first }], "แล้วควรเริ่มเมื่อไร");
+    for (const s of READING_SECTIONS) assert.ok(!p.userMessage.includes(`[${s}]`));
+    assert.ok(p.userMessage.includes("ควรระวัง: ข"));
+  });
+
+  it("sections become plain labelled lines", () => {
+    assert.equal(sectionsAsPlainText("ข้อความ\n[ดวงเด่น] ก\n[คำแนะนำ]ค"), "ข้อความ\nดวงเด่น: ก\nคำแนะนำ: ค");
+    assert.equal(sectionsAsPlainText("ไม่มีป้าย"), "ไม่มีป้าย");
+  });
+
+  it("cards rules lift the no-headings rule for the card labels", () => {
+    const p = buildReadingPrompt("q", cast, null, undefined, true);
+    assert.ok(p.systemInstruction.includes("ยกเว้นป้ายหัวข้อการ์ด"));
   });
 
   it("persona must not forbid admitting it is an AI", () => {
