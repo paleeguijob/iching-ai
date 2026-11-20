@@ -202,7 +202,9 @@ fun OracleSheet(
                     animate = animate,
                     style = MaterialTheme.typography.bodyLarge,
                     onRevealed = {
-                        messageRevealed = true
+                        // Called whenever the typing catches up with the stream; the message is only finished
+                        // once a card has started after it or the reading is complete.
+                        if (parts.sections.isNotEmpty() || isComplete) messageRevealed = true
                         if (isComplete) revealed = true
                     },
                 )

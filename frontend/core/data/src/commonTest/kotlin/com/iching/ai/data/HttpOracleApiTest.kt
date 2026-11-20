@@ -203,6 +203,17 @@ class HttpOracleApiTest {
     }
 
     @Test
+    fun journalSyncAsksForCards() = runTest {
+        var query = ""
+        val engine = MockEngine { r ->
+            query = r.url.encodedQuery
+            respond("""{"readings":[]}""", HttpStatusCode.OK)
+        }
+        HttpOracleApi(HttpClient(engine), FakeSession(), "https://x/api", "https://w/").readings()
+        assertTrue(query.contains("format=cards"), query)
+    }
+
+    @Test
     fun mapsLimitedAndSafetyEvents() = runTest {
         val engine = MockEngine {
             respond(

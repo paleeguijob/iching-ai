@@ -50,4 +50,18 @@ class ReadingSectionsTest {
         assertTrue(speech.contains("ควรระวัง. ข"))
         assertFalse(speech.contains("["))
     }
+
+    @Test
+    fun toleratesSpacesInsideMarkersAndAColonAfter() {
+        val parts = parseReading("ข้อความ\n[ ดวงเด่น ]: ก\n[ควรระวัง] - ข")
+        assertEquals(listOf(ReadingSection("ดวงเด่น", "ก"), ReadingSection("ควรระวัง", "ข")), parts.sections)
+        assertEquals("ข้อความ", parts.message)
+    }
+
+    @Test
+    fun boldMarkersLeaveNoStarsBehind() {
+        val parts = parseReading("ข้อความ\n**[ดวงเด่น]** ก")
+        assertEquals("ข้อความ", parts.message)
+        assertEquals(listOf(ReadingSection("ดวงเด่น", "ก")), parts.sections)
+    }
 }

@@ -305,7 +305,7 @@ class HttpOracleApi(
     }
 
     override suspend fun readings(): List<Reading> =
-        json.decodeFromString(ReadingsDto.serializer(), call(HttpMethod.Get, "/readings?limit=500")).readings.map { dto ->
+        json.decodeFromString(ReadingsDto.serializer(), call(HttpMethod.Get, "/readings?limit=500&format=$READING_FORMAT")).readings.map { dto ->
             Reading(
                 question = dto.question,
                 createdAtMillis = dto.createdAt,
