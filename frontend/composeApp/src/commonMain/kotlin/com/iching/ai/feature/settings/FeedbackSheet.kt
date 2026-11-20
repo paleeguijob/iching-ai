@@ -19,6 +19,8 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -29,6 +31,10 @@ import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import com.iching.ai.ui.toThaiNumerals
+
+/** A send in flight keeps the sheet up, so its result (thanks or the error) is seen; see PreCastSheet for the same guard. */
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun feedbackSheetMayMove(sending: Boolean, target: SheetValue): Boolean = !sending || target != SheetValue.Hidden
 
 /**
  * A plain note to the team. No stars and no "how do you feel" question here: asking that before the store's
@@ -42,11 +48,13 @@ fun FeedbackSheet(
     onSend: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
-        containerColor = ZenColors.PaperCream,
-    ) {
+    val sending by rememberUpdatedState(ui.sending)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        confirmValueChange = { feedbackSheetMayMove(sending, it) },
+    )
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = ZenColors.PaperCream) {
         Column(
             Modifier
                 .fillMaxWidth()

@@ -134,9 +134,19 @@ class AppSession(
     /** Set when a reading finishes; Home takes it on its next resume to decide whether to ask for a rating. */
     private var readingFinished = false
 
-    /** A reading's interpretation finished: counts it, and lets Home consider asking for a rating. */
+    /**
+     * A reading's interpretation finished: counts it, and lets Home consider asking for a rating. Called from the
+     * middle of a reading's stream, so a failed settings write is only recorded: a rating counter must never stop a
+     * reading from finishing.
+     */
     suspend fun onReadingCompleted() {
-        settings.update { it.withReadingCompleted() }
+        try {
+            settings.update { it.withReadingCompleted() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("reading_count: ${e.message}")
+        }
         readingFinished = true
     }
 

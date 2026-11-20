@@ -54,6 +54,16 @@ class AppSessionReviewTest {
     }
 
     @Test
+    fun aFailedCountWriteNeverBreaksTheReading() = runTest {
+        val broken = object : SettingsRepository by CountingSettings() {
+            override suspend fun update(transform: (AppSettings) -> AppSettings) = throw IllegalStateException("disk full")
+        }
+        val session = session(backgroundScope, broken, FakeReview())
+        session.onReadingCompleted()
+        assertTrue(session.takeReadingFinished())
+    }
+
+    @Test
     fun reviewFailureIsSwallowed() = runTest {
         val review = FakeReview(error = "no activity")
         session(backgroundScope, CountingSettings(), review).requestReview()
