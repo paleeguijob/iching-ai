@@ -2,6 +2,7 @@ package com.iching.ai.ui.strings
 
 import com.iching.ai.domain.model.AppLanguage.EN
 import com.iching.ai.domain.model.AppLanguage.TH
+import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.ui.formatThaiShortDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -28,7 +29,8 @@ class FormattersTest {
 
     @Test
     fun zodiacYear() {
-        assertEquals("ปีมะแม ๒๕๗๐", zodiacYearLabel(2027, TH))
+        assertEquals("มะแม ๒๕๗๐", zodiacYearLabel(2027, TH))
+        for (y in listOf(2024, 2026, 2027, 2031)) assertEquals(campaignYearLabel(y), zodiacYearLabel(y, TH))
         assertEquals("Year of the Goat 2027", zodiacYearLabel(2027, EN))
     }
 

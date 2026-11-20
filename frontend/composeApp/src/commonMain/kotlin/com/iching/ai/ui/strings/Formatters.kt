@@ -56,11 +56,11 @@ fun formatTime(epochMillis: Long, lang: AppLanguage, tz: TimeZone = TimeZone.cur
     return if (lang == AppLanguage.TH) "$hm น." else hm
 }
 
-/** TH "ปีมะแม ๒๕๗๐", EN "Year of the Goat 2027". */
+/** TH "มะแม ๒๕๗๐" (callers add the "กวาประจำปี" prefix), EN "Year of the Goat 2027". */
 fun zodiacYearLabel(year: Int, lang: AppLanguage): String {
     val i = (year - 4).mod(12)
     return when (lang) {
-        AppLanguage.TH -> "ปี${ZODIAC_TH[i]} ${formatNumber(year + 543, lang)}"
+        AppLanguage.TH -> "${ZODIAC_TH[i]} ${formatNumber(year + 543, lang)}"
         AppLanguage.EN -> "Year of the ${ZODIAC_EN[i]} $year"
     }
 }
