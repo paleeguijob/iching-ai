@@ -11,6 +11,9 @@ import com.iching.ai.platform.NativeNotifications
 import com.iching.ai.platform.ResultCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import com.iching.ai.ui.strings.effectiveLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
@@ -26,19 +29,28 @@ private class FakeNotifications : NativeNotifications {
     var subscribeWorks = true
     var neverAnswers = false
     var throws = false
+    /** When set, answers wait here until the test completes them, in order. */
+    var hold = false
+    val held = ArrayDeque<ResultCallback>()
     val calls = mutableListOf<Boolean>()
-    val languages = mutableListOf<AppLanguage>()
+    val topics = mutableListOf<String>()
+    val others = mutableListOf<String>()
     override fun isSupported() = true
     override fun permissionGranted() = granted
     override fun requestPermission(callback: ResultCallback) {
         granted = grantOnRequest
         callback.onResult(if (granted) "granted" else "denied", null)
     }
-    override fun setDailySubscribed(enabled: Boolean, lang: AppLanguage, callback: ResultCallback) {
+    override fun setDailySubscribed(enabled: Boolean, topic: String, otherTopic: String, callback: ResultCallback) {
         calls += enabled
-        languages += lang
+        topics += topic
+        others += otherTopic
         if (throws) error("bridge failed")
         if (neverAnswers) return
+        if (hold) {
+            held += callback
+            return
+        }
         if (subscribeWorks) callback.onResult("ok", null) else callback.onResult(null, "offline")
     }
     override fun openSystemSettings() = Unit
@@ -203,7 +215,7 @@ class AppSessionPushTest {
         session.onLanguageChanged(AppLanguage.EN)
         testScheduler.runCurrent()
         assertEquals(listOf(true), notifications.calls)
-        assertEquals(listOf(AppLanguage.EN), notifications.languages)
+        assertEquals(listOf("daily-hexagram-en"), notifications.topics)
         assertTrue(settings.flow.value.dailyPushSynced)
     }
 
@@ -230,6 +242,83 @@ class AppSessionPushTest {
         session.onLanguageChanged(AppLanguage.EN)
         session.setDailyPush(true)
         testScheduler.runCurrent()
-        assertEquals(listOf(AppLanguage.EN), notifications.languages)
+        assertEquals(listOf("daily-hexagram-en"), notifications.topics)
+    }
+
+    @Test
+    fun switchingLanguageBackAndForthDuringASyncEndsOnTheThaiTopic() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true, dailyPushSynced = false))
+        val session = session(settings, backgroundScope)
+        notifications.hold = true
+        backgroundScope.launch { session.start() }
+        testScheduler.runCurrent()
+        assertEquals(listOf("daily-hexagram-th"), notifications.topics)
+        backgroundScope.launch { session.onLanguageChanged(AppLanguage.EN) }
+        backgroundScope.launch { session.onLanguageChanged(AppLanguage.TH) }
+        testScheduler.runCurrent()
+        notifications.hold = false
+        notifications.held.removeFirst().onResult("ok", null)
+        testScheduler.runCurrent()
+        assertEquals(listOf("daily-hexagram-th"), notifications.topics)
+        assertEquals("daily-hexagram-en", notifications.others.last())
+        assertTrue(settings.flow.value.dailyPushSynced)
+    }
+
+    @Test
+    fun aLanguageChangeDuringASyncIsAppliedAfterIt() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true, dailyPushSynced = false))
+        val session = session(settings, backgroundScope)
+        notifications.hold = true
+        backgroundScope.launch { session.start() }
+        testScheduler.runCurrent()
+        backgroundScope.launch { session.onLanguageChanged(AppLanguage.EN) }
+        testScheduler.runCurrent()
+        notifications.hold = false
+        notifications.held.removeFirst().onResult("ok", null)
+        testScheduler.runCurrent()
+        assertEquals(listOf("daily-hexagram-th", "daily-hexagram-en"), notifications.topics)
+        assertTrue(settings.flow.value.dailyPushSynced)
+    }
+
+    @Test
+    fun aFailedLanguageSyncLeavesItUnsynced() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true))
+        val session = session(settings, backgroundScope)
+        notifications.subscribeWorks = false
+        session.onLanguageChanged(AppLanguage.EN)
+        testScheduler.runCurrent()
+        assertFalse(settings.flow.value.dailyPushSynced)
+    }
+
+    @Test
+    fun theKillSwitchKeepsAnEnglishSeekerOnTheThaiTopic() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true, dailyPushSynced = false, language = AppLanguage.EN))
+        val session = session(settings, backgroundScope)
+        session.followLanguage(backgroundScope, effectiveLanguage(settings.settings, flowOf(false)))
+        session.start()
+        testScheduler.runCurrent()
+        assertEquals(listOf("daily-hexagram-th"), notifications.topics)
+        assertEquals(listOf("daily-hexagram-en"), notifications.others)
+    }
+
+    @Test
+    fun aColdStartInEnglishDoesNotResubscribeWhenSynced() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true, language = AppLanguage.EN))
+        val session = session(settings, backgroundScope)
+        session.followLanguage(backgroundScope, effectiveLanguage(settings.settings, flowOf(true)))
+        session.start()
+        testScheduler.runCurrent()
+        assertEquals(emptyList(), notifications.calls)
+    }
+
+    @Test
+    fun aColdStartInEnglishSubscribesEnglishWhenUnsynced() = runTest {
+        val settings = MemorySettings(AppSettings(dailyPushEnabled = true, dailyPushSynced = false, language = AppLanguage.EN))
+        val session = session(settings, backgroundScope)
+        session.followLanguage(backgroundScope, effectiveLanguage(settings.settings, flowOf(true)))
+        testScheduler.runCurrent()
+        session.start()
+        testScheduler.runCurrent()
+        assertEquals(listOf("daily-hexagram-en"), notifications.topics)
     }
 }

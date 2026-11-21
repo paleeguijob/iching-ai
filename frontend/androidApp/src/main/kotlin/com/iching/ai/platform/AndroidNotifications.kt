@@ -11,7 +11,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationManagerCompat
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.messaging.FirebaseMessaging
-import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.ui.strings.ThDailyStrings
 
 /** Keep the channel id in step with backend/functions/src/core/daily.ts and index.ts; topics are in DailyTopic.kt. */
@@ -53,14 +52,13 @@ class AndroidNotifications(private val context: Context) : NativeNotifications {
         launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    override fun setDailySubscribed(enabled: Boolean, lang: AppLanguage, callback: ResultCallback) {
+    override fun setDailySubscribed(enabled: Boolean, topic: String, otherTopic: String, callback: ResultCallback) {
         val messaging = FirebaseMessaging.getInstance()
         // Auto-init is off in the manifest so nobody gets an FCM token before opting in.
         if (enabled) messaging.isAutoInitEnabled = true
         // Always leave the other language's topic; when switching off, leave both.
-        val own = dailyTopicFor(lang)
-        val first = if (enabled) messaging.subscribeToTopic(own) else messaging.unsubscribeFromTopic(own)
-        val second = messaging.unsubscribeFromTopic(otherTopic(lang))
+        val first = if (enabled) messaging.subscribeToTopic(topic) else messaging.unsubscribeFromTopic(topic)
+        val second = messaging.unsubscribeFromTopic(otherTopic)
         Tasks.whenAll(first, second).addOnCompleteListener {
             if (it.isSuccessful) callback.onResult("ok", null)
             else callback.onResult(null, it.exception?.message ?: "FCM topic change failed")

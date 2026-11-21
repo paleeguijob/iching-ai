@@ -492,6 +492,6 @@ internal object NoNotifications : NativeNotifications {
     override fun isSupported() = false
     override fun permissionGranted() = false
     override fun requestPermission(callback: ResultCallback) = callback.onResult("denied", null)
-    override fun setDailySubscribed(enabled: Boolean, lang: com.iching.ai.domain.model.AppLanguage, callback: ResultCallback) = callback.onResult("ok", null)
+    override fun setDailySubscribed(enabled: Boolean, topic: String, otherTopic: String, callback: ResultCallback) = callback.onResult("ok", null)
     override fun openSystemSettings() = Unit
 }

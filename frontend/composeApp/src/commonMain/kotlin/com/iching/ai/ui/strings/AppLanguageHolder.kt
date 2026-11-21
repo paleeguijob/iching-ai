@@ -23,7 +23,7 @@ class AppLanguageHolder(
     val englishEnabled: StateFlow<Boolean> = englishAllowed.stateIn(scope, SharingStarted.Eagerly, true)
 
     val language: StateFlow<AppLanguage> =
-        combine(observeSettings(), englishAllowed) { settings, enabled -> settings.languageFor(enabled) }
+        effectiveLanguage(observeSettings(), englishAllowed)
             .stateIn(scope, SharingStarted.Eagerly, AppLanguage.TH)
 
     val strings: Strings get() = stringsFor(language.value)
@@ -36,3 +36,7 @@ class AppLanguageHolder(
 fun effectiveEnglishEnabled(online: Flow<Boolean>, status: Flow<AccountStatus>, settings: Flow<AppSettings>): Flow<Boolean> =
     combine(online, status, settings) { isOnline, st, s -> if (isOnline) st.englishEnabled else s.lastEnglishEnabled }
         .distinctUntilChanged()
+
+/** The language in force: the seeker's choice, unless English is switched off. */
+fun effectiveLanguage(settings: Flow<AppSettings>, englishAllowed: Flow<Boolean>): Flow<AppLanguage> =
+    combine(settings, englishAllowed) { s, enabled -> s.languageFor(enabled) }.distinctUntilChanged()

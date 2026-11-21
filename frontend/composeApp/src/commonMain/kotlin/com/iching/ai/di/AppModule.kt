@@ -37,14 +37,15 @@ import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.FirebaseApiSession
+import com.iching.ai.session.followLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import com.iching.ai.data.scripture.HexagramContentState
 import com.iching.ai.data.siamsi.SiamSiContentState
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.effectiveEnglishEnabled
+import com.iching.ai.ui.strings.effectiveLanguage
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import com.iching.ai.domain.oracle.bangkokEpochDay
@@ -97,15 +98,17 @@ fun platformModule(bridges: NativeBridges): Module = module {
     }
     single {
         val holderScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        val englishAllowed = get<AppSession>().let { session ->
+            effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
+        }
+        // The daily push topic follows the effective language (the kill switch gives Thai); the first value is
+        // what it was last synced to. Not the holder's flow: that starts on a Thai placeholder.
+        get<AppSession>().followLanguage(holderScope, effectiveLanguage(get<ObserveSettingsUseCase>()(), englishAllowed))
         AppLanguageHolder(
             observeSettings = get(),
-            englishAllowed = get<AppSession>().let { session ->
-                effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
-            },
+            englishAllowed = englishAllowed,
             scope = holderScope,
         ).also { holder ->
-            // The daily push topic follows the effective language (the kill switch gives Thai).
-            holderScope.launch { holder.language.collect { get<AppSession>().onLanguageChanged(it) } }
             // The scripture follows the effective language (the kill switch gives Thai) and the server's file version.
             val session = get<AppSession>()
             get<HexagramContentState>().apply {

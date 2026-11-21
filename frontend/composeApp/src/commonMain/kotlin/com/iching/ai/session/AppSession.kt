@@ -18,6 +18,8 @@ import com.iching.ai.platform.NativeAuth
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.platform.NativeException
 import com.iching.ai.platform.awaitNative
+import com.iching.ai.platform.dailyTopicFor
+import com.iching.ai.platform.otherTopic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlin.time.Clock
@@ -226,6 +228,12 @@ class AppSession(
 
     /** The language whose daily topic the device should hold; follows the language in force. */
     private var pushLanguage = AppLanguage.TH
+    private val pushSyncLock = Mutex()
+
+    /** The language in force when the app starts: what the topic was last synced to, so nothing is resubscribed. */
+    fun initPushLanguage(lang: AppLanguage) {
+        pushLanguage = lang
+    }
 
     /** The language in force changed: move a seeker who has the daily push on over to that language's topic. */
     suspend fun onLanguageChanged(lang: AppLanguage) {
@@ -236,16 +244,27 @@ class AppSession(
         syncDailyPush()
     }
 
-    /** Brings the FCM topic in line with the setting. A failure (offline) is retried on the next launch. */
+    /**
+     * Brings the FCM topic in line with the setting. One sync runs at a time, and it repeats until the
+     * setting and language it applied are still the current ones. A failure (offline) is retried on the next launch.
+     */
     private suspend fun syncDailyPush() {
         try {
-            val current = settings.settings.firstOrNull() ?: return
-            if (current.dailyPushSynced || !dailyPushSupported) return
-            val enabled = current.dailyPushEnabled
-            val lang = pushLanguage
-            awaitNative { bridges.notifications.setDailySubscribed(enabled, lang, it) }
-            // A change of setting or language while this ran leaves it unsynced for the next pass.
-            settings.update { if (it.dailyPushEnabled == enabled && pushLanguage == lang) it.copy(dailyPushSynced = true) else it }
+            pushSyncLock.withLock {
+                while (true) {
+                    val current = settings.settings.firstOrNull() ?: return
+                    if (current.dailyPushSynced || !dailyPushSupported) return
+                    val enabled = current.dailyPushEnabled
+                    val lang = pushLanguage
+                    awaitNative { bridges.notifications.setDailySubscribed(enabled, dailyTopicFor(lang), otherTopic(lang), it) }
+                    var done = false
+                    settings.update {
+                        done = it.dailyPushEnabled == enabled && pushLanguage == lang
+                        if (done) it.copy(dailyPushSynced = true) else it
+                    }
+                    if (done) return
+                }
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -556,4 +575,18 @@ class AppSession(
     fun setUserProperty(name: String, value: String) = bridges.analytics.setUserProperty(name, value)
 
     fun log(event: String, params: Map<String, String> = emptyMap()) = bridges.analytics.logEvent(event, params)
+}
+
+/**
+ * Keeps the daily push topic on the language in force. The first language seen is what the topic was last
+ * synced to, so only a later change resubscribes.
+ */
+fun AppSession.followLanguage(scope: CoroutineScope, languages: kotlinx.coroutines.flow.Flow<AppLanguage>) {
+    scope.launch {
+        var first = true
+        languages.collect {
+            if (first) initPushLanguage(it) else onLanguageChanged(it)
+            first = false
+        }
+    }
 }
