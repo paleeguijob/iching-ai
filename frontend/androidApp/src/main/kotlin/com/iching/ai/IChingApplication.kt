@@ -15,7 +15,11 @@ import com.iching.ai.platform.AndroidReview
 import com.iching.ai.platform.NativeBridges
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import androidx.glance.appwidget.updateAll
+import androidx.work.ExistingWorkPolicy
 import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.widget.DailyHexagramWidget
+import com.iching.ai.widget.MidnightRefreshWorker
 import com.iching.ai.ui.strings.stringsFor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,7 +69,15 @@ class IChingApplication : Application() {
         // The channel name follows the language in force; the launcher name stays as it is.
         val holder = KoinPlatform.getKoin().get<AppLanguageHolder>()
         CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
-            holder.language.collect { notifications.createChannel(stringsFor(it).daily.title) }
+            holder.language.collect {
+                notifications.createChannel(stringsFor(it).daily.title)
+                // The widget reads the language itself; this only asks it to redraw.
+                runCatching { DailyHexagramWidget().updateAll(this@IChingApplication) }
+            }
+        }
+        // A widget already on the home screen keeps its midnight refresh across reboots and updates.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            runCatching { if (MidnightRefreshWorker.hasWidgets(this@IChingApplication)) MidnightRefreshWorker.schedule(this@IChingApplication, ExistingWorkPolicy.KEEP) }
         }
     }
 

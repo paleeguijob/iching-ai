@@ -21,6 +21,7 @@ interface Strings {
     val settings: SettingsStrings
     val paywall: PaywallStrings
     val review: ReviewStrings
+    val widget: WidgetStrings
 }
 
 private object ThStrings : Strings {
@@ -39,6 +40,7 @@ private object ThStrings : Strings {
     override val settings = ThSettingsStrings
     override val paywall = ThPaywallStrings
     override val review = ThReviewStrings
+    override val widget = ThWidgetStrings
 }
 
 private object EnStrings : Strings {
@@ -57,6 +59,7 @@ private object EnStrings : Strings {
     override val settings = EnSettingsStrings
     override val paywall = EnPaywallStrings
     override val review = EnReviewStrings
+    override val widget = EnWidgetStrings
 }
 
 fun stringsFor(lang: AppLanguage): Strings = when (lang) {

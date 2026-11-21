@@ -7,7 +7,11 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.glance.appwidget.updateAll
+import androidx.lifecycle.lifecycleScope
 import com.iching.ai.navigation.PendingNavigation
+import com.iching.ai.widget.DailyHexagramWidget
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val app get() = application as IChingApplication
@@ -37,6 +41,12 @@ class MainActivity : ComponentActivity() {
         openFromPush(intent)
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Opening the app is one of the moments the widget catches up with the day and the language.
+        lifecycleScope.launch { DailyHexagramWidget().updateAll(applicationContext) }
+    }
+
     override fun onDestroy() {
         if (isFinishing) app.notifications.attach(null)
         super.onDestroy()
@@ -53,6 +63,10 @@ class MainActivity : ComponentActivity() {
         if (type == "campaign") {
             app.analytics.logEvent("push_open", mapOf("type" to "campaign"))
             PendingNavigation.requestYear()
+        } else if (intent.getStringExtra("source") == "widget") {
+            intent.removeExtra("source")
+            app.analytics.logEvent("widget_tap", emptyMap())
+            PendingNavigation.requestDaily()
         } else {
             app.analytics.logEvent("push_open", emptyMap())
             PendingNavigation.requestDaily()

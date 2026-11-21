@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">อี้จิง AI</string>
+    <!-- The widget picker can't follow the in-app language; it follows the phone's (Thai by default, English below). -->
+    <string name="widget_description">กวาประจำวันบนหน้าจอหลัก</string>
 </resources>

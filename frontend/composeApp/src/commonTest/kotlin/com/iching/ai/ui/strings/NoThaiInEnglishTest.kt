@@ -243,6 +243,11 @@ class NoThaiInEnglishTest {
     }
 
     @Test
+    fun widget() {
+        check("widget", listOf(EnWidgetStrings.empty))
+    }
+
+    @Test
     fun englishSettingsNameNoPushHour() {
         val text = listOf(EnSettingsStrings.dailyPush, EnSettingsStrings.dailyPushSubtitle).joinToString(" ")
         assertFalse(Regex("\\d").containsMatchIn(text), text)

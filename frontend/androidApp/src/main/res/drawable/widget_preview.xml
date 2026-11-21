@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview: hexagram 1 (six solid lines) on the paper colour. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="110dp"
+    android:height="110dp"
+    android:viewportWidth="110"
+    android:viewportHeight="110">
+    <path android:fillColor="#FAF9F6" android:pathData="M20,0h70a20,20 0 0 1 20,20v70a20,20 0 0 1 -20,20h-70a20,20 0 0 1 -20,-20v-70a20,20 0 0 1 20,-20z" />
+    <path android:fillColor="#9C4221" android:pathData="M30,22h50v5h-50z M30,34h50v5h-50z M30,46h50v5h-50z M30,58h50v5h-50z M30,70h50v5h-50z M30,82h50v5h-50z" />
+</vector>

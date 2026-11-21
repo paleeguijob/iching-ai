@@ -53,6 +53,13 @@ dependencies {
     implementation(libs.androidx.credentials.playServices)
     implementation(libs.googleid)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+    implementation(libs.work.runtime.ktx)
+
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 android {
