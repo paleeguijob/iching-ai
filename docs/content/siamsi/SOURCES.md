@@ -36,6 +36,14 @@
 
 **ข้อสังเกต:** ทั้งสองเว็บน่าจะมาจากผู้ดูแลกลุ่มเดียวกัน (ข้อมูลตรงกันทุกตัวอักษร) จึงยังไม่ใช่การยืนยันจากสองแหล่งที่เป็นอิสระต่อกัน ถ้ามีฉบับพิมพ์จริงจากวัดหรือศาลเจ้า ควรเทียบอีกรอบ
 
+## English edition (2.0)
+- **Files:** `guanyin100.en.json` and `jiazi60.en.json` beside the Thai set files, copied unchanged to `backend/hosting/public/content/siamsi/`.
+- **Poems (`poem_en`):** our own translation of the Chinese poems (`poem_orig`), which are ancient text with no known author. No published English translation was copied or closely paraphrased.
+- **Everything else** (`summary`, `topics`, `keywords`): our own English rendering of the Thai interpretation written by the team. `story` is empty in every slip, as in the Thai files.
+- **Drafted by:** Claude (drafted and independently reviewed), 2026-11. Style was normalized afterwards: poem lines start with a capital, end punctuation is uniform, and the dealings topic uses "talks" throughout.
+- **Caution (same as the Thai):** the `health` topic gives no treatment advice, only self-care and "see a doctor if you have symptoms". There are no predictions of death or serious illness. The text is for reflection, not a guarantee.
+- **Owner review:** not done yet. All 160 slips must be checked before `siamsiEnabled` goes live in English.
+
 ## การตรวจโดยเจ้าของแอป
 **ยังไม่ได้ตรวจ** ต้องตรวจครบทุกใบก่อนเปิด `siamsiEnabled` บน production
 

@@ -11,6 +11,7 @@ import { campaignActive, DEFAULT_CAMPAIGN } from "./campaign";
 import { Cast, castHexagram, Coin, LineValue, resolveLines } from "./cast";
 import { estimateCostThb, GeminiError, Usage } from "./gemini";
 import { Scripture } from "./hexagrams";
+import { Lang, requestLang } from "./lang";
 import {
   buildFollowUpPrompt,
   buildReadingPrompt,
@@ -108,6 +109,8 @@ export interface StoredReading {
   createdAt: number;
   /** Set on a Siam Si reading, which has no cast (lines/coins empty, primaryId 0). */
   siamsi?: { set: string; stick: number } | null;
+  /** Language the reading was made in; readings from before 2.0 have none and are Thai. */
+  lang?: Lang;
 }
 
 /** The one hexagram an account keeps for a campaign year; cast once on the server, never recast. */
@@ -258,11 +261,26 @@ export function createApi(deps: Deps) {
     }
   }
 
-  const readStatus = (uid: string, deviceHash: string | null, cfg: RuntimeConfig): Promise<QuotaStatus> =>
-    deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now()) }));
+  /** The status poster follows the language of the request (X-App-Lang), never the language of a stored reading. */
+  const readStatus = (req: HttpReq, uid: string, deviceHash: string | null, cfg: RuntimeConfig): Promise<QuotaStatus> => {
+    const lang = requestLang(req.get("x-app-lang"), cfg);
+    return deps.store.quotaTx(uid, deviceHash, (user, device) => ({ result: status(user, device, cfg, deps.now(), lang) }));
+  };
 
-  /** Streams an AI reading for an existing cast, charging quota first and refunding on failure. */
-  async function interpret(sse: Sse, uid: string, deviceHash: string | null, cfg: RuntimeConfig, reading: StoredReading, prompt: Prompt) {
+  /**
+   * Streams an AI reading for an existing cast, charging quota first and refunding on failure.
+   * [lang] is the language [prompt] was built in; it sets the share summary's length limit.
+   */
+  async function interpret(
+    req: HttpReq,
+    sse: Sse,
+    uid: string,
+    deviceHash: string | null,
+    cfg: RuntimeConfig,
+    reading: StoredReading,
+    prompt: Prompt,
+    lang: Lang,
+  ) {
     const resuming = reading.interrupted && reading.interrupted.resumes < MAX_FREE_RESUMES ? reading.interrupted : null;
     const decision = await deps.store.quotaTx<ChargeDecision>(uid, deviceHash, (user, device) => {
       const d = resuming ? resumeReading(user, resuming.charge, cfg, deps.now()) : chargeReading(user, device, cfg, deps.now());
@@ -272,7 +290,7 @@ export function createApi(deps: Deps) {
       sse.send("limited", {
         reason: decision.reason,
         retryAfterSeconds: decision.retryAfterSeconds ?? null,
-        status: await readStatus(uid, deviceHash, cfg),
+        status: await readStatus(req, uid, deviceHash, cfg),
       });
       return;
     }
@@ -292,7 +310,7 @@ export function createApi(deps: Deps) {
     };
     try {
       const stream = deps.streamModel(prompt, decision.model, abort.signal);
-      const splitter = new SummarySplitter();
+      const splitter = new SummarySplitter(lang);
       let step = await stream.next();
       while (!step.done) {
         show(splitter.push(step.value));
@@ -319,7 +337,7 @@ export function createApi(deps: Deps) {
         tokensOut: usage.tokensOut,
         costThb: Number(estimateCostThb(decision.model, usage).toFixed(4)),
       });
-      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: decision.model, shareSummary: end.summary, status: await readStatus(req, uid, deviceHash, cfg) });
     } catch (e) {
       // The connection dropped after some words: keep the charge, since they saw part of it, but
       // not the fragment, which the app discards. A retry regenerates the whole reading for free.
@@ -341,6 +359,7 @@ export function createApi(deps: Deps) {
 
   async function divine(req: HttpReq, res: HttpRes, uid: string, deviceHash: string | null, cfg: RuntimeConfig) {
     const b = body(req);
+    let lang = requestLang(req.get("x-app-lang"), cfg);
     const existingId = typeof b.readingId === "string" ? b.readingId : null;
     let reading: StoredReading;
     let cast: Cast;
@@ -350,10 +369,12 @@ export function createApi(deps: Deps) {
       if (!found) throw new HttpError(404, "reading_not_found");
       if (found.siamsi) throw new HttpError(409, "wrong_method");
       reading = found;
-      cast = castFromStored(deps.scripture, found);
+      lang = found.lang ?? "th";
+      cast = castFromStored(deps.scripture.forLang(lang), found);
     } else {
       const question = sanitizeQuestion(b.question);
-      const safety = checkSafety(question);
+      // No reading yet: the reply is in the language asked for; both languages' phrases are checked.
+      const safety = checkSafety(question, lang);
       if (safety.kind === "crisis") {
         const sse = new Sse(res);
         deps.log.info("safety_redirect", { uid, topic: safety.topic });
@@ -365,10 +386,10 @@ export function createApi(deps: Deps) {
       if (b.mode === "year") {
         const year = await deps.store.getYearHexagram(uid, cfg.campaign?.year ?? DEFAULT_CAMPAIGN.year);
         if (!year) throw new HttpError(409, "no_year_hexagram");
-        cast = resolveLines(deps.scripture, year.lines, year.coins);
+        cast = resolveLines(deps.scripture.forLang(lang), year.lines, year.coins);
         yearOf = year.year;
       } else {
-        cast = castHexagram(deps.scripture);
+        cast = castHexagram(deps.scripture.forLang(lang));
       }
       const data: Omit<StoredReading, "id"> = {
         question,
@@ -390,6 +411,7 @@ export function createApi(deps: Deps) {
         outcome: null,
         outcomeNote: null,
         createdAt: deps.now(),
+        lang: cast.primary.lang ?? "th", // the language actually served, Thai when the English scripture is incomplete
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }
@@ -399,16 +421,22 @@ export function createApi(deps: Deps) {
     if (reading.aiText) {
       // Already interpreted (e.g. the app retried after a dropped connection): replay, never re-charge.
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(req, uid, deviceHash, cfg) });
     } else {
+      const served = cast.primary.lang ?? "th"; // the language of the scripture in the prompt
       const prompt = buildReadingPrompt(
         reading.question,
         cast,
         reading.category,
-        reading.yearOf != null ? (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext) : undefined,
+        reading.yearOf != null
+          ? served === "en"
+            ? (cfg.campaign ?? DEFAULT_CAMPAIGN).yearContextEn // none → English prompts leave it out, never Thai
+            : (cfg.campaign?.yearContext ?? DEFAULT_CAMPAIGN.yearContext)
+          : undefined,
         b.format === "cards",
+        served,
       );
-      await interpret(sse, uid, deviceHash, cfg, reading, prompt);
+      await interpret(req, sse, uid, deviceHash, cfg, reading, prompt, served);
     }
     sse.end();
   }
@@ -418,6 +446,7 @@ export function createApi(deps: Deps) {
     if (!cfg.siamsiEnabled) throw new HttpError(503, "siamsi_disabled");
     if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
     const b = body(req);
+    const requested = requestLang(req.get("x-app-lang"), cfg);
     const existingId = typeof b.readingId === "string" ? b.readingId : null;
     let reading: StoredReading;
 
@@ -428,11 +457,10 @@ export function createApi(deps: Deps) {
     } else {
       const setId = typeof b.set === "string" ? b.set : "";
       const stick = typeof b.stick === "number" && Number.isInteger(b.stick) ? b.stick : -1;
-      if (!cfg.siamsiSets.some((r) => r.id === setId) || !findStick(deps.siamsi, setId, stick)) {
-        throw new HttpError(400, "bad_stick");
-      }
+      const served = cfg.siamsiSets.some((r) => r.id === setId) ? findStick(deps.siamsi, setId, stick, requested) : null;
+      if (!served) throw new HttpError(400, "bad_stick");
       const question = sanitizeQuestion(b.question);
-      const safety = checkSafety(question);
+      const safety = checkSafety(question, requested);
       if (safety.kind === "crisis") {
         const sse = new Sse(res);
         deps.log.info("safety_redirect", { uid, topic: safety.topic });
@@ -461,6 +489,7 @@ export function createApi(deps: Deps) {
         outcomeNote: null,
         createdAt: deps.now(),
         siamsi: { set: setId, stick },
+        lang: served.lang, // the language actually served, Thai when the set has no complete English file
       };
       reading = { id: await deps.store.createReading(uid, data), ...data };
     }
@@ -469,11 +498,12 @@ export function createApi(deps: Deps) {
     sse.send("reading", { readingId: reading.id });
     if (reading.aiText) {
       sse.send("delta", { text: reading.aiText });
-      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(uid, deviceHash, cfg) });
+      sse.send("done", { model: reading.model, shareSummary: reading.shareSummary ?? null, status: await readStatus(req, uid, deviceHash, cfg) });
     } else {
-      const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick);
+      const slip = findStick(deps.siamsi, reading.siamsi!.set, reading.siamsi!.stick, reading.lang ?? "th");
       if (!slip) throw new HttpError(404, "reading_not_found");
-      await interpret(sse, uid, deviceHash, cfg, reading, buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category));
+      const prompt = buildSiamSiPrompt(reading.question, slip.set, slip.stick, reading.category, slip.lang);
+      await interpret(req, sse, uid, deviceHash, cfg, reading, prompt, slip.lang);
     }
     sse.end();
   }
@@ -483,14 +513,14 @@ export function createApi(deps: Deps) {
     const id = typeof b.readingId === "string" ? b.readingId : "";
     const message = sanitizeQuestion(b.message, MAX_FOLLOW_UP_CHARS);
     if (!id || !message) throw new HttpError(400, "bad_request");
-    const st = await readStatus(uid, deviceHash, cfg);
+    const st = await readStatus(req, uid, deviceHash, cfg);
     if (!st.premium) throw new HttpError(403, "premium_required");
     if (!cfg.aiEnabled) throw new HttpError(503, "ai_disabled");
     const reading = await deps.store.getReading(uid, id);
     if (!reading || !reading.aiText) throw new HttpError(404, "reading_not_found");
 
     const sse = new Sse(res);
-    const safety = checkSafety(message);
+    const safety = checkSafety(message, reading.lang ?? "th");
     if (safety.kind === "crisis") {
       sse.send("safety", { topic: safety.topic, message: safety.message });
       sse.end();
@@ -502,7 +532,8 @@ export function createApi(deps: Deps) {
       return;
     }
     const model = cfg.forceModel ?? cfg.freeModel;
-    const prompt = buildFollowUpPrompt(reading.question, followUpContext(reading), reading.aiText, reading.followUps, message);
+    const context = followUpContext(reading);
+    const prompt = buildFollowUpPrompt(reading.question, context.text, reading.aiText, reading.followUps, message, context.lang);
     const abort = new AbortController();
     const watcher = setInterval(() => sse.isClosed && abort.abort(), 500);
     let text = "";
@@ -587,11 +618,18 @@ export function createApi(deps: Deps) {
     deps.log.info("account_merged", { from: from.uid, to: uid });
   }
 
-  function followUpContext(reading: StoredReading): string {
-    if (!reading.siamsi) return scriptureContext(castFromStored(deps.scripture, reading));
-    const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick);
+  /** The context in the reading's language, and that language: Thai if the English text has since gone missing. */
+  function followUpContext(reading: StoredReading): { text: string; lang: Lang } {
+    // A reading keeps the language it was made in, whatever the header or config say now.
+    const lang = reading.lang ?? "th";
+    if (!reading.siamsi) {
+      const cast = castFromStored(deps.scripture.forLang(lang), reading);
+      const served = cast.primary.lang ?? "th";
+      return { text: scriptureContext(cast, served), lang: served };
+    }
+    const slip = findStick(deps.siamsi, reading.siamsi.set, reading.siamsi.stick, lang);
     if (!slip) throw new HttpError(404, "reading_not_found");
-    return siamsiContext(slip.set, slip.stick);
+    return { text: siamsiContext(slip.set, slip.stick, slip.lang), lang: slip.lang };
   }
 
   const toClientReading = (r: StoredReading) => ({
@@ -609,6 +647,7 @@ export function createApi(deps: Deps) {
     outcomeNote: r.outcomeNote,
     createdAt: r.createdAt,
     siamsi: r.siamsi ?? null,
+    lang: r.lang ?? "th",
   });
 
   /** The year hexagram stays viewable after the campaign; only a new cast needs it to be active. */
@@ -639,7 +678,7 @@ export function createApi(deps: Deps) {
       if (route === "POST /siamsi/interpret") return await siamsiInterpret(req, res, uid, deviceHash, cfg);
 
       if (route === "GET /status") {
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "POST /ad-reward") {
@@ -647,7 +686,7 @@ export function createApi(deps: Deps) {
           const g = grantAdReward(user, device, cfg, deps.now());
           return g.ok ? { user: g.user, device: g.device, result: { granted: true as const } } : { result: { granted: false as const, reason: g.reason } };
         });
-        res.status(200).json({ ...granted, status: await readStatus(uid, deviceHash, cfg) });
+        res.status(200).json({ ...granted, status: await readStatus(req, uid, deviceHash, cfg) });
         return;
       }
       if (route === "POST /report") {
@@ -673,14 +712,14 @@ export function createApi(deps: Deps) {
       }
       if (route === "GET /readings") {
         // Free accounts get back the days their journal shows; Premium gets everything.
-        const st = await readStatus(uid, deviceHash, cfg);
+        const st = await readStatus(req, uid, deviceHash, cfg);
         const since = st.journalDays == null ? undefined : deps.now() - st.journalDays * 86_400_000;
         const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
         // Apps from before reading cards would show the markers as text; they get plain labelled lines instead.
         const cards = req.query.format === "cards";
         const readings = (await deps.store.listReadings(uid, limit, since)).map(toClientReading);
         res.status(200).json({
-          readings: cards ? readings : readings.map((r) => ({ ...r, aiText: r.aiText && sectionsAsPlainText(r.aiText) })),
+          readings: cards ? readings : readings.map((r) => ({ ...r, aiText: r.aiText && sectionsAsPlainText(r.aiText, r.lang) })),
         });
         return;
       }
@@ -711,7 +750,7 @@ export function createApi(deps: Deps) {
       }
       if (route === "POST /purchases/sync") {
         await syncPurchases(uid);
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "GET /year-hexagram") {
@@ -727,7 +766,7 @@ export function createApi(deps: Deps) {
       if (route === "POST /account/merge") {
         if (typeof b.fromIdToken !== "string" || !b.fromIdToken) throw new HttpError(400, "bad_request");
         await mergeAnonymousAccount(uid, b.fromIdToken);
-        res.status(200).json(await readStatus(uid, deviceHash, cfg));
+        res.status(200).json(await readStatus(req, uid, deviceHash, cfg));
         return;
       }
       if (route === "DELETE /account") {
