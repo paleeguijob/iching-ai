@@ -2,6 +2,7 @@ package com.iching.ai.ui.strings
 
 import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.Hexagram
+import com.iching.ai.domain.oracle.englishMeaningAfterName
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
@@ -108,6 +109,6 @@ fun Hexagram.meaning(lang: AppLanguage): String = meaningTh
 fun Hexagram.dailyBannerLine(lang: AppLanguage): String {
     val number = formatNumber(id, lang)
     if (lang != AppLanguage.EN || !hasEnglish) return "$number · ${shortName(lang)} ${meaning(lang)}"
-    val rest = meaningTh.removePrefix(nameEn).trimStart(',', ':', '—', '-', ' ')
+    val rest = englishMeaningAfterName(nameEn, meaningTh)
     return if (rest.isEmpty()) "$number · $nameEn" else "$number · $nameEn — $rest"
 }

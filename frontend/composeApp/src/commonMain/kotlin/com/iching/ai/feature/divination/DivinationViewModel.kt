@@ -603,7 +603,8 @@ class DivinationViewModel(
                 lines = cast.lines,
                 primaryId = cast.primary.id,
                 relatingId = cast.relating?.id,
-                interpretation = interpretation,
+                // Scripture text is composed in the language in force when it is opened, never stored.
+                interpretation = if (source == InterpretationSource.SCRIPTURE) "" else interpretation,
                 source = source,
                 serverId = serverId,
                 category = s.category,

@@ -77,6 +77,8 @@ class FormattersTest {
         assertEquals("5 · Waiting", waiting.dailyBannerLine(EN))
         val heaven = hex("Heaven — Strong and unceasing", "Heaven").copy(id = 1)
         assertEquals("1 · Heaven — Strong and unceasing", heaven.dailyBannerLine(EN))
+        val windy = hex("Wind — Windy plains", "Wind").copy(id = 57)
+        assertEquals("57 · Wind — Windy plains", windy.dailyBannerLine(EN))
         val kun = hex("ขุน — ความตีบตัน, ถูกล้อม").copy(id = 47)
         assertEquals("๔๗ · ขุน ความตีบตัน, ถูกล้อม", kun.dailyBannerLine(TH))
         assertEquals("47 · ขุน ความตีบตัน, ถูกล้อม", kun.dailyBannerLine(EN))
