@@ -70,7 +70,7 @@ android {
         applicationId = "com.iching.ai"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 200
+        versionCode = 201
         versionName = "2.0.0"
     }
     buildFeatures {

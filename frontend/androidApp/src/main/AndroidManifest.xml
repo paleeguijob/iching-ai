@@ -8,6 +8,12 @@
     <!-- Declared by the AdMob SDK; needed for the Advertising ID on Android 13+. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <!-- screenOrientation="portrait" implies this feature as required; Play then
+         blocks Desktop, Android XR and some tablets. Keep it optional. -->
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+
     <application
         android:name=".IChingApplication"
         android:allowBackup="false"
