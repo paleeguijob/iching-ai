@@ -55,6 +55,9 @@ class CrisisCheckTest {
         for (q in listOf(
             "he had a stroke", "She is unconscious", "my dad is having a heart attack", "he was found unconscious",
             "hes unconscious", "she passed out and wont wake",
+            "I found my mom unconscious", "found him unconscious on the floor", "my mother unconscious, what do I do",
+            "Help! Unconscious child", "I think he's having a stroke, of course I'm scared", "he had a stroke of some kind",
+            "my dad had a heart attack of some sort", "he passed out and won't wake up",
         )) assertEquals(MEDICAL_MESSAGE_EN, crisisMessage(q, AppLanguage.EN), q)
     }
 

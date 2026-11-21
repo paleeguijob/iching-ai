@@ -34,9 +34,8 @@ export const SELF_HARM_EN = [
 ];
 
 export const MEDICAL_EMERGENCY_EN = [
-  "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack(?! of)", "stroke(?! of)",
-    "(is|was|were|are|hes|shes|theyre|went|go|goes|gone|fell|been|being|became|become|knocked|found|lying|lies) unconscious",
-    "unconsciousness", "passed out",
+  "(cant|cannot|can not) breathe?", "not breathing", "chest pains?", "heart attack(?! of love)", "stroke(?! of (luck|good|bad|genius|fortune|brilliance|insight|inspiration|fate))",
+    "unconscious(ness)?(?! (fears?|minds?|desires?|thoughts?|bias(es)?|feelings?|patterns?|self|wish(es)?|motives?))", "passed out",
   "severe bleeding", "bleeding (heavily|badly)", "wont stop bleeding", "seizures?", "overdos(e|ed|ing)",
   "anaphyla(xis|ctic)", "snake bite", "bitten by a snake",
 ];
