@@ -353,9 +353,9 @@ fun SettingsScreen(
                             Card {
                                 LinkRow(st.howToCast, onClick = onOpenGuide)
                                 Divider()
-                                LinkRow(st.privacy) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }
+                                LinkRow(st.privacy) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${st.privacyPath}") } }
                                 Divider()
-                                LinkRow(st.terms) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }
+                                LinkRow(st.terms) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${st.termsPath}") } }
                             }
                             VersionLine(st.version(viewModel.appVersion))
                         }

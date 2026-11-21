@@ -59,6 +59,12 @@ interface SettingsStrings {
     val howToCast: String
     val privacy: String
     val terms: String
+
+    /** Path of the privacy page on the web host, in this language. */
+    val privacyPath: String
+
+    /** Path of the terms page on the web host, in this language. */
+    val termsPath: String
     fun version(version: String): String
 
     val deleteTitle: String
@@ -145,6 +151,8 @@ object ThSettingsStrings : SettingsStrings {
     override val howToCast = "วิธีเสี่ยงทาย"
     override val privacy = "นโยบายความเป็นส่วนตัว"
     override val terms = "ข้อกำหนดการใช้งาน"
+    override val privacyPath = "/privacy"
+    override val termsPath = "/terms"
     override fun version(version: String) = "เวอร์ชัน $version"
 
     override val deleteTitle = "ลบบัญชีและข้อมูลทั้งหมด?"
@@ -234,6 +242,8 @@ object EnSettingsStrings : SettingsStrings {
     override val howToCast = "How to cast"
     override val privacy = "Privacy policy"
     override val terms = "Terms of use"
+    override val privacyPath = "/en/privacy"
+    override val termsPath = "/en/terms"
     override fun version(version: String) = "Version $version"
 
     override val deleteTitle = "Delete account and all data?"

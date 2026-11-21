@@ -1,4 +1,4 @@
-# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12) และ v1.3 (หัวข้อ 13)
+# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12) v1.3 (หัวข้อ 13) และ 2.0 (หัวข้อ 14)
 
 **ลำดับการปล่อย: Android ก่อน** · iOS ทำภายหลังเมื่อสมัคร Apple Developer แล้ว (รวมไว้ที่หัวข้อ 9)
 
@@ -378,27 +378,48 @@ Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`st
 3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp frontend/androidApp/build/outputs/bundle/release/*.aab iching-ai-1.3.0-130.aab` (ไม่ commit) → อัปโหลด Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8
 4. ☐ ถ้า v1.2 ยังไม่ขึ้น production ให้ปล่อย v1.2 ให้เสร็จก่อน (แคมเปญตรุษจีนมีกำหนดเวลา) แล้วค่อยส่ง v1.3
 
-## 14. ปล่อย v1.4 — เซียมซี
+## 14. ปล่อย 2.0 — เซียมซี + ภาษาอังกฤษ + Widget
 
-เพิ่มโหมดเซียมซีคู่กับอี้จิง: ตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ (bundle ในแอป) · ดูโฆษณาก่อนเสี่ยง (ฟรี ๒ ครั้ง/วัน, Premium ๓ ครั้ง/วันไม่มีโฆษณา นับในเครื่อง แยกจากสิทธิ์โฆษณาของอี้จิง) · ไม้ปัวบังคับ · "แปลความหมาย" ใช้สิทธิ์คำทำนายเดิม ๑ ครั้งผ่าน `POST /siamsi/interpret` · บันทึกชะตามีตัวกรองและการ์ดแชร์ · ชุดใหม่ดาวน์โหลดจาก Hosting `/content/siamsi/{id}.json` ได้ภายหลัง · `versionCode` 140 / `versionName` 1.4.0 · Android ก่อน
-สเปก: [`docs/superpowers/specs/2026-11-08-siamsi-design.md`](superpowers/specs/2026-11-08-siamsi-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-v1.4-siamsi.md`](superpowers/plans/2026-11-08-v1.4-siamsi.md)
+v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รวมอยู่ใน 2.0 พร้อมภาษาอังกฤษและ widget กวาประจำวัน · `versionCode` 200 / `versionName` 2.0.0 · Android ก่อน (iOS ดูข้อ H)
+
+**เซียมซี:** ตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ (bundle ในแอป) · ดูโฆษณาก่อนเสี่ยง (ฟรี ๒ ครั้ง/วัน, Premium ๓ ครั้ง/วันไม่มีโฆษณา นับในเครื่อง แยกจากสิทธิ์โฆษณาของอี้จิง) · ไม้ปัวบังคับ · "แปลความหมาย" ใช้สิทธิ์คำทำนายเดิม ๑ ครั้งผ่าน `POST /siamsi/interpret` · บันทึกชะตามีตัวกรองและการ์ดแชร์ · ชุดใหม่ดาวน์โหลดจาก Hosting `/content/siamsi/{id}.json` ได้ภายหลัง
+**ภาษาอังกฤษ:** ติดตั้งใหม่เห็นหน้าเลือกภาษา (อัปเดตจากเวอร์ชันเก่าได้ไทยเหมือนเดิม) เปลี่ยนได้ในตั้งค่า · แอปส่ง header `X-App-Lang` · push topic `daily-hexagram-th` (เดิม) และ `daily-hexagram-en` · กวาและใบเซียมซีอังกฤษ bundle ในแอป แก้ภายหลังผ่าน Hosting ได้ (ข้อ G) · ลิงก์ privacy/terms ในแอปโหมดอังกฤษเปิด `/en/privacy` และ `/en/terms`
+**Widget:** กวาประจำวันบนหน้าจอหลัก (Android) อัปเดตตอนเที่ยงคืน UTC+7 และตอนเปิดแอป
+
+สเปก: [`docs/superpowers/specs/2026-11-08-siamsi-design.md`](superpowers/specs/2026-11-08-siamsi-design.md) · [`docs/superpowers/specs/2026-11-20-v2.0-english-widget-design.md`](superpowers/specs/2026-11-20-v2.0-english-widget-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-v1.4-siamsi.md`](superpowers/plans/2026-11-08-v1.4-siamsi.md)
 
 ### A. ก่อนส่งแอป (ต้องครบก่อน)
-1. ☐ **เนื้อหาครบ 160 ใบ** — ตอนนี้ไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` มีแค่ใบตัวอย่าง ๓ ใบต่อชุด (ข้อความ 〔ตัวอย่าง〕) ต้องเลือกฉบับตำรา ใส่กลอนต้นฉบับ เขียนคำแปลเอง บันทึกแหล่งใน `docs/content/siamsi/SOURCES.md` แล้วเปลี่ยน bundle เป็น `strict = true` (แผน Task 13)
-2. ☐ เจ้าของแอปตรวจทุกใบ และลงชื่อผู้ตรวจ/วันที่ใน `SOURCES.md`
+1. ☐ **เนื้อหาเซียมซีครบ 160 ใบ** ในไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` และ bundle อ่านแบบ `strict = true` · `grep -rn "〔ตัวอย่าง〕" frontend/core/data/src/commonMain/composeResources/files backend/hosting/public/content` ต้องว่าง (ค้นคำว่า "ตัวอย่าง" เฉย ๆ ไม่ได้ เพราะหกสิบกะจื๊อใบ 54 มี "เตรียมตัวอย่างดี" ในเนื้อหาจริง)
+2. ☐ เจ้าของแอปตรวจทุกใบ (ทั้งไทยและอังกฤษ) และลงชื่อผู้ตรวจ/วันที่ใน `docs/content/siamsi/SOURCES.md`
 3. ☐ ไล่ดูบน emulator ทั้ง 5 ธีม (ตั้ง `siamsiEnabled = true` ใน Firestore emulator ก่อน): หน้าแรก + เลือกตำรา, ปุ่มเสี่ยง ๔ สถานะ (ดูโฆษณา / ปิดโฆษณากลางคัน / ไม่มีโฆษณา / ครบแล้ว), เขย่าด้วยเซ็นเซอร์และกดค้าง, ไม้ปัว ๓ รอบ, ใบจีน ๑๐๐/๖๐, แปลความหมาย (ทั้งมีสิทธิ์และต้องดูโฆษณา), ถามต่อ (Premium), บันทึก + ตัวกรอง, แชร์ (การ์ดต้องไม่มีคำถาม)
 4. ☐ `grep -rn "ขยายความ" frontend/composeApp/src frontend/core/*/src/commonMain/kotlin backend/functions/src` ต้องว่าง (`hexagrams.json` ของอี้จิงมีคำนี้ในเนื้อหาคัมภีร์เดิม ไม่เกี่ยวกับเซียมซี)
+5. ☐ ไล่ดูโหมดอังกฤษบน emulator ทั้ง 5 ธีมและจอแคบ: ไม่มีอักษรไทยหลง ไม่มีข้อความถูกตัด · ติดตั้งใหม่ → เห็นหน้าเลือกภาษา · อัปเดตจาก 1.3 → ไม่เห็น ได้ไทย · เปลี่ยนภาษาในตั้งค่า → ทุกหน้า widget และ push เปลี่ยนตาม · ลิงก์ privacy/terms เปิดหน้าภาษาที่ถูก
+6. ☐ หน้าจอไทยทุกหน้าเหมือนก่อนเปลี่ยน (เทียบ screenshot ก่อน/หลัง: หน้าแรก เสี่ยงทาย คำทำนาย เซียมซี บันทึก ตั้งค่า paywall)
+7. ☐ Widget บนเครื่องจริง: วางได้ทั้งสองขนาด ข้ามเที่ยงคืนแล้วเปลี่ยน แตะแล้วเปิดหน้ากวาประจำวันถูก
+8. ☐ QA หน้าที่เรียก backend บน emulator: ลงทะเบียน App Check debug token ของ emulator ใน Firebase Console → App Check → Apps → Android → Manage debug tokens ก่อน (token อยู่ใน logcat ตอนเปิดแอป debug ครั้งแรก) ไม่งั้นทุก request ถูกปฏิเสธ
 
 ### B. Store listing
-- คำอธิบายเพิ่มย่อหน้า: "เสี่ยงทายได้ทั้ง อี้จิง และเซียมซี จากตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ"
+**ไทย** (`docs/store/listing-th.md`)
+- ☐ คำอธิบายเพิ่มย่อหน้า "🎋 เสี่ยงเซียมซี" และคำอธิบายสั้นชุด "หลังเปิด v1.4 เซียมซี" ตามไฟล์
 - ☐ ภาพหน้าจอใบเซียมซี ๑ รูปใน `docs/store/screenshots/` — ห้ามมีเทวรูปหรือโลโก้วัด/ศาลเจ้า
 
-### C. ลำดับเปิดใช้
-1. ☐ Deploy functions + hosting (`siamsiEnabled` ยังเป็น `false` ตามค่าเริ่มต้น ผู้ใช้จึงยังไม่เห็นอะไร)
-2. ☐ Build `./gradlew :androidApp:bundleRelease` → อัปโหลด Closed testing → Production
-3. ☐ เมื่อแอป 1.4.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
-4. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`)
+**อังกฤษ** (`docs/store/listing-en.md`)
+- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มจากไฟล์ · **ชื่อ "I Ching AI: Oracle & Fortune Sticks" ยาว 35 ตัวอักษร เกินขีด 30 ของ Play** ต้องเลือกชื่อที่ไม่เกิน (ในไฟล์เสนอ "I Ching AI: Oracle & Kau Cim" 28 ตัว)
+- ☐ ภาพหน้าจอภาษาอังกฤษ 5 ภาพ (1080×2160 เหมือนชุดไทย) และ feature graphic สำหรับ en-US
+- ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy` และ `/en/terms` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
+- ☐ **ประเทศ:** Production → Countries/regions → เพิ่ม สิงคโปร์ (SG) มาเลเซีย (MY) ฟิลิปปินส์ (PH) สหรัฐ (US) สหราชอาณาจักร (GB) ออสเตรเลีย (AU) แคนาดา (CA) · ตรวจว่า in-app products และ subscription มีราคาในประเทศเหล่านี้ และ AdMob/RevenueCat ไม่ได้จำกัดประเทศ
+- ☐ **Data safety:** ตรวจซ้ำ ไม่มีประเภทข้อมูลใหม่ที่ต้องประกาศ (ภาษาที่เลือกส่งไปกับ request และเป็น user property ใน Analytics ซึ่งอยู่ในหมวด App activity/App info เดิม) · ถ้ามีหมวดใดเปลี่ยน แก้ฉบับไทยของ `privacy.html` ก่อน แล้วแปล `en/privacy.html` ให้ตรง
 
+### C. ลำดับเปิดใช้ (เจ้าของแอปทำเอง — Claude ไม่ deploy และไม่อัปโหลด)
+1. ☐ **Merge `feature/v2.0-server` แล้ว deploy functions + hosting ก่อนแอป 2.0 ขึ้น** เพราะแอป 2.0 ส่ง `X-App-Lang` และต้องการ push topic และเนื้อหาอังกฤษ ถ้า server เก่า ผู้ใช้อังกฤษจะได้คำทำนายไทย
+   - `cd backend/functions && npm test` ผ่าน
+   - `cd backend && firebase deploy --only functions,hosting` (`copy-data` คัดลอกกวาและใบเซียมซีอังกฤษให้ server ตอน build)
+   - `siamsiEnabled` ยังเป็น `false` ตามค่าเริ่มต้น ผู้ใช้จึงยังไม่เห็นเซียมซี
+2. ☐ `englishEnabled` ใน `config/runtime` ค่าเริ่มต้นเป็น `true` อยู่แล้ว ไม่ต้องตั้ง (ถ้าคำแปลยังตรวจไม่ผ่าน ตั้ง `false` ก่อนปล่อยแอป ดูข้อ F)
+3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp androidApp/build/outputs/bundle/release/*.aab ../iching-ai-2.0.0-200.aab` (ไม่ commit)
+4. ☐ Play Console: อัปโหลด `iching-ai-2.0.0-200.aab` ที่ Closed testing ก่อน → ทดสอบตามข้อ A → Production พร้อม listing en-US, screenshots EN, ประเทศ SG MY PH US GB AU CA และ Data safety ตามข้อ B
+5. ☐ เมื่อแอป 2.0.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
+6. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`) · widget: `widget_added`, `widget_removed`, `widget_tap`
 
 ### D. แก้ข้อความใบเซียมซีหลังปล่อยแล้ว (ไม่ต้องออกแอปใหม่)
 1. ☐ แก้ไฟล์ชุดนั้น แล้วเพิ่ม `"version"` ในไฟล์ (เช่น `"version": 2`) วางไว้ที่ `backend/hosting/public/content/siamsi/{id}.json`
@@ -456,3 +477,27 @@ popup เด้งครั้งเดียวต่อ `id` บนหน้�
 9. ☐ ตั้ง `enabled: true` (server เก็บค่าไว้ไม่เกิน 1 นาที) แล้วดู log ว่าไม่มี `poster_invalid`
 10. ☐ ดู analytics `poster_shown` / `poster_tapped` / `poster_closed` (param `poster_id`, `surface` = `popup` หรือ `card`)
 11. ☐ ปิดก่อนกำหนด: ตั้ง `enabled: false` · หลังจบโปรลดราคา: สลับ offering ใน RevenueCat กลับเป็นปกติ
+
+### F. ปิดภาษาอังกฤษ (`englishEnabled`, ไม่ต้องออกแอปใหม่)
+1. ☐ ตั้ง `config/runtime.englishEnabled = false` ใน Firestore (server เก็บค่าไว้ไม่เกิน 1 นาที)
+2. ผล: แอปซ่อนหน้าเลือกภาษาและแถวภาษาในตั้งค่า ผู้ใช้ที่เลือกอังกฤษไว้ถูกบังคับเป็นไทยจนกว่าจะเปิดใหม่ (ค่าที่เลือกไว้ยังเก็บในเครื่อง) · server ถือ request ใหม่เป็นไทยแม้แอปส่ง `en` · ถามต่อของ reading อังกฤษเดิมยังตอบอังกฤษ · แอปที่ถูกบังคับเป็นไทยย้ายไป topic `daily-hexagram-th` · push อังกฤษหยุดส่ง
+3. **ข้อจำกัด (R21):** เครื่องที่ติดตั้งใหม่ยังไม่เคยได้ status จาก server จึงยังเห็นหน้าเลือกภาษาตอน onboarding แม้ปิดสวิตช์แล้ว แอปจะรู้ว่าปิดเมื่อได้ status ครั้งแรกหลัง onboarding · ระหว่างนั้น server ก็ยังตอบเป็นไทยอยู่แล้ว ผู้ใช้จึงไม่ได้เนื้อหาอังกฤษจาก server
+4. ☐ เปิดกลับ: ตั้ง `englishEnabled = true`
+
+### G. แก้คำแปลอังกฤษหลังปล่อยแล้ว (ผ่าน Hosting, ไม่ต้องออกแอปใหม่)
+**กวา (`hexagrams.en.json`)**
+1. ☐ คัดลอก `frontend/core/data/src/commonMain/composeResources/files/hexagrams.en.json` ไปแก้ เพิ่ม `"version"` ในไฟล์ (มากกว่าฉบับที่ติดมากับแอป เช่น `"version": 2`) แล้ววางที่ `backend/hosting/public/content/hexagrams.en.json`
+2. ☐ Deploy **ทั้ง hosting และ functions** (`cd backend && firebase deploy --only functions,hosting`) — `copy-data` ให้ไฟล์บน Hosting ทับฉบับในแอปตอน build server ถ้า deploy hosting อย่างเดียว นักพรตจะตอบจากข้อความเก่า
+3. ☐ ตั้ง `config/runtime.hexagramsEnVersion` ให้ตรงกับ `version` ในไฟล์ แอปจะโหลด `/content/hexagrams.en.json?v={version}` มาแทนฉบับในแอป
+
+**ใบเซียมซี (`{id}.en.json`)**
+1. ☐ แก้ไฟล์ชุดนั้น เพิ่ม `"version"` ในไฟล์ แล้ววางที่ `backend/hosting/public/content/siamsi/{id}.en.json`
+2. ☐ Deploy ทั้ง hosting และ functions (เหตุผลเดียวกับข้อบน)
+3. ☐ ตั้ง `enVersion` ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ (คนละค่ากับ `version` ของฉบับไทยในข้อ D)
+
+### H. หมายเหตุก่อนปล่อย (คำตัดสินระหว่างพัฒนา)
+- **iOS ยังไม่ได้ compile:** Swift bridge ที่แก้ใน 2.0 (notifications `setDailySubscribed` ที่รับชื่อ topic เป็น string, analytics `setUserProperty`, `trialDays`) ยังไม่เคย build ใน Xcode · ก่อนปล่อย iOS ต้อง build และทดสอบใน Xcode ก่อน (หัวข้อ 9) · Android ปล่อยก่อนตามเดิม
+- **App Check debug token:** ต้องลงทะเบียน token ของ emulator ก่อน QA หน้าที่เรียก backend (ข้อ A.8)
+- **Server ก่อนแอป:** `feature/v2.0-server` ต้อง merge และ deploy functions + hosting ก่อนแอป 2.0 ขึ้น (ข้อ C.1)
+- **ปิดภาษาอังกฤษบนเครื่องใหม่:** สวิตช์ซ่อนหน้าเลือกภาษาไม่ได้จนกว่าจะได้ status แรกหลัง onboarding (ข้อ F.3)
+- การ deploy Firebase และการอัปโหลดขึ้น Play เป็นงานของเจ้าของแอป ในคู่มือนี้เขียนเป็นขั้นตอนไว้เท่านั้น

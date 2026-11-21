@@ -27,6 +27,12 @@ interface PaywallStrings {
     val manage: String
     val terms: String
     val privacy: String
+
+    /** Path of the privacy page on the web host, in this language. */
+    val privacyPath: String
+
+    /** Path of the terms page on the web host, in this language. */
+    val termsPath: String
     val planYearly: String
     val planMonthly: String
     val bestValue: String
@@ -71,6 +77,8 @@ object ThPaywallStrings : PaywallStrings {
     override val manage = "จัดการการสมัคร"
     override val terms = "ข้อกำหนดการใช้งาน"
     override val privacy = "นโยบายความเป็นส่วนตัว"
+    override val privacyPath = "/privacy"
+    override val termsPath = "/terms"
     override val planYearly = "รายปี"
     override val planMonthly = "รายเดือน"
     override val bestValue = "คุ้มที่สุด"
@@ -124,6 +132,8 @@ object EnPaywallStrings : PaywallStrings {
     override val manage = "Manage subscription"
     override val terms = "Terms of use"
     override val privacy = "Privacy policy"
+    override val privacyPath = "/en/privacy"
+    override val termsPath = "/en/terms"
     override val planYearly = "Yearly"
     override val planMonthly = "Monthly"
     override val bestValue = "Best value"

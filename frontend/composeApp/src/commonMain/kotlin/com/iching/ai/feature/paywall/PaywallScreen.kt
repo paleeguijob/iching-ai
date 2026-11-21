@@ -177,10 +177,10 @@ fun PaywallScreen(viewModel: PaywallViewModel, onClose: () -> Unit) {
                     }
                 }
                 Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }) {
+                    TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${paywall.termsPath}") } }) {
                         Text(paywall.terms, color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
                     }
-                    TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }) {
+                    TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${paywall.privacyPath}") } }) {
                         Text(paywall.privacy, color = ZenColors.InkFaint, style = MaterialTheme.typography.labelSmall)
                     }
                 }

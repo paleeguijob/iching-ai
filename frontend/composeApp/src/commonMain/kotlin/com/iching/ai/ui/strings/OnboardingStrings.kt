@@ -37,6 +37,12 @@ interface OnboardingStrings {
     val terms: String
     val privacy: String
 
+    /** Path of the privacy page on the web host, in this language. */
+    val privacyPath: String
+
+    /** Path of the terms page on the web host, in this language. */
+    val termsPath: String
+
     /** The language picker. Bilingual on purpose, the same in both languages: a seeker must find their own. */
     val languageTitle: String
     val languageThai: String
@@ -97,6 +103,8 @@ object ThOnboardingStrings : OnboardingStrings {
     override val disclaimerTitle = "ก่อนเริ่มถามทาง"
     override val terms = "ข้อกำหนดการใช้งาน"
     override val privacy = "นโยบายความเป็นส่วนตัว"
+    override val privacyPath = "/privacy"
+    override val termsPath = "/terms"
     override val languageTitle = LANGUAGE_TITLE
     override val languageThai = LANGUAGE_NAME_TH
     override val languageEnglish = LANGUAGE_NAME_EN
@@ -148,6 +156,8 @@ object EnOnboardingStrings : OnboardingStrings {
     override val disclaimerTitle = "Before you begin"
     override val terms = "Terms of use"
     override val privacy = "Privacy policy"
+    override val privacyPath = "/en/privacy"
+    override val termsPath = "/en/terms"
     override val languageTitle = LANGUAGE_TITLE
     override val languageThai = LANGUAGE_NAME_TH
     override val languageEnglish = LANGUAGE_NAME_EN

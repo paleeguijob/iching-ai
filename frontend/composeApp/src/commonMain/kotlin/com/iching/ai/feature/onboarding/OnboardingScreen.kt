@@ -460,10 +460,10 @@ private fun DisclaimerPage() {
         }
         Spacer(Modifier.height(ZenSpacing.sm))
         Row {
-            TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }) {
+            TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${strings.termsPath}") } }) {
                 Text(strings.terms, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
             }
-            TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }) {
+            TextButton(onClick = { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${strings.privacyPath}") } }) {
                 Text(strings.privacy, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint, textAlign = TextAlign.Center)
             }
         }
