@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
@@ -41,6 +42,7 @@ private class RecordingAnalytics : NativeAnalytics {
         events += name to params
     }
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) = Unit
     override fun recordError(message: String) = Unit
 }
 
@@ -66,7 +68,7 @@ class UpsellPlacementTest {
         )
         val vm = DivinationViewModel(
             "", null, TossCoinsUseCase(), ResolveCastUseCase(NoHexagrams), SaveReadingUseCase(FakeJournal()),
-            api, session, ObserveSettingsUseCase(NoSettings),
+            api, session, ObserveSettingsUseCase(NoSettings), thaiLanguageHolder(),
         )
         vm.onQuotaUpsellShown()
         vm.onUpsellPremium()

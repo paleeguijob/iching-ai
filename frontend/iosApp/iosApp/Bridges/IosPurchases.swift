@@ -40,8 +40,10 @@ final class IosPurchases: NSObject, NativePurchases {
                     kind = "coins"
                 }
                 var trial: Any = NSNull()
+                var trialDays: Any = NSNull()
                 if let intro = product.introductoryDiscount, intro.paymentMode == .freeTrial {
                     trial = "ทดลองฟรี \(Self.days(intro.subscriptionPeriod)) วัน"
+                    trialDays = Self.days(intro.subscriptionPeriod)
                 }
                 return [
                     "packageId": pkg.identifier,
@@ -51,6 +53,7 @@ final class IosPurchases: NSObject, NativePurchases {
                     "price": product.localizedPriceString,
                     "period": kind == "monthly" ? "เดือน" : (kind == "yearly" ? "ปี" : NSNull()),
                     "trial": trial,
+                    "trialDays": trialDays,
                 ]
             }
             let data = (try? JSONSerialization.data(withJSONObject: items)) ?? Data("[]".utf8)

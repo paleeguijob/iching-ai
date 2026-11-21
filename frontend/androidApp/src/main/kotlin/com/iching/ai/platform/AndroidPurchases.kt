@@ -57,7 +57,8 @@ class AndroidPurchases(
                             .put("title", product.title)
                             .put("price", product.price.formatted)
                             .put("period", if (kind == "monthly") "เดือน" else if (kind == "yearly") "ปี" else JSONObject.NULL)
-                            .put("trial", trialDays?.let { "ทดลองฟรี $it วัน" } ?: JSONObject.NULL),
+                            .put("trial", trialDays?.let { "ทดลองฟรี $it วัน" } ?: JSONObject.NULL)
+                            .put("trialDays", trialDays ?: JSONObject.NULL),
                     )
                 }
                 callback.onResult(out.toString(), null)

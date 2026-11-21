@@ -2,6 +2,7 @@ package com.iching.ai.feature.year
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.CoinToss
 import com.iching.ai.domain.model.Hexagram
@@ -11,7 +12,7 @@ import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.zodiacYearLabel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -190,7 +191,5 @@ class YearViewModel(
     }
 }
 
-private val ZODIAC = listOf("ชวด", "ฉลู", "ขาล", "เถาะ", "มะโรง", "มะเส็ง", "มะเมีย", "มะแม", "วอก", "ระกา", "จอ", "กุน")
-
 /** e.g. 2027 → "มะแม ๒๕๗๐": the zodiac animal and the Buddhist-era year. */
-fun campaignYearLabel(year: Int): String = "${ZODIAC[(year - 4).mod(12)]} ${(year + 543).toThaiNumerals()}"
+fun campaignYearLabel(year: Int): String = zodiacYearLabel(year, AppLanguage.TH)

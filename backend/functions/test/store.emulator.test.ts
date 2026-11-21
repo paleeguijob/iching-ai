@@ -15,7 +15,7 @@ const projectId = "demo-iching";
 describe("firestore store", { skip: !host && "needs the Firestore emulator" }, () => {
   const db = host ? getFirestore(initializeApp({ projectId }, "store-test")) : (null as never);
   const store = host ? firestoreStore(db) : (null as never);
-  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1, minSecondsBetweenReadings: 0 };
+  const cfg = { ...DEFAULT_CONFIG, freeDailyReadings: 1, freeReadingsPerDevice: 1, minSecondsBetweenReadings: 0, welcomeReadings: 0, premiumDailyReadings: 10, adRewardsPerDay: 2 };
 
   const userDoc = async (uid: string) => (await db.doc(`users/${uid}`).get()).data();
   const seed = (uid: string, coins: number) =>
@@ -92,6 +92,14 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     assert.equal((await db.collection("reports").where("uid", "==", "u1").get()).size, 1);
   });
 
+  it("keeps the slip of a Siam Si reading, and none on an I Ching one", async () => {
+    const base = { question: "q", category: null, yearOf: null, lines: [], coins: [], primaryId: 0, relatingId: null, aiText: "t", source: "ai" as const, model: "m", tokensIn: 0, tokensOut: 0, charge: null, interrupted: null, followUps: [], followUpCount: 0, outcome: null, outcomeNote: null, createdAt: 1 };
+    const slip = await store.createReading("u1", { ...base, siamsi: { set: "guanyin100", stick: 17 } });
+    assert.deepEqual((await store.getReading("u1", slip))?.siamsi, { set: "guanyin100", stick: 17 });
+    const cast = await store.createReading("u1", { ...base, lines: [7, 7, 7, 7, 7, 7], primaryId: 1 });
+    assert.equal((await store.getReading("u1", cast))?.siamsi, null);
+  });
+
   it("never spends more coins than there are, under concurrent readings", async () => {
     await seed("u1", 3);
     const charges = await Promise.all(Array.from({ length: 10 }, () => spendOne("u1")));
@@ -129,6 +137,42 @@ describe("firestore store", { skip: !host && "needs the Firestore emulator" }, (
     const until = Date.now() + 86_400_000;
     await Promise.all([store.setPremiumUntil("u1", until), spendOne("u1")]);
     assert.equal((await userDoc("u1"))?.premiumUntil, until);
+  });
+
+  const fb = (uid: string, createdAt = 1) => ({ uid, message: "m", appVersion: "1.4.0", platform: "android", premium: false, createdAt });
+  const feedbackOf = async (uid: string) => (await db.collection("feedback").where("uid", "==", uid).get()).size;
+
+  it("holds the daily feedback limit even when sends race", async () => {
+    const results = await Promise.all(Array.from({ length: 8 }, () => store.addFeedbackWithinLimit(fb("u1"), "2026-11-20", 5)));
+    assert.equal(results.filter(Boolean).length, 5);
+    assert.equal(await feedbackOf("u1"), 5);
+    assert.equal(await store.addFeedbackWithinLimit(fb("u1"), "2026-11-21", 5), true, "a new Bangkok day starts a new allowance");
+  });
+
+  it("moves feedback on merge and removes it on delete", async () => {
+    await store.addFeedbackWithinLimit(fb("anon"), "2026-11-20", 5);
+    await store.addFeedbackWithinLimit(fb("anon"), "2026-11-20", 5);
+    await store.addFeedbackWithinLimit(fb("u2"), "2026-11-20", 5);
+
+    await store.mergeUser("anon", "u1");
+    assert.equal(await feedbackOf("anon"), 0);
+    assert.equal(await feedbackOf("u1"), 2);
+
+    await store.deleteUser("u1");
+    assert.equal(await feedbackOf("u1"), 0);
+    assert.equal(await feedbackOf("u2"), 1);
+  });
+
+  it("deletes an account with more than 500 reports and feedback messages", async () => {
+    const writer = db.bulkWriter();
+    for (let i = 0; i < 300; i++) writer.create(db.collection("feedback").doc(), fb("u1"));
+    for (let i = 0; i < 300; i++) writer.create(db.collection("reports").doc(), { uid: "u1", readingId: "r", reason: "x", note: "", createdAt: 1 });
+    await writer.close();
+
+    await store.deleteUser("u1");
+
+    assert.equal(await feedbackOf("u1"), 0);
+    assert.equal((await db.collection("reports").where("uid", "==", "u1").get()).size, 0);
   });
 
   it("deletes the user's readings, reports and purchase markers, and nobody else's", async () => {

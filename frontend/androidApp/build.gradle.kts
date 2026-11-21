@@ -33,6 +33,7 @@ val keystoreProps = Properties().apply {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(projects.core.domain)
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.foundation)
     implementation(libs.koin.android)
@@ -47,10 +48,18 @@ dependencies {
     implementation(libs.revenuecat.purchases)
     implementation(libs.play.services.ads)
     implementation(libs.ump)
+    implementation(libs.play.review)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.playServices)
     implementation(libs.googleid)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+    implementation(libs.work.runtime.ktx)
+
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 android {
@@ -61,8 +70,8 @@ android {
         applicationId = "com.iching.ai"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 120
-        versionName = "1.2.0"
+        versionCode = 201
+        versionName = "2.0.0"
     }
     buildFeatures {
         buildConfig = true

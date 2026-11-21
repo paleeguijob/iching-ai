@@ -11,10 +11,23 @@ import com.iching.ai.platform.AndroidAnalytics
 import com.iching.ai.platform.AndroidAuth
 import com.iching.ai.platform.AndroidNotifications
 import com.iching.ai.platform.AndroidPurchases
+import com.iching.ai.platform.AndroidReview
 import com.iching.ai.platform.NativeBridges
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import androidx.glance.appwidget.updateAll
+import androidx.work.ExistingWorkPolicy
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.widget.DailyHexagramWidget
+import com.iching.ai.widget.MidnightRefreshWorker
+import com.iching.ai.widget.runCatchingCancellable
+import com.iching.ai.ui.strings.stringsFor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
+import org.koin.mp.KoinPlatform
 
 class IChingApplication : Application() {
 
@@ -49,9 +62,23 @@ class IChingApplication : Application() {
             ads = ads,
             analytics = analytics,
             notifications = notifications,
+            review = AndroidReview(this, activities),
         )
         initKoin(bridges) {
             androidContext(this@IChingApplication)
+        }
+        // The channel name follows the language in force; the launcher name stays as it is.
+        val holder = KoinPlatform.getKoin().get<AppLanguageHolder>()
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+            holder.language.collect {
+                notifications.createChannel(stringsFor(it).daily.title)
+                // The widget reads the language itself; this only asks it to redraw.
+                runCatchingCancellable { DailyHexagramWidget().updateAll(this@IChingApplication) }
+            }
+        }
+        // A widget already on the home screen keeps its midnight refresh across reboots and updates.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            runCatchingCancellable { if (MidnightRefreshWorker.hasWidgets(this@IChingApplication)) MidnightRefreshWorker.schedule(this@IChingApplication, ExistingWorkPolicy.KEEP) }
         }
     }
 

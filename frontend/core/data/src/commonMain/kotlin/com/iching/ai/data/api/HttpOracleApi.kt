@@ -2,6 +2,12 @@ package com.iching.ai.data.api
 
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
+import com.iching.ai.domain.model.PosterCardText
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.domain.model.PosterStatus
+import com.iching.ai.domain.model.SiamSiStatus
+import com.iching.ai.domain.siamsi.SiamSiPick
+import com.iching.ai.domain.siamsi.SiamSiSetRef
 import com.iching.ai.domain.model.YearHexagram
 import com.iching.ai.domain.model.CoinFace
 import com.iching.ai.domain.model.FollowUpTurn
@@ -60,6 +66,9 @@ interface ApiSession {
     /** Stable per-install id (hashed on the server) for the per-device free limit. */
     val deviceId: String
     val appVersion: String
+
+    /** The effective app language on the wire ("th" or "en"); read on every request, so a switch shows on the next one. */
+    val language: String
 }
 
 // ---------- wire format (see functions/src/core/api.ts) ----------
@@ -77,14 +86,64 @@ internal data class StatusDto(
     val journalDays: Int? = null,
     val aiEnabled: Boolean = true,
     val campaign: CampaignDto? = null,
+    val siamsi: SiamSiStatusDto? = null,
+    val poster: PosterDto? = null,
+    val englishEnabled: Boolean = true,
+    val hexagramsEnVersion: Int = 1,
 ) {
-    fun toDomain() = AccountStatus(
+    fun toDomain(webBaseUrl: String) = AccountStatus(
         premium = premium, premiumUntilMillis = premiumUntil, coins = coins, includedLeft = includedLeft,
         adCreditsLeft = adCreditsLeft, adsWatchableLeft = adsWatchableLeft, readingsLeft = readingsLeft,
         followUpsPerReading = followUpsPerReading, journalDays = journalDays, aiEnabled = aiEnabled,
         campaign = campaign?.let { CampaignStatus(it.id, it.year, it.active, it.endsAt) },
+        siamsi = siamsi?.let { s -> SiamSiStatus(s.enabled, s.sets.map { SiamSiSetRef(it.id, it.version, it.enVersion) }, s.drawsPerDay) } ?: SiamSiStatus(),
+        poster = poster?.toDomain(webBaseUrl),
+        englishEnabled = englishEnabled, hexagramsEnVersion = hexagramsEnVersion,
     )
 }
+
+@Serializable internal data class SiamSiSetRefDto(val id: String, val version: Int, val enVersion: Int = 1)
+@Serializable internal data class SiamSiStatusDto(val enabled: Boolean = false, val sets: List<SiamSiSetRefDto> = emptyList(), val drawsPerDay: Int = 1)
+@Serializable internal data class SiamSiPickDto(val set: String, val stick: Int)
+/** Tells the server this app splits I Ching readings into cards; older apps send nothing and get paragraphs. */
+private const val READING_FORMAT = "cards"
+
+@Serializable internal data class CreatedDto(val readingId: String)
+
+// Every field is optional, so a poster shape from a newer server drops just the poster, not the whole status.
+@Serializable
+internal data class PosterDto(
+    val id: String? = null,
+    val image: String? = null,
+    val alt: String? = null,
+    val audience: String? = null,
+    val link: String? = null,
+    val card: PosterCardDto? = null,
+    val endsAt: Long? = null,
+) {
+    /** Null when anything is missing or unknown; the server checks the same, this guards an older or newer one. */
+    fun toDomain(webBaseUrl: String): PosterStatus? {
+        if (id.isNullOrEmpty() || alt.isNullOrEmpty() || endsAt == null) return null
+        if (image == null || !POSTER_IMAGE.matches(image)) return null
+        val freeOnly = when (audience) {
+            "free" -> true
+            "all" -> false
+            else -> return null
+        }
+        val target = link?.let { PosterLink.fromWire(it) ?: return null }
+        val words = card?.let { c ->
+            if (c.label.isNullOrEmpty() || c.title.isNullOrEmpty() || c.cta.isNullOrEmpty() || target == null) return null
+            PosterCardText(c.label, c.title, c.cta, c.showEndDate)
+        }
+        return PosterStatus(id, "${webBaseUrl.trimEnd('/')}/content/posters/$image", alt, freeOnly, target, words, endsAt)
+    }
+}
+
+@Serializable
+internal data class PosterCardDto(val label: String? = null, val title: String? = null, val cta: String? = null, val showEndDate: Boolean = false)
+
+/** A bare file name, as the server enforces: nothing that could point outside content/posters/. */
+private val POSTER_IMAGE = Regex("^[A-Za-z0-9][A-Za-z0-9._-]*\\.(webp|png|jpg|jpeg)$")
 
 @Serializable internal data class CampaignDto(val id: String, val year: Int, val active: Boolean, val endsAt: Long)
 
@@ -118,6 +177,7 @@ internal data class ReadingDto(
     val outcomeNote: String? = null,
     val createdAt: Long,
     val yearOf: Int? = null,
+    val siamsi: SiamSiPickDto? = null,
 )
 
 @Serializable internal data class ReadingsDto(val readings: List<ReadingDto>)
@@ -141,11 +201,12 @@ internal fun failureReason(code: String) = when (code) {
     "reading_not_found", "year_hexagram_not_found" -> FailureReason.NOT_FOUND
     "campaign_inactive" -> FailureReason.CAMPAIGN_INACTIVE
     "no_year_hexagram" -> FailureReason.NO_YEAR_HEXAGRAM
+    "feedback_limit" -> FailureReason.FEEDBACK_LIMIT
     else -> FailureReason.UNKNOWN
 }
 
 /** Parses one server-sent event into a domain event; unknown events are ignored. */
-internal fun parseEvent(json: Json, event: String, data: String): DivinationEvent? = when (event) {
+internal fun parseEvent(json: Json, event: String, data: String, webBaseUrl: String): DivinationEvent? = when (event) {
     "cast" -> json.decodeFromString(CastDto.serializer(), data).let { dto ->
         DivinationEvent.Cast(
             readingId = dto.readingId,
@@ -153,10 +214,11 @@ internal fun parseEvent(json: Json, event: String, data: String): DivinationEven
             coins = dto.coins.map { toss -> toss.map(::coinFace) },
         )
     }
+    "reading" -> DivinationEvent.Created(json.decodeFromString(CreatedDto.serializer(), data).readingId)
     "delta" -> DivinationEvent.Delta(json.decodeFromString(DeltaDto.serializer(), data).text)
-    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(), it.shareSummary) }
+    "done" -> json.decodeFromString(DoneDto.serializer(), data).let { DivinationEvent.Done(it.status?.toDomain(webBaseUrl), it.shareSummary) }
     "limited" -> json.decodeFromString(LimitedDto.serializer(), data).let {
-        DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain())
+        DivinationEvent.Limited(limitReason(it.reason), it.retryAfterSeconds, it.status?.toDomain(webBaseUrl))
     }
     "safety" -> DivinationEvent.Safety(json.decodeFromString(SafetyDto.serializer(), data).message)
     "error" -> DivinationEvent.Failed(failureReason(json.decodeFromString(ErrorDto.serializer(), data).code))
@@ -167,6 +229,8 @@ class HttpOracleApi(
     private val client: HttpClient,
     private val session: ApiSession,
     private val baseUrl: String,
+    /** Hosting root; poster images live under its content/posters/. */
+    private val webBaseUrl: String,
 ) : OracleApi {
 
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
@@ -175,10 +239,14 @@ class HttpOracleApi(
         stream("/divine", buildJsonObject {
             put("question", question)
             category?.let { put("category", it.wire) }
+            put("format", READING_FORMAT)
         })
 
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> =
-        stream("/divine", buildJsonObject { put("readingId", readingId) })
+        stream("/divine", buildJsonObject {
+            put("readingId", readingId)
+            put("format", READING_FORMAT)
+        })
 
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> =
         stream("/follow-up", buildJsonObject {
@@ -186,8 +254,17 @@ class HttpOracleApi(
             put("message", message)
         })
 
+    override fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String?): Flow<DivinationEvent> =
+        stream("/siamsi/interpret", buildJsonObject {
+            put("set", pick.setId)
+            put("stick", pick.number)
+            put("question", question)
+            category?.let { put("category", it.wire) }
+            readingId?.let { put("readingId", it) }
+        })
+
     override suspend fun status(): AccountStatus =
-        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Get, "/status")).toDomain()
+        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Get, "/status")).toDomain(webBaseUrl)
 
     override suspend fun yearHexagram(): YearHexagram? =
         try {
@@ -203,17 +280,26 @@ class HttpOracleApi(
         stream("/divine", buildJsonObject {
             put("mode", "year")
             put("question", question)
+            put("format", READING_FORMAT)
         })
 
     override suspend fun claimAdReward(): Pair<Boolean, AccountStatus> =
         json.decodeFromString(AdRewardDto.serializer(), call(HttpMethod.Post, "/ad-reward", JsonObject(emptyMap())))
-            .let { it.granted to it.status.toDomain() }
+            .let { it.granted to it.status.toDomain(webBaseUrl) }
 
     override suspend fun report(readingId: String, reason: String, note: String) {
         call(HttpMethod.Post, "/report", buildJsonObject {
             put("readingId", readingId)
             put("reason", reason)
             put("note", note)
+        })
+    }
+
+    override suspend fun sendFeedback(message: String, appVersion: String, platform: String) {
+        call(HttpMethod.Post, "/feedback", buildJsonObject {
+            put("message", message)
+            put("appVersion", appVersion)
+            put("platform", platform)
         })
     }
 
@@ -225,7 +311,7 @@ class HttpOracleApi(
     }
 
     override suspend fun readings(): List<Reading> =
-        json.decodeFromString(ReadingsDto.serializer(), call(HttpMethod.Get, "/readings?limit=500")).readings.map { dto ->
+        json.decodeFromString(ReadingsDto.serializer(), call(HttpMethod.Get, "/readings?limit=500&format=$READING_FORMAT")).readings.map { dto ->
             Reading(
                 question = dto.question,
                 createdAtMillis = dto.createdAt,
@@ -240,6 +326,7 @@ class HttpOracleApi(
                 outcomeNote = dto.outcomeNote,
                 followUps = dto.followUps.map { FollowUpTurn(it.q, it.a) },
                 yearOf = dto.yearOf,
+                siamsi = dto.siamsi?.let { SiamSiPick(it.set, it.stick) },
             )
         }
 
@@ -248,13 +335,13 @@ class HttpOracleApi(
     }
 
     override suspend fun syncPurchases(): AccountStatus =
-        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain()
+        json.decodeFromString(StatusDto.serializer(), call(HttpMethod.Post, "/purchases/sync", JsonObject(emptyMap()))).toDomain(webBaseUrl)
 
     override suspend fun mergeAccount(fromIdToken: String): AccountStatus =
         json.decodeFromString(
             StatusDto.serializer(),
             call(HttpMethod.Post, "/account/merge", buildJsonObject { put("fromIdToken", fromIdToken) }),
-        ).toDomain()
+        ).toDomain(webBaseUrl)
 
     override suspend fun deleteAccount() {
         call(HttpMethod.Delete, "/account")
@@ -289,6 +376,7 @@ class HttpOracleApi(
         c.appCheck?.let { header("X-Firebase-AppCheck", it) }
         header("X-Device-Id", session.deviceId)
         header("X-App-Version", session.appVersion)
+        header("X-App-Lang", session.language)
     }
 
     private suspend fun errorOf(response: HttpResponse): ApiException {
@@ -378,7 +466,7 @@ class HttpOracleApi(
             val line = channel.readUTF8Line() ?: break
             when {
                 line.startsWith("event:") -> event = line.removePrefix("event:").trim()
-                line.startsWith("data:") -> parseEvent(json, event, line.removePrefix("data:").trim())?.let { send(it) }
+                line.startsWith("data:") -> parseEvent(json, event, line.removePrefix("data:").trim(), webBaseUrl)?.let { send(it) }
                 line.isBlank() -> event = "message"
             }
         }

@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 /** PREPARING covers the wait between asking to speak and the first sound. */
 enum class SpeechState { IDLE, PREPARING, SPEAKING }
 
+/** The voice for [text]: Thai when it holds Thai script (a Thai reading read in an English UI), else English. */
+fun speechVoiceTag(text: String): String = if (text.any { it in '\u0E00'..'\u0E7F' }) "th-TH" else "en-US"
+
 /** Reads Thai text aloud with the device's own speech engine, so it costs nothing per use. */
 interface SpeechPlayer {
     val state: StateFlow<SpeechState>

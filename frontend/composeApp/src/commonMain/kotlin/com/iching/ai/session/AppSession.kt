@@ -2,11 +2,13 @@ package com.iching.ai.session
 
 import com.iching.ai.data.api.ApiSession
 import com.iching.ai.domain.model.Account
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.SignInProvider
 import com.iching.ai.domain.model.StoreProduct
 import com.iching.ai.domain.model.mergedWith
+import com.iching.ai.domain.model.withReadingCompleted
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.JournalRepository
@@ -16,8 +18,11 @@ import com.iching.ai.platform.NativeAuth
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.platform.NativeException
 import com.iching.ai.platform.awaitNative
+import com.iching.ai.platform.dailyTopicFor
+import com.iching.ai.platform.otherTopic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +35,11 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 /** Supplies Firebase credentials to the HTTP client, signing in anonymously on first use. */
-class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
+class FirebaseApiSession(
+    private val auth: NativeAuth,
+    /** The wire code of the language in force, looked up per request. */
+    private val languageCode: () -> String = { "th" },
+) : ApiSession {
     private val signInLock = Mutex()
 
     suspend fun ensureSignedIn(): String = signInLock.withLock {
@@ -56,6 +65,7 @@ class FirebaseApiSession(private val auth: NativeAuth) : ApiSession {
 
     override val deviceId: String get() = auth.deviceId()
     override val appVersion: String get() = auth.appVersion()
+    override val language: String get() = languageCode()
 }
 
 sealed interface PurchaseResult {
@@ -90,6 +100,7 @@ private data class ProductJson(
     val price: String,
     val period: String? = null,
     val trial: String? = null,
+    val trialDays: Int? = null,
 )
 
 enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
@@ -98,6 +109,9 @@ enum class DailyPushResult { ENABLED, DISABLED, PERMISSION_DENIED }
  * App-wide account state: who is signed in, what they may do today, and the actions that change
  * it (ads, purchases, linking Apple/Google, deleting the account). Screens observe [status].
  */
+/** How long after a reading finishes a return to Home still counts as coming back from it. */
+const val READING_FRESH_MILLIS = 30 * 60 * 1000L
+
 class AppSession(
     private val bridges: NativeBridges,
     private val apiSession: FirebaseApiSession,
@@ -105,6 +119,7 @@ class AppSession(
     private val journal: JournalRepository,
     private val settings: SettingsRepository,
     private val scope: CoroutineScope,
+    private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val _status = MutableStateFlow(AccountStatus.UNKNOWN_FREE)
     val status: StateFlow<AccountStatus> = _status.asStateFlow()
@@ -128,6 +143,50 @@ class AppSession(
     val supportsApple: Boolean get() = bridges.auth.supportsApple()
     val supportsGoogle: Boolean get() = bridges.auth.supportsGoogle()
     val manageSubscriptionsUrl: String get() = bridges.purchases.manageSubscriptionsUrl()
+    val storeUrls: List<String> get() = bridges.review.storeUrls()
+
+    /** When the last reading finished; Home takes it on its next resume to decide whether to ask for a rating. */
+    private var readingFinishedAt: Long? = null
+
+    /**
+     * A reading's interpretation finished: counts it, and lets Home consider asking for a rating. Called from the
+     * middle of a reading's stream, so a failed settings write is only recorded: a rating counter must never stop a
+     * reading from finishing.
+     */
+    suspend fun onReadingCompleted() {
+        try {
+            settings.update { it.withReadingCompleted() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            bridges.analytics.recordError("reading_count: ${e.message}")
+        }
+        readingFinishedAt = nowMillis()
+    }
+
+    /**
+     * True once after each finished reading, and only within [READING_FRESH_MILLIS] of it: a seeker who went from the
+     * reading to the Journal and only came Home much later is not asked out of the blue.
+     */
+    fun takeReadingFinished(): Boolean {
+        val at = readingFinishedAt ?: return false
+        readingFinishedAt = null
+        return nowMillis() - at <= READING_FRESH_MILLIS
+    }
+
+    /** Asks the store's rating sheet; true when the store took the request. A failure is only recorded. */
+    suspend fun requestReview(): Boolean = try {
+        awaitNative(bridges.review::requestReview)
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        bridges.analytics.recordError("review_request: ${e.message}")
+        false
+    }
+
+    suspend fun sendFeedback(message: String) =
+        api.sendFeedback(message, bridges.auth.appVersion(), bridges.review.platform())
 
     fun start() {
         if (started) return
@@ -167,14 +226,45 @@ class AppSession(
         return if (enabled) DailyPushResult.ENABLED else DailyPushResult.DISABLED
     }
 
-    /** Brings the FCM topic in line with the setting. A failure (offline) is retried on the next launch. */
+    /** The language whose daily topic the device should hold; follows the language in force. */
+    private var pushLanguage = AppLanguage.TH
+    private val pushSyncLock = Mutex()
+
+    /** The language in force when the app starts: what the topic was last synced to, so nothing is resubscribed. */
+    fun initPushLanguage(lang: AppLanguage) {
+        pushLanguage = lang
+    }
+
+    /** The language in force changed: move a seeker who has the daily push on over to that language's topic. */
+    suspend fun onLanguageChanged(lang: AppLanguage) {
+        if (lang == pushLanguage) return
+        pushLanguage = lang
+        if (settings.settings.firstOrNull()?.dailyPushEnabled != true) return
+        settings.update { it.copy(dailyPushSynced = false) }
+        syncDailyPush()
+    }
+
+    /**
+     * Brings the FCM topic in line with the setting. One sync runs at a time, and it repeats until the
+     * setting and language it applied are still the current ones. A failure (offline) is retried on the next launch.
+     */
     private suspend fun syncDailyPush() {
         try {
-            val current = settings.settings.firstOrNull() ?: return
-            if (current.dailyPushSynced || !dailyPushSupported) return
-            val enabled = current.dailyPushEnabled
-            awaitNative { bridges.notifications.setDailySubscribed(enabled, it) }
-            settings.update { if (it.dailyPushEnabled == enabled) it.copy(dailyPushSynced = true) else it }
+            pushSyncLock.withLock {
+                while (true) {
+                    val current = settings.settings.firstOrNull() ?: return
+                    if (current.dailyPushSynced || !dailyPushSupported) return
+                    val enabled = current.dailyPushEnabled
+                    val lang = pushLanguage
+                    awaitNative { bridges.notifications.setDailySubscribed(enabled, dailyTopicFor(lang), otherTopic(lang), it) }
+                    var done = false
+                    settings.update {
+                        done = it.dailyPushEnabled == enabled && pushLanguage == lang
+                        if (done) it.copy(dailyPushSynced = true) else it
+                    }
+                    if (done) return
+                }
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -267,6 +357,20 @@ class AppSession(
         if (status != null) {
             _status.value = status
             _online.value = true
+            rememberEnglishEnabled(status.englishEnabled)
+        }
+    }
+
+    /** Kept for the next launch, which starts offline: the language must not flip before a status arrives. */
+    private fun rememberEnglishEnabled(enabled: Boolean) {
+        scope.launch {
+            try {
+                settings.update { if (it.lastEnglishEnabled == enabled) it else it.copy(lastEnglishEnabled = enabled) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                bridges.analytics.recordError("english_enabled_save: ${e.message}")
+            }
         }
     }
 
@@ -317,7 +421,7 @@ class AppSession(
                 "coins" -> ProductKind.COINS
                 else -> return@mapNotNull null
             }
-            StoreProduct(p.packageId, p.productId, kind, p.title, p.price, p.period, p.trial)
+            StoreProduct(p.packageId, p.productId, kind, p.title, p.price, p.period, p.trial, p.trialDays)
         }.sortedBy { it.kind.ordinal }
     }
 
@@ -468,5 +572,21 @@ class AppSession(
         Result.failure(e)
     }
 
+    fun setUserProperty(name: String, value: String) = bridges.analytics.setUserProperty(name, value)
+
     fun log(event: String, params: Map<String, String> = emptyMap()) = bridges.analytics.logEvent(event, params)
+}
+
+/**
+ * Keeps the daily push topic on the language in force. The first language seen is what the topic was last
+ * synced to, so only a later change resubscribes.
+ */
+fun AppSession.followLanguage(scope: CoroutineScope, languages: kotlinx.coroutines.flow.Flow<AppLanguage>) {
+    scope.launch {
+        var first = true
+        languages.collect {
+            if (first) initPushLanguage(it) else onLanguageChanged(it)
+            first = false
+        }
+    }
 }

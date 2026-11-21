@@ -106,6 +106,10 @@ final class IosAnalytics: NSObject, NativeAnalytics {
         Crashlytics.crashlytics().setUserID(uid ?? "")
     }
 
+    func setUserProperty(name: String, value: String) {
+        Analytics.setUserProperty(value, forName: name)
+    }
+
     func recordError(message: String) {
         Crashlytics.crashlytics().record(error: NSError(domain: "IChing", code: 0, userInfo: [NSLocalizedDescriptionKey: message]))
     }
@@ -117,6 +121,6 @@ final class IosNotifications: NSObject, NativeNotifications {
     func isSupported() -> Bool { false }
     func permissionGranted() -> Bool { false }
     func requestPermission(callback: ResultCallback) { callback.onResult(value: "denied", error: nil) }
-    func setDailySubscribed(enabled: Bool, callback: ResultCallback) { callback.onResult(value: "ok", error: nil) }
+    func setDailySubscribed(enabled: Bool, topic: String, otherTopic: String, callback: ResultCallback) { callback.onResult(value: "ok", error: nil) }
     func openSystemSettings() {}
 }

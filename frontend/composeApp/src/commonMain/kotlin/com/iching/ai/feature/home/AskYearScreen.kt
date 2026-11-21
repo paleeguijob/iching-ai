@@ -1,5 +1,8 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.components.ZenChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -67,35 +70,27 @@ fun AskYearScreen(
             onDismiss = viewModel::onSheetDismissed,
         )
     }
-    var question by rememberSaveable { mutableStateOf(QuestionCategory.NEWYEAR.sampleTh) }
+    val yearSample = LocalStrings.current.common.categorySample(QuestionCategory.NEWYEAR)
+    var question by rememberSaveable { mutableStateOf(yearSample) }
 
     PaperBackground {
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = LocalStrings.current.common.back, tint = ZenColors.InkBlack)
                 }
-                Text("ถามนักพรตเรื่องปีนี้", style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
+                Text(LocalStrings.current.home.askYearTitle, style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
             }
-            Column(Modifier.padding(horizontal = 24.dp)) {
+            Column(Modifier.padding(horizontal = ZenSpacing.screen)) {
                 Spacer(Modifier.height(24.dp))
                 QuestionField(question, onChange = { question = it })
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    QuestionCategory.NEWYEAR.labelTh,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ZenColors.PaperCream,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(ZenColors.BambooDeep)
-                        .border(1.dp, ZenColors.BambooGreen.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                )
+                ZenChip(LocalStrings.current.common.category(QuestionCategory.NEWYEAR), selected = true, onClick = {})
                 Spacer(Modifier.height(24.dp))
-                GuidanceQuotaBar(guidanceQuota(status))
+                GuidanceQuotaBar(guidanceQuota(status, LocalStrings.current.home))
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton(
-                    text = startButtonText(deciding),
+                    text = startButtonText(deciding, LocalStrings.current.home),
                     onClick = { viewModel.onStart(question.trim(), QuestionCategory.NEWYEAR) },
                     enabled = !deciding,
                     modifier = Modifier.fillMaxWidth(),

@@ -49,7 +49,7 @@ interface NativePurchases {
 
     /**
      * value = JSON array of
-     * {"packageId","productId","kind":"monthly|yearly|coins","title","price","period","trial"}
+     * {"packageId","productId","kind":"monthly|yearly|coins","title","price","period","trial","trialDays"} (trial is Thai text; trialDays is the same trial as a number, or null)
      */
     fun offerings(callback: ResultCallback)
 
@@ -71,6 +71,7 @@ interface NativeAds {
 interface NativeAnalytics {
     fun logEvent(name: String, params: Map<String, String>)
     fun setUserId(uid: String?)
+    fun setUserProperty(name: String, value: String)
     fun recordError(message: String)
 }
 
@@ -82,9 +83,33 @@ interface NativeNotifications {
     /** value = "granted" or "denied". */
     fun requestPermission(callback: ResultCallback)
 
-    /** Subscribes to or leaves the daily hexagram FCM topic. value = "ok". */
-    fun setDailySubscribed(enabled: Boolean, callback: ResultCallback)
+    /**
+     * Subscribes to the FCM topic [topic] (the daily hexagram in the seeker's language) and always leaves
+     * [otherTopic], or leaves both when [enabled] is false. value = "ok". Plain strings, so Swift sees them.
+     */
+    fun setDailySubscribed(enabled: Boolean, topic: String, otherTopic: String, callback: ResultCallback)
     fun openSystemSettings()
+}
+
+interface NativeReview {
+    /** Asks the store's own rating sheet; value = "ok". The store may decide not to show it, and never says. */
+    fun requestReview(callback: ResultCallback)
+
+    /**
+     * Store page links for the rate-app row, best first (Android: the Play app, then the web page). Empty where there
+     * is none yet (iOS until the App Store id exists), which hides the row.
+     */
+    fun storeUrls(): List<String>
+
+    /** "android" or "ios", sent with feedback. */
+    fun platform(): String
+}
+
+/** No store to ask; used where a platform has no review bridge (and in tests). */
+object NoReview : NativeReview {
+    override fun requestReview(callback: ResultCallback) = callback.onResult("ok", null)
+    override fun storeUrls(): List<String> = emptyList()
+    override fun platform() = "unknown"
 }
 
 class NativeBridges(
@@ -93,6 +118,7 @@ class NativeBridges(
     val ads: NativeAds,
     val analytics: NativeAnalytics,
     val notifications: NativeNotifications,
+    val review: NativeReview = NoReview,
 )
 
 class NativeException(message: String) : Exception(message)

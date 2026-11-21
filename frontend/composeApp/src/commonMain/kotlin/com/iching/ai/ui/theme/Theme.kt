@@ -51,6 +51,8 @@ object ZenColors {
     val ScrollWood get() = palette.scrollWood
     val ScrollRollerLight get() = palette.scrollRollerLight
     val ScrollRollerDark get() = palette.scrollRollerDark
+    val Card get() = palette.card
+    val CardShadow get() = palette.cardShadow
 }
 
 @Composable
@@ -81,11 +83,11 @@ private fun zenTypography(): Typography {
         titleMedium = TextStyle(fontFamily = body, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 28.sp),
         titleSmall = TextStyle(fontFamily = body, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 24.sp),
         bodyLarge = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 17.sp, lineHeight = 31.sp),
-        bodyMedium = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 26.sp),
+        bodyMedium = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 27.sp),
         bodySmall = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 21.sp),
         labelLarge = TextStyle(fontFamily = body, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 22.sp),
         labelMedium = TextStyle(fontFamily = body, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 19.sp),
-        labelSmall = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+        labelSmall = TextStyle(fontFamily = body, fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.8.sp),
     )
 }
 
@@ -111,6 +113,7 @@ fun ZenTheme(content: @Composable () -> Unit) {
         surfaceVariant = ZenColors.PaperShade,
         onSurfaceVariant = ZenColors.InkSoft,
         surfaceContainer = ZenColors.PaperShade,
+        surfaceContainerLowest = palette.card,
         surfaceContainerLow = palette.surfaceLow,
         surfaceContainerHigh = ZenColors.PaperDeep,
         outline = palette.outline,
@@ -122,8 +125,8 @@ fun ZenTheme(content: @Composable () -> Unit) {
         typography = zenTypography(),
         shapes = Shapes(
             small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(14.dp),
-            large = RoundedCornerShape(22.dp),
+            medium = RoundedCornerShape(12.dp),
+            large = RoundedCornerShape(16.dp),
         ),
     ) {
         // The app has no Surface to set this: without it, uncoloured Text falls back to black on every theme.

@@ -2,7 +2,7 @@ package com.iching.ai.feature.home
 
 import com.iching.ai.domain.model.AccountStatus
 
-/** What tapping "เริ่มเสี่ยงทาย" offers before the coins are tossed. */
+/** What tapping the Start button offers before the coins are tossed. */
 enum class PreCastOffer { NONE, AD, UPSELL }
 
 /**

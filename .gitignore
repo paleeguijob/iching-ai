@@ -31,5 +31,5 @@ GoogleService-Info.plist
 firebase-debug*.log
 backend/.firebase/
 
-# Release bundles (upload to Play Console, do not commit)
-*.aab
+# Brainstorming mockups
+.superpowers/

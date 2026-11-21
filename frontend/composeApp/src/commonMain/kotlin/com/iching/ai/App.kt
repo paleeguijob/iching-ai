@@ -1,5 +1,16 @@
 package com.iching.ai
 
+import androidx.compose.ui.text.style.TextOverflow
+import com.iching.ai.ui.strings.HomeStrings
+import com.iching.ai.ui.theme.LocalTabBarHeight
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import com.iching.ai.ui.theme.ZenSpacing
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,9 +39,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.languageReady
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.zodiacYearLabel
+import com.iching.ai.ui.strings.stringsFor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -62,6 +81,7 @@ import com.iching.ai.feature.journal.JournalScreen
 import com.iching.ai.feature.library.HexagramDetailScreen
 import com.iching.ai.feature.library.LibraryScreen
 import com.iching.ai.feature.settings.SettingsScreen
+import com.iching.ai.domain.model.PosterLink
 import com.iching.ai.navigation.DailyRoute
 import com.iching.ai.navigation.DivinationRoute
 import com.iching.ai.navigation.HexagramRoute
@@ -70,8 +90,11 @@ import com.iching.ai.navigation.JournalEntryRoute
 import com.iching.ai.navigation.JournalRoute
 import com.iching.ai.navigation.LibraryRoute
 import com.iching.ai.navigation.PaywallRoute
+import com.iching.ai.navigation.GuideRoute
 import com.iching.ai.navigation.PendingNavigation
 import com.iching.ai.navigation.SettingsRoute
+import com.iching.ai.navigation.SiamSiRoute
+import com.iching.ai.feature.siamsi.SiamSiScreen
 import com.iching.ai.navigation.YearAskRoute
 import com.iching.ai.navigation.YearRoute
 import com.iching.ai.feature.share.ShareCardSheet
@@ -79,10 +102,14 @@ import com.iching.ai.feature.share.yearShareContent
 import com.iching.ai.feature.year.YearHexagramScreen
 import com.iching.ai.feature.year.YearUi
 import com.iching.ai.feature.year.YearViewModel
-import com.iching.ai.feature.year.campaignYearLabel
 import com.iching.ai.navigation.cachedWhileTransitioning
 import com.iching.ai.navigation.platformNavTransitions
 import com.iching.ai.feature.onboarding.OnboardingScreen
+import com.iching.ai.feature.onboarding.LanguagePickScreen
+import com.iching.ai.feature.settings.LanguageSettingsScreen
+import com.iching.ai.domain.model.needsLanguagePick
+import com.iching.ai.navigation.LanguageSettingsRoute
+import com.iching.ai.feature.onboarding.GuideScreen
 import com.iching.ai.feature.paywall.PaywallScreen
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.campaignIdFor
@@ -97,12 +124,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.reflect.KClass
 
-private data class TopLevelTab(val route: Any, val routeClass: KClass<*>, val label: String, val icon: ImageVector)
+private data class TopLevelTab(val route: Any, val routeClass: KClass<*>, val label: (HomeStrings) -> String, val icon: ImageVector)
 
 private val TABS = listOf(
-    TopLevelTab(HomeRoute, HomeRoute::class, "ถามเต๋า", Icons.Outlined.Spa),
-    TopLevelTab(LibraryRoute, LibraryRoute::class, "คัมภีร์", Icons.AutoMirrored.Outlined.MenuBook),
-    TopLevelTab(JournalRoute, JournalRoute::class, "บันทึกชะตา", Icons.Outlined.HistoryEdu),
+    TopLevelTab(HomeRoute, HomeRoute::class, { it.tabAsk }, Icons.Outlined.Spa),
+    TopLevelTab(LibraryRoute, LibraryRoute::class, { it.tabLibrary }, Icons.AutoMirrored.Outlined.MenuBook),
+    TopLevelTab(JournalRoute, JournalRoute::class, { it.tabJournal }, Icons.Outlined.HistoryEdu),
 )
 
 @Composable
@@ -111,20 +138,33 @@ fun App() {
     val settings by remember { observeSettings() }.collectAsState(initial = null)
     val current = settings
     SideEffect { current?.let { ZenColors.useTheme(it.selectedTheme) } }
+    val languageHolder = koinInject<AppLanguageHolder>()
+    val language by languageHolder.language.collectAsState()
+    val englishEnabled by languageHolder.englishEnabled.collectAsState()
     ZenTheme {
+      CompositionLocalProvider(LocalStrings provides stringsFor(language), LocalAppLanguage provides language) {
         val updateSettings = koinInject<UpdateSettingsUseCase>()
         val session = koinInject<AppSession>()
         val scope = rememberCoroutineScope()
+        val ready = languageReady(current, englishEnabled, language)
+        // Held back until the language reflects the settings: the first value is a Thai placeholder.
+        LaunchedEffect(language, ready) { if (ready) session.setUserProperty("app_lang", language.wire) }
         when {
-            current == null -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
+            current == null || !ready -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
+            current.needsLanguagePick(englishEnabled) -> LanguagePickScreen(onPick = { lang ->
+                scope.launch { updateSettings { it.copy(language = lang) } }
+                session.log("language_selected", mapOf("lang" to lang.wire, "source" to "first_launch"))
+            })
             !current.onboardingAccepted -> OnboardingScreen(onAccept = {
                 scope.launch { updateSettings { it.copy(onboardingAccepted = true) } }
             })
             else -> {
                 LaunchedEffect(Unit) { session.start() }
-                MainNavigation()
+                // A new language rebuilds everything below, which is what returns the app to Home after a switch.
+                key(language) { MainNavigation() }
             }
         }
+      }
     }
 }
 
@@ -158,6 +198,15 @@ private fun MainNavigation() {
             }
         }
 
+        /** Where a poster leads; the library and journal are tabs, so they open the way the tab bar does. */
+        fun openLink(link: PosterLink) = when (link) {
+            PosterLink.PAYWALL -> nav.navigate(PaywallRoute)
+            PosterLink.DAILY -> nav.navigate(DailyRoute) { launchSingleTop = true }
+            PosterLink.YEAR -> nav.navigate(YearRoute)
+            PosterLink.LIBRARY -> openTab(TABS[1])
+            PosterLink.JOURNAL -> openTab(TABS[2])
+        }
+
         val pendingDaily by PendingNavigation.daily.collectAsState()
         LaunchedEffect(pendingDaily) {
             if (pendingDaily) {
@@ -178,12 +227,15 @@ private fun MainNavigation() {
 
         // Tapping empty space hides the keyboard. Buttons and text fields consume their own taps,
         // and a scroll cancels the gesture, so neither reaches this.
+        val density = LocalDensity.current
+        var tabBarHeight by remember { mutableStateOf(ZenSpacing.tabBar) }
         Box(
             Modifier
                 .fillMaxSize()
                 .background(ZenColors.PaperCream)
                 .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } },
         ) {
+            CompositionLocalProvider(LocalTabBarHeight provides tabBarHeight) {
             NavHost(
                 nav,
                 startDestination = HomeRoute,
@@ -200,8 +252,18 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onCast = { question, category -> nav.navigate(DivinationRoute(question, category?.wire)) },
                         onOpenDaily = { nav.navigate(DailyRoute) },
-                        onOpenYear = { nav.navigate(YearRoute) },
                         onOpenSettings = { nav.navigate(SettingsRoute) },
+                        onOpenPaywall = { nav.navigate(PaywallRoute) },
+                        siamsi = koinViewModel(),
+                        onSiamSiDraw = { nav.navigate(it) },
+                        onOpenLink = ::openLink,
+                    )
+                }
+                screen<SiamSiRoute> { entry ->
+                    val route = entry.toRoute<SiamSiRoute>()
+                    SiamSiScreen(
+                        viewModel = koinViewModel { parametersOf(route) },
+                        onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                     )
                 }
@@ -210,6 +272,8 @@ private fun MainNavigation() {
                         viewModel = koinViewModel(),
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onOpenLink = ::openLink,
+                        onOpenYear = { nav.navigate(YearRoute) },
                     )
                 }
                 screen<YearRoute> { entry ->
@@ -233,7 +297,7 @@ private fun MainNavigation() {
                     val result = yearState as? YearUi.Result
                     if (sharing && result != null) {
                         ShareCardSheet(
-                            content = yearShareContent(result.hexagram, campaignYearLabel(result.year)),
+                            content = yearShareContent(result.hexagram, zodiacYearLabel(result.year, LocalAppLanguage.current), LocalStrings.current.share),
                             log = { name, params ->
                                 session.log(name, params)
                                 // The sheet reports a finished share once; the year campaign counts it as its own event.
@@ -298,6 +362,9 @@ private fun MainNavigation() {
                         viewModel = koinViewModel { parametersOf(route.id) },
                         onBack = { nav.popFrom(entry) },
                         onOpenHexagram = { nav.navigate(HexagramRoute(it)) },
+                        onInterpretSiamSi = { route ->
+                            nav.navigate(route) { popUpTo<JournalEntryRoute> { inclusive = true } }
+                        },
                         onAskHermit = { reading ->
                             // Replaces the entry: once the hermit has spoken, back leads to the refreshed journal.
                             nav.navigate(DivinationRoute(reading.question, reading.category?.wire, resumeId = reading.id)) {
@@ -312,59 +379,71 @@ private fun MainNavigation() {
                         onBack = { nav.popFrom(entry) },
                         onOpenPaywall = { nav.navigate(PaywallRoute) },
                         onOpenYear = { nav.navigate(YearRoute) },
+                        onOpenGuide = { nav.navigate(GuideRoute) },
+                        onOpenLanguage = { nav.navigate(LanguageSettingsRoute) },
                     )
+                }
+                screen<LanguageSettingsRoute> { entry ->
+                    LanguageSettingsScreen(viewModel = koinViewModel(), onBack = { nav.popFrom(entry) })
+                }
+                screen<GuideRoute> { entry ->
+                    GuideScreen(onClose = { nav.popFrom(entry) })
                 }
                 screen<PaywallRoute> { entry ->
                     PaywallScreen(viewModel = koinViewModel(), onClose = { nav.popFrom(entry) })
                 }
             }
 
+            }
             AnimatedVisibility(
                 visible = currentTab != null,
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = fadeOut() + slideOutVertically { it / 2 },
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                ZenTabBar(selected = currentTab, onSelect = ::openTab)
+                ZenTabBar(
+                    selected = currentTab,
+                    onSelect = ::openTab,
+                    modifier = Modifier.onSizeChanged { tabBarHeight = with(density) { it.height.toDp() } },
+                )
             }
         }
     }
 }
 
-/** Floating pill tab bar, like a strip of rice paper. */
+/** Flat full-width tab bar; the open tab is inked and marked with a small cinnabar dot. */
 @Composable
-private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit) {
+private fun ZenTabBar(selected: TopLevelTab?, onSelect: (TopLevelTab) -> Unit, modifier: Modifier = Modifier) {
+    val edge = ZenColors.current.outlineVariant
     Row(
-        Modifier
+        modifier
+            .fillMaxWidth()
+            .background(ZenColors.PaperMid.copy(alpha = 0.92f))
+            .drawBehind { drawLine(edge, Offset.Zero, Offset(size.width, 0f), strokeWidth = 1.dp.toPx()) }
             .navigationBarsPadding()
-            .padding(bottom = 14.dp)
-            .shadow(16.dp, RoundedCornerShape(32.dp), ambientColor = ZenColors.InkBlack, spotColor = ZenColors.InkBlack)
-            .clip(RoundedCornerShape(32.dp))
-            .background(ZenColors.PaperCream)
-            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.06f), RoundedCornerShape(32.dp))
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .heightIn(min = ZenSpacing.tabBar)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         TABS.forEach { tab ->
+            val tabLabel = tab.label(LocalStrings.current.home)
             val isSelected = tab == selected
+            val tint = if (isSelected) ZenColors.InkBlack else ZenColors.InkFaint
             Column(
                 Modifier
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(if (isSelected) ZenColors.InkBlack else ZenColors.PaperCream)
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable { onSelect(tab) }
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    tab.icon,
-                    contentDescription = tab.label,
-                    tint = if (isSelected) ZenColors.PaperCream else ZenColors.InkSoft,
-                    modifier = Modifier.size(22.dp),
-                )
-                Text(
-                    tab.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) ZenColors.PaperCream else ZenColors.InkSoft,
+                Icon(tab.icon, contentDescription = tabLabel, tint = tint, modifier = Modifier.size(20.dp))
+                Text(tabLabel, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Box(
+                    Modifier
+                        .padding(top = 3.dp)
+                        .size(4.dp)
+                        .background(if (isSelected) ZenColors.CinnabarRed else Color.Transparent, RoundedCornerShape(1.dp)),
                 )
             }
         }

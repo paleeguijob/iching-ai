@@ -25,7 +25,6 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
 
     private var engine: TextToSpeech? = null
     private var engineReady = false
-    private var thaiAvailable = false
     private var pending: (() -> Unit)? = null
     private var pendingUnavailable: (() -> Unit)? = null
     private var lastUtteranceId: String? = null
@@ -38,8 +37,6 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
         var initFailed = false
         val created = TextToSpeech(context.applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                // Loading the voice here rather than on the first speak() is part of the head start.
-                thaiAvailable = engine?.setLanguage(Locale.forLanguageTag("th-TH"))?.let { it >= TextToSpeech.LANG_AVAILABLE } == true
                 engineReady = true
                 pending?.invoke()
                 clearPending()
@@ -70,7 +67,10 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
     private fun start(text: String, onUnavailable: () -> Unit) {
         val tts = engine ?: return
         val parts = splitForSpeech(stripMarkup(text), minOf(SPEECH_PIECE_CHARS, TextToSpeech.getMaxSpeechInputLength()))
-        if (!thaiAvailable || parts.isEmpty()) {
+        // The voice follows the text (a Thai reading stays Thai in an English UI), so it is chosen here, not at start-up.
+        val voiceAvailable = parts.isNotEmpty() &&
+            tts.setLanguage(Locale.forLanguageTag(speechVoiceTag(text))) >= TextToSpeech.LANG_AVAILABLE
+        if (!voiceAvailable) {
             _state.value = SpeechState.IDLE
             onUnavailable()
             return
@@ -126,7 +126,6 @@ private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
         engine?.shutdown()
         engine = null
         engineReady = false
-        thaiAvailable = false
         _state.value = SpeechState.IDLE
     }
 }

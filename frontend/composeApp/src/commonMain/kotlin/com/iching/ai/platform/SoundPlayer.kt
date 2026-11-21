@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 enum class ZenSound(val resourcePath: String) {
     COIN_TOSS("files/coin_toss.wav"),
     WIND_CHIME("files/wind_chime.wav"),
+    STICK_RATTLE("files/stick_rattle.wav"),
 }
 
 /** Plays short bundled sound effects; silently does nothing if audio is unavailable. */

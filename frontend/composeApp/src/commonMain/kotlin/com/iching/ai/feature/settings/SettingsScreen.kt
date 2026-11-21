@@ -1,5 +1,31 @@
 package com.iching.ai.feature.settings
 
+import com.iching.ai.platform.rememberTextSharer
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+
+import androidx.compose.ui.semantics.selected
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenTextButton
+import com.iching.ai.ui.components.ZenPrimaryButton
+import com.iching.ai.ui.components.ZenCardDivider
+import com.iching.ai.ui.components.ZenCard
+import com.iching.ai.ui.components.CinnabarSeal
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,15 +81,22 @@ import com.iching.ai.domain.model.currentOn
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.SectionLabel
-import com.iching.ai.ui.formatThaiDate
 import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.paletteFor
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.SettingsStrings
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywall: () -> Unit, onOpenYear: () -> Unit) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenPaywall: () -> Unit,
+    onOpenYear: () -> Unit,
+    onOpenGuide: () -> Unit,
+    onOpenLanguage: () -> Unit,
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.status.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
@@ -74,6 +107,11 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
     var confirmDelete by remember { mutableStateOf(false) }
     val notificationsGranted by viewModel.notificationsGranted.collectAsStateWithLifecycle()
     val pushBlocked by viewModel.pushBlocked.collectAsStateWithLifecycle()
+    val feedback by viewModel.feedback.collectAsStateWithLifecycle()
+    val englishEnabled by viewModel.englishEnabled.collectAsStateWithLifecycle()
+    val textSharer = rememberTextSharer()
+    val strings = LocalStrings.current
+    val st = strings.settings
     LifecycleResumeEffect(viewModel) {
         viewModel.refreshNotificationPermission()
         onPauseOrDispose { }
@@ -83,10 +121,10 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
     if (pushBlocked) {
         AlertDialog(
             onDismissRequest = viewModel::dismissPushBlocked,
-            title = { Text("ยังไม่ได้รับอนุญาตให้แจ้งเตือน") },
-            text = { Text("โปรดเปิดการแจ้งเตือนของแอปนี้ในการตั้งค่าของเครื่อง") },
-            confirmButton = { TextButton(onClick = viewModel::openNotificationSettings) { Text("เปิดการตั้งค่า") } },
-            dismissButton = { TextButton(onClick = viewModel::dismissPushBlocked) { Text("ไว้ก่อน") } },
+            title = { Text(st.pushBlockedTitle) },
+            text = { Text(st.pushBlockedBody) },
+            confirmButton = { TextButton(onClick = viewModel::openNotificationSettings) { Text(strings.divination.openSettings) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissPushBlocked) { Text(strings.divination.notNow) } },
         )
     }
 
@@ -97,189 +135,253 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
         }
     }
 
+    var page by rememberSaveable { mutableStateOf(SettingsPage.MAIN) }
+    // System Back from a sub-page returns to the main settings page instead of leaving settings.
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = page != SettingsPage.MAIN,
+        onBackCompleted = { page = SettingsPage.MAIN },
+    )
+    val provider = account?.provider ?: SignInProvider.ANONYMOUS
+
     PaperBackground(showMountains = false) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                IconButton(onClick = { if (page == SettingsPage.MAIN) onBack() else page = SettingsPage.MAIN }) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = strings.common.back, tint = ZenColors.InkBlack)
                 }
-                Text("ตั้งค่า", style = MaterialTheme.typography.headlineSmall)
+                Text(page.title(st), style = MaterialTheme.typography.headlineSmall)
             }
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                message?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = ZenColors.PaperCream,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(ZenColors.BambooDeep).padding(12.dp),
-                    )
-                }
+            message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ZenColors.PaperCream,
+                    modifier = Modifier
+                        .padding(horizontal = ZenSpacing.screen)
+                        .padding(bottom = ZenSpacing.sm)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(ZenColors.BambooDeep)
+                        .padding(12.dp),
+                )
+            }
+            AnimatedContent(
+                targetState = page,
+                transitionSpec = {
+                    val forward = targetState != SettingsPage.MAIN
+                    (fadeIn(tween(220)) + slideInHorizontally(tween(260)) { if (forward) it / 10 else -it / 10 }) togetherWith
+                        fadeOut(tween(120))
+                },
+                label = "settingsPage",
+            ) { shown ->
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .navigationBarsPadding()
+                        .padding(horizontal = ZenSpacing.screen)
+                        .padding(top = ZenSpacing.xs, bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(ZenSpacing.md),
+                ) {
+                    when (shown) {
+                        SettingsPage.MAIN -> {
+                            Card {
+                                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    CinnabarSeal(text = "易", size = 36.dp, tilt = 0f)
+                                    Spacer(Modifier.width(ZenSpacing.md))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(if (status.premium) st.planPremium else st.planFree, style = MaterialTheme.typography.titleSmall)
+                                        Text(
+                                            buildString {
+                                                append(st.readingsLeftToday(status.readingsLeftToday))
+                                                if (!status.premium || status.coins > 0) append(" · ${st.coinsNote(status.coins)}")
+                                                if (status.premium) status.premiumUntilMillis?.let { append(" · ${st.until(it)}") }
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = ZenColors.InkFaint,
+                                        )
+                                    }
+                                    if (status.premium) {
+                                        ZenTextButton(st.details, onClick = onOpenPaywall)
+                                    } else {
+                                        ZenPrimaryButton(st.upgrade, onClick = onOpenPaywall, showSeal = false, compact = true)
+                                    }
+                                }
+                            }
 
-                SectionLabel("สมาชิก")
-                Card {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(if (status.premium) "Premium" else "ผู้ใช้ทั่วไป", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                buildString {
-                                    append("วันนี้เหลือ ${status.readingsLeftToday} คำทำนาย")
-                                    if (!status.premium || status.coins > 0) append(" · เหรียญ ${status.coins} (ไม่มีวันหมดอายุ)")
-                                    if (status.premium) status.premiumUntilMillis?.let { append(" · ถึง ${formatThaiDate(it)}") }
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = ZenColors.InkFaint,
-                            )
-                        }
-                        TextButton(onClick = onOpenPaywall) {
-                            Text(if (status.premium) "รายละเอียด" else "อัปเกรด", color = ZenColors.CinnabarRed)
-                        }
-                    }
-                    Divider()
-                    LinkRow("กู้คืนการซื้อ", enabled = !busy) { viewModel.restore() }
-                    Divider()
-                    LinkRow("จัดการการสมัครสมาชิก") { runCatching { uri.openUri(viewModel.manageSubscriptionsUrl) } }
-                }
+                            Card {
+                                SwitchRow(st.sound, checked = current.soundEnabled, onCheckedChange = viewModel::setSound)
+                                if (viewModel.dailyPushSupported) {
+                                    Divider()
+                                    SwitchRow(
+                                        st.dailyPush,
+                                        subtitle = st.dailyPushSubtitle,
+                                        checked = current.dailyPushEnabled && notificationsGranted,
+                                        onCheckedChange = viewModel::setDailyPush,
+                                    )
+                                }
+                                yearResult?.let { year ->
+                                    Divider()
+                                    LinkRow(st.yearRow(year), onClick = onOpenYear)
+                                }
+                                if (englishEnabled) {
+                                    Divider()
+                                    LinkRow(st.language, onClick = onOpenLanguage)
+                                }
+                            }
 
-                SectionLabel("บัญชี")
-                Card {
-                    val provider = account?.provider ?: SignInProvider.ANONYMOUS
-                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(
-                            when (provider) {
-                                SignInProvider.APPLE -> "เชื่อมกับ Apple แล้ว"
-                                SignInProvider.GOOGLE -> "เชื่อมกับ Google แล้ว"
-                                SignInProvider.ANONYMOUS -> "บัญชีบนเครื่องนี้ (ยังไม่เชื่อม)"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            account?.email ?: "รหัสบัญชี ${account?.uid?.take(8) ?: "—"}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = ZenColors.InkFaint,
-                        )
-                        if (provider == SignInProvider.ANONYMOUS) {
-                            Spacer(Modifier.height(6.dp))
+                            Card {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(st.theme, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                    Text(
+                                        st.streak(current.streak.currentOn(bangkokEpochDay(Clock.System.now().toEpochMilliseconds())), current.streak.best),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ZenColors.InkFaint,
+                                    )
+                                }
+                                ThemePicker(
+                                    selected = current.selectedTheme,
+                                    unlocked = current.streak.unlocked,
+                                    hintFor = { lockedThemeHint(it, status.campaign?.active == true, st) },
+                                    lockedSuffix = st.lockedSuffix,
+                                    onSelect = viewModel::selectTheme,
+                                )
+                            }
+
+                            Card {
+                                LinkRow(
+                                    SettingsPage.ACCOUNT.title(st),
+                                    subtitle = when (provider) {
+                                        SignInProvider.APPLE -> st.linkedApple
+                                        SignInProvider.GOOGLE -> st.linkedGoogle
+                                        SignInProvider.ANONYMOUS -> st.notLinked
+                                    },
+                                ) { page = SettingsPage.ACCOUNT }
+                                Divider()
+                                LinkRow(SettingsPage.FEEDBACK.title(st)) { page = SettingsPage.FEEDBACK }
+                                Divider()
+                                LinkRow(SettingsPage.ABOUT.title(st)) { page = SettingsPage.ABOUT }
+                            }
+
+                            VersionLine(st.version(viewModel.appVersion))
+                        }
+
+                        SettingsPage.ACCOUNT -> {
+                            SectionLabel(st.sectionAccount)
+                            Card {
+                                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                    Text(
+                                        when (provider) {
+                                            SignInProvider.APPLE -> st.linkedApple
+                                            SignInProvider.GOOGLE -> st.linkedGoogle
+                                            SignInProvider.ANONYMOUS -> st.localAccount
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    Text(
+                                        account?.email ?: st.accountId(account?.uid?.take(8) ?: "—"),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ZenColors.InkFaint,
+                                    )
+                                    if (provider == SignInProvider.ANONYMOUS) {
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(
+                                            st.linkHint,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = ZenColors.InkSoft,
+                                        )
+                                    }
+                                }
+                                if (provider == SignInProvider.ANONYMOUS) {
+                                    if (viewModel.supportsApple) {
+                                        Divider()
+                                        LinkRow(st.signInApple, enabled = !busy) { viewModel.link(SignInProvider.APPLE) }
+                                    }
+                                    if (viewModel.supportsGoogle) {
+                                        Divider()
+                                        LinkRow(st.signInGoogle, enabled = !busy) { viewModel.link(SignInProvider.GOOGLE) }
+                                    }
+                                }
+                                Divider()
+                                LinkRow(st.syncJournal, enabled = !busy) { viewModel.syncJournal() }
+                            }
+
+                            SectionLabel(st.sectionPurchases, modifier = Modifier.padding(top = ZenSpacing.sm))
+                            Card {
+                                LinkRow(st.restore, enabled = !busy) { viewModel.restore() }
+                                Divider()
+                                LinkRow(st.manageSubscriptions) { runCatching { uri.openUri(viewModel.manageSubscriptionsUrl) } }
+                            }
+
+                            Spacer(Modifier.height(ZenSpacing.lg))
+                            Card {
+                                LinkRow(st.deleteAccount, color = ZenColors.CinnabarRed, enabled = !busy) { confirmDelete = true }
+                            }
+                        }
+
+                        SettingsPage.FEEDBACK -> {
+                            Card {
+                                val storeUrls = viewModel.storeUrls
+                                if (storeUrls.isNotEmpty()) {
+                                    LinkRow(strings.review.rateApp, subtitle = strings.review.rateAppSubtitle) {
+                                        viewModel.onRateAppTapped()
+                                        openFirst(storeUrls, uri::openUri)
+                                    }
+                                    Divider()
+                                }
+                                viewModel.shareAppText?.let { shareText ->
+                                    LinkRow(st.shareApp, subtitle = st.shareAppSubtitle) {
+                                        viewModel.onShareAppTapped()
+                                        textSharer.share(shareText)
+                                    }
+                                    Divider()
+                                }
+                                LinkRow(st.sendFeedback, subtitle = st.sendFeedbackSubtitle, onClick = viewModel::openFeedback)
+                            }
+                        }
+
+                        SettingsPage.ABOUT -> {
                             Text(
-                                "เชื่อมบัญชีเพื่อเก็บการซื้อและบันทึกชะตาไว้ เมื่อเปลี่ยนเครื่องหรือติดตั้งแอปใหม่",
-                                style = MaterialTheme.typography.labelSmall,
+                                st.aboutBody,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = ZenColors.InkSoft,
                             )
-                        }
-                    }
-                    if (provider == SignInProvider.ANONYMOUS) {
-                        if (viewModel.supportsApple) {
-                            Divider()
-                            LinkRow("ลงชื่อเข้าใช้ด้วย Apple", enabled = !busy) { viewModel.link(SignInProvider.APPLE) }
-                        }
-                        if (viewModel.supportsGoogle) {
-                            Divider()
-                            LinkRow("ลงชื่อเข้าใช้ด้วย Google", enabled = !busy) { viewModel.link(SignInProvider.GOOGLE) }
-                        }
-                    }
-                    Divider()
-                    LinkRow("ดึงบันทึกชะตาจากระบบ", enabled = !busy) { viewModel.syncJournal() }
-                    Divider()
-                    LinkRow("ลบบัญชีและข้อมูลทั้งหมด", color = ZenColors.CinnabarRed, enabled = !busy) { confirmDelete = true }
-                }
-
-                SectionLabel("บรรยากาศ")
-                Card {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("เสียงเหรียญและกระดิ่งลม", style = MaterialTheme.typography.bodyMedium)
-                            Text("ช่วยให้จิตสงบก่อนการเสี่ยงทาย", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
-                        }
-                        Switch(
-                            checked = current.soundEnabled,
-                            onCheckedChange = viewModel::setSound,
-                            colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
-                        )
-                    }
-                }
-
-                if (viewModel.dailyPushSupported) {
-                    Card {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text("แจ้งเตือนกวาประจำวัน", style = MaterialTheme.typography.bodyMedium)
-                                Text("ทุกเช้าเวลา ๗ นาฬิกา", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                            Card {
+                                LinkRow(st.howToCast, onClick = onOpenGuide)
+                                Divider()
+                                LinkRow(st.privacy) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${st.privacyPath}") } }
+                                Divider()
+                                LinkRow(st.terms) { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}${st.termsPath}") } }
                             }
-                            Switch(
-                                checked = current.dailyPushEnabled && notificationsGranted,
-                                onCheckedChange = viewModel::setDailyPush,
-                                colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.BambooGreen),
-                            )
+                            VersionLine(st.version(viewModel.appVersion))
                         }
                     }
                 }
-
-                yearResult?.let { year ->
-                    Card {
-                        LinkRow("กวาประจำปี ${(year + 543).toThaiNumerals()}", onClick = onOpenYear)
-                    }
-                }
-
-                SectionLabel("ธีม")
-                Card {
-                    Text(
-                        "เปิดดูกวาประจำวันต่อเนื่อง ${current.streak.currentOn(bangkokEpochDay(Clock.System.now().toEpochMilliseconds())).toThaiNumerals()} วัน · ดีที่สุด ${current.streak.best.toThaiNumerals()} วัน",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ZenColors.InkSoft,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    )
-                    AppTheme.entries.forEach { theme ->
-                        Divider()
-                        ThemeRow(
-                            theme = theme,
-                            selected = theme == current.selectedTheme,
-                            unlocked = theme in current.streak.unlocked,
-                            lockedHint = lockedThemeHint(theme, status.campaign?.active == true),
-                            onSelect = { viewModel.selectTheme(theme) },
-                        )
-                    }
-                }
-
-                SectionLabel("ว่าด้วยแอปนี้")
-                Text(
-                    "อี้จิง AI ใช้การโยนเหรียญสามเหรียญหกครั้งตามตำราดั้งเดิม แล้วอ้างอิงตัวบทคัมภีร์อี้จิง ๖๔ กวา ๓๘๔ เส้น " +
-                        "เป็นแก่นของคำชี้แนะทุกครั้ง คำชี้แนะสร้างโดย AI (Google Gemini) มีไว้เพื่อความบันเทิงและการสะท้อนคิด " +
-                        "มิใช่คำแนะนำทางการแพทย์ กฎหมาย หรือการเงิน",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ZenColors.InkSoft,
-                )
-                Card {
-                    LinkRow("นโยบายความเป็นส่วนตัว") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/privacy") } }
-                    Divider()
-                    LinkRow("ข้อกำหนดการใช้งาน") { runCatching { uri.openUri("${BuildConfig.WEB_BASE_URL}/terms") } }
-                }
-                Text("เวอร์ชัน ${viewModel.appVersion}", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
-                Spacer(Modifier.height(32.dp))
             }
         }
+    }
+
+    if (feedback.open) {
+        FeedbackSheet(
+            ui = feedback,
+            onTextChange = viewModel::onFeedbackText,
+            onSend = viewModel::sendFeedback,
+            onDismiss = viewModel::closeFeedback,
+        )
     }
 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             containerColor = ZenColors.PaperCream,
-            title = { Text("ลบบัญชีและข้อมูลทั้งหมด?", style = MaterialTheme.typography.titleMedium) },
+            title = { Text(st.deleteTitle, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Text(
-                    "บันทึกชะตา บทสนทนา และเหรียญที่เหลือจะถูกลบถาวรทั้งบนเครื่องนี้และบนระบบ ไม่สามารถกู้คืนได้ " +
-                        "การลบบัญชีไม่ยกเลิกการสมัครสมาชิก โปรดยกเลิกในการตั้งค่าของ App Store / Google Play ด้วย",
+                    st.deleteBody,
                     style = MaterialTheme.typography.bodySmall,
                 )
             },
@@ -287,83 +389,157 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPaywa
                 TextButton(onClick = {
                     confirmDelete = false
                     viewModel.deleteAccount(onDone = onBack)
-                }) { Text("ลบถาวร", color = ZenColors.CinnabarRed) }
+                }) { Text(st.deleteConfirm, color = ZenColors.CinnabarRed) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("ยกเลิก", color = ZenColors.InkSoft) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(strings.common.cancel, color = ZenColors.InkSoft) } },
         )
     }
 }
 
 /** Why a theme is still locked: days in a row for streak themes, the year hexagram for the campaign one. */
-internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean): String = when {
-    theme.unlockDays >= 0 -> "ปลดล็อกเมื่อเปิดดูกวาครบ ${theme.unlockDays.toThaiNumerals()} วันต่อเนื่อง"
-    campaignActive -> "รับได้จากการเสี่ยงทายกวาประจำปี"
-    else -> "ธีมพิเศษตรุษจีน"
+internal fun lockedThemeHint(theme: AppTheme, campaignActive: Boolean, strings: SettingsStrings): String = when {
+    theme.unlockDays >= 0 -> strings.lockedStreak(theme.unlockDays)
+    campaignActive -> strings.lockedCampaign
+    else -> strings.lockedSpecial
 }
 
+/**
+ * One row of theme dots. The selected dot gets an ink ring; locked dots carry a small lock, and tapping
+ * one says how to unlock it underneath instead of switching.
+ */
 @Composable
-private fun ThemeRow(theme: AppTheme, selected: Boolean, unlocked: Boolean, lockedHint: String, onSelect: () -> Unit) {
-    val swatch = paletteFor(theme)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = unlocked, onClick = onSelect)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .size(26.dp)
-                .clip(CircleShape)
-                .background(swatch.paperCream)
-                .border(5.dp, swatch.inkBlack, CircleShape),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                theme.labelTh,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (unlocked) ZenColors.InkBlack else ZenColors.InkFaint,
-            )
-            if (!unlocked) {
-                Text(
-                    lockedHint,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = ZenColors.InkFaint,
-                )
+private fun ThemePicker(
+    selected: AppTheme,
+    unlocked: Set<AppTheme>,
+    hintFor: (AppTheme) -> String,
+    lockedSuffix: String,
+    onSelect: (AppTheme) -> Unit,
+) {
+    val common = LocalStrings.current.common
+    var hinted by remember { mutableStateOf<AppTheme?>(null) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            AppTheme.entries.forEach { theme ->
+                val isUnlocked = theme in unlocked
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .clickable(onClickLabel = common.theme(theme)) {
+                            if (isUnlocked) {
+                                hinted = null
+                                onSelect(theme)
+                            } else {
+                                hinted = theme
+                            }
+                        }
+                        .semantics {
+                            contentDescription = common.theme(theme) + if (!isUnlocked) lockedSuffix else ""
+                            this.selected = theme == selected
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .size(30.dp)
+                            .then(if (theme == selected) Modifier.border(2.dp, ZenColors.InkBlack, CircleShape) else Modifier)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(paletteFor(theme).paperCream)
+                            // The theme's own ink as a rim, so similar papers (ink paper, bamboo) stay tellable apart.
+                            .border(4.dp, paletteFor(theme).inkBlack, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!isUnlocked) {
+                            Icon(Icons.Outlined.Lock, null, tint = paletteFor(theme).inkFaint, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
             }
         }
-        when {
-            selected -> Icon(Icons.Outlined.Check, contentDescription = "ใช้อยู่", tint = ZenColors.BambooDeep)
-            !unlocked -> Icon(Icons.Outlined.Lock, contentDescription = "ยังล็อกอยู่", tint = ZenColors.InkFaint)
-        }
+        Spacer(Modifier.height(6.dp))
+        val h = hinted
+        Text(
+            if (h != null) "${common.theme(h)} · ${hintFor(h)}" else common.theme(selected),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (h != null) ZenColors.InkSoft else ZenColors.InkFaint,
+        )
+    }
+}
+
+/** The main settings page and the rarely-used groups that open from it, so the main page fits one screen. */
+private enum class SettingsPage {
+    MAIN, ACCOUNT, FEEDBACK, ABOUT;
+
+    fun title(strings: SettingsStrings): String = when (this) {
+        MAIN -> strings.pageMain
+        ACCOUNT -> strings.pageAccount
+        FEEDBACK -> strings.pageFeedback
+        ABOUT -> strings.pageAbout
     }
 }
 
 @Composable
-private fun Card(content: @Composable ColumnScope.() -> Unit) {
-    Column(
+private fun SwitchRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, subtitle: String? = null) {
+    Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(ZenColors.PaperCream)
-            .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.07f), RoundedCornerShape(18.dp)),
-        content = content,
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text, style = MaterialTheme.typography.bodyMedium)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(checkedTrackColor = ZenColors.InkBlack, checkedThumbColor = ZenColors.PaperCream),
+        )
+    }
+}
+
+@Composable
+private fun VersionLine(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = ZenColors.InkFaint,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
 @Composable
-private fun Divider() {
-    Spacer(Modifier.fillMaxWidth().height(1.dp).background(ZenColors.InkBlack.copy(alpha = 0.06f)))
+private fun Card(content: @Composable ColumnScope.() -> Unit) {
+    ZenCard(contentPadding = PaddingValues(0.dp), content = content)
 }
 
 @Composable
-private fun LinkRow(text: String, color: Color = ZenColors.InkBlack, enabled: Boolean = true, onClick: () -> Unit) {
+private fun Divider() {
+    ZenCardDivider()
+}
+
+@Composable
+private fun LinkRow(
+    text: String,
+    color: Color = ZenColors.InkBlack,
+    enabled: Boolean = true,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+) {
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = if (subtitle == null) 14.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (enabled) color else color.copy(alpha = 0.4f), modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = if (enabled) color else color.copy(alpha = 0.4f))
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+        }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = ZenColors.InkFaint)
     }
 }

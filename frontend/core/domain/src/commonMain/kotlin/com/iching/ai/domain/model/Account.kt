@@ -1,11 +1,38 @@
 package com.iching.ai.domain.model
 
+import com.iching.ai.domain.siamsi.SiamSiSetRef
+
 enum class SignInProvider { ANONYMOUS, APPLE, GOOGLE }
 
 data class Account(
     val uid: String,
     val provider: SignInProvider,
     val email: String? = null,
+)
+
+/** Where tapping a poster goes; only screens the app knows. A link this version does not know means no poster. */
+enum class PosterLink {
+    PAYWALL, DAILY, YEAR, LIBRARY, JOURNAL;
+
+    companion object {
+        fun fromWire(s: String): PosterLink? = entries.firstOrNull { it.name.lowercase() == s }
+    }
+}
+
+/** The small card's words, shown at the end of the daily hexagram page. */
+data class PosterCardText(val label: String, val title: String, val cta: String, val showEndDate: Boolean)
+
+/** The one poster the server runs: an artwork popup on home, optionally with a card; [endsAtMillis] is exclusive. */
+data class PosterStatus(
+    val id: String,
+    val imageUrl: String,
+    /** Read aloud by TalkBack in place of the artwork. */
+    val alt: String,
+    /** Hidden from Premium (a discount); false = everyone (news, a festival). */
+    val freeOnly: Boolean,
+    val link: PosterLink?,
+    val card: PosterCardText?,
+    val endsAtMillis: Long,
 )
 
 /** A seasonal campaign as the server reports it. */
@@ -16,6 +43,13 @@ fun campaignIdFor(campaign: CampaignStatus?, year: Int): String = campaign?.id ?
 
 /** The hexagram cast once per account for the year; [lines] hold values 6-9, [coins] the three coin values of each toss. */
 data class YearHexagram(val year: Int, val primaryId: Int, val lines: List<Int>, val coins: List<List<Int>>)
+
+/** Siam Si as the server offers it; off until the server says otherwise. [drawsPerDay] already reflects Premium. */
+data class SiamSiStatus(
+    val enabled: Boolean = false,
+    val sets: List<SiamSiSetRef> = emptyList(),
+    val drawsPerDay: Int = 1,
+)
 
 /** Quota and entitlements as reported by the server (GET /status). */
 data class AccountStatus(
@@ -33,6 +67,13 @@ data class AccountStatus(
     val aiEnabled: Boolean,
     /** The Chinese New Year campaign; null when the server runs none. */
     val campaign: CampaignStatus? = null,
+    val siamsi: SiamSiStatus = SiamSiStatus(),
+    /** The poster while one runs; the server leaves it out outside its window, and a free-only one for Premium. */
+    val poster: PosterStatus? = null,
+    /** The server's switch for English; off sends everyone back to Thai. */
+    val englishEnabled: Boolean = true,
+    /** Version of the English hexagram texts the server serves. */
+    val hexagramsEnVersion: Int = 1,
 ) {
     /** Readings that reset tomorrow; [coins] are kept apart because they never expire. */
     val readingsLeftToday: Int get() = (readingsLeft - coins).coerceAtLeast(0)
@@ -59,4 +100,6 @@ data class StoreProduct(
     val periodTh: String?,
     /** Free-trial description, e.g. "ทดลองฟรี 7 วัน"; null when none. */
     val trialTh: String?,
+    /** The free trial's length in days, for wording it in a language other than Thai; null when none. */
+    val trialDays: Int? = null,
 )

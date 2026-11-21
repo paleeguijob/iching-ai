@@ -1,0 +1,2510 @@
+{
+  "id": "guanyin100",
+  "version": 1,
+  "name": "Guanyin Oracle",
+  "source": {
+    "note": "Ancient text, author unknown · translation and commentary by the I Ching AI team"
+  },
+  "sticks": [
+    {
+      "number": 1,
+      "poem_en": [
+        "Heaven opens and earth parts, forming a fine bond.",
+        "The day is auspicious and the hour is good; all is in place.",
+        "To draw this stick is no small matter,",
+        "One who walks the upright path is honored by the throne."
+      ],
+      "story": "",
+      "summary": "A good beginning in every way, with timing on your side. Stay honest and good results will follow, and elders will recognize your worth.",
+      "topics": {
+        "work": "You can start new work or present a plan. Seniors will notice work done honestly.",
+        "money": "Income is steady. Honest investment does well.",
+        "love": "The relationship runs smoothly and suits a serious commitment.",
+        "health": "Overall you feel fresh and bright. Keep a steady rest routine.",
+        "travel": "Travel is easy and the timing is good.",
+        "lost": "Lost items may be returned. Try the places where you usually keep them.",
+        "dealings": "Talks can reach agreement. Being straightforward helps you succeed."
+      },
+      "keywords": [
+        "Good start",
+        "Honesty",
+        "Auspicious timing"
+      ]
+    },
+    {
+      "number": 2,
+      "poem_en": [
+        "The whale has not yet transformed and still guards the rivers and lakes.",
+        "It is not yet allowed to rise and leave the green waves.",
+        "One day it will grow mighty and change its form,",
+        "Then leap over the Dragon Gate in a single jump."
+      ],
+      "story": "",
+      "summary": "This is not yet the moment. Be patient and build your strength where you are. A great opportunity will come later, and when you are ready you can make the leap.",
+      "topics": {
+        "work": "Do not change jobs or move up yet. Practice your skills and wait for the moment.",
+        "money": "Do not make a large investment yet. Save for now.",
+        "love": "Love takes time. Do not rush for an answer.",
+        "health": "Get enough rest. If anything feels unusual, consult a doctor.",
+        "travel": "Put off long trips for now.",
+        "lost": "The lost item may take a while. You may find it when you stop rushing to look.",
+        "dealings": "Talks are not settled yet. Wait until the other side is ready."
+      },
+      "keywords": [
+        "Waiting for the moment",
+        "Building strength",
+        "Patience"
+      ]
+    },
+    {
+      "number": 3,
+      "poem_en": [
+        "Braving wind and rain, you go out and come back.",
+        "Toiling and worn out, like a swallow,",
+        "It carries mud to build its nest layer on layer,",
+        "But in the end the nest collapses and turns back to mud."
+      ],
+      "story": "",
+      "summary": "The effort you put in may not bring the result you hope for. Check whether you are building on a solid base before you put in more work.",
+      "topics": {
+        "work": "Your current work may stall. Check that the foundation of your plan is firm before going on.",
+        "money": "Beware of losing what you have already put in. Do not add more just to win it back.",
+        "love": "The relationship needs steadiness more than effort from one side alone.",
+        "health": "Watch for built-up tiredness. Rest well and see a doctor if you have symptoms.",
+        "travel": "The trip may tire you for nothing. Reconsider whether it is needed.",
+        "lost": "The lost item is hard to find. Be prepared for that.",
+        "dealings": "An agreement may not last. Read the terms carefully."
+      },
+      "keywords": [
+        "Review the foundation",
+        "Tiring in vain",
+        "Caution"
+      ]
+    },
+    {
+      "number": 4,
+      "poem_en": [
+        "The broken mirror joins into a full circle again.",
+        "A woman seeks a husband anew, a man marries anew.",
+        "From now on the household takes on a new face,",
+        "And blessings and fortune increase for children and grandchildren."
+      ],
+      "story": "",
+      "summary": "What was once broken will become whole again. It is a fresh and good beginning, and family and life will change for the better.",
+      "topics": {
+        "work": "Work that stalled can resume, or a better new opportunity may come.",
+        "money": "Finances recover, and some good luck comes into the home.",
+        "love": "People who drifted apart may reconcile, or you may meet a good new love.",
+        "health": "The body slowly recovers. Keep caring for yourself steadily.",
+        "travel": "Travel goes well, especially going home or moving house.",
+        "lost": "The lost item can be returned.",
+        "dealings": "Talks that collapsed earlier can come back to an agreement."
+      },
+      "keywords": [
+        "Reconciliation",
+        "New start",
+        "Family"
+      ]
+    },
+    {
+      "number": 5,
+      "poem_en": [
+        "With one swing of the hoe you dig the ground, hoping for a spring.",
+        "You strive on and reach it before anyone else.",
+        "Without meaning to, you suddenly meet someone who understands you.",
+        "Meeting, you go hand in hand up to the blue sky."
+      ],
+      "story": "",
+      "summary": "Your effort will pay off, and along the way you will unexpectedly meet someone who understands and helps you. Working together will take you far.",
+      "topics": {
+        "work": "Acting first gives you an advantage, and you will gain a good ally.",
+        "money": "Income comes from hard work. Someone may point out a useful path.",
+        "love": "You may meet someone you like by chance.",
+        "health": "Work hard but do not overdo it. Balance it with rest.",
+        "travel": "You meet good people on the trip.",
+        "lost": "The lost item may be returned with someone else's help.",
+        "dealings": "Talks succeed when a go-between understands both sides."
+      },
+      "keywords": [
+        "Perseverance",
+        "Kindred spirit",
+        "Cooperation"
+      ]
+    },
+    {
+      "number": 6,
+      "poem_en": [
+        "Throwing oneself down beneath the cliff to feed the tiger,",
+        "Only then can one be called a true hero.",
+        "Such self-sacrifice is hard to find again,",
+        "Across the land there is no one like this."
+      ],
+      "story": "",
+      "summary": "Sacrifice and generosity are valuable, but know your limits. Do good without harming yourself too much.",
+      "topics": {
+        "work": "Give your all, but do not take on others' burdens until you are worn out.",
+        "money": "Be careful about lending money or guaranteeing a loan beyond your means.",
+        "love": "Good love means giving and receiving in balance.",
+        "health": "Do not neglect yourself while caring for others. Rest enough.",
+        "travel": "You may travel to help others, but plan carefully.",
+        "lost": "The lost item may not be returned. Try to let it go.",
+        "dealings": "You may give way on some matters, but set clear limits."
+      },
+      "keywords": [
+        "Sacrifice",
+        "Knowing limits",
+        "Generosity"
+      ]
+    },
+    {
+      "number": 7,
+      "poem_en": [
+        "Rushing about, worn out, through danger upon danger,",
+        "Wading through water and mud, then crossing a mountain,",
+        "And still thinking of seeking another use in some far place,",
+        "Over a thousand mountains and ten thousand rivers you cannot return."
+      ],
+      "story": "",
+      "summary": "There are many obstacles now. Struggling to find a new path far away may only tire you more. Steady yourself first with what you already have.",
+      "topics": {
+        "work": "Do not change jobs or start a far-off project yet.",
+        "money": "Watch for costs that swell. Economize.",
+        "love": "The relationship has obstacles. Stay calm and communicate more.",
+        "health": "Watch for tiredness. If you have symptoms, consult a doctor.",
+        "travel": "A long trip has obstacles. Postpone it if you can.",
+        "lost": "The lost item is hard to find.",
+        "dealings": "Talks drag on. Do not rush to close."
+      },
+      "keywords": [
+        "Obstacles",
+        "Steady yourself",
+        "Stay calm"
+      ]
+    },
+    {
+      "number": 8,
+      "poem_en": [
+        "In the cold of the year, pine and cypress were planted long ago.",
+        "Rain, snow, wind and frost cannot break them.",
+        "One day they will surely be put to great use,",
+        "And in public life become a pillar of the realm."
+      ],
+      "story": "",
+      "summary": "Steadiness and endurance in hard times will help you grow into someone others can rely on. Success comes slowly but lasts.",
+      "topics": {
+        "work": "Your endurance will lead to an important position.",
+        "money": "Finances are steady over the long term.",
+        "love": "A love that passes its tests will grow close and firm.",
+        "health": "The body is strong. Keep caring for it regularly.",
+        "travel": "Travel is safe.",
+        "lost": "The lost item can be returned, even if it takes time.",
+        "dealings": "Talks succeed through firmness."
+      },
+      "keywords": [
+        "Steadiness",
+        "Endurance",
+        "Pillar"
+      ]
+    },
+    {
+      "number": 9,
+      "poem_en": [
+        "Thank you for asking what is on my mind.",
+        "This matter is best spoken openly to an elder.",
+        "A clear spirit, bright as a mirror,",
+        "Is just like the full moon in the middle of the sky."
+      ],
+      "story": "",
+      "summary": "A pure and open heart brings clarity. Talk with someone you trust and everything will become clear.",
+      "topics": {
+        "work": "Consult your boss or an elder to get good advice.",
+        "money": "Your finances are transparent, with nothing holding them up.",
+        "love": "Speak openly and love will become clear.",
+        "health": "A calm mind brings a fresh body.",
+        "travel": "Travel goes smoothly.",
+        "lost": "The lost item will be found. Think back calmly.",
+        "dealings": "Talk openly and you will succeed."
+      },
+      "keywords": [
+        "Clear heart",
+        "Openness",
+        "Seek advice"
+      ]
+    },
+    {
+      "number": 10,
+      "poem_en": [
+        "A priceless treasure is kept hidden in a box,",
+        "Yet you go searching in other lands.",
+        "It is like carrying a lamp to look for fire.",
+        "Better to stay quiet and not wear yourself out."
+      ],
+      "story": "",
+      "summary": "What you are looking for is close at hand. You do not need to strive far away. Look at what you already have and see its worth.",
+      "topics": {
+        "work": "The opportunity is in your present work. There is no need to change in a hurry.",
+        "money": "Income comes from what you already have. Use it well.",
+        "love": "The right person may be near you.",
+        "health": "A calm mind helps the body. Rest enough.",
+        "travel": "There is no need to travel far.",
+        "lost": "The lost item is nearby. Search the house first.",
+        "dealings": "You do not need to look for distant new partners."
+      },
+      "keywords": [
+        "Close at hand",
+        "See the worth",
+        "Calm mind"
+      ]
+    },
+    {
+      "number": 11,
+      "poem_en": [
+        "You long for good things and are delighted beyond measure.",
+        "Rushing about over a marriage connection is only a passing bustle.",
+        "In the end the good matter will come to pass,",
+        "And a noble person will lead you into a noble land."
+      ],
+      "story": "",
+      "summary": "Though the beginning may be hectic, in the end what you hope for will come about, and an elder or someone of standing will help you.",
+      "topics": {
+        "work": "Elders support you, and the work succeeds even if it is hectic at first.",
+        "money": "Finances improve step by step.",
+        "love": "Matters of partnership may be busy at first but end well.",
+        "health": "Health is good. Watch for stress during the busy period.",
+        "travel": "On the trip you meet a kind senior.",
+        "lost": "The lost item can be returned with help.",
+        "dealings": "A go-between helps the talks succeed."
+      },
+      "keywords": [
+        "Patron",
+        "Success",
+        "Good fortune"
+      ]
+    },
+    {
+      "number": 12,
+      "poem_en": [
+        "When misfortune reaches its limit, peace will come.",
+        "Shake off the dust and rise out of the darkness.",
+        "When the Rabbit or Tiger month comes, good news arrives,",
+        "Hold firm to your resolve and all will fall into harmony."
+      ],
+      "story": "",
+      "summary": "The hard period is passing. Renew your resolve and rise again. Good news is on its way.",
+      "topics": {
+        "work": "The situation improves. You can set new goals.",
+        "money": "Finances recover.",
+        "love": "Love becomes bright again.",
+        "health": "The body recovers. Keep caring for yourself.",
+        "travel": "You receive good news on the trip.",
+        "lost": "The lost item may be returned.",
+        "dealings": "Talks settle when you are sincere."
+      },
+      "keywords": [
+        "Turnaround",
+        "Good news",
+        "Renewed resolve"
+      ]
+    },
+    {
+      "number": 13,
+      "poem_en": [
+        "Born in childhood into a wealthy and noble house,",
+        "Before your eyes everything is splendid.",
+        "If you want to be granted the golden fish purse,",
+        "You must make a name that rings throughout the four seas."
+      ],
+      "story": "",
+      "summary": "Your standing is good capital, but true reputation must be built by yourself. Do not be lulled by comfort into forgetting to grow.",
+      "topics": {
+        "work": "Do not rely only on what you inherited. Build your own record.",
+        "money": "Finances are good, but watch for extravagant spending.",
+        "love": "Love is good, but give more than material things.",
+        "health": "Do not overindulge in food and comfort.",
+        "travel": "Travel is easy and comfortable.",
+        "lost": "The lost item can be returned.",
+        "dealings": "You have the upper hand in talks, but do not be arrogant."
+      },
+      "keywords": [
+        "Make your own name",
+        "Stay mindful",
+        "Inherited means"
+      ]
+    },
+    {
+      "number": 14,
+      "poem_en": [
+        "Just like an immortal crane leaving its cage,",
+        "You shed your restraints and pass freely everywhere.",
+        "North, south, east and west, there is no obstruction,",
+        "Rise straight into the ninth heaven as you wish."
+      ],
+      "story": "",
+      "summary": "You are free from old limits and free to choose your own path. This is an open period.",
+      "topics": {
+        "work": "A good time to change jobs or begin a new path.",
+        "money": "Finances become more flexible.",
+        "love": "Love is free, with nothing in the way.",
+        "health": "You feel light and relieved, and the body is fresh.",
+        "travel": "Travel is easy in every direction.",
+        "lost": "The lost item may not return, but you will gain something new.",
+        "dealings": "You can break free of old terms in talks."
+      },
+      "keywords": [
+        "Freedom",
+        "Openness",
+        "New path"
+      ]
+    },
+    {
+      "number": 15,
+      "poem_en": [
+        "Words that strike at a person are the hardest to swallow.",
+        "Suddenly disaster and danger arrive at the door.",
+        "The egg is broken and the nest empty, with nowhere to stay.",
+        "Be steady and guard yourself well."
+      ],
+      "story": "",
+      "summary": "There may be clashes or problems at this time. Hold back your words and steady yourself. Care will help you get through.",
+      "topics": {
+        "work": "Watch for conflict at work. Do not answer back with emotion.",
+        "money": "Watch for financial loss. Keep a reserve.",
+        "love": "Watch for words that hurt each other.",
+        "health": "Look after stress and rest enough, and see a doctor if you have symptoms.",
+        "travel": "Avoid trips that are not needed.",
+        "lost": "The lost item is hard to find.",
+        "dealings": "Do not sign a contract while you are upset."
+      },
+      "keywords": [
+        "Restraint",
+        "Steady yourself",
+        "Beware of harm"
+      ]
+    },
+    {
+      "number": 16,
+      "poem_en": [
+        "The knitted brow of worry will soon ease.",
+        "The clouds part within arm's reach and the sun appears.",
+        "Like a piece of jade in the mud,",
+        "A skilled craftsman lifts it from the dust in one move."
+      ],
+      "story": "",
+      "summary": "Your worry will pass. A hidden worth will be noticed and lifted up so that you stand out.",
+      "topics": {
+        "work": "Someone will notice your hidden ability.",
+        "money": "Finances begin to clear up.",
+        "love": "Someone will see your worth.",
+        "health": "Stress eases and the body improves.",
+        "travel": "Travel is possible.",
+        "lost": "The lost item will be found in an unexpected place.",
+        "dealings": "Talks clear up when a knowledgeable person helps."
+      },
+      "keywords": [
+        "Clearing up",
+        "Hidden worth",
+        "Being recognized"
+      ]
+    },
+    {
+      "number": 17,
+      "poem_en": [
+        "Do not listen to idle talk and gossip.",
+        "Morning and evening, simply recite Amitabha.",
+        "If you take false words as true,",
+        "How can a painted cake cure hunger?"
+      ],
+      "story": "",
+      "summary": "Do not be taken in by rumors or empty promises. Hold to what is real and keep your mind calm.",
+      "topics": {
+        "work": "Do not believe promises without evidence.",
+        "money": "Beware of offers that are too good to be true.",
+        "love": "Do not listen to outsiders more than to your partner.",
+        "health": "A calm mind helps good health.",
+        "travel": "Check travel information to be sure.",
+        "lost": "Do not believe rumors about the lost item. Search for it yourself in an orderly way.",
+        "dealings": "Talks need written evidence."
+      },
+      "keywords": [
+        "Ignore rumors",
+        "What is real",
+        "Calm mind"
+      ]
+    },
+    {
+      "number": 18,
+      "poem_en": [
+        "The golden crow sets in the west as the hare rises in the east.",
+        "Day and night turn round, from ancient times to now.",
+        "Monks and Daoists who receive this stick find nothing but benefit,",
+        "And craftsmen, merchants, farmers and scholars are each glad at heart."
+      ],
+      "story": "",
+      "summary": "Everything turns in its natural cycle. It is a balanced period and auspicious for everyone. Do your own duties well and you will be content.",
+      "topics": {
+        "work": "Work in every line moves at a good rhythm.",
+        "money": "Income circulates well.",
+        "love": "Love is balanced, each of you completing the other.",
+        "health": "The rhythm of life is balanced. Sleep at regular hours.",
+        "travel": "Travel goes well.",
+        "lost": "The lost item will come back around.",
+        "dealings": "Talks benefit both sides."
+      },
+      "keywords": [
+        "Cycle",
+        "Balance",
+        "Good fortune"
+      ]
+    },
+    {
+      "number": 19,
+      "poem_en": [
+        "Launching a boat at the head of a fast rapid,",
+        "With a wild wind whipping up waves, what can be done?",
+        "Wait until the waves are calm and the wind has stopped,",
+        "Then carry the boat back steadily and cross without danger."
+      ],
+      "story": "",
+      "summary": "Do not force things when the situation is stormy. Wait for the right moment, and then everything can pass safely.",
+      "topics": {
+        "work": "Wait until things settle before deciding.",
+        "money": "Hold off investing while the market is volatile.",
+        "love": "Do not discuss important matters when emotions are strong.",
+        "health": "Rest a lot. If you have symptoms, consult a doctor.",
+        "travel": "Wait for good weather or a good moment before traveling.",
+        "lost": "The lost item will be found when the commotion calms.",
+        "dealings": "Hold talks when the other side has cooled down."
+      },
+      "keywords": [
+        "Wait for the moment",
+        "Do not force",
+        "Safety"
+      ]
+    },
+    {
+      "number": 20,
+      "poem_en": [
+        "The long spring rain has just cleared, and it is welcome.",
+        "The jade hare and the golden crow slowly grow bright.",
+        "Old matters are done and new ones are settled.",
+        "Soon you will step into the Isles of the Blessed."
+      ],
+      "story": "",
+      "summary": "The long hard period has passed. Everything is slowly brightening. Pending matters will finish and new ones will go well.",
+      "topics": {
+        "work": "Pending work finishes and new work can move forward.",
+        "money": "Finances slowly improve.",
+        "love": "Love brightens.",
+        "health": "The body recovers. Keep caring for it.",
+        "travel": "Travel goes well.",
+        "lost": "The lost item may be returned.",
+        "dealings": "Old talks end well and open the way to new ones."
+      },
+      "keywords": [
+        "Sun after rain",
+        "Brightening",
+        "Success"
+      ]
+    },
+    {
+      "number": 21,
+      "poem_en": [
+        "The joining of yin and yang all comes from Heaven.",
+        "A woman marrying a man is no coincidence.",
+        "See how the dragon and the snake stir,",
+        "A dream of the bear is a good omen of reunion."
+      ],
+      "story": "",
+      "summary": "This meeting and cooperation is set by fate. It is auspicious for family and for beginning something together.",
+      "topics": {
+        "work": "You gain a partner or team that gets along well.",
+        "money": "Finances do well through cooperation.",
+        "love": "An auspicious stick for partnership and family.",
+        "health": "The body is in balance. Keep caring for yourself.",
+        "travel": "Traveling as a pair or with family goes well.",
+        "lost": "The lost item can be returned.",
+        "dealings": "Cooperative talks succeed."
+      },
+      "keywords": [
+        "Partnership",
+        "Set by fate",
+        "Family"
+      ]
+    },
+    {
+      "number": 22,
+      "poem_en": [
+        "The fields in all four directions are parched.",
+        "After a long drought, suddenly three days of steady rain.",
+        "Flowers, fruit, grass and sprouts are all moistened.",
+        "Only then do you know that one rain is worth a thousand in gold."
+      ],
+      "story": "",
+      "summary": "The help or opportunity you have been waiting for is coming just when you need it most. Everything will be refreshed again.",
+      "topics": {
+        "work": "You get an opportunity or support when you need it.",
+        "money": "Tight finances will become more flexible.",
+        "love": "Love is refreshed.",
+        "health": "The body recovers. Drink water and rest enough.",
+        "travel": "Travel goes well.",
+        "lost": "The lost item can be returned.",
+        "dealings": "Stuck talks clear up."
+      },
+      "keywords": [
+        "First rain",
+        "Help arrives",
+        "Renewal"
+      ]
+    },
+    {
+      "number": 23,
+      "poem_en": [
+        "You wish to climb the fragrant cassia to the Toad Palace on the moon.",
+        "Why worry that the gate of heaven will not open?",
+        "Whatever you plan and hope for, the news is good,",
+        "And a noble person will bring it up the mountain to you."
+      ],
+      "story": "",
+      "summary": "Your ambition has a chance of success. The door is open, and an elder will help guide you.",
+      "topics": {
+        "work": "Exams and job applications stand a good chance.",
+        "money": "There is good news about money.",
+        "love": "An elder helps as a matchmaker in love.",
+        "health": "Health is good. Watch for stress from aiming high.",
+        "travel": "You get good news on the trip.",
+        "lost": "Someone will bring the lost item back.",
+        "dealings": "An elder helps push the talks along."
+      },
+      "keywords": [
+        "Ambition",
+        "Good news",
+        "Help from elders"
+      ]
+    },
+    {
+      "number": 24,
+      "poem_en": [
+        "No peace with the neighbors, no settled home.",
+        "Like water bubbles, a foolish person is like fallen blossoms.",
+        "If you ask about the kindness of those above, it is hard to rely on.",
+        "In the end things are as tangled as hemp."
+      ],
+      "story": "",
+      "summary": "For now matters are not settled and it is hard to rely on others. Put your own affairs in order one by one and do not be carried away by what does not last.",
+      "topics": {
+        "work": "Do not expect support from above. Do your own part well.",
+        "money": "Watch for unstable finances. Do not borrow or lend.",
+        "love": "The relationship is not yet steady. Take time to understand each other.",
+        "health": "Look after stress, rest enough, and see a doctor if you have symptoms.",
+        "travel": "The trip may be hectic. Check your plan well.",
+        "lost": "The lost item is hard to find.",
+        "dealings": "Talks are still tangled. Separate the issues one at a time."
+      },
+      "keywords": [
+        "Tangled",
+        "Rely on yourself",
+        "Put in order"
+      ]
+    },
+    {
+      "number": 25,
+      "poem_en": [
+        "Having passed beyond worry and danger, layer upon layer,",
+        "From now on, whatever comes, no misfortune will follow.",
+        "A calm heart finds its own calm way,",
+        "And you will meet a lofty person whose blessing shields you."
+      ],
+      "story": "",
+      "summary": "The hard period is over. Relax your mind. Someone will help and protect you, and the bad matters will not come around again.",
+      "topics": {
+        "work": "You have passed the crisis, and work becomes steadier.",
+        "money": "Finances are out of the tight spot.",
+        "love": "Love becomes steadier after the obstacles.",
+        "health": "The body recovers and the mind feels lighter.",
+        "travel": "Travel is safe.",
+        "lost": "The lost item may be returned.",
+        "dealings": "You get a good helper in the talks."
+      },
+      "keywords": [
+        "Out of danger",
+        "Open heart",
+        "Protection"
+      ]
+    },
+    {
+      "number": 26,
+      "poem_en": [
+        "News passed up and down is all empty.",
+        "A letter arrives from the far horizon.",
+        "In it, fame and rank are promised to me.",
+        "Wait until the very end, and there is nothing."
+      ],
+      "story": "",
+      "summary": "Be careful with promises that have no basis. Do not place your hopes on things that are still uncertain. Trust what you can see actually working.",
+      "topics": {
+        "work": "Do not hope for a position based on words alone. Wait for real proof.",
+        "money": "Do not trust offers of returns that sound too good to be true.",
+        "love": "Be careful of sweet words that are not backed by actions.",
+        "health": "A calm mind helps the body stay well.",
+        "travel": "Check your travel information carefully.",
+        "lost": "For lost items, do not trust vague clues.",
+        "dealings": "Talks need a clear contract."
+      },
+      "keywords": [
+        "Empty promises",
+        "Verify",
+        "Do not pin hopes"
+      ]
+    },
+    {
+      "number": 27,
+      "poem_en": [
+        "One plan, one use, one turn of cleverness.",
+        "Worrying ahead and doubting behind, you dare not act.",
+        "When the time comes, a noble helper will appear.",
+        "You will dwell in peace behind walls of silver and iron."
+      ],
+      "story": "",
+      "summary": "Hesitation keeps you from stepping forward. But when the right time comes, someone will help and everything will become secure.",
+      "topics": {
+        "work": "Plan well, then wait for the right moment. Someone will support you.",
+        "money": "Your finances are stable. There is no need to worry too much.",
+        "love": "Do not hesitate so long that you miss the chance.",
+        "health": "Worry less and get enough rest.",
+        "travel": "You can travel when the time is right.",
+        "lost": "The lost item will be found when the time comes.",
+        "dealings": "In talks, help comes at the right moment."
+      },
+      "keywords": [
+        "Hesitation",
+        "Right time",
+        "Secure"
+      ]
+    },
+    {
+      "number": 28,
+      "poem_en": [
+        "In the east the moon rises, lovely and bright.",
+        "In a moment, clouds cover half of it.",
+        "Do not say that what is full must wane again,",
+        "The part that is missing will become whole again."
+      ],
+      "story": "",
+      "summary": "A good matter may meet a brief obstacle, but what is missing will return whole. Do not lose heart.",
+      "topics": {
+        "work": "Work stalls for a while, then comes back in good shape.",
+        "money": "Money is short for a brief time, then recovers.",
+        "love": "Love has a passing cloud over it. After talking, it will improve.",
+        "health": "Minor symptoms will pass. Take good care of yourself.",
+        "travel": "Travel may be delayed, but you will arrive.",
+        "lost": "The lost item will come back.",
+        "dealings": "Talks hit a snag, then settle into place."
+      },
+      "keywords": [
+        "Waning then full",
+        "Temporary",
+        "Do not lose heart"
+      ]
+    },
+    {
+      "number": 29,
+      "poem_en": [
+        "A precious sword shines when it leaves its sheath.",
+        "Inside the sheath it was never dulled by dust.",
+        "A noble person lends a hand and lifts you up.",
+        "It can protect you well. Have no doubt."
+      ],
+      "story": "",
+      "summary": "Your hidden ability is about to be shown, and an elder or superior will lift you into a role. Be confident in yourself.",
+      "topics": {
+        "work": "You get a chance to show your skill, and a senior person raises you up.",
+        "money": "Finances do well through your ability.",
+        "love": "Confidence makes you attractive.",
+        "health": "The body is strong.",
+        "travel": "Travel is safe.",
+        "lost": "The lost item will be returned.",
+        "dealings": "You gain the advantage when you show your strengths."
+      },
+      "keywords": [
+        "Sword leaves sheath",
+        "Ability",
+        "Confidence"
+      ]
+    },
+    {
+      "number": 30,
+      "poem_en": [
+        "I urge you: do not seek help from others.",
+        "It is like a crane flying in, met by a hidden arrow.",
+        "If you go to gather firewood, a snake lies in the grass.",
+        "I fear you may be harmed, and this is worrying."
+      ],
+      "story": "",
+      "summary": "For now, rely on yourself and watch for hidden danger. Do not trust people too easily or step into matters you do not know.",
+      "topics": {
+        "work": "Watch for people at work who do not wish you well. Work carefully.",
+        "money": "Do not lend money or act as a guarantor.",
+        "love": "Be careful of someone who approaches with a hidden motive.",
+        "health": "Watch for accidents. Take care of yourself, and see a doctor if you have symptoms.",
+        "travel": "Be careful when travelling. Check the lodging and the route.",
+        "lost": "The lost item may have been taken.",
+        "dealings": "Read contracts closely and watch for hidden conditions."
+      },
+      "keywords": [
+        "Rely on yourself",
+        "Hidden danger",
+        "Be careful"
+      ]
+    },
+    {
+      "number": 31,
+      "poem_en": [
+        "Sit calmly in a quiet place, free of cares.",
+        "Eat when hungry, lie down when tired.",
+        "Put body and mind at ease, with no need to hurry.",
+        "You will surely meet no misfortune or harm."
+      ],
+      "story": "",
+      "summary": "For now, live simply and do not struggle. Letting go and keeping to what is enough will keep you safe.",
+      "topics": {
+        "work": "Work as usual. There is no need to rush to expand.",
+        "money": "Finances are adequate. Do not take risks.",
+        "love": "Love is simple but warm.",
+        "health": "Eat enough and sleep enough, and the body will feel well.",
+        "travel": "Staying put is better than travelling.",
+        "lost": "The lost item will turn up by itself when you stop rushing to find it.",
+        "dealings": "No need to hurry the talks. Let things follow their own pace."
+      },
+      "keywords": [
+        "Simple",
+        "Let go",
+        "Enough"
+      ]
+    },
+    {
+      "number": 32,
+      "poem_en": [
+        "The road ahead is faint and uncertain.",
+        "Jade is hidden in the stone. Who would know?",
+        "One day a good official splits it open.",
+        "Only then do you see the rare green jade inside."
+      ],
+      "story": "",
+      "summary": "Though you cannot see clearly now, something valuable lies hidden. When a knowledgeable person helps open it, its worth will show.",
+      "topics": {
+        "work": "Your ability is not yet noticed, but a knowledgeable person will discover it.",
+        "money": "A financial opportunity is hidden and needs someone to point it out.",
+        "love": "The right person may look ordinary but has worth within.",
+        "health": "Have regular check-ups, and see a doctor if you have concerns.",
+        "travel": "You will find something good on the trip.",
+        "lost": "The lost item is somewhere overlooked.",
+        "dealings": "Talks need an expert to help analyze them."
+      },
+      "keywords": [
+        "Jade in stone",
+        "Knowledgeable person",
+        "Hidden worth"
+      ]
+    },
+    {
+      "number": 33,
+      "poem_en": [
+        "Fine jade is hidden in the heart of the stone.",
+        "What you have is already there. Why look outside?",
+        "Wait for a wise person to come and split it open.",
+        "It will be like a sacred rain washing away a troubled heart."
+      ],
+      "story": "",
+      "summary": "What you need is already within you, so there is no need to look elsewhere. When someone guides you, your worries will fade.",
+      "topics": {
+        "work": "Make full use of the ability you already have.",
+        "money": "The assets you hold are worth more than you think.",
+        "love": "The love you already have is the treasure.",
+        "health": "When the mind is clear, the body feels well.",
+        "travel": "There is no need to go far.",
+        "lost": "The lost item is near you.",
+        "dealings": "The answer lies in the existing agreement. Review it well."
+      },
+      "keywords": [
+        "Within yourself",
+        "Guide",
+        "Relief"
+      ]
+    },
+    {
+      "number": 34,
+      "poem_en": [
+        "In coming and going, hiding and acting, be courteous and righteous.",
+        "Speak with loyalty and listen with sharp understanding.",
+        "The heart knows and sees through everything.",
+        "Bright as the sun at midday in the sky."
+      ],
+      "story": "",
+      "summary": "Good conduct and attentive listening bring clear understanding of every matter. Everything is open and goes smoothly.",
+      "topics": {
+        "work": "Honesty earns you trust.",
+        "money": "Finances are transparent and stable.",
+        "love": "Sincerity makes love firm.",
+        "health": "The body feels bright and well.",
+        "travel": "Travel goes smoothly.",
+        "lost": "The lost item will be found.",
+        "dealings": "Talks succeed through honesty and listening."
+      },
+      "keywords": [
+        "Honesty",
+        "Listening",
+        "Clarity"
+      ]
+    },
+    {
+      "number": 35,
+      "poem_en": [
+        "Straighten robe and cap, and revive the old customs.",
+        "They say there is no merit, yet there is merit.",
+        "Sweep away the brambles blocking the road.",
+        "Three people discuss together and agree."
+      ],
+      "story": "",
+      "summary": "What is done quietly is worth more than others see. When obstacles are cleared and people consult together, things can move forward.",
+      "topics": {
+        "work": "Work that people overlooked will be recognized. Work as a team.",
+        "money": "Finances improve when you put things in order again.",
+        "love": "Talk openly with each other and you will understand one another.",
+        "health": "Return to the healthy routines you had before.",
+        "travel": "Travelling in a group goes well.",
+        "lost": "Someone helps look for the lost item, and it is found.",
+        "dealings": "Several parties come to agreement in talks."
+      },
+      "keywords": [
+        "Consult together",
+        "Clear obstacles",
+        "Renewal"
+      ]
+    },
+    {
+      "number": 36,
+      "poem_en": [
+        "Illness and lawsuits before you need not worry you.",
+        "Real, tangible wealth may be sought.",
+        "Like a tethered monkey slipping free of its golden chain,",
+        "It returns to the immortals' cave and roams freely."
+      ],
+      "story": "",
+      "summary": "Worries will be resolved. You will be free from what binds you, and freedom and peace of mind will return.",
+      "topics": {
+        "work": "You are freed from a binding burden and can work more smoothly.",
+        "money": "Seeking tangible wealth brings results.",
+        "love": "You break free from a stifling relationship, or gain peace of mind.",
+        "health": "Worry eases. Still keep your follow-up appointments with a doctor.",
+        "travel": "You can travel freely.",
+        "lost": "The lost item will be returned.",
+        "dealings": "A case or dispute is resolved."
+      },
+      "keywords": [
+        "Freed",
+        "Resolved",
+        "Freedom"
+      ]
+    },
+    {
+      "number": 37,
+      "poem_en": [
+        "You ask when you will be at peace and fortune will be smooth.",
+        "A candle in the wind is not suitable.",
+        "Better to gather yourself and sit in a deep room,",
+        "To avoid the flickering light and wait for stillness."
+      ],
+      "story": "",
+      "summary": "This time is like a candle in the wind. Do not put yourself forward or take risks. Keep a low profile and make what you have secure first.",
+      "topics": {
+        "work": "Do not launch a new project yet. Work quietly.",
+        "money": "Protect your savings. Do not take risks.",
+        "love": "Give each other time. Do not rush.",
+        "health": "Look after yourself, rest, and see a doctor if you have symptoms.",
+        "travel": "Postpone your travel.",
+        "lost": "Wait a while before searching for the lost item.",
+        "dealings": "Put off the talks for now."
+      },
+      "keywords": [
+        "Keep a low profile",
+        "Candle in wind",
+        "Await calm"
+      ]
+    },
+    {
+      "number": 38,
+      "poem_en": [
+        "A mirror-like moon rises in the middle of the sky.",
+        "In an instant, mist and cloud darken it.",
+        "Stay easy at heart and wait for the drifting clouds to clear.",
+        "Adjust things to suit, and then you may hope."
+      ],
+      "story": "",
+      "summary": "What looks bright may be covered for a while. Be patient, adjust your method, and the opportunity will return.",
+      "topics": {
+        "work": "An obstacle appears. Adjust your plan, then wait for the right moment.",
+        "money": "Watch for income stalling for a short time.",
+        "love": "A misunderstanding clouds the heart. Stay calm and it can be cleared up.",
+        "health": "Manage your stress, and see a doctor if you have symptoms.",
+        "travel": "Travel may be delayed.",
+        "lost": "The lost item cannot be seen yet. Wait a while.",
+        "dealings": "Talks are stuck. Rework your offer."
+      },
+      "keywords": [
+        "Clouds cover",
+        "Adjust",
+        "Patience"
+      ]
+    },
+    {
+      "number": 39,
+      "poem_en": [
+        "News from far away is hard to come by.",
+        "Do not force hopes out of your own wishes.",
+        "If you grind a stone to make a mirror,",
+        "You only waste effort for nothing."
+      ],
+      "story": "",
+      "summary": "Do not force what goes against its nature. Some things bring no result however hard you try. Change your goal to suit reality.",
+      "topics": {
+        "work": "Do not pour effort into work that cannot succeed. Find a new goal.",
+        "money": "Do not force an investment in something you do not understand.",
+        "love": "Do not force the other person's feelings.",
+        "health": "Do not overdo it. Rest enough, and see a doctor if you have symptoms.",
+        "travel": "The trip will not bring results yet.",
+        "lost": "The lost item is hard to find.",
+        "dealings": "Do not force an agreement to happen."
+      },
+      "keywords": [
+        "Do not force",
+        "Change goal",
+        "Wasted effort"
+      ]
+    },
+    {
+      "number": 40,
+      "poem_en": [
+        "The red wheel sinks in the west and the hare rises in the east.",
+        "Yin grows and yang fades; these are two states.",
+        "If a woman draws this stick,",
+        "Her fortune and standing will increase to her satisfaction."
+      ],
+      "story": "",
+      "summary": "A time when gentleness and listening have the advantage over harshness. Matters that need delicacy will go well.",
+      "topics": {
+        "work": "Work that needs care and coordination goes well.",
+        "money": "Finances do well through steady, gradual saving.",
+        "love": "Gentleness keeps love smooth.",
+        "health": "Get enough rest at night.",
+        "travel": "Travelling in the evening or at night goes well.",
+        "lost": "The lost item will be found in a quiet place.",
+        "dealings": "Talking gently will work."
+      },
+      "keywords": [
+        "Gentle",
+        "Yin and yang",
+        "Delicate"
+      ]
+    },
+    {
+      "number": 41,
+      "poem_en": [
+        "Endless good things lie before you, and you must remember this.",
+        "But it is like taking a thief in as your child.",
+        "Do not crave the sweetness right in front of you.",
+        "I fear you will suffer for it another day."
+      ],
+      "story": "",
+      "summary": "Beware of what looks good now but hides harm. Do not trust the wrong person, and do not choose short-term comfort that costs you long-term trouble.",
+      "topics": {
+        "work": "Watch for someone who comes close but has a hidden motive.",
+        "money": "Do not be drawn in by quick returns.",
+        "love": "Look closely at their true character before committing.",
+        "health": "Beware of what feels comfortable now but harms your health later.",
+        "travel": "Check your travel companions carefully.",
+        "lost": "The lost item may involve someone close to you.",
+        "dealings": "Read the long-term conditions closely."
+      },
+      "keywords": [
+        "Beware those close",
+        "Do not be greedy",
+        "Look ahead"
+      ]
+    },
+    {
+      "number": 42,
+      "poem_en": [
+        "The ruler's kindness spreads and soaks without limit.",
+        "Protection and blessing are given without favoritism.",
+        "All living beings receive and enjoy it.",
+        "Each shares in joy and benefit, and all are provided for."
+      ],
+      "story": "",
+      "summary": "A stick of kindness spreading to all. Everyone benefits, and doing good for others will return to you as happiness.",
+      "topics": {
+        "work": "Work done for the common good goes well and is recognized.",
+        "money": "Finances are good, with a gain from the kindness of an elder.",
+        "love": "Love is warm, with generosity toward each other.",
+        "health": "The body is well and the spirit cheerful.",
+        "travel": "You will be welcomed well on your travels.",
+        "lost": "The lost item will be returned.",
+        "dealings": "Talks turn out well for all sides."
+      },
+      "keywords": [
+        "Kindness",
+        "Reaches all",
+        "Common good"
+      ]
+    },
+    {
+      "number": 43,
+      "poem_en": [
+        "Heaven and earth meet in harmony, and all things are new.",
+        "Each has its own form and color, and rejoices in itself.",
+        "All the myriad things are splendid.",
+        "Every matter is in harmony and as people wish."
+      ],
+      "story": "",
+      "summary": "A time of harmony and new beginnings. Everything goes naturally and falls into place.",
+      "topics": {
+        "work": "The team is in harmony and work moves forward well.",
+        "money": "Finances grow.",
+        "love": "Love is harmonious and you understand each other.",
+        "health": "The body feels refreshed and the spirit cheerful.",
+        "travel": "The trip is enjoyable.",
+        "lost": "The lost item will be returned.",
+        "dealings": "Talks settle well for all sides."
+      },
+      "keywords": [
+        "Harmony",
+        "Fresh",
+        "Fits well"
+      ]
+    },
+    {
+      "number": 44,
+      "poem_en": [
+        "In chess, meeting an equal opponent means hiding your tactics.",
+        "On the board of black and white, the result is not yet decided.",
+        "If you want to know who will win or lose,",
+        "You must make the first move with a sense of timing."
+      ],
+      "story": "",
+      "summary": "The situation is evenly matched. Think carefully and choose your moves well. Planning ahead is the key.",
+      "topics": {
+        "work": "Competitors are evenly matched. Plan, and open your game at the right moment.",
+        "money": "Any investment needs careful thought.",
+        "love": "Do not show all your cards in love. Get to know each other slowly.",
+        "health": "Take care of yourself with a plan.",
+        "travel": "Plan your trip ahead.",
+        "lost": "Search for the lost item in an orderly way.",
+        "dealings": "Prepare your information well before the talks."
+      },
+      "keywords": [
+        "Plan",
+        "Timing",
+        "Evenly matched"
+      ]
+    },
+    {
+      "number": 45,
+      "poem_en": [
+        "Gentleness naturally overcomes hard strength.",
+        "Storing up goodness in the household brings great fortune.",
+        "If anyone draws this stick,",
+        "It is like finding fine nectar when you thirst."
+      ],
+      "story": "",
+      "summary": "Gentleness and storing up goodness bring prosperity. What you need will arrive at the right time.",
+      "topics": {
+        "work": "Humility helps your work succeed.",
+        "money": "Finances are good, and you receive what you lacked.",
+        "love": "Gentleness lets love flourish.",
+        "health": "You receive good care and the body recovers.",
+        "travel": "The trip goes well.",
+        "lost": "The lost item will be returned.",
+        "dealings": "A gentle manner in talks leads to success."
+      },
+      "keywords": [
+        "Gentle",
+        "Store up goodness",
+        "Fulfilled"
+      ]
+    },
+    {
+      "number": 46,
+      "poem_en": [
+        "I urge you to endure and keep to your old way of living.",
+        "Hold body and mind firm, and do not listen to what is wrong.",
+        "Wait until someone lends a light touch of effort,",
+        "And a whole garden of withered trees will bloom again."
+      ],
+      "story": "",
+      "summary": "Be patient, keep to your usual path, and do not stray down a wrong one. When the time comes, someone will help, and what was dormant will come back to life.",
+      "topics": {
+        "work": "Do your current work well, and someone will help revive the situation.",
+        "money": "Be patient and keep your savings. Do not be drawn in by offers.",
+        "love": "Love that has faded will become fresh again.",
+        "health": "Keep looking after yourself, and the body will slowly recover.",
+        "travel": "There is no need to travel yet.",
+        "lost": "The lost item will be returned when someone helps.",
+        "dealings": "Do not listen to those stirring things up. Wait for a new chance to talk."
+      },
+      "keywords": [
+        "Endure",
+        "Withered trees bloom",
+        "Old path"
+      ]
+    },
+    {
+      "number": 47,
+      "poem_en": [
+        "Flowers added to brocade make the colors brighter still.",
+        "Luck arrives, bringing wealth and rank together.",
+        "Let no one marvel that success and fame come late,",
+        "Pass the exam at a single try, and your name spreads across the four seas."
+      ],
+      "story": "",
+      "summary": "Good fortune upon good fortune. Success may come late, but when it arrives it will stand out.",
+      "topics": {
+        "work": "Work goes beyond expectations, and a promotion is possible.",
+        "money": "Finances are good, with gains piling up.",
+        "love": "There is happy news in love.",
+        "health": "Health is good.",
+        "travel": "You receive good news while travelling.",
+        "lost": "The lost item will be returned.",
+        "dealings": "Talks succeed beyond expectations."
+      },
+      "keywords": [
+        "Good upon good",
+        "Reputation",
+        "Success"
+      ]
+    },
+    {
+      "number": 48,
+      "poem_en": [
+        "In the autumn light, the kun bird turns into the great peng.",
+        "It soars as it wishes, rising ever higher.",
+        "It shoots straight past the clouds, ten thousand miles up.",
+        "No other bird can follow."
+      ],
+      "story": "",
+      "summary": "A time of leaping growth. Your ability will shine above others.",
+      "topics": {
+        "work": "Growth takes a leap. A good time to take on a new role.",
+        "money": "Finances expand.",
+        "love": "Your charm stands out.",
+        "health": "The body is strong.",
+        "travel": "Long journeys go well.",
+        "lost": "The lost item may be returned from far away.",
+        "dealings": "You clearly hold the advantage in talks."
+      },
+      "keywords": [
+        "Leap forward",
+        "Soar",
+        "Stand out"
+      ]
+    },
+    {
+      "number": 49,
+      "poem_en": [
+        "Every plan you make is like melting ice.",
+        "Why be stingy and greedy and make trouble for yourself?",
+        "It is better to sit calmly in a quiet place,",
+        "And wait for things to change. Then why doubt?"
+      ],
+      "story": "",
+      "summary": "Your plans are not yet firm. Do not cling or hold on so tightly that it causes hardship. Stay calm and wait for the situation to change.",
+      "topics": {
+        "work": "The plan is not yet clear. Do not rush. Wait for the situation to change.",
+        "money": "Do not be so stingy that you lose chances, but do not take risks either.",
+        "love": "Do not cling. Give each other some freedom.",
+        "health": "Reduce stress and get enough rest.",
+        "travel": "There is no need to travel yet.",
+        "lost": "The lost item needs time.",
+        "dealings": "Wait for the situation to change, then hold talks."
+      },
+      "keywords": [
+        "Wait calmly",
+        "Do not cling",
+        "Change"
+      ]
+    },
+    {
+      "number": 50,
+      "poem_en": [
+        "Boats travel across the five lakes and four seas.",
+        "Raise the sail high and hold the rudder firm.",
+        "Fortunately a fair wind carries you wherever you go.",
+        "The whole boat is full of treasure, to your heart's content."
+      ],
+      "story": "",
+      "summary": "You have a clear goal, steadiness, and good timing. Moving forward will bring full results.",
+      "topics": {
+        "work": "Work can expand widely. Hold the rudder firm.",
+        "money": "Trade and income are very good.",
+        "love": "Love goes smoothly.",
+        "health": "The body is well.",
+        "travel": "A good time to travel, especially by water or over long distances.",
+        "lost": "The lost item will be returned.",
+        "dealings": "Business talks turn out well."
+      },
+      "keywords": [
+        "Fair wind",
+        "Clear goal",
+        "Trade"
+      ]
+    },
+    {
+      "number": 51,
+      "poem_en": [
+        "Early summer arrives, and the sun burns as usual.",
+        "Everyone grows weary and troubled by the heat.",
+        "Heaven understands what people feel,",
+        "So it sends a fragrant, cooling breeze."
+      ],
+      "story": "",
+      "summary": "When everyone is struggling, something good comes to ease the load. This stick brings relief.",
+      "topics": {
+        "work": "A heavy problem will find a way out.",
+        "money": "Money comes to help in a time of need.",
+        "love": "You receive encouragement from your partner.",
+        "health": "Discomfort will ease. Keep taking care of yourself.",
+        "travel": "The journey goes comfortably.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "Heated talks will cool down."
+      },
+      "keywords": [
+        "Relief",
+        "Ease",
+        "Cool breeze"
+      ]
+    },
+    {
+      "number": 52,
+      "poem_en": [
+        "Scooping the moon from the water wastes effort.",
+        "You tire yourself out and still get nothing.",
+        "Do not trust idle talk and wild rumors.",
+        "You spend your heart in vain and still cannot gain it."
+      ],
+      "story": "",
+      "summary": "Do not chase an illusion, and do not believe rumors. Put your effort into what you can actually hold.",
+      "topics": {
+        "work": "Do not pour yourself into a project that is only a daydream.",
+        "money": "Be careful of investments with nothing real behind them.",
+        "love": "Do not fall in love with a picture you made yourself.",
+        "health": "Look after your health with methods that have proof. Consult a doctor.",
+        "travel": "Check your travel information to be sure it is real.",
+        "lost": "For lost items, do not trust vague clues.",
+        "dealings": "Go into talks only with something real to back it up."
+      },
+      "keywords": [
+        "Illusion",
+        "Do not trust rumors",
+        "What is real"
+      ]
+    },
+    {
+      "number": 53,
+      "poem_en": [
+        "Disappointment turns into fulfillment.",
+        "The dragon's call and the tiger's roar blend together.",
+        "There is a road to the blue clouds, and you will reach it in the end.",
+        "Fame and rank await you without fail."
+      ],
+      "story": "",
+      "summary": "Disappointment will turn into success. The way is still open, so keep walking.",
+      "topics": {
+        "work": "Work that once disappointed you will turn around.",
+        "money": "Your finances recover clearly.",
+        "love": "A love that once disappointed you will improve.",
+        "health": "Body and mind recover.",
+        "travel": "The journey brings results.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "The talks turn around in your favor."
+      },
+      "keywords": [
+        "Turnaround",
+        "Fulfillment",
+        "Open road"
+      ]
+    },
+    {
+      "number": 54,
+      "poem_en": [
+        "You dream of finding treasure, but wake with nothing.",
+        "Wu Mountain was only a dream.",
+        "If you ask about marriage, illness or lawsuits,",
+        "Seeking another way will suit you better."
+      ],
+      "story": "",
+      "summary": "What you hope for may be only a dream. Return to reality and look for a new, workable choice.",
+      "topics": {
+        "work": "Do not rely on empty hopes. Find another way that is real.",
+        "money": "Be careful of false hopes about money.",
+        "love": "This love may not turn out as you dreamed. Look in another direction.",
+        "health": "Care for your health as it really is. See a doctor when you have symptoms.",
+        "travel": "Change your travel plans.",
+        "lost": "Lost items may not be recovered.",
+        "dealings": "Look for another option in place of this agreement."
+      },
+      "keywords": [
+        "False dream",
+        "New path",
+        "Back to reality"
+      ]
+    },
+    {
+      "number": 55,
+      "poem_en": [
+        "It passes down unbroken, and children and grandchildren praise it.",
+        "Food and clothing are plentiful, and wealth follows heaven's will.",
+        "With golden horses and a jade hall, people are happy.",
+        "Eat when hungry, sleep when tired."
+      ],
+      "story": "",
+      "summary": "Life is steady and continuous, with no shortage and simple happiness. This stick stands for a family's stability.",
+      "topics": {
+        "work": "Work is steady, and you inherit good things from those before you.",
+        "money": "Money is enough to live on and steady.",
+        "love": "The family is warm.",
+        "health": "You eat well and sleep well, and your health is good.",
+        "travel": "The journey goes comfortably.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "The talks go smoothly."
+      },
+      "keywords": [
+        "Stability",
+        "Family",
+        "Simplicity"
+      ]
+    },
+    {
+      "number": 56,
+      "poem_en": [
+        "The stream is small, the rocks rough, and the water loud.",
+        "Straining to pole the boat, you fear damage.",
+        "The way must lead on to the river ahead.",
+        "Once the wind is calm and the tide level, all is well."
+      ],
+      "story": "",
+      "summary": "The path is narrow and rough for now. Do not force it. Find a wider way and wait for things to calm.",
+      "topics": {
+        "work": "Do not push work forward when you are not ready.",
+        "money": "Be careful with money. Wait for a better moment.",
+        "love": "Do not force a relationship in a tense period.",
+        "health": "Do not overdo it. Rest enough.",
+        "travel": "Wait until the way is easy before you travel.",
+        "lost": "For lost items, wait for time to pass.",
+        "dealings": "Wait for a better atmosphere before the talks."
+      },
+      "keywords": [
+        "Do not force it",
+        "Find a wider way",
+        "Wait for calm"
+      ]
+    },
+    {
+      "number": 57,
+      "poem_en": [
+        "Hearing right and wrong is like wind passing the ear.",
+        "Good clothes and good fortune, like the sun in mid-sky.",
+        "Keep in mind what the coming years will bring.",
+        "Your heart is surely the same as mine."
+      ],
+      "story": "",
+      "summary": "Pay no attention to gossip. Keep your own goodness, and good results will follow later.",
+      "topics": {
+        "work": "Ignore criticism and do your work well.",
+        "money": "Your finances are good.",
+        "love": "Do not listen to outsiders. Trust each other.",
+        "health": "Your mind is at ease and your health is good.",
+        "travel": "You can travel.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "The talks settle when both sides understand each other."
+      },
+      "keywords": [
+        "Ignore gossip",
+        "Keep your goodness",
+        "Hearts aligned"
+      ]
+    },
+    {
+      "number": 58,
+      "poem_en": [
+        "Remember the honest words and good advice.",
+        "Do not go to other lands to seek a different trade.",
+        "I urge you to stay content with your old way of life.",
+        "Any other way is not the right one."
+      ],
+      "story": "",
+      "summary": "The best path now is the one you are already on. Do not change fields or look for something new and far away.",
+      "topics": {
+        "work": "Stay in your current work. It is not yet time to change fields.",
+        "money": "Protect your main income. Do not risk new channels.",
+        "love": "Look after the relationship you already have.",
+        "health": "Keep your good routines.",
+        "travel": "Staying where you are is better.",
+        "lost": "Lost items are in their usual place.",
+        "dealings": "Hold to the existing agreement."
+      },
+      "keywords": [
+        "Old path",
+        "No change of field",
+        "Keep what you have"
+      ]
+    },
+    {
+      "number": 59,
+      "poem_en": [
+        "You climb a tall tower to hide from danger.",
+        "Yet thorns and brambles surround you on every side.",
+        "Who knew that heaven had already set the plan,",
+        "And the one who was doing well becomes disappointed."
+      ],
+      "story": "",
+      "summary": "Running from a problem may not help, and a success you already have may change. Do not be careless, and face things directly.",
+      "topics": {
+        "work": "Do not run from problems, and do not be careless about your success.",
+        "money": "Be careful: finances that look steady can change.",
+        "love": "Do not avoid talking about the problem.",
+        "health": "Look after your stress. Consult a doctor when you have symptoms.",
+        "travel": "Escaping to somewhere else will not help.",
+        "lost": "Lost items are hard to find.",
+        "dealings": "Do not assume you have the upper hand and grow careless."
+      },
+      "keywords": [
+        "Do not be careless",
+        "Face the problem",
+        "Change"
+      ]
+    },
+    {
+      "number": 60,
+      "poem_en": [
+        "Carrying firewood to put out a fire makes more smoke.",
+        "It spreads until it burns through countless worlds.",
+        "If you ask about schemes or journeys,",
+        "It is better to put things away and not worry about it spreading."
+      ],
+      "story": "",
+      "summary": "A wrong way of fixing a problem makes it spread. Stop first, review your method, then fix it the right way.",
+      "topics": {
+        "work": "Stop doing what makes the problem worse. Review a new method.",
+        "money": "Do not try to solve a problem by adding more money.",
+        "love": "Do not settle a conflict with emotion.",
+        "health": "Do not try to treat symptoms yourself in the wrong way. Consult a doctor.",
+        "travel": "Hold off on travel for now.",
+        "lost": "For lost items, do not search in a frantic way.",
+        "dealings": "Stop talks that get worse the more you talk."
+      },
+      "keywords": [
+        "Stop first",
+        "Fix it rightly",
+        "Do not let it spread"
+      ]
+    },
+    {
+      "number": 61,
+      "poem_en": [
+        "By day you recite poems; under the moon you sing.",
+        "Wherever you join in, you play and laugh heartily.",
+        "Meeting at a gathering, it is hard to hide.",
+        "Voices cheer together, loud and lively."
+      ],
+      "story": "",
+      "summary": "This is a time of fun and company. Do not get lost in entertainment and forget what matters.",
+      "topics": {
+        "work": "Work with people and communication goes well, but do not neglect the details.",
+        "money": "Be careful with spending on entertainment.",
+        "love": "You may meet someone at a social event, but look carefully at their heart.",
+        "health": "Enjoy yourself, but get enough rest.",
+        "travel": "A fun trip for pleasure.",
+        "lost": "Lost items may have been left at a gathering.",
+        "dealings": "Talking in a friendly atmosphere works."
+      },
+      "keywords": [
+        "Fun",
+        "Social life",
+        "Moderation"
+      ]
+    },
+    {
+      "number": 62,
+      "poem_en": [
+        "Morning and evening, you rely wholly on the Buddha's protection.",
+        "Even when you meet danger, no harm comes of it.",
+        "If a noble person comes to guide you,",
+        "At that time blessings and good fortune follow on their own."
+      ],
+      "story": "",
+      "summary": "Though there are worries, you will pass through safely. When an elder helps, good things follow.",
+      "topics": {
+        "work": "There are problems, but you will get through, and someone senior helps.",
+        "money": "Your finances are safe.",
+        "love": "Your love is steady.",
+        "health": "Even with symptoms, things will pass well. Consult a doctor as appropriate.",
+        "travel": "The journey is safe.",
+        "lost": "Lost items are recovered with help.",
+        "dealings": "An elder helps with the talks."
+      },
+      "keywords": [
+        "Protection",
+        "Safe passage",
+        "Patron"
+      ]
+    },
+    {
+      "number": 63,
+      "poem_en": [
+        "Once, sailing a boat, I lost a needle.",
+        "Today I am still searching for it in the sea.",
+        "Even if I find the very same needle,",
+        "It costs great effort and great heart."
+      ],
+      "story": "",
+      "summary": "Trying to get back what is already lost is very tiring. Consider whether it is worth it or whether to start anew.",
+      "topics": {
+        "work": "Do not waste time on old work that went wrong.",
+        "money": "Money already lost may be hard to get back.",
+        "love": "Do not try too hard to go back to the past.",
+        "health": "Take care of yourself steadily.",
+        "travel": "Reconsider whether the trip is necessary before you go.",
+        "lost": "Lost items are very hard to find.",
+        "dealings": "Do not reopen an old matter that has ended."
+      },
+      "keywords": [
+        "Needle in the sea",
+        "Start anew",
+        "Let go"
+      ]
+    },
+    {
+      "number": 64,
+      "poem_en": [
+        "Like a golden-scaled fish released into clear water,",
+        "Yet unseen nets close in on every side.",
+        "You think and find no way to turn and get out.",
+        "Fate leaves you in hardship, sorrowful and alone."
+      ],
+      "story": "",
+      "summary": "You may feel surrounded. Do not face it alone. Ask for help from someone you trust and watch out for traps.",
+      "topics": {
+        "work": "Beware of situations where you are pressured. Ask advice from someone you trust.",
+        "money": "Beware of financial traps and debt.",
+        "love": "Do not keep your sorrow to yourself.",
+        "health": "Look after your mind and rest. Consult a doctor or specialist when you feel overwhelmed.",
+        "travel": "Be careful when traveling into unfamiliar places.",
+        "lost": "Lost items are hard to find.",
+        "dealings": "Beware of a contract that binds you so you cannot get free."
+      },
+      "keywords": [
+        "Beware of traps",
+        "Ask for help",
+        "Not alone"
+      ]
+    },
+    {
+      "number": 65,
+      "poem_en": [
+        "The joy before your eyes is not yet true joy.",
+        "Whether it is dangerous or safe is not certain.",
+        "Why cut your own flesh and make a wound?",
+        "It is better to keep what you have and stay safe."
+      ],
+      "story": "",
+      "summary": "Do not rejoice yet over what is uncertain, and do not hurt yourself without need. Keeping what you have is safer.",
+      "topics": {
+        "work": "Do not leave your current work for something uncertain.",
+        "money": "Do not risk money for an uncertain result.",
+        "love": "Do not harm a good relationship for something new.",
+        "health": "Beware of actions that put your body at risk. Consult a doctor when you have symptoms.",
+        "travel": "Staying where you are is safer.",
+        "lost": "Lost items may not be recovered.",
+        "dealings": "Hold to the existing agreement."
+      },
+      "keywords": [
+        "Do not rejoice yet",
+        "Keep what you have",
+        "Safe"
+      ]
+    },
+    {
+      "number": 66,
+      "poem_en": [
+        "The road is steep, the horse walks on, and the traveler goes far.",
+        "A lost sheep faces a tiger.",
+        "As the boat passes dangerous rapids, the wind whips up the waves.",
+        "At the end of spring the flowers fall, and heaven sends frost."
+      ],
+      "story": "",
+      "summary": "There are obstacles on many sides. Stay close to people you trust, do not stray off the path, and wait for the hard stretch to pass.",
+      "topics": {
+        "work": "Do not separate yourself from the team. Work carefully.",
+        "money": "Be careful of expenses and damage.",
+        "love": "The relationship may grow distant. Pay more attention to each other.",
+        "health": "Take extra care of yourself. Consult a doctor when you have symptoms.",
+        "travel": "Avoid long or risky trips.",
+        "lost": "Lost items are hard to find.",
+        "dealings": "Talks are difficult. Wait for a better time."
+      },
+      "keywords": [
+        "Obstacles",
+        "Stay close to trusted people",
+        "Caution"
+      ]
+    },
+    {
+      "number": 67,
+      "poem_en": [
+        "One golden scale weighs your heart.",
+        "Nothing taken away, nothing added, neither heavy nor light.",
+        "Because your heart has been upright all your life,",
+        "Even without reading, you understand what is right."
+      ],
+      "story": "",
+      "summary": "Your honesty and fairness are plain to see. What you receive will be fitting and just.",
+      "topics": {
+        "work": "You are assessed fairly.",
+        "money": "Your finances are fitting and fair.",
+        "love": "Love is sincere and equal.",
+        "health": "Your health is in balance.",
+        "travel": "The journey goes smoothly.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "The talks are fair to both sides."
+      },
+      "keywords": [
+        "Honest",
+        "Fair",
+        "Fitting"
+      ]
+    },
+    {
+      "number": 68,
+      "poem_en": [
+        "The home is quiet and peaceful, and dreams are auspicious.",
+        "Goodness stored up in the household brings great prosperity.",
+        "Lawsuits are settled, a wedding is made, and the silkworms thrive.",
+        "If you fall ill, you meet good medicine and recover well."
+      ],
+      "story": "",
+      "summary": "A home that stores up goodness sees only good fortune. Pending matters will be settled one by one.",
+      "topics": {
+        "work": "Work goes well, and disputes are resolved.",
+        "money": "Income grows with your diligence.",
+        "love": "A good time to make a decision about a partner.",
+        "health": "You will find a suitable doctor and care. Follow the doctor's advice.",
+        "travel": "The journey goes smoothly.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "Legal matters or disputes are resolved."
+      },
+      "keywords": [
+        "Blessed home",
+        "Storing goodness",
+        "Resolution"
+      ]
+    },
+    {
+      "number": 69,
+      "poem_en": [
+        "Winter comes, and on the ridge stands one branch of plum blossom.",
+        "Leaves fall and branches dry, yet it is never broken.",
+        "Word comes that spring is near,",
+        "And will again be the finest of the blossoms."
+      ],
+      "story": "",
+      "summary": "Even in a bitterly cold time, be patient and stand firm. When the season turns, you will stand out again.",
+      "topics": {
+        "work": "Be patient in a slow period, and you will stand out again.",
+        "money": "Your finances will recover when the time comes.",
+        "love": "A love that waits patiently will bloom.",
+        "health": "Your body will recover. Keep up your care.",
+        "travel": "Wait for the right season to travel.",
+        "lost": "Lost items will be recovered later.",
+        "dealings": "The talks will succeed when the time comes."
+      },
+      "keywords": [
+        "Winter plum",
+        "Patience",
+        "Return to prominence"
+      ]
+    },
+    {
+      "number": 70,
+      "poem_en": [
+        "Every morning I toil like a bee,",
+        "Flying back and forth, west and then east.",
+        "At the end of spring the flowers have fallen and none can be found.",
+        "This self no longer clings to the old thicket."
+      ],
+      "story": "",
+      "summary": "Aimless busyness only wears you out. Stop and ask what you are chasing, then find a new footing that suits you.",
+      "topics": {
+        "work": "Beware of being busy without results. Reorder your priorities.",
+        "money": "Beware of uneven income. Plan your finances.",
+        "love": "The relationship may grow distant because of busyness.",
+        "health": "Beware of exhaustion. Rest, and consult a doctor when you have symptoms.",
+        "travel": "Too much travel is tiring.",
+        "lost": "Lost items are hard to find.",
+        "dealings": "Talking in many directions at once may get you nowhere."
+      },
+      "keywords": [
+        "Empty busyness",
+        "Set priorities",
+        "Find a footing"
+      ]
+    },
+    {
+      "number": 71,
+      "poem_en": [
+        "Who knew a beloved one would meet a ruffian?",
+        "The woman of that day had to marry twice.",
+        "It is like one bow shooting two arrows,",
+        "In the end riding dragon and horse, living in peace."
+      ],
+      "story": "",
+      "summary": "There may be trouble at first, or a choice between two paths, but in the end things settle and you gain a steady place.",
+      "topics": {
+        "work": "You may have to do two jobs at once, and in the end it settles.",
+        "money": "Income comes from two sources. Manage it well.",
+        "love": "Matters of the heart may be complicated. Be true to your feelings.",
+        "health": "Beware of stress from many things. Rest enough.",
+        "travel": "Travel plans change, but you arrive.",
+        "lost": "Lost items are recovered, though late.",
+        "dealings": "The talks may have two options, and in the end they settle."
+      },
+      "keywords": [
+        "Two paths",
+        "Settling",
+        "Steady in the end"
+      ]
+    },
+    {
+      "number": 72,
+      "poem_en": [
+        "You tease the bees because you want their honey,",
+        "But fear the stinger at the tail.",
+        "Though a strange new path lies before you,",
+        "In the shadows a thorn forest hides."
+      ],
+      "story": "",
+      "summary": "A tempting gain often hides a risk. Weigh it well before stepping onto a new path.",
+      "topics": {
+        "work": "Consider the risks of a new offer carefully.",
+        "money": "High returns often come with high risk.",
+        "love": "Beware of a relationship that is sweet but hides trouble.",
+        "health": "Beware of what pleases the heart but does not help the body.",
+        "travel": "Check a new route carefully.",
+        "lost": "Lost items may be somewhere you must search with care.",
+        "dealings": "Read the hidden conditions carefully."
+      },
+      "keywords": [
+        "Honey and stinger",
+        "Weigh it up",
+        "Careful with new paths"
+      ]
+    },
+    {
+      "number": 73,
+      "poem_en": [
+        "Spring thunder rouses the insects in hibernation.",
+        "They shed the dust of the world and leave the old wall.",
+        "When suddenly they meet where wind and cloud join,",
+        "They will naturally change and become dragons."
+      ],
+      "story": "",
+      "summary": "A time of awakening and great change. What has long been hidden will come out and grow fully.",
+      "topics": {
+        "work": "A big opportunity arrives, and you are ready for a new role.",
+        "money": "Your finances grow by leaps.",
+        "love": "Love begins anew and brightly.",
+        "health": "Your body feels lively.",
+        "travel": "The trip brings a new opportunity.",
+        "lost": "Lost items will be recovered.",
+        "dealings": "The talks open a new way."
+      },
+      "keywords": [
+        "Awakening",
+        "Change",
+        "Becoming a dragon"
+      ]
+    },
+    {
+      "number": 74,
+      "poem_en": [
+        "The wild crane, too lazy to fly, enters the cage itself.",
+        "Wanting to soar into the sky, it falls into a pit.",
+        "North, south, east, west, all is blocked.",
+        "This self is worn and pale, with endless regret."
+      ],
+      "story": "",
+      "summary": "Beware of a decision that looks easy but leads into limits. Do not choose the comfortable path and lose your freedom. Think again before binding yourself.",
+      "topics": {
+        "work": "Beware of an offer that binds you so you cannot move.",
+        "money": "Beware of debt or financial commitments.",
+        "love": "Do not rush into commitment in a relationship.",
+        "health": "Look after your mind and rest. Consult a doctor when you feel unwell.",
+        "travel": "The journey meets delays.",
+        "lost": "Lost items are hard to find.",
+        "dealings": "Do not sign a contract that binds too tightly."
+      },
+      "keywords": [
+        "Beware of commitments",
+        "Rethink",
+        "Keep your freedom"
+      ]
+    },
+    {
+      "number": 75,
+      "poem_en": [
+        "It is as if you carried a tiger past the mountain.",
+        "Trembling with fear, your heart nearly breaks.",
+        "Luckily at the foot of the mountain you meet a skilled person,",
+        "And so you keep yourself safe."
+      ],
+      "story": "",
+      "summary": "You are in a frightening situation, but a capable person will come to help. Ask for help from someone who knows.",
+      "topics": {
+        "work": "The problem is heavy. Ask advice from an expert.",
+        "money": "Consult someone knowledgeable about money before deciding.",
+        "love": "Ask advice from someone you trust.",
+        "health": "Consult a specialist doctor, and you will be well cared for.",
+        "travel": "Travel with someone who knows the way.",
+        "lost": "Lost items need someone to help look.",
+        "dealings": "Hold talks with a skilled adviser."
+      },
+      "keywords": [
+        "Getting through danger",
+        "Expert",
+        "Ask for help"
+      ]
+    },
+    {
+      "number": 76,
+      "poem_en": [
+        "Fish and dragons mingle, with one shared heart.",
+        "Patiently it waits in the cold pool, not yet across.",
+        "Before it knows, one day its horns rise above the water.",
+        "One leap over the Yu Gate, and it reaches the heavenly palace."
+      ],
+      "story": "",
+      "summary": "For now you are still mixed in with everyone else. Be patient and keep building. Before long your ability will stand out, and you can make a great leap.",
+      "topics": {
+        "work": "Stay patient in your present post, and a promotion will come.",
+        "money": "Finances will improve in a big leap.",
+        "love": "Love needs the right moment, and then it will turn out as hoped.",
+        "health": "Keep looking after yourself steadily.",
+        "travel": "Wait for the right moment before you travel.",
+        "lost": "A lost item will be found later.",
+        "dealings": "When the time comes, you will have the advantage in talks."
+      },
+      "keywords": [
+        "Patient building",
+        "Great leap",
+        "Dragon gate"
+      ]
+    },
+    {
+      "number": 77,
+      "poem_en": [
+        "In a dream within a dream, you win great wealth.",
+        "Do not guess at fame that lies outside yourself.",
+        "Waters are far and mountains distant, so news is hard to trust.",
+        "When a noble person points the way, you will smile."
+      ],
+      "story": "",
+      "summary": "What you hope for is still unclear. Do not picture it bigger than it is. Once someone wise points the way, matters will resolve well.",
+      "topics": {
+        "work": "Do not build on empty hopes. Ask for advice from someone knowledgeable.",
+        "money": "Be careful with financial hopes that are not yet certain.",
+        "love": "Love is not yet clear. Ask and make sure first.",
+        "health": "Consult a doctor to get clarity.",
+        "travel": "Travel news is not certain. Check first.",
+        "lost": "A lost item needs someone to point the way.",
+        "dealings": "In talks, wait until the information is clear."
+      },
+      "keywords": [
+        "No daydreams",
+        "A guide",
+        "Wait for clarity"
+      ]
+    },
+    {
+      "number": 78,
+      "poem_en": [
+        "Cold water is poured over white snow.",
+        "Neither cold nor hot, it is naturally just right.",
+        "If you wish to travel the whole world, nothing stands in your way.",
+        "You need only one skill kept strong within."
+      ],
+      "story": "",
+      "summary": "Balance and a skill of your own are your best security. You can get by wherever you go.",
+      "topics": {
+        "work": "Your skill can take you anywhere. Keep developing it.",
+        "money": "Finances are steady thanks to your ability.",
+        "love": "Love is balanced, neither too hot nor too cold.",
+        "health": "Health is in balance.",
+        "travel": "You can travel anywhere.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks succeed because of your expertise."
+      },
+      "keywords": [
+        "Balance",
+        "A skill of your own",
+        "Steady"
+      ]
+    },
+    {
+      "number": 79,
+      "poem_en": [
+        "A vow made into the void, a bond made with people.",
+        "You were kept safe, but the vow is not yet repaid.",
+        "Having caught the rabbit, you forget the snare, leaving no trace.",
+        "Do not dare to treat your first promise lightly."
+      ],
+      "story": "",
+      "summary": "Once you have received what you asked for, do not forget your promise or the kindness shown to you. Keeping your word is the foundation of later fortune.",
+      "topics": {
+        "work": "Keep the promises you made to others.",
+        "money": "Pay back debts or return what you borrowed.",
+        "love": "Do not forget the promises you made to your partner.",
+        "health": "Look after your health as you intended.",
+        "travel": "Finish what you set out to do before you travel.",
+        "lost": "A lost item comes back if you keep your word.",
+        "dealings": "Follow through on the agreements you gave before."
+      },
+      "keywords": [
+        "Keep your word",
+        "Remember kindness",
+        "Promise"
+      ]
+    },
+    {
+      "number": 80,
+      "poem_en": [
+        "You climb straight up the high mountain to study the immortal arts.",
+        "Who would know that one day the emperor would send for you?",
+        "The sky is clear and the sun always shines bright.",
+        "Your wish is for your name to be spread across the four seas."
+      ],
+      "story": "",
+      "summary": "Your dedicated practice will be recognized, and an important opportunity will come when you do not expect it.",
+      "topics": {
+        "work": "Those above will see your ability and give you an important chance.",
+        "money": "Finances do well through reputation.",
+        "love": "Love is bright.",
+        "health": "Health is good.",
+        "travel": "Travel brings a good opportunity.",
+        "lost": "A lost item will be found.",
+        "dealings": "In talks, you win acceptance."
+      },
+      "keywords": [
+        "Practice",
+        "Being chosen",
+        "Reputation"
+      ]
+    },
+    {
+      "number": 81,
+      "poem_en": [
+        "Leaves fall in the courtyard in late autumn.",
+        "The traveler hurries on, swift as flying.",
+        "Thanks to Heaven for lending a light hand.",
+        "A fair wind sends the treasure ship home."
+      ],
+      "story": "",
+      "summary": "Your journey or effort will bear fruit, and you will return with something in hand. This is a time when Heaven helps send you along.",
+      "topics": {
+        "work": "The work you have done will bring its reward.",
+        "money": "Income or good fortune comes back to you.",
+        "love": "Someone far away will return.",
+        "health": "The body is well.",
+        "travel": "The journey home goes smoothly.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks turn out as hoped."
+      },
+      "keywords": [
+        "Fair wind",
+        "Homecoming",
+        "Fruitful"
+      ]
+    },
+    {
+      "number": 82,
+      "poem_en": [
+        "Blazing flames burn up to the sky.",
+        "Yet within the fire, a lotus still grows.",
+        "In the end its roots last and are not harmed.",
+        "Its branches and leaves are still fresh in color."
+      ],
+      "story": "",
+      "summary": "Even in a hot and pressured situation, good things can still grow, as long as you protect your roots.",
+      "topics": {
+        "work": "Even under pressure, you can still do good work.",
+        "money": "Finances may fluctuate, but the foundation is firm.",
+        "love": "Love can pass through its tests.",
+        "health": "Manage stress well. See a doctor if you have symptoms.",
+        "travel": "You can travel past the obstacles.",
+        "lost": "A lost item will be found.",
+        "dealings": "Even under pressure, talks can still succeed."
+      },
+      "keywords": [
+        "Lotus in fire",
+        "Roots",
+        "Stand firm"
+      ]
+    },
+    {
+      "number": 83,
+      "poem_en": [
+        "Like the moon on the third, fourth and fifth nights.",
+        "Half there and half not, not yet complete.",
+        "You must wait for the fine night of the fifteenth.",
+        "Then clear light fills every place, and the moon is round."
+      ],
+      "story": "",
+      "summary": "The matter is not yet complete. Give it time. When the right time comes, everything will be full and whole.",
+      "topics": {
+        "work": "The work is not yet finished. Keep going step by step.",
+        "money": "Finances grow gradually.",
+        "love": "Love needs time to grow.",
+        "health": "The body slowly gets better.",
+        "travel": "Wait until your plans are ready before you travel.",
+        "lost": "A lost item will be found when the time comes.",
+        "dealings": "Talks gradually fall into place."
+      },
+      "keywords": [
+        "Step by step",
+        "Wait for time",
+        "Full moon"
+      ]
+    },
+    {
+      "number": 84,
+      "poem_en": [
+        "Losing virtue for the sake of a name brings discord.",
+        "Take care that haste does not turn into misfortune.",
+        "Drunk, you do not know where you are going.",
+        "You sleep in a daze beneath the shade of a green pine."
+      ],
+      "story": "",
+      "summary": "Do not trade virtue for reputation, and do not decide in a rush or when you are not thinking clearly. Steady your mind.",
+      "topics": {
+        "work": "Do not compete so hard that you lose your integrity.",
+        "money": "Do not make money decisions in a hurry.",
+        "love": "Do not quarrel over pride.",
+        "health": "Cut back on whatever clouds your mind, rest, and see a doctor if you have symptoms.",
+        "travel": "Take care when traveling while tired or not clear-headed.",
+        "lost": "A lost item may have been left behind in a moment of distraction.",
+        "dealings": "Hold talks only when your mind is calm."
+      },
+      "keywords": [
+        "Steady mind",
+        "Integrity",
+        "Do not rush"
+      ]
+    },
+    {
+      "number": 85,
+      "poem_en": [
+        "Open the mountain anew and leave past matters behind it.",
+        "In the garden of ten thousand treasures, all can gather again.",
+        "Tipsy, you chant new poems and your carefree joy grows.",
+        "A noble person leads you onto the road of clouds."
+      ],
+      "story": "",
+      "summary": "This is the start of a new chapter after old matters have passed. You will find good things again, and a respected person will help advance you.",
+      "topics": {
+        "work": "Begin a new chapter. A respected person helps push you forward.",
+        "money": "Finances turn good again.",
+        "love": "You may meet again or begin a new love.",
+        "health": "The body feels fresh.",
+        "travel": "Travel goes well.",
+        "lost": "A lost item will be found.",
+        "dealings": "A new round of talks goes well."
+      },
+      "keywords": [
+        "New chapter",
+        "Reunion",
+        "Support from elders"
+      ]
+    },
+    {
+      "number": 86,
+      "poem_en": [
+        "Spring comes and flowers bloom, facing the sunlit terrace.",
+        "A boat sails ten thousand miles and brings treasure.",
+        "You leap the three tiers of waves at the Yu Gate.",
+        "It is just like a clap of thunder on level ground."
+      ],
+      "story": "",
+      "summary": "Good news arrives quickly and clearly. This is a time when success stands out plainly.",
+      "topics": {
+        "work": "Success is clear. You may be promoted.",
+        "money": "Good fortune comes from afar.",
+        "love": "Love blossoms.",
+        "health": "The body feels fresh.",
+        "travel": "Travel brings good fortune.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks succeed beautifully."
+      },
+      "keywords": [
+        "Thunder on level ground",
+        "Success",
+        "Good fortune"
+      ]
+    },
+    {
+      "number": 87,
+      "poem_en": [
+        "Halfway up the ridge, the sun is setting behind the mountain.",
+        "The cliffs are steep and sharp and cannot yet be climbed.",
+        "Look up and ask Heaven for protection.",
+        "You are still suspended in the great void."
+      ],
+      "story": "",
+      "summary": "You have come halfway but are stuck. Do not force the climb for now. Stop and rest, ask for help, and then go on.",
+      "topics": {
+        "work": "The work is stuck halfway. Stop and assess before pushing on.",
+        "money": "Finances are not yet settled. Do not take on more burdens.",
+        "love": "Love is not yet clear. Give it time.",
+        "health": "Do not overdo it. Rest enough, and see a doctor if you have symptoms.",
+        "travel": "Do not travel in the evening or on risky routes.",
+        "lost": "A lost item is not yet found.",
+        "dealings": "Talks are stuck midway. Pause first."
+      },
+      "keywords": [
+        "Halfway",
+        "Rest first",
+        "Ask for help"
+      ]
+    },
+    {
+      "number": 88,
+      "poem_en": [
+        "A carved wooden tiger stands in the mountain forest.",
+        "Seen from afar, its fierce look unsettles you.",
+        "Though you say it does no harm, it is still fearsome.",
+        "It is as if this body had entered the middle of a great river."
+      ],
+      "story": "",
+      "summary": "Some things look frightening but hold no real danger. At the same time, do not be careless. See clearly what is real and what is only an image.",
+      "topics": {
+        "work": "Do not fear a rival who looks fierce but has nothing behind it.",
+        "money": "Assess risk as it truly is, without panic.",
+        "love": "Do not overthink what has not happened yet.",
+        "health": "Look after your anxiety, and see a doctor if you have symptoms.",
+        "travel": "You can travel, but be careful.",
+        "lost": "A lost item may be in a place you would not think of.",
+        "dealings": "Judge the other side by the facts."
+      },
+      "keywords": [
+        "Wooden tiger",
+        "See clearly",
+        "Stay alert"
+      ]
+    },
+    {
+      "number": 89,
+      "poem_en": [
+        "Going in and out, your plans all prosper greatly.",
+        "Flawless jade lies hidden inside the stone.",
+        "Now, by good fortune, a noble person points the way.",
+        "You win the treasure as you wished, with uncommon joy."
+      ],
+      "story": "",
+      "summary": "Something valuable is about to be found through the advice of someone knowledgeable. Your plans are all auspicious.",
+      "topics": {
+        "work": "A respected person points the way, and work succeeds beyond expectation.",
+        "money": "Good fortune comes from good advice.",
+        "love": "You meet a person of worth who was hidden from view.",
+        "health": "Health is good.",
+        "travel": "Travel goes well.",
+        "lost": "A lost item is found through someone's guidance.",
+        "dealings": "Talks succeed with a good adviser."
+      },
+      "keywords": [
+        "Jade in stone",
+        "A guide",
+        "Wish fulfilled"
+      ]
+    },
+    {
+      "number": 90,
+      "poem_en": [
+        "One day word comes from the court.",
+        "The ship returns loaded full of treasure.",
+        "If you ask how the road ahead will go,",
+        "From start to finish a noble person will lift you up."
+      ],
+      "story": "",
+      "summary": "Good news will arrive unexpectedly, and respected people will support you all along the way.",
+      "topics": {
+        "work": "You receive good news about work, with support from those above you.",
+        "money": "A large piece of good fortune arrives.",
+        "love": "There is good news in love.",
+        "health": "The body is well.",
+        "travel": "Travel goes well.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks receive support."
+      },
+      "keywords": [
+        "Good news",
+        "Good fortune",
+        "Elders' praise"
+      ]
+    },
+    {
+      "number": 91,
+      "poem_en": [
+        "Best to smooth out your worried brow.",
+        "A person of great talent will be recommended.",
+        "The broad road is as flat as the palm of a hand.",
+        "Whatever you undertake goes as you wish."
+      ],
+      "story": "",
+      "summary": "Your worries are about to end. Your ability will be valued, and the road ahead is smooth.",
+      "topics": {
+        "work": "You will be recommended, or a good opportunity will come.",
+        "money": "Finances go smoothly.",
+        "love": "Love goes smoothly.",
+        "health": "Worries ease and health improves.",
+        "travel": "Travel goes easily.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks go smoothly."
+      },
+      "keywords": [
+        "Worries ease",
+        "Smooth road",
+        "Being valued"
+      ]
+    },
+    {
+      "number": 92,
+      "poem_en": [
+        "Trade brings profit and satisfies the heart.",
+        "Blessing, rank and splendor double your wealth.",
+        "If you ask about advancing in life and your hopes,",
+        "A scholar sits the exam once and comes home first in the land."
+      ],
+      "story": "",
+      "summary": "This is a time when trade and work flourish. Your effort will bring a splendid reward.",
+      "topics": {
+        "work": "Work advances with distinction. Exams or job applications go well.",
+        "money": "Trade brings a good profit.",
+        "love": "Love turns out as hoped.",
+        "health": "Health is good.",
+        "travel": "Travel for trade goes well.",
+        "lost": "A lost item will be found.",
+        "dealings": "Business talks succeed."
+      },
+      "keywords": [
+        "Trade",
+        "Advancement",
+        "Success"
+      ]
+    },
+    {
+      "number": 93,
+      "poem_en": [
+        "The phoenix's feathers hang weighed down by rain.",
+        "At this moment it may be scorned by a sparrow.",
+        "Then one day, when the clouds clear from the sky,",
+        "It will spread its plumage again as before."
+      ],
+      "story": "",
+      "summary": "You may be looked down on or in poor shape for now, but your true worth is not lost. When the situation improves, you will return to what you were.",
+      "topics": {
+        "work": "You may be overlooked for a while. Be patient and you will come back.",
+        "money": "Finances are tight for a time.",
+        "love": "Do not lose your confidence in yourself.",
+        "health": "Recover fully, and the body will grow strong again.",
+        "travel": "Wait for the sky to clear before traveling.",
+        "lost": "A lost item will be found later.",
+        "dealings": "Do not hold talks while you are at a disadvantage."
+      },
+      "keywords": [
+        "Phoenix in rain",
+        "Patience",
+        "Wings spread again"
+      ]
+    },
+    {
+      "number": 94,
+      "poem_en": [
+        "Petty people and noble ones must be told apart, wise from foolish.",
+        "When things go wrong, right and wrong are there to be sorted.",
+        "A zither should be played for one who understands its tune.",
+        "Better to stay calm and still, and gain the advantage."
+      ],
+      "story": "",
+      "summary": "Judge people carefully. Speak only with those who understand you. In matters still confused, staying calm and still serves you better.",
+      "topics": {
+        "work": "Choose your work partners well. Do not open your heart to everyone.",
+        "money": "Be careful of people who invite you to invest.",
+        "love": "Choose someone who truly understands you.",
+        "health": "A calm mind helps the body. See a doctor if you have symptoms.",
+        "travel": "Staying put is better than traveling.",
+        "lost": "For a lost item, you must wait.",
+        "dealings": "Do not hold talks with someone who is not sincere."
+      },
+      "keywords": [
+        "Judge people",
+        "Stay calm",
+        "One who understands"
+      ]
+    },
+    {
+      "number": 95,
+      "poem_en": [
+        "Your work and merit go on, morning and evening.",
+        "Glory and abundance are more than can be counted.",
+        "Keep in mind the fight of the golden rooster.",
+        "Blessing, rank and fame will naturally stand high."
+      ],
+      "story": "",
+      "summary": "Steady diligence brings prosperity. Remember the important moments, because opportunity will come at that time.",
+      "topics": {
+        "work": "Diligence will be rewarded well.",
+        "money": "Finances prosper.",
+        "love": "Love is steady.",
+        "health": "Health is good. Keep a regular rhythm of life.",
+        "travel": "Travel goes well.",
+        "lost": "A lost item will be found.",
+        "dealings": "You gain the advantage when the moment arrives."
+      },
+      "keywords": [
+        "Diligence",
+        "Prosperity",
+        "Right moment"
+      ]
+    },
+    {
+      "number": 96,
+      "poem_en": [
+        "The lofty precious pagoda is no ordinary thing.",
+        "On all eight sides it gleams and shines in splendor.",
+        "I urge you to bow in worship with a steady heart.",
+        "Heavenly beings and dragons guard you and send down a thousand blessings."
+      ],
+      "story": "",
+      "summary": "A steady purpose and a humble heart will receive protection and many blessings.",
+      "topics": {
+        "work": "Work prospers and earns recognition all around.",
+        "money": "Finances are very good.",
+        "love": "Love is steady and auspicious.",
+        "health": "Health is good and the mind is calm.",
+        "travel": "Travel is safe.",
+        "lost": "A lost item will be found.",
+        "dealings": "Talks succeed."
+      },
+      "keywords": [
+        "Steady purpose",
+        "Protection",
+        "A thousand blessings"
+      ]
+    },
+    {
+      "number": 97,
+      "poem_en": [
+        "In the moonlit garden, sparse shadows sway.",
+        "It looks as if jade were spread across the whole ground.",
+        "Children come to gather it again and again.",
+        "Who would have known that however they gather, they gain nothing?"
+      ],
+      "story": "",
+      "summary": "What looks valuable may only be a reflection. Do not waste effort chasing what cannot be held. Tell the real from the illusion.",
+      "topics": {
+        "work": "Work that looks good may have no real result. Check it clearly.",
+        "money": "Beware of profit that exists only on paper.",
+        "love": "A love that looks good may be an illusion.",
+        "health": "Look after your health with correct information.",
+        "travel": "Review your travel plans.",
+        "lost": "A lost item cannot be found.",
+        "dealings": "Do not agree to something that does not yet exist."
+      },
+      "keywords": [
+        "Moon shadows",
+        "Illusion",
+        "The real thing"
+      ]
+    },
+    {
+      "number": 98,
+      "poem_en": [
+        "In trade, coming and going, you hesitate.",
+        "You fear stirring up idle worry and disputes.",
+        "Like a bird flying into a net and caught,",
+        "And of those who watch, how few would know."
+      ],
+      "story": "",
+      "summary": "This is not a time to rush into trade or new ventures. Take care not to walk into a trap without knowing it.",
+      "topics": {
+        "work": "Take your time with business decisions. Check the details.",
+        "money": "Be careful with an investment that looks easy.",
+        "love": "Beware of a relationship that brings trouble.",
+        "health": "Look after your worries, and see a doctor if you have symptoms.",
+        "travel": "Postpone business travel.",
+        "lost": "A lost item is hard to find.",
+        "dealings": "Watch for traps in contracts."
+      },
+      "keywords": [
+        "Hesitation",
+        "Trap",
+        "Hold off"
+      ]
+    },
+    {
+      "number": 99,
+      "poem_en": [
+        "Riding at ease, then suddenly cracking the whip.",
+        "Half of it holds danger, half of it holds wealth.",
+        "Like a fire starting to burn the roof over your head,",
+        "Heaven sends a rain to wash the misfortune away."
+      ],
+      "story": "",
+      "summary": "Carelessness may bring both opportunity and danger, but something will be there to put out the danger that arises. So stay watchful and take care.",
+      "topics": {
+        "work": "Work carefully. Do not rush and slip up.",
+        "money": "There is both gain and loss. Keep risk under control.",
+        "love": "Do not act on a passing mood.",
+        "health": "Beware of accidents, and see a doctor if you have symptoms.",
+        "travel": "Travel with care.",
+        "lost": "A lost item may be partly recovered.",
+        "dealings": "Talks have both gain and loss. Think it through."
+      },
+      "keywords": [
+        "Do not be careless",
+        "Gain and loss",
+        "Danger clears"
+      ]
+    },
+    {
+      "number": 100,
+      "poem_en": [
+        "You want to go east, and you want to go west.",
+        "Whoever you tell your troubles to, you grow more confused.",
+        "You climb the mountain and do not see the immortal's face.",
+        "Better to return home and rest, and say no more of it."
+      ],
+      "story": "",
+      "summary": "Hesitation and asking too many people make you more confused. Stop and rest, come back to steady ground, and then decide.",
+      "topics": {
+        "work": "Stop hesitating. Do not ask for too many opinions.",
+        "money": "Do not make money decisions while you are confused.",
+        "love": "Do not tell too many people about your love life.",
+        "health": "Rest so the mind is calm, and see a doctor if you have symptoms.",
+        "travel": "Going home is better than traveling.",
+        "lost": "A lost item may not be recovered.",
+        "dealings": "Put talks on hold for now."
+      },
+      "keywords": [
+        "Hesitation",
+        "Regain your footing",
+        "Rest"
+      ]
+    }
+  ]
+}

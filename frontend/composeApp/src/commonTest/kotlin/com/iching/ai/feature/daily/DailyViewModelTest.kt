@@ -1,5 +1,6 @@
 package com.iching.ai.feature.daily
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.model.AppTheme
 import com.iching.ai.domain.model.Hexagram
@@ -72,6 +73,7 @@ class DailyViewModelTest {
         enablePush = enablePush,
         syncStreak = { streakSyncs++ },
         now = { now },
+        languageHolder = thaiLanguageHolder(),
     )
 
     private var streakSyncs = 0

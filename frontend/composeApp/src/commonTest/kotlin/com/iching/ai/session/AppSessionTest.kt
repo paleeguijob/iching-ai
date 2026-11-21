@@ -31,6 +31,8 @@ import com.iching.ai.platform.ResultCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import com.iching.ai.domain.siamsi.SiamSiPick
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -110,16 +112,21 @@ internal class FakeAds(var answer: String? = "rewarded") : NativeAds {
 
 internal class LoggedAnalytics : NativeAnalytics {
     val events = mutableListOf<Pair<String, Map<String, String>>>()
+    val userProperties = mutableMapOf<String, String>()
     override fun logEvent(name: String, params: Map<String, String>) {
         events += name to params
     }
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) {
+        userProperties[name] = value
+    }
     override fun recordError(message: String) = Unit
 }
 
 internal object NoAnalytics : NativeAnalytics {
     override fun logEvent(name: String, params: Map<String, String>) = Unit
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) = Unit
     override fun recordError(message: String) = Unit
 }
 
@@ -137,6 +144,13 @@ internal class FakeApi : OracleApi {
     override fun divine(question: String, category: QuestionCategory?): Flow<DivinationEvent> = emptyFlow()
     override fun interpretAgain(readingId: String): Flow<DivinationEvent> = emptyFlow()
     override fun followUp(readingId: String, message: String): Flow<DivinationEvent> = emptyFlow()
+    /** Events the next Siam Si interpretation streams, and the requests made. */
+    var siamsiEvents: List<DivinationEvent> = emptyList()
+    val siamsiCalls = mutableListOf<Pair<SiamSiPick, String?>>()
+    override fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String?): Flow<DivinationEvent> {
+        siamsiCalls += pick to readingId
+        return siamsiEvents.asFlow()
+    }
     var yearHexagramNow: YearHexagram? = null
     var yearFailure: FailureReason? = null
     /** What POST /year-hexagram answers; falls back to [yearHexagramNow]. */
@@ -166,7 +180,17 @@ internal class FakeApi : OracleApi {
     /** What POST /ad-reward answers: granted, and the status after it. */
     var adGrant: Pair<Boolean, AccountStatus> = false to AccountStatus.UNKNOWN_FREE
     override suspend fun claimAdReward() = adGrant
-    override suspend fun report(readingId: String, reason: String, note: String) = Unit
+    val reports = mutableListOf<Pair<String, String>>()
+    override suspend fun report(readingId: String, reason: String, note: String) {
+        reports += readingId to reason
+    }
+    /** Each sent message with its app version and platform. */
+    val feedbackSent = mutableListOf<Triple<String, String, String>>()
+    var feedbackFailure: FailureReason? = null
+    override suspend fun sendFeedback(message: String, appVersion: String, platform: String) {
+        feedbackFailure?.let { throw ApiException(it, "failed") }
+        feedbackSent += Triple(message, appVersion, platform)
+    }
     var saveOutcomeFailure: FailureReason? = null
     val outcomesSaved = mutableListOf<String>()
     override suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?) {
@@ -468,6 +492,6 @@ internal object NoNotifications : NativeNotifications {
     override fun isSupported() = false
     override fun permissionGranted() = false
     override fun requestPermission(callback: ResultCallback) = callback.onResult("denied", null)
-    override fun setDailySubscribed(enabled: Boolean, callback: ResultCallback) = callback.onResult("ok", null)
+    override fun setDailySubscribed(enabled: Boolean, topic: String, otherTopic: String, callback: ResultCallback) = callback.onResult("ok", null)
     override fun openSystemSettings() = Unit
 }

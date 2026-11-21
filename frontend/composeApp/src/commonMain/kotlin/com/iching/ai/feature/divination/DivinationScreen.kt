@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.LocalStrings
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -35,16 +36,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -55,8 +59,9 @@ import com.iching.ai.feature.reading.CastSummary
 import com.iching.ai.feature.share.ShareCardSheet
 import com.iching.ai.feature.share.readingShareContent
 import com.iching.ai.feature.reading.AiContentLabel
-import com.iching.ai.feature.reading.OracleScroll
+import com.iching.ai.feature.reading.OracleSheet
 import com.iching.ai.feature.reading.ScriptureSection
+import com.iching.ai.domain.oracle.readingForSpeech
 import com.iching.ai.platform.ZenSound
 import com.iching.ai.platform.rememberSoundPlayer
 import com.iching.ai.ui.components.AncientCoin
@@ -65,8 +70,8 @@ import com.iching.ai.ui.components.PaperBackground
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DivinationScreen(
@@ -77,6 +82,7 @@ fun DivinationScreen(
     onDone: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val guides = rememberFirstReadingGuides(castDone = state.tossesDone == 6)
     val sound = rememberSoundPlayer()
     var confirmLeave by remember { mutableStateOf(false) }
     val requestBack = { if (state.leavingInterrupts) confirmLeave = true else onBack() }
@@ -128,14 +134,14 @@ fun DivinationScreen(
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = requestBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = LocalStrings.current.common.back, tint = ZenColors.InkBlack)
                 }
                 Text(
                     when (state.phase) {
-                        DivinationPhase.CASTING -> "เสี่ยงทาย"
-                        DivinationPhase.REVEAL -> "ฉักกะปรากฏ"
-                        DivinationPhase.SAFETY -> "หยุดพักก่อน"
-                        else -> "คำทำนาย"
+                        DivinationPhase.CASTING -> LocalStrings.current.divination.titleCasting
+                        DivinationPhase.REVEAL -> LocalStrings.current.divination.titleReveal
+                        DivinationPhase.SAFETY -> LocalStrings.current.divination.titleSafety
+                        else -> LocalStrings.current.divination.titleReading
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     color = ZenColors.InkBlack,
@@ -152,10 +158,10 @@ fun DivinationScreen(
                     DivinationPhase.CASTING -> if (state.year) {
                         YearWaitingStage()
                     } else {
-                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining)
+                        CastingStage(state, viewModel::onToss, viewModel::onTossRemaining, guide = guides.cast)
                     }
                     DivinationPhase.SAFETY -> SafetyStage(state.safetyMessage.orEmpty(), onDone)
-                    else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone)
+                    else -> ReadingStage(state, viewModel, onOpenHexagram, onOpenPaywall, onDone, guides)
                 }
             }
         }
@@ -169,7 +175,7 @@ fun DivinationScreen(
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(20.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(ZenColors.InkBlack.copy(alpha = 0.9f))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             )
@@ -182,7 +188,7 @@ fun DivinationScreen(
 private fun YearWaitingStage() {
     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(
-            "กำลังเปิดกวาประจำปีของท่าน...",
+            LocalStrings.current.divination.yearOpening,
             style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
             color = ZenColors.InkSoft,
             textAlign = TextAlign.Center,
@@ -191,9 +197,9 @@ private fun YearWaitingStage() {
 }
 
 @Composable
-private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit) {
+private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRemaining: () -> Unit, guide: Boolean) {
     TossStage(
-        prompt = if (state.question.isBlank()) "ตั้งจิตให้สงบ แล้วโยนเหรียญ" else "“${state.question}”",
+        prompt = if (state.question.isBlank()) LocalStrings.current.divination.blankPrompt else "“${state.question}”",
         tosses = state.tosses,
         currentToss = state.currentToss,
         tossKey = state.tossKey,
@@ -202,6 +208,7 @@ private fun CastingStage(state: DivinationUiState, onToss: () -> Unit, onTossRem
         canToss = state.canToss,
         onToss = onToss,
         onTossRemaining = onTossRemaining,
+        guide = guide,
     )
 }
 
@@ -212,6 +219,7 @@ private fun ReadingStage(
     onOpenHexagram: (Int) -> Unit,
     onOpenPaywall: () -> Unit,
     onDone: () -> Unit,
+    guides: FirstReadingGuides,
 ) {
     val cast = state.cast ?: run {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -240,6 +248,11 @@ private fun ReadingStage(
             onHexagramClick = onOpenHexagram,
         )
         Spacer(Modifier.height(24.dp))
+        if (state.phase != DivinationPhase.REVEAL && guides.reading) {
+            LaunchedEffect(Unit) { guides.onReadingGuideShown() }
+            HowToReadNote(hasRelating = cast.relating != null, onDismiss = guides::dismissReading)
+            Spacer(Modifier.height(16.dp))
+        }
         if (state.phase != DivinationPhase.REVEAL) {
             if (state.phase == DivinationPhase.COMPLETE) {
                 state.notice?.let {
@@ -259,7 +272,7 @@ private fun ReadingStage(
                     Spacer(Modifier.height(16.dp))
                 }
             }
-            OracleScroll(
+            OracleSheet(
                 text = state.interpretation,
                 isComplete = state.phase == DivinationPhase.COMPLETE,
                 animate = true,
@@ -274,7 +287,7 @@ private fun ReadingStage(
                 Spacer(Modifier.height(12.dp))
                 if (state.isAiReading) {
                     ListenButton(
-                        text = state.interpretation,
+                        text = readingForSpeech(state.interpretation, LocalStrings.current.reading::sectionTitle),
                         premium = state.status.premium,
                         onOpenPaywall = onOpenPaywall,
                         log = viewModel::logEvent,
@@ -282,7 +295,7 @@ private fun ReadingStage(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                ZenSecondaryButton("แชร์การ์ดคำทำนาย", onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
+                ZenSecondaryButton(LocalStrings.current.divination.shareCard, onClick = { sharing = true }, modifier = Modifier.fillMaxWidth())
                 if (sharing) {
                     ShareCardSheet(
                         content = readingShareContent(
@@ -302,19 +315,19 @@ private fun ReadingStage(
                 ScriptureSection(cast.primary, cast.relating, cast.changingPositions)
                 Spacer(Modifier.height(20.dp))
                 Text(
-                    "บันทึกลงในบันทึกชะตาแล้ว",
+                    LocalStrings.current.divination.savedNote,
                     style = MaterialTheme.typography.labelMedium,
                     color = ZenColors.BambooDeep,
                 )
                 Spacer(Modifier.height(12.dp))
-                ZenSecondaryButton("กลับสู่ความสงบ", onClick = onDone)
+                ZenSecondaryButton(LocalStrings.current.divination.backToCalm, onClick = onDone)
                 Spacer(Modifier.height(28.dp))
             } else {
                 Spacer(Modifier.height(24.dp))
             }
         } else {
             Text(
-                "สูดลมหายใจลึก ๆ ... คัมภีร์กำลังเปิดออก",
+                LocalStrings.current.divination.unrolling,
                 style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
                 color = ZenColors.InkSoft,
             )
@@ -329,28 +342,39 @@ private fun ReadingStage(
             },
         )
     }
-    // Keep the newest words in view while the scroll unrolls.
+    // Keep the newest words in view while the scroll unrolls, until the seeker scrolls on their own: never
+    // pull the page out from under a finger, or back down once they have scrolled up to reread.
+    var following by remember { mutableStateOf(true) }
+    val nearBottomPx = with(LocalDensity.current) { 64.dp.toPx() }
+    LaunchedEffect(scroll) {
+        launch { scroll.interactionSource.interactions.collect { if (it is DragInteraction.Start) following = false } }
+        snapshotFlow { !scroll.isScrollInProgress && scroll.maxValue - scroll.value < nearBottomPx }
+            .collect { settledAtBottom -> if (settledAtBottom) following = true }
+    }
     LaunchedEffect(state.interpretation.length / 120) {
-        if (state.phase == DivinationPhase.INTERPRETING && scroll.maxValue > 0) scroll.animateScrollTo(scroll.maxValue)
+        if (state.phase == DivinationPhase.INTERPRETING && following && !scroll.isScrollInProgress && scroll.maxValue > 0) {
+            scroll.animateScrollTo(scroll.maxValue)
+        }
     }
 }
 
 @Composable
 private fun LeaveReadingDialog(savedInJournal: Boolean, onStay: () -> Unit, onLeave: () -> Unit) {
+    val strings = LocalStrings.current.divination
     AlertDialog(
         onDismissRequest = onStay,
-        title = { Text("ยังทำนายไม่จบ ออกตอนนี้?", style = MaterialTheme.typography.titleMedium) },
+        title = { Text(strings.leaveTitle, style = MaterialTheme.typography.titleMedium) },
         text = {
             Text(
                 if (savedInJournal) {
-                    "กวานี้บันทึกในบันทึกชะตาแล้ว ท่านกลับมารับคำชี้แนะจากนักพรตต่อได้ที่บันทึกชะตา โดยไม่เสียสิทธิ์ซ้ำ"
+                    strings.leaveSaved
                 } else {
-                    "หากออกตอนนี้ การเสี่ยงทายครั้งนี้จะไม่ถูกบันทึก"
+                    strings.leaveUnsaved
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
         },
-        confirmButton = { TextButton(onClick = onStay) { Text("อยู่ต่อ", color = ZenColors.BambooDeep) } },
-        dismissButton = { TextButton(onClick = onLeave) { Text("ออก", color = ZenColors.InkSoft) } },
+        confirmButton = { TextButton(onClick = onStay) { Text(strings.stay, color = ZenColors.BambooDeep) } },
+        dismissButton = { TextButton(onClick = onLeave) { Text(strings.leave, color = ZenColors.InkSoft) } },
     )
 }

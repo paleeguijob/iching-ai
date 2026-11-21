@@ -3,10 +3,13 @@
  * writes the returned docs back, so the rules are testable without a database.
  *
  * Order of charging for a reading: premium daily allowance → free daily reading (0 by default since
- * v1.1: free users pay with an ad or a coin) → rewarded-ad credits → coins. A failed model call refunds exactly what was charged.
+ * v1.1: free users pay with an ad or a coin) → welcome reading (once per account and device, ever) →
+ * rewarded-ad credits → coins. A failed model call refunds exactly what was charged.
  */
 
 import { Campaign, campaignActive, DEFAULT_CAMPAIGN, parseCampaign } from "./campaign";
+import type { Lang } from "./lang";
+import { parsePoster, Poster, posterFor, StatusPoster } from "./poster";
 
 export interface RuntimeConfig {
   /** Global kill-switch: false → every reading comes back as raw scripture. */
@@ -18,6 +21,8 @@ export interface RuntimeConfig {
   freeDailyReadings: number;
   premiumDailyReadings: number;
   adRewardsPerDay: number;
+  /** Free readings a new seeker gets once, before the first ad. Counted per account and per device. */
+  welcomeReadings: number;
   followUpsPerReading: number;
   /** Free readings allowed per device per day, against farming fresh anonymous accounts. */
   freeReadingsPerDevice: number;
@@ -29,6 +34,26 @@ export interface RuntimeConfig {
   dailyPushEnabled: boolean;
   /** Chinese New Year campaign window; null when the stored config is malformed (= no campaign). */
   campaign: Campaign | null;
+  /** Feature switch for Siam Si; off until the sets are reviewed. */
+  siamsiEnabled: boolean;
+  /** Sets the app may offer, with the version of each file (bumped to make apps download it again). */
+  siamsiSets: SiamSiSetRef[];
+  /** Siam Si draws a free account gets per day, one rewarded ad each. Counted by the app. */
+  siamsiAdDrawsPerDay: number;
+  siamsiPremiumPerDay: number;
+  /** The one poster (home popup + optional daily-page card); null when unset or malformed (= none). */
+  poster: Poster | null;
+  /** Kill-switch for English: false → every new reading is Thai whatever the app asks for. */
+  englishEnabled: boolean;
+  /** Version of hexagrams.en.json (bumped to make apps download it again). */
+  hexagramsEnVersion: number;
+}
+
+export interface SiamSiSetRef {
+  id: string;
+  version: number;
+  /** Version of the set's English file ({id}.en.json). */
+  enVersion: number;
 }
 
 export const DEFAULT_CONFIG: RuntimeConfig = {
@@ -38,8 +63,9 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   freeModel: "gemini-3.1-flash-lite",
   premiumModel: "gemini-3.5-flash-lite",
   freeDailyReadings: 0,
-  premiumDailyReadings: 10,
-  adRewardsPerDay: 2,
+  premiumDailyReadings: 5,
+  adRewardsPerDay: 3,
+  welcomeReadings: 1,
   followUpsPerReading: 3,
   freeReadingsPerDevice: 0,
   minSecondsBetweenReadings: 8,
@@ -47,7 +73,24 @@ export const DEFAULT_CONFIG: RuntimeConfig = {
   enforceAppCheck: true,
   dailyPushEnabled: true,
   campaign: DEFAULT_CAMPAIGN,
+  siamsiEnabled: false,
+  siamsiSets: [
+    { id: "guanyin100", version: 1, enVersion: 1 },
+    { id: "jiazi60", version: 1, enVersion: 1 },
+  ],
+  siamsiAdDrawsPerDay: 2,
+  siamsiPremiumPerDay: 3,
+  poster: null,
+  englishEnabled: true,
+  hexagramsEnVersion: 1,
 };
+
+/** enVersion is optional in stored config (older docs have none) and defaults to 1. */
+const isSetRef = (v: unknown): v is Omit<SiamSiSetRef, "enVersion"> & { enVersion?: number } =>
+  typeof v === "object" && v !== null &&
+  typeof (v as SiamSiSetRef).id === "string" && (v as SiamSiSetRef).id.length > 0 &&
+  typeof (v as SiamSiSetRef).version === "number" &&
+  ((v as SiamSiSetRef).enVersion === undefined || typeof (v as SiamSiSetRef).enVersion === "number");
 
 /** Merges the Firestore config/runtime doc over the defaults, ignoring fields of the wrong type. */
 export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeConfig {
@@ -58,6 +101,10 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
     const def = DEFAULT_CONFIG[key];
     if (key === "campaign") {
       if (v !== undefined) out.campaign = parseCampaign(v);
+    } else if (key === "poster") {
+      if (v !== undefined) out.poster = parsePoster(v);
+    } else if (key === "siamsiSets") {
+      if (Array.isArray(v) && v.every(isSetRef)) out.siamsiSets = v.map((r) => ({ id: r.id, version: r.version, enVersion: r.enVersion ?? 1 }));
     } else if (key === "forceModel") {
       if (v === null || (typeof v === "string" && v.length > 0)) out.forceModel = v as string | null;
     } else if (v !== undefined && typeof v === typeof def) {
@@ -65,6 +112,15 @@ export function mergeConfig(raw: Record<string, unknown> | undefined): RuntimeCo
     }
   }
   return out;
+}
+
+/**
+ * Problems in the stored config that mergeConfig drops quietly. A poster that fails to parse would otherwise just
+ * never show, with nothing saying why (a Thai title over 40 code units, or a Timestamp where an ISO string belongs).
+ */
+export function configWarnings(raw: Record<string, unknown> | undefined): string[] {
+  if (!raw || raw.poster === undefined || raw.poster === null) return [];
+  return parsePoster(raw.poster) === null ? ["poster_invalid"] : [];
 }
 
 export interface DailyUsage {
@@ -82,13 +138,17 @@ export interface UserDoc {
   coins: number;
   usage: DailyUsage;
   lastReadingAt: number | null;
+  /** Welcome readings taken, ever (never resets). */
+  welcomeUsed: number;
 }
 
 export interface DeviceDoc {
   usage: { day: string; free: number; adEarned: number };
+  /** Welcome readings taken on this device, ever, so a fresh anonymous account cannot take another. */
+  welcomeUsed: number;
 }
 
-export type Charge = "premium" | "free" | "ad" | "coin";
+export type Charge = "premium" | "free" | "welcome" | "ad" | "coin";
 
 export const emptyUsage = (day: string): DailyUsage => ({ day, free: 0, premium: 0, adEarned: 0, adUsed: 0 });
 
@@ -99,13 +159,23 @@ export function normalizeUser(raw: Partial<UserDoc> | undefined, day: string): U
     coins: Math.max(0, Math.floor(raw?.coins ?? 0)),
     usage,
     lastReadingAt: typeof raw?.lastReadingAt === "number" ? raw.lastReadingAt : null,
+    welcomeUsed: count(raw?.welcomeUsed),
   };
 }
 
+const count = (v: unknown) => (typeof v === "number" ? Math.max(0, Math.floor(v)) : 0);
+
 export function normalizeDevice(raw: Partial<DeviceDoc> | undefined, day: string): DeviceDoc {
   const u = raw?.usage;
-  return { usage: u && u.day === day ? { day, free: u.free ?? 0, adEarned: u.adEarned ?? 0 } : { day, free: 0, adEarned: 0 } };
+  return {
+    usage: u && u.day === day ? { day, free: u.free ?? 0, adEarned: u.adEarned ?? 0 } : { day, free: 0, adEarned: 0 },
+    welcomeUsed: count(raw?.welcomeUsed),
+  };
 }
+
+/** Welcome readings still owed. Needs a device: without one a fresh anonymous account could take it again and again. */
+const welcomeLeft = (user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, premium: boolean) =>
+  premium || !device ? 0 : Math.max(0, Math.min(cfg.welcomeReadings - user.welcomeUsed, cfg.welcomeReadings - device.welcomeUsed));
 
 export const isPremium = (u: UserDoc, now: number) => u.premiumUntil !== null && u.premiumUntil > now;
 
@@ -123,15 +193,19 @@ export interface QuotaStatus {
   journalDays: number | null;
   aiEnabled: boolean;
   campaign: { id: string; year: number; active: boolean; endsAt: number } | null;
+  siamsi: { enabled: boolean; sets: SiamSiSetRef[]; drawsPerDay: number };
+  englishEnabled: boolean;
+  hexagramsEnVersion: number;
+  poster: StatusPoster | null;
 }
 
-export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number): QuotaStatus {
+export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConfig, now: number, lang: Lang = "th"): QuotaStatus {
   const premium = isPremium(user, now);
   const u = user.usage;
   const deviceFreeLeft = device ? Math.max(0, cfg.freeReadingsPerDevice - device.usage.free) : cfg.freeDailyReadings;
   const includedLeft = premium
     ? Math.max(0, cfg.premiumDailyReadings - u.premium)
-    : Math.min(Math.max(0, cfg.freeDailyReadings - u.free), deviceFreeLeft);
+    : Math.min(Math.max(0, cfg.freeDailyReadings - u.free), deviceFreeLeft) + welcomeLeft(user, device, cfg, premium);
   const adCreditsLeft = Math.max(0, u.adEarned - u.adUsed);
   const deviceAdLeft = device ? Math.max(0, cfg.adRewardsPerDay - device.usage.adEarned) : cfg.adRewardsPerDay;
   const adsWatchableLeft = premium ? 0 : Math.min(Math.max(0, cfg.adRewardsPerDay - u.adEarned), deviceAdLeft);
@@ -152,6 +226,14 @@ export function status(user: UserDoc, device: DeviceDoc | null, cfg: RuntimeConf
       active: campaignActive(cfg.campaign, now),
       endsAt: cfg.campaign.endsAt,
     },
+    siamsi: {
+      enabled: cfg.siamsiEnabled,
+      sets: cfg.siamsiSets,
+      drawsPerDay: premium ? cfg.siamsiPremiumPerDay : cfg.siamsiAdDrawsPerDay,
+    },
+    poster: posterFor(cfg.poster, premium, now, lang),
+    englishEnabled: cfg.englishEnabled,
+    hexagramsEnVersion: cfg.hexagramsEnVersion,
   };
 }
 
@@ -171,9 +253,10 @@ export function chargeReading(
   if (limited) return limited;
   const premium = isPremium(user, now);
   const u = { ...user.usage };
-  const d = device ? { usage: { ...device.usage } } : null;
+  const d = device ? { ...device, usage: { ...device.usage } } : null;
   let charge: Charge;
   let coins = user.coins;
+  let welcomeUsed = user.welcomeUsed;
 
   if (premium && u.premium < cfg.premiumDailyReadings) {
     charge = "premium";
@@ -182,6 +265,10 @@ export function chargeReading(
     charge = "free";
     u.free++;
     if (d) d.usage.free++;
+  } else if (welcomeLeft(user, device, cfg, premium) > 0) {
+    charge = "welcome";
+    welcomeUsed++;
+    if (d) d.welcomeUsed++;
   } else if (u.adEarned > u.adUsed) {
     charge = "ad";
     u.adUsed++;
@@ -191,7 +278,7 @@ export function chargeReading(
   } else {
     return { ok: false, reason: "quota" };
   }
-  return { ok: true, charge, model: modelFor(charge, cfg), user: { ...user, coins, usage: u, lastReadingAt: now }, device: d };
+  return { ok: true, charge, model: modelFor(charge, cfg), user: { ...user, coins, usage: u, lastReadingAt: now, welcomeUsed }, device: d };
 }
 
 const modelFor = (charge: Charge, cfg: RuntimeConfig) =>
@@ -224,7 +311,8 @@ export function resumeReading(user: UserDoc, charge: Charge, cfg: RuntimeConfig,
 export function refundReading(user: UserDoc, device: DeviceDoc | null, charge: Charge): { user: UserDoc; device: DeviceDoc | null } {
   const u = { ...user.usage };
   let coins = user.coins;
-  const d = device ? { usage: { ...device.usage } } : null;
+  let welcomeUsed = user.welcomeUsed;
+  const d = device ? { ...device, usage: { ...device.usage } } : null;
   switch (charge) {
     case "premium":
       u.premium = Math.max(0, u.premium - 1);
@@ -232,6 +320,10 @@ export function refundReading(user: UserDoc, device: DeviceDoc | null, charge: C
     case "free":
       u.free = Math.max(0, u.free - 1);
       if (d) d.usage.free = Math.max(0, d.usage.free - 1);
+      break;
+    case "welcome":
+      welcomeUsed = Math.max(0, welcomeUsed - 1);
+      if (d) d.welcomeUsed = Math.max(0, d.welcomeUsed - 1);
       break;
     case "ad":
       u.adUsed = Math.max(0, u.adUsed - 1);
@@ -241,7 +333,7 @@ export function refundReading(user: UserDoc, device: DeviceDoc | null, charge: C
       break;
   }
   // Clear the rate-limit stamp so the seeker can retry straight away.
-  return { user: { ...user, coins, usage: u, lastReadingAt: null }, device: d };
+  return { user: { ...user, coins, usage: u, lastReadingAt: null, welcomeUsed }, device: d };
 }
 
 export type AdDecision = { ok: true; user: UserDoc; device: DeviceDoc | null } | { ok: false; reason: "premium" | "limit" };
@@ -253,7 +345,7 @@ export function grantAdReward(user: UserDoc, device: DeviceDoc | null, cfg: Runt
   return {
     ok: true,
     user: { ...user, usage: { ...user.usage, adEarned: user.usage.adEarned + 1 } },
-    device: device ? { usage: { ...device.usage, adEarned: device.usage.adEarned + 1 } } : null,
+    device: device ? { ...device, usage: { ...device.usage, adEarned: device.usage.adEarned + 1 } } : null,
   };
 }
 

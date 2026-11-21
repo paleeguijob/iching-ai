@@ -35,6 +35,7 @@ import com.iching.ai.platform.encodePng
 import com.iching.ai.platform.rememberImageSharer
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
+import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.theme.ZenColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -47,12 +48,23 @@ private const val CARD_HEIGHT_PX = 1920f
 
 /** Full-screen preview of the card, with the button that opens the system share sheet. */
 @Composable
-fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) {
+fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) =
+    ShareImageSheet(onShared = { log("share_card", mapOf("source" to content.source)) }, onDismiss = onDismiss) { ShareCard(content) }
+
+/** The Siam Si card in the same preview; counted as `siamsi_share`. */
+@Composable
+fun SiamSiShareSheet(content: SiamSiShareContent, log: (String, Map<String, String>) -> Unit, onDismiss: () -> Unit) =
+    ShareImageSheet(onShared = { log("siamsi_share", mapOf("set" to content.setId)) }, onDismiss = onDismiss) { SiamSiShareCard(content) }
+
+/** Previews [card] at 1080×1920 px and shares exactly those pixels; [onShared] runs once the system took them. */
+@Composable
+private fun ShareImageSheet(onShared: () -> Unit, onDismiss: () -> Unit, card: @Composable () -> Unit) {
     val layer = rememberGraphicsLayer()
     val sharer = rememberImageSharer()
     val scope = rememberCoroutineScope()
     var sharing by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    val strings = LocalStrings.current.share
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -81,21 +93,21 @@ fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>)
                                 drawLayer(layer)
                             },
                     ) {
-                        ShareCard(content)
+                        card()
                     }
                 }
             }
             if (failed) {
                 Text(
-                    "แชร์ไม่สำเร็จ โปรดลองใหม่",
+                    strings.failed,
                     color = ZenColors.CinnabarRed,
                     modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
                 )
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ZenSecondaryButton("ปิด", onClick = onDismiss, modifier = Modifier.weight(1f))
+                ZenSecondaryButton(strings.close, onClick = onDismiss, modifier = Modifier.weight(1f))
                 ZenPrimaryButton(
-                    text = "แชร์",
+                    text = strings.share,
                     enabled = !sharing,
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -104,13 +116,13 @@ fun ShareCardSheet(content: ShareCardContent, log: (String, Map<String, String>)
                         scope.launch {
                             val shared = try {
                                 val png = withContext(Dispatchers.Default) { layer.toImageBitmap().encodePng() }
-                                sharer.share(png, SHARE_TEXT)
+                                sharer.share(png, strings.shareText)
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
                                 false
                             }
-                            if (shared) log("share_card", mapOf("source" to content.source))
+                            if (shared) onShared()
                             failed = !shared
                             sharing = false
                         }

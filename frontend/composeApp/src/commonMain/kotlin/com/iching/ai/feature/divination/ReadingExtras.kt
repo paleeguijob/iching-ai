@@ -1,5 +1,9 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenTextButton
+import com.iching.ai.ui.components.ZenCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,7 +58,6 @@ import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
 
 /** Explains why the scroll shows raw scripture, with the ways to get the hermit's words. */
 @Composable
@@ -71,34 +74,36 @@ fun ReadingNoticeCard(
     onUpsellPremium: () -> Unit,
     onUpsellBuyCoins: () -> Unit,
 ) {
+    val strings = LocalStrings.current.divination
+    val common = LocalStrings.current.common
     val quota = notice is ReadingNotice.Limited && notice.reason == LimitReason.QUOTA
     val offersUpsell = offersQuotaUpsell(notice, status, canRetry)
     if (offersUpsell) LaunchedEffect(Unit) { onUpsellShown() }
     val message = when (notice) {
         is ReadingNotice.Limited -> when (notice.reason) {
             LimitReason.QUOTA -> if (status.readingsLeft > 0) {
-                "ท่านได้รับสิทธิ์เพิ่มแล้ว แตะด้านล่างเพื่อรับคำชี้แนะจากนักพรตสำหรับกวานี้"
+                strings.noticeQuotaGranted
             } else if (offersUpsell) {
-                "คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว ท่านยังรับคำชี้แนะสำหรับกวานี้ได้"
+                strings.noticeQuotaAdsDone
             } else {
-                "คำชี้แนะจากนักพรตสำหรับวันนี้ครบแล้ว ท่านยังอ่านตัวบทคัมภีร์ด้านล่างได้เสมอ"
+                strings.noticeQuotaDone
             }
-            LimitReason.RATE_LIMITED -> "โปรดเว้นจังหวะหายใจสักครู่${notice.retryAfterSeconds?.let { " (${it.toThaiNumerals()} วินาที)" } ?: ""} แล้วจึงถามนักพรตอีกครั้ง"
-            LimitReason.AI_DISABLED -> "นักพรตปลีกวิเวกชั่วคราว จึงแสดงตัวบทจากคัมภีร์แทน โปรดกลับมาใหม่ภายหลัง"
-            LimitReason.FOLLOW_UP_LIMIT -> "ถามต่อครบจำนวนครั้งแล้ว"
+            LimitReason.RATE_LIMITED -> strings.noticeRateLimited(notice.retryAfterSeconds)
+            LimitReason.AI_DISABLED -> strings.noticeAiDisabled
+            LimitReason.FOLLOW_UP_LIMIT -> strings.noticeFollowUpLimit
         }
         is ReadingNotice.Failed -> when (notice.reason) {
-            FailureReason.NETWORK -> "การเชื่อมต่อขาดหาย จึงแสดงตัวบทจากคัมภีร์แทน แตะถามนักพรตอีกครั้งเพื่อรับคำทำนายฉบับเต็ม โดยไม่เสียสิทธิ์ซ้ำ"
-            FailureReason.BLOCKED -> "คำถามนี้ไม่อาจตีความได้ จึงแสดงตัวบทจากคัมภีร์แทน สิทธิ์ของท่านยังไม่ถูกใช้"
-            FailureReason.UNAUTHENTICATED -> "ยืนยันตัวตนกับระบบไม่สำเร็จ จึงแสดงตัวบทจากคัมภีร์แทน"
-            else -> "การติดต่อนักพรตขัดข้องชั่วคราว จึงแสดงตัวบทจากคัมภีร์แทน สิทธิ์ของท่านยังไม่ถูกใช้"
+            FailureReason.NETWORK -> strings.noticeNetwork
+            FailureReason.BLOCKED -> strings.noticeBlocked
+            FailureReason.UNAUTHENTICATED -> strings.noticeUnauthenticated
+            else -> strings.noticeOther
         }
-        ReadingNotice.Offline -> "ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้ จึงเสี่ยงทายในเครื่องและแสดงตัวบทจากคัมภีร์"
+        ReadingNotice.Offline -> strings.noticeOffline
     }
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(ZenColors.CinnabarRed.copy(alpha = 0.07f))
             .padding(16.dp),
     ) {
@@ -111,26 +116,26 @@ fun ReadingNoticeCard(
         when {
             quota && status.readingsLeft > 0 && canRetry -> {
                 Spacer(Modifier.height(12.dp))
-                ZenPrimaryButton("รับคำชี้แนะจากนักพรต", onClick = onRetry, modifier = Modifier.fillMaxWidth())
+                ZenPrimaryButton(strings.getGuidance, onClick = onRetry, modifier = Modifier.fillMaxWidth())
             }
             offersUpsell -> {
                 Spacer(Modifier.height(12.dp))
                 ZenPrimaryButton(
-                    text = "Premium · วันละ ๑๐ คำทำนาย" + (upsell.premiumTrial?.let { " · $it" } ?: ""),
+                    text = common.premiumDaily + (upsell.premiumTrial?.let { " · $it" } ?: ""),
                     onClick = { onUpsellPremium(); onOpenPaywall() },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 upsell.coins?.let { coins ->
                     Spacer(Modifier.height(8.dp))
                     ZenSecondaryButton(
-                        text = if (upsell.buyingCoins) "กำลังดำเนินการ..." else "เหรียญอี้จิง ๑๐ เหรียญ · ${coins.price}",
+                        text = if (upsell.buyingCoins) common.working else "${common.coinPack} · ${coins.price}",
                         onClick = onUpsellBuyCoins,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ชมโฆษณาเริ่มนับใหม่ทุกวัน",
+                    common.comeBackTomorrow,
                     style = MaterialTheme.typography.labelSmall,
                     color = ZenColors.InkBlack.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center,
@@ -142,7 +147,7 @@ fun ReadingNoticeCard(
                 Spacer(Modifier.height(12.dp))
                 if (status.adsWatchableLeft > 0 && canRetry) {
                     ZenPrimaryButton(
-                        text = if (isWatchingAd) "กำลังเปิดโฆษณา..." else "ชมโฆษณาสั้น รับคำชี้แนะ (เหลือ ${status.adsWatchableLeft.toThaiNumerals()})",
+                        text = if (isWatchingAd) common.openingAd else strings.watchAdForGuidance(status.adsWatchableLeft),
                         onClick = onWatchAd,
                         enabled = !isWatchingAd,
                         color = ZenColors.BambooDeep,
@@ -150,9 +155,9 @@ fun ReadingNoticeCard(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                ZenSecondaryButton("Premium · วันละ ๑๐ คำทำนาย", onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
+                ZenSecondaryButton(common.premiumDaily, onClick = onOpenPaywall, modifier = Modifier.fillMaxWidth())
             }
-            canRetry && retryable -> TextButton(onClick = onRetry) { Text("ถามนักพรตอีกครั้ง", color = ZenColors.CinnabarRed) }
+            canRetry && retryable -> ZenTextButton(strings.askAgain, onClick = onRetry)
         }
     }
 }
@@ -164,26 +169,21 @@ fun FollowUpSection(
     onSend: (String) -> Unit,
     onOpenPaywall: () -> Unit,
 ) {
+    val strings = LocalStrings.current.divination
     Column(Modifier.fillMaxWidth()) {
-        SectionLabel("ถามต่อกับนักพรต", color = ZenColors.CinnabarRed)
+        SectionLabel(strings.followUpTitle, color = ZenColors.CinnabarRed)
         Spacer(Modifier.height(12.dp))
         if (!state.status.premium) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, ZenColors.InkBlack.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
-                    .clickable(onClick = onOpenPaywall)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            ZenCard(onClick = onOpenPaywall) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Lock, null, tint = ZenColors.BambooDeep)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("สนทนาต่อในกวาเดิมได้ ๓ คำถาม", style = MaterialTheme.typography.bodyMedium)
-                    Text("สิทธิ์ของสมาชิก Premium", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+                    Text(strings.followUpTeaser(3), style = MaterialTheme.typography.bodyMedium)
+                    Text(strings.followUpPremiumOnly, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
                 }
-                Text("ดูแพ็กเกจ", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+                Text(strings.seePlans, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+            }
             }
         } else {
             FollowUpThread(state, onSend)
@@ -193,6 +193,7 @@ fun FollowUpSection(
 
 @Composable
 private fun FollowUpThread(state: DivinationUiState, onSend: (String) -> Unit) {
+    val strings = LocalStrings.current.divination
     Column(Modifier.fillMaxWidth()) {
         state.followUps.forEach { turn ->
             Text(
@@ -204,13 +205,13 @@ private fun FollowUpThread(state: DivinationUiState, onSend: (String) -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                turn.answer.ifEmpty { "นักพรตกำลังพินิจ..." },
+                turn.answer.ifEmpty { strings.hermitThinking },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (turn.answer.isEmpty()) ZenColors.InkFaint else ZenColors.InkBlack,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(ZenColors.Scroll)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ZenColors.Card)
                     .padding(14.dp),
             )
             Spacer(Modifier.height(14.dp))
@@ -222,57 +223,55 @@ private fun FollowUpThread(state: DivinationUiState, onSend: (String) -> Unit) {
                 onValueChange = { if (it.length <= 300) draft = it },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.followUpBusy,
-                placeholder = { Text("ถามต่อ (เหลือ ${state.followUpsLeft.toThaiNumerals()} คำถาม)", color = ZenColors.InkFaint) },
+                placeholder = { Text(strings.followUpPlaceholder(state.followUpsLeft), color = ZenColors.InkFaint) },
                 trailingIcon = {
                     if (state.followUpBusy) {
                         CircularProgressIndicator(Modifier.size(20.dp), color = ZenColors.BambooDeep, strokeWidth = 2.dp)
                     } else {
                         IconButton(onClick = { onSend(draft); draft = "" }, enabled = draft.isNotBlank()) {
-                            Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "ส่ง", tint = ZenColors.CinnabarRed)
+                            Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = strings.send, tint = ZenColors.CinnabarRed)
                         }
                     }
                 },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ZenColors.BambooGreen,
-                    unfocusedBorderColor = ZenColors.InkBlack.copy(alpha = 0.15f),
+                    focusedBorderColor = ZenColors.current.outline,
+                    unfocusedBorderColor = ZenColors.current.outlineVariant,
+                    focusedContainerColor = ZenColors.Card,
+                    unfocusedContainerColor = ZenColors.Card,
                 ),
             )
         } else {
-            Text("ถามต่อครบ ๓ คำถามแล้ว — หากใจยังมีคำถามใหม่ ให้เสี่ยงทายครั้งใหม่", style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
+            Text(strings.followUpsUsed, style = MaterialTheme.typography.labelSmall, color = ZenColors.InkFaint)
         }
     }
 }
 
-private val REPORT_REASONS = listOf(
-    "harmful" to "เป็นอันตราย หรือชี้นำให้ทำสิ่งเสี่ยง",
-    "offensive" to "หยาบคาย ไม่เหมาะสม",
-    "wrong" to "ไม่ตรงกับคัมภีร์ หรือข้อมูลผิด",
-    "other" to "อื่น ๆ",
-)
+private val REPORT_REASON_IDS = listOf("harmful", "offensive", "wrong", "other")
 
 @Composable
 fun ReportDialog(onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
-    var selected by rememberSaveable { mutableStateOf(REPORT_REASONS.first().first) }
+    val strings = LocalStrings.current.divination
+    var selected by rememberSaveable { mutableStateOf(REPORT_REASON_IDS.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = ZenColors.PaperCream,
-        title = { Text("รายงานคำตอบนี้", style = MaterialTheme.typography.titleMedium) },
+        title = { Text(strings.reportTitle, style = MaterialTheme.typography.titleMedium) },
         text = {
             Column {
-                REPORT_REASONS.forEach { (id, label) ->
+                REPORT_REASON_IDS.forEach { id ->
                     Row(
                         Modifier.fillMaxWidth().clickable { selected = id },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = selected == id, onClick = { selected = id }, colors = RadioButtonDefaults.colors(selectedColor = ZenColors.CinnabarRed))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                        Text(strings.reportReason(id), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSubmit(selected) }) { Text("ส่งรายงาน", color = ZenColors.CinnabarRed) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("ยกเลิก", color = ZenColors.InkSoft) } },
+        confirmButton = { TextButton(onClick = { onSubmit(selected) }) { Text(strings.reportSubmit, color = ZenColors.CinnabarRed) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(LocalStrings.current.common.cancel, color = ZenColors.InkSoft) } },
     )
 }
 
@@ -280,20 +279,21 @@ fun ReportDialog(onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
 @Composable
 fun SafetyStage(message: String, onDone: () -> Unit) {
     val uri = LocalUriHandler.current
+    val strings = LocalStrings.current.divination
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = ZenSpacing.screen, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(Icons.Outlined.Favorite, null, tint = ZenColors.CinnabarRed, modifier = Modifier.size(36.dp))
         Text(message, style = MaterialTheme.typography.bodyLarge, color = ZenColors.InkBlack)
-        ZenPrimaryButton("โทรสายด่วนสุขภาพจิต 1323", onClick = { runCatching { uri.openUri("tel:1323") } }, modifier = Modifier.fillMaxWidth(), color = ZenColors.CinnabarRed)
-        ZenSecondaryButton("เหตุฉุกเฉินทางการแพทย์ 1669", onClick = { runCatching { uri.openUri("tel:1669") } }, modifier = Modifier.fillMaxWidth())
-        TextButton(onClick = onDone) { Text("กลับสู่หน้าแรก", color = ZenColors.InkSoft) }
+        ZenPrimaryButton(strings.helplineLabel, onClick = { runCatching { uri.openUri(strings.helplineUri) } }, modifier = Modifier.fillMaxWidth(), color = ZenColors.CinnabarRed)
+        ZenSecondaryButton(strings.emergencyLabel, onClick = { runCatching { uri.openUri(strings.emergencyUri) } }, modifier = Modifier.fillMaxWidth())
+        TextButton(onClick = onDone) { Text(strings.backHome, color = ZenColors.InkSoft) }
         CinnabarSeal(text = "安", size = 44.dp)
     }
 }

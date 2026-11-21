@@ -1,5 +1,9 @@
 package com.iching.ai.data.di
 
+import com.iching.ai.data.siamsi.FileSiamSiCache
+import com.iching.ai.data.siamsi.SiamSiCache
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import androidx.room.Room
 import com.iching.ai.data.journal.JournalDatabase
 import io.ktor.client.HttpClient
@@ -27,4 +31,5 @@ internal actual fun platformDataModule(): Module = module {
     single { HttpClient(Darwin).configured() }
     single { buildDatabase(Room.databaseBuilder<JournalDatabase>(name = "${documentDirectory()}/$DATABASE_FILE")) }
     single { createDataStore("${documentDirectory()}/$SETTINGS_FILE") }
+    single<SiamSiCache> { FileSiamSiCache("${documentDirectory()}/$SIAMSI_DIR".toPath(), FileSystem.SYSTEM) }
 }

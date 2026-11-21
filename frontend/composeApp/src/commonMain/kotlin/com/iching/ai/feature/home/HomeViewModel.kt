@@ -3,23 +3,27 @@ package com.iching.ai.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iching.ai.domain.model.AccountStatus
-import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.ProductKind
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.StoreProduct
-import com.iching.ai.domain.model.campaignIdFor
-import com.iching.ai.domain.model.YearHexagram
-import com.iching.ai.domain.model.currentOn
+import com.iching.ai.domain.model.PosterLink
+import com.iching.ai.domain.model.StreakState
+import com.iching.ai.domain.model.withFirstOpen
+import com.iching.ai.domain.model.withPosterSeen
 import com.iching.ai.domain.oracle.bangkokEpochDay
-import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.GetDailyHexagramUseCase
-import com.iching.ai.domain.usecase.GetHexagramUseCase
 import com.iching.ai.domain.usecase.ObserveSettingsUseCase
-import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
-import com.iching.ai.feature.paywall.PENDING_MESSAGE
+import com.iching.ai.domain.usecase.UpdateSettingsUseCase
+import com.iching.ai.feature.poster.PosterImages
+import com.iching.ai.feature.poster.PosterPopup
+import com.iching.ai.feature.poster.posterPopup
+import kotlinx.coroutines.flow.first
+import com.iching.ai.domain.model.withReviewRequested
+import com.iching.ai.feature.review.shouldRequestReview
 import com.iching.ai.session.AdResult
 import com.iching.ai.session.AppSession
+import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -54,29 +58,16 @@ data class PreCastSheetUi(
     val message: String? = null,
 )
 
-/** The campaign card above the daily one. */
-sealed interface CampaignCard {
-    data object Hidden : CampaignCard
-    data class New(val year: Int) : CampaignCard
-    data class Cast(val year: Int, val hexagram: Hexagram) : CampaignCard
-}
-
-/** Shown only while the server says the campaign is active; [hexagram] is the year hexagram once cast. */
-fun campaignCard(campaign: CampaignStatus?, year: YearHexagram?, hexagram: Hexagram?): CampaignCard = when {
-    campaign == null || !campaign.active -> CampaignCard.Hidden
-    year != null && hexagram != null -> CampaignCard.Cast(campaign.year, hexagram)
-    else -> CampaignCard.New(campaign.year)
-}
-
 private const val STATUS_WAIT_MILLIS = 1_500L
-private const val PRODUCTS_FAILED_MESSAGE = "ยังโหลดแพ็กเกจจากร้านค้าไม่ได้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
 
 class HomeViewModel(
     private val getDaily: GetDailyHexagramUseCase,
-    observeSettings: ObserveSettingsUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     private val session: AppSession,
-    private val api: OracleApi,
-    private val getHexagram: GetHexagramUseCase,
+    private val updateSettings: UpdateSettingsUseCase,
+    private val images: PosterImages,
+    private val languageHolder: AppLanguageHolder,
+    private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) : ViewModel() {
 
     private val _dailyHexagram = MutableStateFlow<Hexagram?>(null)
@@ -85,26 +76,99 @@ class HomeViewModel(
     /** A contemplation for today, the same for everyone on a given date. */
     val dailyHexagram: StateFlow<Hexagram?> = _dailyHexagram.asStateFlow()
 
-    val streakDays: StateFlow<Int> = combine(observeSettings(), today) { settings, day -> settings.streak.currentOn(day) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    /** The last seven days of opening the daily hexagram, shown under today's card. */
+    val streakWeek: StateFlow<StreakWeek> = combine(observeSettings(), today, languageHolder.language) { settings, day, _ ->
+        streakWeek(settings.streak, day, languageHolder.strings.home, languageHolder.strings.common)
+    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), streakWeek(StreakState(), today.value, languageHolder.strings.home, languageHolder.strings.common))
 
     val status: StateFlow<AccountStatus> = session.status
 
-    private val yearResult = MutableStateFlow<YearHexagram?>(null)
-    private val yearHexagram = MutableStateFlow<Hexagram?>(null)
+    /** Refreshed on resume with [today], so a poster that ends while home stays open drops off. */
+    private val now = MutableStateFlow(nowMillis())
+
+    /** Poster images already in the cache; the popup waits for its image so it never shows an empty frame. */
+    private val readyImages = MutableStateFlow<Set<String>>(emptySet())
+    private val loadingImages = mutableSetOf<String>()
+    private val _popup = MutableStateFlow<PosterPopup?>(null)
+
+    /** The poster popup, held from the moment it qualifies until the seeker closes or taps it. */
+    val popup: StateFlow<PosterPopup?> = _popup.asStateFlow()
+
+    init {
+        viewModelScope.launch { updateSettings { it.withFirstOpen(today.value) } }
+        viewModelScope.launch {
+            session.status.map { it.poster?.imageUrl }.distinctUntilChanged().collect { url -> url?.let(::preload) }
+        }
+        viewModelScope.launch {
+            // No default settings seed: one would pop a poster that already showed in an earlier launch.
+            combine(session.status, observeSettings(), today, now, readyImages) { status, settings, day, millis, ready ->
+                posterPopup(status, settings, day, millis, ready)
+            }.collect { next -> if (next != null && _popup.value == null) _popup.value = next }
+        }
+    }
+
+    private fun preload(url: String) {
+        if (url in readyImages.value || !loadingImages.add(url)) return
+        viewModelScope.launch {
+            val ok = try {
+                images.preload(url)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            } finally {
+                loadingImages.remove(url)
+            }
+            if (ok) readyImages.update { it + url }
+        }
+    }
+
+    private var displayedId: String? = null
 
     /**
-     * True once a year lookup has answered. Until then the card stays hidden: showing "new" first would
-     * flash the wrong card (and log it) for someone who already has a hexagram. A failed lookup never
-     * sets it, so offline the card stays hidden rather than guessing.
+     * Called by home once the popup is actually on screen. Holding it is not enough: this view model lives on under
+     * the daily page and behind sheets, and spending the poster there would lose it if the app closes first.
      */
-    private val yearLookupAnswered = MutableStateFlow(false)
+    fun onPopupDisplayed(id: String) {
+        if (displayedId == id) return
+        displayedId = id
+        session.log("poster_shown", popupParams(id))
+        viewModelScope.launch { updateSettings { it.withPosterSeen(id) } }
+    }
 
-    val campaignCard: StateFlow<CampaignCard> = combine(session.status, yearResult, yearHexagram, yearLookupAnswered) { s, year, hexagram, answered ->
-        if (answered) campaignCard(s.campaign, year, hexagram) else CampaignCard.Hidden
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CampaignCard.Hidden)
+    /**
+     * Back from a finished reading: asks the store's rating sheet when [shouldRequestReview] allows. The day is saved
+     * once the store took the request (it never says whether the sheet showed); a request that never reached the
+     * store, e.g. with no foreground activity, leaves the cooldown free.
+     */
+    private fun maybeAskForReview() {
+        if (!session.takeReadingFinished()) return
+        val posterThisRun = displayedId != null || _popup.value != null
+        viewModelScope.launch {
+            val day = bangkokEpochDay(nowMillis())
+            if (!shouldRequestReview(observeSettings().first(), day, posterThisRun)) return@launch
+            if (!session.requestReview()) return@launch
+            updateSettings { it.withReviewRequested(day) }
+            session.log("review_prompt_requested")
+        }
+    }
 
-    private var loggedBannerState: String? = null
+    fun onPopupClosed() {
+        val shown = _popup.value ?: return
+        _popup.value = null
+        session.log("poster_closed", popupParams(shown.id))
+    }
+
+    /** Clears the popup and returns where it leads, if anywhere. */
+    fun onPopupTapped(): PosterLink? {
+        val shown = _popup.value ?: return null
+        _popup.value = null
+        session.log("poster_tapped", popupParams(shown.id))
+        return shown.link
+    }
+
+    private fun popupParams(id: String) = mapOf("poster_id" to id, "surface" to "popup")
 
     private val _sheet = MutableStateFlow<PreCastSheetUi?>(null)
 
@@ -130,10 +194,6 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch { session.refreshStatus() }
-        // The year hexagram is only asked for once the server says there is a campaign.
-        viewModelScope.launch {
-            session.status.map { it.campaign?.active == true }.distinctUntilChanged().collect { if (it) refreshYear() }
-        }
         viewModelScope.launch {
             session.status.collect { s ->
                 if (premiumTapped && s.premium) {
@@ -158,52 +218,9 @@ class HomeViewModel(
     fun onResumed() {
         castSent = false
         refreshDay()
-        if (session.status.value.campaign?.active == true) refreshYear()
-    }
-
-    /** Keeps the last answer when the server cannot be reached. */
-    private fun refreshYear() {
-        viewModelScope.launch {
-            val result = try {
-                api.yearHexagram()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                return@launch
-            }
-            val hexagram = result?.let { runCatching { getHexagram(it.primaryId) }.getOrNull() ?: return@launch }
-            yearHexagram.value = hexagram
-            yearResult.value = result
-            yearLookupAnswered.value = true
-        }
-    }
-
-    /** The card is on screen; counted once per kind of card, not on every redraw. */
-    fun onCampaignCardShown(card: CampaignCard) {
-        val state = card.stateName() ?: return
-        if (loggedBannerState == state) return
-        loggedBannerState = state
-        session.log("campaign_banner_shown", mapOf("campaign_id" to campaignId(card), "state" to state))
-    }
-
-    fun onCampaignCardTapped(card: CampaignCard) {
-        val state = card.stateName() ?: return
-        session.log("campaign_banner_tap", mapOf("campaign_id" to campaignId(card), "state" to state))
-    }
-
-    private fun campaignId(card: CampaignCard): String {
-        val year = when (card) {
-            is CampaignCard.New -> card.year
-            is CampaignCard.Cast -> card.year
-            CampaignCard.Hidden -> 0
-        }
-        return campaignIdFor(session.status.value.campaign, year)
-    }
-
-    private fun CampaignCard.stateName(): String? = when (this) {
-        CampaignCard.Hidden -> null
-        is CampaignCard.New -> "new"
-        is CampaignCard.Cast -> "cast"
+        maybeAskForReview()
+        // Retries an image that failed to load, e.g. offline when the status arrived.
+        session.status.value.poster?.imageUrl?.let(::preload)
     }
 
     fun onStart(question: String, category: QuestionCategory?) {
@@ -239,7 +256,7 @@ class HomeViewModel(
             _sheet.update {
                 it?.copy(
                     coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
-                    premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                    premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.let(languageHolder.strings.paywall::trialLabel),
                 )
             }
         }
@@ -253,10 +270,10 @@ class HomeViewModel(
         viewModelScope.launch {
             when (session.watchAdForReading()) {
                 is AdResult.Granted -> castFromSheet()
-                AdResult.NotCompleted -> settle("ต้องชมโฆษณาจนจบจึงจะได้รับสิทธิ์")
-                is AdResult.Error -> settle("ยังไม่มีโฆษณาพร้อมแสดง โปรดลองใหม่อีกครู่ หรือเสี่ยงทายอ่านตัวบทไปก่อน")
+                AdResult.NotCompleted -> settle(languageHolder.strings.common.adMustFinish)
+                is AdResult.Error -> settle(languageHolder.strings.home.adUnavailableOrScripture)
                 AdResult.LimitReached -> {
-                    _sheet.update { it?.copy(kind = PreCastSheetKind.UPSELL, busy = false, message = "วันนี้ใช้สิทธิ์ชมโฆษณาครบแล้ว") }
+                    _sheet.update { it?.copy(kind = PreCastSheetKind.UPSELL, busy = false, message = languageHolder.strings.common.adLimitReached) }
                     if (_sheet.value != null) onUpsellShown()
                 }
             }
@@ -273,7 +290,7 @@ class HomeViewModel(
             // The price may not have loaded yet; the button works anyway, so look the pack up now.
             val coins = sh.coins ?: runCatching { session.products() }.getOrNull()?.firstOrNull { it.kind == ProductKind.COINS }
             if (coins == null) {
-                settle(PRODUCTS_FAILED_MESSAGE)
+                settle(languageHolder.strings.home.productsFailed)
                 return@launch
             }
             when (session.purchase(coins)) {
@@ -282,9 +299,9 @@ class HomeViewModel(
                     castFromSheet()
                 }
                 PurchaseResult.Cancelled -> settle(null)
-                PurchaseResult.Pending -> settle(PENDING_MESSAGE)
-                PurchaseResult.AwaitingPayment -> settle(AWAITING_PAYMENT_MESSAGE)
-                is PurchaseResult.Error -> settle("การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง")
+                PurchaseResult.Pending -> settle(languageHolder.strings.paywall.pending)
+                PurchaseResult.AwaitingPayment -> settle(languageHolder.strings.paywall.awaitingPayment)
+                is PurchaseResult.Error -> settle(languageHolder.strings.common.paymentFailed)
             }
         }
     }
@@ -341,11 +358,11 @@ class HomeViewModel(
     /** Runs on every resume too: the app may have stayed open past midnight. */
     fun refreshDay() {
         viewModelScope.launch {
-            val now = nowMillis()
-            today.value = bangkokEpochDay(now)
-            _dailyHexagram.value = getDaily(now)
+            val millis = nowMillis()
+            now.value = millis
+            today.value = bangkokEpochDay(millis)
+            _dailyHexagram.value = getDaily(millis)
         }
     }
 
-    private fun nowMillis() = Clock.System.now().toEpochMilliseconds()
 }

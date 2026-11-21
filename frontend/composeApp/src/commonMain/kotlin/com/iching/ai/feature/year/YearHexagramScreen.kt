@@ -1,5 +1,6 @@
 package com.iching.ai.feature.year
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -52,10 +53,12 @@ import com.iching.ai.ui.components.SectionLabel
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.LocalStrings
+import com.iching.ai.ui.strings.zodiacYearLabel
 import kotlinx.coroutines.delay
-
-private const val THEME_NOTICE = "ท่านได้รับธีมชาดทอง เลือกใช้ได้ในหน้าตั้งค่า"
 
 /**
  * The year hexagram: the ritual first, then the result. [onShare] and [onAskHermit] show their button
@@ -73,6 +76,7 @@ fun YearHexagramScreen(
     val soundEnabled by viewModel.soundEnabled.collectAsStateWithLifecycle()
     val sound = rememberSoundPlayer()
     val ui = state
+    val strings = LocalStrings.current.year
 
     LaunchedEffect(ui is YearUi.Ritual) {
         // A chime to settle the mind before the first toss.
@@ -94,24 +98,24 @@ fun YearHexagramScreen(
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "กลับ", tint = ZenColors.InkBlack)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = LocalStrings.current.common.back, tint = ZenColors.InkBlack)
                 }
                 if (ui is YearUi.Ritual) {
-                    Text("ตั้งจิตอธิษฐานรับปีใหม่", style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
+                    Text(strings.ritualTitle, style = MaterialTheme.typography.headlineSmall, color = ZenColors.InkBlack)
                 }
             }
             when (ui) {
-                YearUi.Loading -> Message("กำลังตั้งจิต...")
+                YearUi.Loading -> Message(strings.loading)
                 is YearUi.Ritual -> RitualStage(ui, soundEnabled, sound::play, viewModel::onToss)
                 is YearUi.Result -> ResultStage(ui, onOpenHexagram, onShare, onAskHermit)
-                YearUi.Offline -> Message("ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อรับกวาประจำปี", retry = viewModel::retry)
-                YearUi.RateLimited -> Message("รอสักครู่แล้วลองโยนอีกครั้ง", retry = viewModel::retry)
-                YearUi.Inactive -> Message("ช่วงเสี่ยงทายกวาประจำปีสิ้นสุดแล้ว")
+                YearUi.Offline -> Message(strings.offline, retry = viewModel::retry)
+                YearUi.RateLimited -> Message(strings.rateLimited, retry = viewModel::retry)
+                YearUi.Inactive -> Message(strings.inactive)
             }
         }
         if (notice) {
             Text(
-                THEME_NOTICE,
+                strings.themeNotice,
                 style = MaterialTheme.typography.bodySmall,
                 color = ZenColors.PaperCream,
                 textAlign = TextAlign.Center,
@@ -119,7 +123,7 @@ fun YearHexagramScreen(
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(20.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(ZenColors.InkBlack.copy(alpha = 0.9f))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             )
@@ -142,7 +146,7 @@ private fun Message(text: String, retry: (() -> Unit)? = null) {
         )
         if (retry != null) {
             Spacer(Modifier.height(16.dp))
-            ZenPrimaryButton(text = "ลองใหม่", onClick = retry)
+            ZenPrimaryButton(text = LocalStrings.current.year.retry, onClick = retry)
         }
     }
 }
@@ -161,7 +165,7 @@ private fun RitualStage(ui: YearUi.Ritual, soundEnabled: Boolean, play: (ZenSoun
         }
     }
     TossStage(
-        prompt = "ตั้งจิตให้สงบ แล้วโยนเหรียญ",
+        prompt = LocalStrings.current.year.ritualPrompt,
         tosses = ui.tosses,
         currentToss = ui.currentToss,
         tossKey = ui.tossKey,
@@ -180,18 +184,21 @@ private fun ResultStage(
     onAskHermit: (() -> Unit)?,
 ) {
     val hexagram = ui.hexagram
+    val lang = LocalAppLanguage.current
     val message = hexagram.yearMessage
+    val strings = LocalStrings.current.year
+    val common = LocalStrings.current.common
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+            .padding(horizontal = ZenSpacing.screen, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 1. Header
         Text(
-            "กวาประจำปี${campaignYearLabel(ui.year)}",
+            strings.heading(zodiacYearLabel(ui.year, LocalAppLanguage.current)),
             style = MaterialTheme.typography.headlineSmall,
             color = ZenColors.InkBlack,
             textAlign = TextAlign.Center,
@@ -207,12 +214,15 @@ private fun ResultStage(
         )
         Spacer(Modifier.height(14.dp))
         Text(
-            "${hexagram.nameCn}  ${hexagram.id.toThaiNumerals()} · ${hexagram.shortNameTh}",
+            "${hexagram.nameCn}  ${common.number(hexagram.id)} · ${hexagram.shortName(lang)}",
             style = MaterialTheme.typography.titleLarge,
             color = ZenColors.InkBlack,
             textAlign = TextAlign.Center,
         )
-        Text(hexagram.meaningTh, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+        val meaning = hexagram.meaning(lang)
+        if (meaning.isNotEmpty()) {
+            Text(meaning, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+        }
 
         if (message != null) {
             Spacer(Modifier.height(24.dp))
@@ -222,11 +232,11 @@ private fun ResultStage(
             InkDivider()
             Spacer(Modifier.height(20.dp))
             // 3. Work, love, money
-            Aspect("การงาน", message.work)
+            Aspect(strings.work, message.work)
             Spacer(Modifier.height(14.dp))
-            Aspect("ความรัก", message.love)
+            Aspect(strings.love, message.love)
             Spacer(Modifier.height(14.dp))
-            Aspect("การเงิน", message.money)
+            Aspect(strings.money, message.money)
             Spacer(Modifier.height(24.dp))
             // 4. Blessing in a seal frame
             Text(
@@ -244,21 +254,21 @@ private fun ResultStage(
         // 5. Buttons, only when the caller wires them
         if (onShare != null || onAskHermit != null) {
             Spacer(Modifier.height(24.dp))
-            onShare?.let { ZenPrimaryButton(text = "แชร์การ์ดปีใหม่", onClick = it, modifier = Modifier.fillMaxWidth()) }
+            onShare?.let { ZenPrimaryButton(text = strings.share, onClick = it, modifier = Modifier.fillMaxWidth()) }
             if (onShare != null && onAskHermit != null) Spacer(Modifier.height(10.dp))
-            onAskHermit?.let { ZenSecondaryButton(text = "ถามนักพรตเรื่องปีนี้", onClick = it, modifier = Modifier.fillMaxWidth()) }
+            onAskHermit?.let { ZenSecondaryButton(text = strings.askHermit, onClick = it, modifier = Modifier.fillMaxWidth()) }
         }
 
         // 6. Scripture link
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = { onOpenHexagram(hexagram.id) }) {
-            Text("อ่านตัวบทคัมภีร์ของกวานี้", color = ZenColors.CinnabarRed, style = MaterialTheme.typography.labelLarge)
+            Text(strings.readScripture, color = ZenColors.CinnabarRed, style = MaterialTheme.typography.labelLarge)
         }
 
         // 7. Footnote
         Spacer(Modifier.height(8.dp))
         Text(
-            "ข้อความประจำปีเขียนไว้ล่วงหน้าจากความหมายของกวา ใช้เพื่อการสะท้อนคิด",
+            strings.footnote,
             style = MaterialTheme.typography.labelSmall,
             color = ZenColors.InkFaint,
             textAlign = TextAlign.Center,

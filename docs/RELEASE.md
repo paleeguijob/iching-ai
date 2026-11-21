@@ -1,4 +1,4 @@
-# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11) และ v1.2 (หัวข้อ 12)
+# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12), v1.3 (หัวข้อ 13) และ 2.0 (หัวข้อ 14)
 
 **ลำดับการปล่อย: Android ก่อน** · iOS ทำภายหลังเมื่อสมัคร Apple Developer แล้ว (รวมไว้ที่หัวข้อ 9)
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | เรียก AI | แอปเรียก Gemini ตรง ฝัง API key ในแอป | ผ่าน Cloud Function `api` เท่านั้น key อยู่ใน Firebase Secret |
 | สุ่มกวา | ในเครื่อง | ฝั่ง server (crypto RNG, 3 เหรียญ = 1/8, 3/8, 3/8, 1/8) แอปเล่นแอนิเมชันตามผล · ออฟไลน์ยังสุ่มในเครื่องได้แต่ได้แค่ตัวบท |
-| โควตา | ไม่มี | Free ไม่มีสิทธิ์ฟรีรายวัน (ตั้งแต่ 6 พ.ย. 2026) · โฆษณาแลก 2/วัน (`gemini-3.1-flash-lite`) · Premium 10/วัน (`gemini-3.5-flash-lite`) · เหรียญ 1 = 1 คำทำนาย · จำกัดต่อเครื่อง · rate limit 8 วิ · Gemini error = คืนโควตา |
+| โควตา | ไม่มี | Free ไม่มีสิทธิ์ฟรีรายวัน (ตั้งแต่ 6 พ.ย. 2026) · คำทำนายต้อนรับ 1 ครั้งตลอดชีพ (ต่อบัญชี + ต่อเครื่อง) · โฆษณาแลก 3/วัน (`gemini-3.1-flash-lite`) · Premium 5/วัน (`gemini-3.5-flash-lite`) · เหรียญ 1 = 1 คำทำนาย · จำกัดต่อเครื่อง · rate limit 8 วิ · Gemini error = คืนโควตา |
 | บัญชี | ไม่มี | Firebase Anonymous → ผูก Google (Android) / Sign in with Apple (iOS) · ลบบัญชีในแอป |
 | เงิน | ไม่มี | RevenueCat (รายเดือน 49 / รายปี 390 + ทดลอง 7 วัน / เหรียญ 29 บาท 10 เหรียญ) + AdMob rewarded |
 | ถามต่อ | ไม่มี | Premium ถามต่อ 3 รอบ/คำทำนาย (ส่งสรุป ไม่ส่ง history เต็ม) |
@@ -23,6 +23,7 @@
 | Safety | ไม่มี | คำถามทำร้ายตนเอง/ฉุกเฉินทางการแพทย์ → ข้อความคงที่ + 1323/1669 ไม่ทำนาย ไม่ตัดโควตา |
 | Store compliance | ไม่มี | Onboarding disclaimer, ป้าย "สร้างโดย AI", ปุ่มรายงานคำตอบ, Restore/Manage subscription, เงื่อนไขต่ออายุบน paywall, privacy/terms/delete-account บน Firebase Hosting, ATT + UMP consent |
 | Persona | "ห้ามบอกว่าเป็น AI" | ไม่พูดถึงเทคโนโลยีในคำทำนาย แต่ถ้าถามตรง ๆ ต้องยอมรับ |
+| ให้คะแนน / ความเห็น | ไม่มี | หน้าต่างให้ดาวของ Play ขึ้นเมื่อกลับหน้าแรกหลังทำนายครบ 3 ครั้ง ติดตั้งมาแล้ว 2 วัน เว้น 30 วัน (ไม่ถามความรู้สึกก่อน ตามนโยบาย Play) · Settings มี "ให้คะแนนแอป" และ "ส่งความเห็น" → `POST /feedback` เก็บใน `feedback/` วันละ 5 ข้อความ (นับใน transaction ที่ `users/{uid}/meta/feedback`) |
 
 ไฟล์สำคัญ: `backend/functions/src/core/*` (logic ทั้งหมดของ server + เทสต์) · `frontend/composeApp/.../session/AppSession.kt` ·
 `frontend/composeApp/.../feature/divination/DivinationViewModel.kt` · `frontend/composeApp/.../platform/NativeBridges.kt` (สัญญากับโค้ด native) ·
@@ -71,7 +72,7 @@
 
 **Kill-switch / ปรับโควตาโดยไม่ต้อง deploy:** สร้างเอกสาร Firestore `config/runtime` ใส่ฟิลด์ที่ต้องการ override เช่น
 `aiEnabled: false` (ปิด AI ทุกคน → ได้ตัวบทแทน), `forceModel: "gemini-3.1-flash-lite"` (สลับทุกคนไปรุ่นถูก),
-`freeDailyReadings` (ค่าเริ่มต้น 0 = ไม่มีคำทำนายฟรี), `premiumDailyReadings`, `adRewardsPerDay`, `enforceAppCheck` — มีผลภายใน 60 วินาที (ดูค่าทั้งหมดใน `backend/functions/src/core/quota.ts`)
+`freeDailyReadings` (ค่าเริ่มต้น 0 = ไม่มีคำทำนายฟรี), `premiumDailyReadings` (5), `adRewardsPerDay` (3), `welcomeReadings` (1 = คำทำนายต้อนรับต่อบัญชีและต่อเครื่อง, 0 = ปิด), `enforceAppCheck` — มีผลภายใน 60 วินาที (ดูค่าทั้งหมดใน `backend/functions/src/core/quota.ts`)
 
 **รุ่น Gemini:** ห้ามใช้ alias `-latest` เพราะอาจถูกเลื่อนไปรุ่นที่แพงกว่าโดยไม่ต้องแก้โค้ด (เช่น 3.8 Flash $0.75/$3.75 ถึงสิ้นปี 2026 และ $1.50/$7.50 ตั้งแต่ 1 ม.ค. 2027)
 รุ่น 2.5 ยังไม่มีวันปิดบริการ แต่ Google ไม่ได้จัดเป็นรุ่น stable จึงต้องคอยดูประกาศและหน้า deprecations · ก่อนเปลี่ยนรุ่นให้ทดสอบคุณภาพภาษาไทยและคิดต้นทุนใหม่เทียบ KPI ≤ 0.10 บาท/คำทำนาย
@@ -158,7 +159,7 @@
 
 ## 6. ข้อมูลแอปใน Play Console
 
-- ☐ Data safety: เก็บ User IDs, Device IDs, App interactions, Crash logs, Purchase history, User-generated content (คำถาม) · เข้ารหัสระหว่างส่ง: Yes · ผู้ใช้ขอลบได้: Yes → URL `https://<project-id>.web.app/delete-account`
+- ☐ Data safety: เก็บ User IDs, Device IDs, App interactions, Crash logs, Purchase history, User-generated content (คำถาม และข้อความ "ส่งความเห็น" จากหน้าตั้งค่า) · เข้ารหัสระหว่างส่ง: Yes · ผู้ใช้ขอลบได้: Yes → URL `https://<project-id>.web.app/delete-account`
 - ☐ Privacy Policy URL: `https://<project-id>.web.app/privacy`
 - ☐ Content rating (IARC) → ได้ Teen · Target audience 13+
 - ☐ ประกาศ **Ads: Yes** และ **AI-generated content** (นโยบาย Generative AI: มีปุ่มรายงานในแอปแล้ว)
@@ -175,9 +176,9 @@
 - ☐ ซื้อเหรียญ → จำนวนเหรียญขึ้นในหน้าตั้งค่า → ใช้หมดแล้วกลับเป็นตัวบท
 
 **Release จาก Internal testing + บัญชี License testing**
-- ☐ เปิดครั้งแรก → หน้า disclaimer → หน้าแรกบอกว่าต้องชมโฆษณาก่อนเสี่ยงทาย (ไม่มีคำว่า "ฟรี")
-- ☐ บัญชี Free ไม่มีเหรียญ → ชมโฆษณาจบ → เสี่ยงทาย 6 ครั้ง → คำทำนายแบบ streaming + ป้าย "สร้างโดย AI" (ทำได้ 2 ครั้ง/วัน)
-- ☐ บัญชี Free ข้ามโฆษณาหรือชมครบ 2 ครั้งแล้ว → ได้ตัวบท + การ์ดเสนอ Premium/เหรียญ ไม่มีคำทำนาย AI ฟรี
+- ☐ เปิดครั้งแรก → หน้า disclaimer → หน้าแรกบอกว่าเหลือคำชี้แนะ ๑ ครั้ง → เสี่ยงทายได้คำทำนาย AI โดยไม่ต้องชมโฆษณา (คำทำนายต้อนรับ) → ครั้งต่อไปต้องชมโฆษณา และลบข้อมูลแอป/สร้างบัญชีใหม่บนเครื่องเดิมแล้วไม่ได้คำทำนายต้อนรับอีก
+- ☐ บัญชี Free ไม่มีเหรียญ → ชมโฆษณาจบ → เสี่ยงทาย 6 ครั้ง → คำทำนายแบบ streaming + ป้าย "สร้างโดย AI" (ทำได้ 3 ครั้ง/วัน)
+- ☐ บัญชี Free ข้ามโฆษณาหรือชมครบ 3 ครั้งแล้ว → ได้ตัวบท + การ์ดเสนอ Premium/เหรียญ ไม่มีคำทำนาย AI ฟรี
 - ☐ ถามว่า "ไม่อยากมีชีวิตอยู่แล้ว" → หน้าสายด่วน 1323 ไม่มีการทำนาย
 - ☐ ซื้อรายเดือน รายปี และเหรียญผ่าน Play → webhook ทำงาน (ดู log `revenuecat_event`)
 - ☐ ลบแอป ติดตั้งใหม่ → ผูก Google → กู้คืนการซื้อ → ดึงบันทึกชะตาจากระบบ
@@ -210,6 +211,8 @@
 - ☐ **ถอนสิทธิ์ Sign in with Apple ตอนลบบัญชี** — ตอนนี้ยังไม่มีโค้ด revoke และ Apple กำหนดให้ทำ
 - ☐ **Push กวาประจำวัน (v1.1)** — อัปโหลด APNs key ใน Firebase, เพิ่ม `FirebaseMessaging` ใน Xcode และทำ `IosNotifications` ใน `Bridges/IosAdsAndAnalytics.swift` ให้ทำงานจริง (ตอนนี้ `isSupported()` คืน `false` แอปจึงซ่อนสวิตช์) แล้วเรียก `PendingNavigation.requestDaily()` เมื่อแตะแจ้งเตือน
 - ☐ **สี status bar ของธีมมืด (v1.1)** — `SystemBars.ios.kt` ยังไม่ทำงาน ตัวอักษร status bar จะเป็นสีเข้มบนพื้นเข้มในธีมราตรีหมึก
+- ☐ **เขย่าเซียมซีด้วยเซ็นเซอร์ (v1.4)** — `ShakeDetector.ios.kt` ยังไม่ต่อ CoreMotion ตอนนี้บน iOS เขย่าได้ด้วยการกดค้างที่กระบอกเท่านั้น
+- ☐ **ปุ่ม "ให้คะแนนแอป" (v1.4)** — ได้ App Store id แล้วให้ `IosReview.storeUrls()` ใน `Bridges/IosReview.swift` คืน `["https://apps.apple.com/app/id<id>?action=write-review"]` (ตอนนี้คืนรายการว่าง แอปจึงซ่อนแถวนี้บน iOS; หน้าต่างให้ดาวในแอปทำงานแล้ว)
 - ☐ แยก RevenueCat test key ของ debug ออกจาก release แบบเดียวกับ Android และตรวจว่า SDK เป็น 5.43.0 ขึ้นไป
 
 **Firebase**
@@ -254,7 +257,7 @@
 - ปลดล็อกเสียงจาก streak — ต้องมีไฟล์เสียงที่ใช้ได้ตามลิขสิทธิ์ก่อน
 - schema กวา: `name_en` (ใช้ตอนทำ v2)
 - context caching ของ Gemini (prompt ยังสั้นกว่าขั้นต่ำที่ caching คุ้ม)
-- Server-side verification (SSV) ของ AdMob — ตอนนี้ server เชื่อสัญญาณจากแอปที่ผ่าน App Check และจำกัด 2 ครั้ง/วัน/เครื่อง ถ้าเห็นการโกงค่อยเพิ่ม
+- Server-side verification (SSV) ของ AdMob — ตอนนี้ server เชื่อสัญญาณจากแอปที่ผ่าน App Check และจำกัด 3 ครั้ง/วัน/เครื่อง ถ้าเห็นการโกงค่อยเพิ่ม
 
 ---
 
@@ -364,3 +367,141 @@
 | ค่า API ÷ รายได้สุทธิ | < 50% | ตามเดิม |
 
 Event ทั้งหมด: `campaign_banner_shown`, `campaign_banner_tap` (`state` = `new` \| `cast`), `year_cast`, `year_view`, `year_share` (`target`), `year_ai_tap`, `year_ai_done` (`charge`), `push_open` (เพิ่ม `type = campaign`) · ทุก event มี `campaign_id`
+
+## 13. ปล่อย v1.3 — ปรับ UI แบบ Quiet Ink
+
+ปรับหน้าตาทั้งแอปตามแนว Quiet Ink (ยัง Zen หมึกบนกระดาษเหมือนเดิม): การ์ดพื้นผิวใหม่ทุกธีม, แถบเมนูล่างแบบเรียบ, ปุ่มเริ่มเสี่ยงทายตรึงเหนือเมนู, แถบความคืบหน้าตอนโยนเหรียญ, คำทำนายเป็นแผ่นกระดาษขอบชาด, คัมภีร์เป็นรายการกระชับ + ตัวกรองตรีกรม, บันทึกชะตาเป็นการ์ดรายเดือน, ตั้งค่าเลือกธีมด้วยจุดสี · ไม่มีการเปลี่ยน backend · `versionCode` 130 / `versionName` 1.3.0 · Android เท่านั้น
+สเปก: [`docs/superpowers/specs/2026-11-08-quiet-ink-ui-redesign-design.md`](superpowers/specs/2026-11-08-quiet-ink-ui-redesign-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-quiet-ink-ui-redesign.md`](superpowers/plans/2026-11-08-quiet-ink-ui-redesign.md)
+
+1. ☐ ไล่ดูบนเครื่องจริงทั้ง 5 ธีม: หน้าแรก (พิมพ์คำถามตอนคีย์บอร์ดเปิด ปุ่มต้องลอยเหนือคีย์บอร์ด), โยนเหรียญ, คำทำนาย (ทั้งแบบ AI และตัวบทคัมภีร์ — แบบตัวบทต้องไม่มีป้าย AI), คัมภีร์ + ตัวกรอง, บันทึก, ตั้งค่า, paywall · ลองขนาดตัวอักษรระบบ 1.3 เท่าด้วย
+2. ☐ ภาพหน้าจอ store ชุดใหม่อยู่ที่ `docs/store/screenshots/01–05` (1080×2160, ธีมราตรีหมึก) → อัปโหลดแทนชุดเดิมใน Play Console → Main store listing
+3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp frontend/androidApp/build/outputs/bundle/release/*.aab iching-ai-1.3.0-130.aab` (ไม่ commit) → อัปโหลด Closed testing ก่อน แล้วขอ Production ตามหัวข้อ 8
+4. ☐ ถ้า v1.2 ยังไม่ขึ้น production ให้ปล่อย v1.2 ให้เสร็จก่อน (แคมเปญตรุษจีนมีกำหนดเวลา) แล้วค่อยส่ง v1.3
+
+## 14. ปล่อย 2.0 — เซียมซี + ภาษาอังกฤษ + Widget
+
+v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รวมอยู่ใน 2.0 พร้อมภาษาอังกฤษและ widget กวาประจำวัน · `versionCode` 200 / `versionName` 2.0.0 · Android ก่อน (iOS ดูข้อ H)
+
+**เซียมซี:** ตำราเจ้าแม่กวนอิม ๑๐๐ ใบ และหกสิบกะจื๊อ ๖๐ ใบ (bundle ในแอป) · ดูโฆษณาก่อนเสี่ยง (ฟรี ๒ ครั้ง/วัน, Premium ๓ ครั้ง/วันไม่มีโฆษณา นับในเครื่อง แยกจากสิทธิ์โฆษณาของอี้จิง) · ไม้ปัวบังคับ · "แปลความหมาย" ใช้สิทธิ์คำทำนายเดิม ๑ ครั้งผ่าน `POST /siamsi/interpret` · บันทึกชะตามีตัวกรองและการ์ดแชร์ · ชุดใหม่ดาวน์โหลดจาก Hosting `/content/siamsi/{id}.json` ได้ภายหลัง
+**ภาษาอังกฤษ:** ติดตั้งใหม่เห็นหน้าเลือกภาษา (อัปเดตจากเวอร์ชันเก่าได้ไทยเหมือนเดิม) เปลี่ยนได้ในตั้งค่า · แอปส่ง header `X-App-Lang` · push topic `daily-hexagram-th` (เดิม) และ `daily-hexagram-en` · กวาและใบเซียมซีอังกฤษ bundle ในแอป แก้ภายหลังผ่าน Hosting ได้ (ข้อ G) · ลิงก์ privacy/terms ในแอปโหมดอังกฤษเปิด `/en/privacy` และ `/en/terms`
+**Widget:** กวาประจำวันบนหน้าจอหลัก (Android) อัปเดตตอนเที่ยงคืน UTC+7 และตอนเปิดแอป
+
+สเปก: [`docs/superpowers/specs/2026-11-08-siamsi-design.md`](superpowers/specs/2026-11-08-siamsi-design.md) · [`docs/superpowers/specs/2026-11-20-v2.0-english-widget-design.md`](superpowers/specs/2026-11-20-v2.0-english-widget-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-v1.4-siamsi.md`](superpowers/plans/2026-11-08-v1.4-siamsi.md)
+
+### A. ก่อนส่งแอป (ต้องครบก่อน)
+1. ☐ **เนื้อหาเซียมซีครบ 160 ใบ** ในไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` บันทึกแหล่งของแต่ละชุดใน `docs/content/siamsi/SOURCES.md` และ bundle อ่านแบบ `strict = true` · `grep -rn "〔ตัวอย่าง〕" frontend/core/data/src/commonMain/composeResources/files backend/hosting/public/content` ต้องว่าง (ค้นคำว่า "ตัวอย่าง" เฉย ๆ ไม่ได้ เพราะหกสิบกะจื๊อใบ 54 มี "เตรียมตัวอย่างดี" ในเนื้อหาจริง)
+2. ☐ เจ้าของแอปตรวจทุกใบ (ทั้งไทยและอังกฤษ) และลงชื่อผู้ตรวจ/วันที่ใน `docs/content/siamsi/SOURCES.md`
+3. ☐ ไล่ดูบน emulator ทั้ง 5 ธีม (ตั้ง `siamsiEnabled = true` ใน Firestore emulator ก่อน): หน้าแรก + เลือกตำรา, ปุ่มเสี่ยง ๔ สถานะ (ดูโฆษณา / ปิดโฆษณากลางคัน / ไม่มีโฆษณา / ครบแล้ว), เขย่าด้วยเซ็นเซอร์และกดค้าง, ไม้ปัว ๓ รอบ, ใบจีน ๑๐๐/๖๐, แปลความหมาย (ทั้งมีสิทธิ์และต้องดูโฆษณา), ถามต่อ (Premium), บันทึก + ตัวกรอง, แชร์ (การ์ดต้องไม่มีคำถาม)
+4. ☐ `grep -rn "ขยายความ" frontend/composeApp/src frontend/core/*/src/commonMain/kotlin backend/functions/src` ต้องว่าง (`hexagrams.json` ของอี้จิงมีคำนี้ในเนื้อหาคัมภีร์เดิม ไม่เกี่ยวกับเซียมซี)
+5. ☐ ไล่ดูโหมดอังกฤษบน emulator ทั้ง 5 ธีมและจอแคบ: ไม่มีอักษรไทยหลง ไม่มีข้อความถูกตัด · ติดตั้งใหม่ → เห็นหน้าเลือกภาษา · อัปเดตจาก 1.3 → ไม่เห็น ได้ไทย · เปลี่ยนภาษาในตั้งค่า → ทุกหน้า widget และ push เปลี่ยนตาม · ลิงก์ privacy/terms เปิดหน้าภาษาที่ถูก (หน้าเว็บอังกฤษลิงก์ไป `/en/delete-account`)
+6. ☐ หน้าจอไทยทุกหน้าเหมือนก่อนเปลี่ยน (เทียบ screenshot ก่อน/หลัง: หน้าแรก เสี่ยงทาย คำทำนาย เซียมซี บันทึก ตั้งค่า paywall)
+7. ☐ Widget บนเครื่องจริง: วางได้ทั้งสองขนาด ข้ามเที่ยงคืนแล้วเปลี่ยน แตะแล้วเปิดหน้ากวาประจำวันถูก
+8. ☐ QA หน้าที่เรียก backend บน emulator: ลงทะเบียน App Check debug token ของ emulator ใน Firebase Console → App Check → Apps → Android → Manage debug tokens ก่อน (token อยู่ใน logcat ตอนเปิดแอป debug ครั้งแรก) ไม่งั้นทุก request ถูกปฏิเสธ
+
+### B. Store listing
+**ไทย** (`docs/store/listing-th.md`)
+- ☐ ตอนปล่อยใช้คำอธิบายชุด "ตอนนี้ (ยังไม่เปิดเซียมซี)" · เพิ่มย่อหน้า "🎋 เสี่ยงเซียมซี" และเปลี่ยนคำอธิบายสั้นเป็นชุด "หลังเปิด v1.4 เซียมซี" **หลังตั้ง `siamsiEnabled = true` แล้วเท่านั้น** (ข้อ C.6)
+- ☐ ภาพหน้าจอใบเซียมซี ๑ รูปใน `docs/store/screenshots/` — ห้ามมีเทวรูปหรือโลโก้วัด/ศาลเจ้า
+
+**อังกฤษ** (`docs/store/listing-en.md`)
+- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มชุด **"Before `siamsiEnabled` is on"** จากไฟล์ (ชื่อ "I Ching AI: Book of Changes" 27 ตัวอักษร ไม่มีเซียมซี) · ชุด "After" ที่มีชื่อ "I Ching AI & Fortune Sticks" (27 ตัวอักษร) และพูดถึง Kau Cim ใช้หลังตั้ง `siamsiEnabled = true` แล้วเท่านั้น (ข้อ C.6)
+- ☐ ภาพหน้าจอภาษาอังกฤษ 5 ภาพ (1080×2160 เหมือนชุดไทย) และ feature graphic สำหรับ en-US
+- ☐ **ถ่ายใหม่ `docs/store/screenshots/en/03-hexagram.png`:** บรรทัดความหมายใต้ชื่อกวาในโหมดอังกฤษไม่ซ้ำชื่อแล้ว (เช่น "Heaven" ไม่มี "Heaven, creative force" ต่อท้าย) ภาพเดิมยังเป็นแบบเก่า · เจ้าของแอปถ่ายใหม่ก่อนอัปโหลด (Claude ไม่ได้ถ่ายใหม่)
+- ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy`, `/en/terms` และ `/en/delete-account` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
+- ☐ **ประเทศ:** Production → Countries/regions → เพิ่ม สิงคโปร์ (SG) มาเลเซีย (MY) ฟิลิปปินส์ (PH) สหรัฐ (US) สหราชอาณาจักร (GB) ออสเตรเลีย (AU) แคนาดา (CA) · ตรวจว่า in-app products และ subscription มีราคาในประเทศเหล่านี้ และ AdMob/RevenueCat ไม่ได้จำกัดประเทศ
+- ☐ **Data safety:** ตรวจซ้ำ ไม่มีประเภทข้อมูลใหม่ที่ต้องประกาศ (ภาษาที่เลือกส่งไปกับ request และเป็น user property ใน Analytics ซึ่งอยู่ในหมวด App activity/App info เดิม) · ถ้ามีหมวดใดเปลี่ยน แก้ฉบับไทยของ `privacy.html` ก่อน แล้วแปล `en/privacy.html` ให้ตรง · ส่วน Data deletion: URL ลบบัญชีของ Play ยังใช้ `https://<โดเมน hosting>/delete-account` ได้ และมีฉบับอังกฤษที่ `https://<โดเมน hosting>/en/delete-account` (ลิงก์ไปมาหากัน)
+
+### C. ลำดับเปิดใช้ (เจ้าของแอปทำเอง — Claude ไม่ deploy และไม่อัปโหลด)
+1. ☐ **Merge `feature/v2.0-server` แล้ว deploy functions + hosting ก่อนแอป 2.0 ขึ้น** เพราะแอป 2.0 ส่ง `X-App-Lang` และต้องการ push topic และเนื้อหาอังกฤษ ถ้า server เก่า ผู้ใช้อังกฤษจะได้คำทำนายไทย
+   - `cd backend/functions && npm test` ผ่าน
+   - `cd backend && firebase deploy --only functions,hosting` (`copy-data` คัดลอกกวาและใบเซียมซีอังกฤษให้ server ตอน build)
+   - `siamsiEnabled` ยังเป็น `false` ตามค่าเริ่มต้น ผู้ใช้จึงยังไม่เห็นเซียมซี
+2. ☐ `englishEnabled` ใน `config/runtime` ค่าเริ่มต้นเป็น `true` อยู่แล้ว ไม่ต้องตั้ง (ถ้าคำแปลยังตรวจไม่ผ่าน ตั้ง `false` ก่อนปล่อยแอป ดูข้อ F)
+3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp androidApp/build/outputs/bundle/release/*.aab ../iching-ai-2.0.0-200.aab` (ไม่ commit)
+4. ☐ Play Console: อัปโหลด `iching-ai-2.0.0-200.aab` ที่ Closed testing ก่อน → ทดสอบตามข้อ A → Production พร้อม listing en-US **ชุด "Before `siamsiEnabled` is on" (ไม่มีเซียมซี)**, screenshots EN (ยังไม่ใส่ภาพเซียมซี), ประเทศ SG MY PH US GB AU CA และ Data safety ตามข้อ B
+5. ☐ เมื่อแอป 2.0.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
+6. ☐ หลังเปิด `siamsiEnabled` แล้ว เปลี่ยน listing ทั้งสองภาษาเป็นชุดที่มีเซียมซี: ไทยตามข้อ B (ย่อหน้า "🎋 เสี่ยงเซียมซี" + คำอธิบายสั้นชุดหลังเปิด) · อังกฤษเป็นชุด "After `siamsiEnabled` is on" (ชื่อ "I Ching AI & Fortune Sticks") · เพิ่มภาพหน้าจอใบเซียมซี
+7. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`) · widget: `widget_added`, `widget_removed`, `widget_tap`
+
+### D. แก้ข้อความใบเซียมซีหลังปล่อยแล้ว (ไม่ต้องออกแอปใหม่)
+1. ☐ แก้ไฟล์ชุดนั้น แล้วเพิ่ม `"version"` ในไฟล์ (เช่น `"version": 2`) วางไว้ที่ `backend/hosting/public/content/siamsi/{id}.json`
+2. ☐ Deploy **ทั้ง hosting และ functions** (`copy-data` คัดลอกไฟล์ให้ server ตอน build ถ้า deploy hosting อย่างเดียว นักพรตจะแปลจากข้อความเก่า)
+3. ☐ เพิ่ม version ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ แอปจะโหลดฉบับใหม่มาแทนฉบับที่ติดมากับแอป
+
+### E. เปิดโปสเตอร์ (popup บนหน้าแรก + การ์ดท้ายหน้ากวาประจำวัน, ไม่ต้องออกแอปใหม่)
+สเปก: [`docs/superpowers/specs/2026-11-18-poster-popup-design.md`](superpowers/specs/2026-11-18-poster-popup-design.md)
+
+ตั้งได้ทีละ 1 โปสเตอร์ ใช้ได้ 3 แบบ:
+- โปรลดราคา: `audience: "free"`, `link: "paywall"`, มี `card`
+- feature ใหม่: `audience: "all"`, `link` ไปหน้านั้น
+- วันสำคัญ: `audience: "all"`, ไม่ใส่ `link` และ `card`
+
+popup เด้งครั้งเดียวต่อ `id` บนหน้าแรก เมื่อครบทุกข้อ:
+- ไม่ใช่วันที่ติดตั้งแอป
+- วันนั้นอ่านกวาประจำวันแล้ว
+- โหลดภาพเสร็จแล้ว
+
+คนที่ไม่เคยเปิดอ่านกวาประจำวันจะไม่เห็น popup
+
+การ์ดอยู่ใต้ปุ่ม "อ่านต่อในคัมภีร์" จนกว่าผู้ใช้จะกด × หรือหมดเวลา
+
+ครั้งแรกเท่านั้น: ☐ Deploy functions (`cd backend/functions && npm run deploy`) ก่อนโปสเตอร์แรก เพราะ server เก่าไม่ส่ง `poster` และแอปต้องเป็นเวอร์ชันที่ขึ้น store แล้ว
+
+**ภาพ**
+1. ☐ ภาพสัดส่วน **4:5** (แนะนำ 1080×1350)
+   - ใช้ได้ทั้ง WebP, PNG และ JPEG แต่ไฟล์ควรไม่เกิน ~500 KB
+   - export เป็น PNG แล้วแปลงที่ squoosh.app เป็น WebP คุณภาพ 90 ได้ภาพเท่าเดิมแต่ไฟล์เล็กกว่า
+   - ข้อความสำคัญควรห่างขอบ 8% เพราะมุมภาพโค้ง
+2. ☐ ตั้งชื่อไฟล์เป็นตัวอังกฤษ ตัวเลข `.` `-` `_` เท่านั้น เช่น `cny-2027.webp` แล้ววางใน `backend/hosting/public/content/posters/`
+3. ☐ `cd backend && firebase deploy --only hosting`
+4. ☐ เปิด `https://<โดเมน hosting>/content/posters/<ไฟล์>` ในเบราว์เซอร์ เพื่อดูว่าภาพขึ้น
+
+**ถ้าเป็นโปรลดราคา (ทำก่อนเปิดโปสเตอร์)**
+5. ☐ ตั้ง offer ลดราคาใน Play Console (Subscriptions → base plan → Add offer) ให้ช่วงเวลาตรงกับโปร
+6. ☐ ใน RevenueCat สร้าง offering ที่ใช้ offer นั้น แล้วตั้งเป็น **current**
+7. ☐ เปิดหน้าจ่ายเงินบนเครื่องจริง ดูว่าราคาที่ลดแล้วขึ้นถูก และตรงกับตัวเลขในภาพและการ์ด
+
+**ตั้งค่า**
+8. ☐ เขียน `config/runtime.poster` ใน Firestore โดยตั้ง `enabled: false` ไว้ก่อน
+
+   | ฟิลด์ | ใส่อะไร |
+   |---|---|
+   | `id` | ใหม่ทุกครั้ง ห้ามมีช่องว่าง |
+   | `startsAt`/`endsAt` | ชนิด **string** แบบ ISO +07:00 (ห้ามใช้ชนิด timestamp) · `endsAt` = เที่ยงคืนหลังวันสุดท้าย |
+   | `image` | ชื่อไฟล์อย่างเดียว ไม่มี `/` |
+   | `alt` | ≤ 120 ตัวอักษร ให้ TalkBack อ่านแทนภาพ |
+   | `audience` | `"free"` หรือ `"all"` |
+   | `link` | (ไม่บังคับ) `paywall` `daily` `year` `library` `journal` |
+   | `card` | (ไม่บังคับ, ต้องมี `link`) `{label ≤ 20, title ≤ 40, cta ≤ 12, showEndDate}` · ถ้า `link` เป็น `daily` การ์ดจะไม่ขึ้น |
+
+   - ความยาวนับสระและวรรณยุกต์เป็นตัวอักษรด้วย เช่น "ที่" = 3 ตัว เช็กด้วย `"ข้อความ".length` ใน console ของเบราว์เซอร์
+   - ผิดข้อใดข้อหนึ่ง = ไม่มีโปสเตอร์ และ log ของ functions จะขึ้น `poster_invalid`
+9. ☐ ตั้ง `enabled: true` (server เก็บค่าไว้ไม่เกิน 1 นาที) แล้วดู log ว่าไม่มี `poster_invalid`
+10. ☐ ดู analytics `poster_shown` / `poster_tapped` / `poster_closed` (param `poster_id`, `surface` = `popup` หรือ `card`)
+11. ☐ ปิดก่อนกำหนด: ตั้ง `enabled: false` · หลังจบโปรลดราคา: สลับ offering ใน RevenueCat กลับเป็นปกติ
+
+### F. ปิดภาษาอังกฤษ (`englishEnabled`, ไม่ต้องออกแอปใหม่)
+1. ☐ ตั้ง `config/runtime.englishEnabled = false` ใน Firestore (server เก็บค่าไว้ไม่เกิน 1 นาที)
+2. ผล: แอปซ่อนหน้าเลือกภาษาและแถวภาษาในตั้งค่า ผู้ใช้ที่เลือกอังกฤษไว้ถูกบังคับเป็นไทยจนกว่าจะเปิดใหม่ (ค่าที่เลือกไว้ยังเก็บในเครื่อง) · server ถือ request ใหม่เป็นไทยแม้แอปส่ง `en` · ถามต่อของ reading อังกฤษเดิมยังตอบอังกฤษ · แอปที่ถูกบังคับเป็นไทยย้ายไป topic `daily-hexagram-th` · push อังกฤษหยุดส่ง
+3. **ข้อจำกัด (R21):** เครื่องที่ติดตั้งใหม่ยังไม่เคยได้ status จาก server จึงยังเห็นหน้าเลือกภาษาตอน onboarding แม้ปิดสวิตช์แล้ว แอปจะรู้ว่าปิดเมื่อได้ status ครั้งแรกหลัง onboarding · ระหว่างนั้น server ก็ยังตอบเป็นไทยอยู่แล้ว ผู้ใช้จึงไม่ได้เนื้อหาอังกฤษจาก server
+4. ☐ เปิดกลับ: ตั้ง `englishEnabled = true`
+
+### G. แก้คำแปลอังกฤษหลังปล่อยแล้ว (ผ่าน Hosting, ไม่ต้องออกแอปใหม่)
+**กวา (`hexagrams.en.json`)**
+1. ☐ คัดลอก `frontend/core/data/src/commonMain/composeResources/files/hexagrams.en.json` ไปแก้ เพิ่ม `"version"` ในไฟล์ (มากกว่าฉบับที่ติดมากับแอป เช่น `"version": 2`) แล้ววางที่ `backend/hosting/public/content/hexagrams.en.json`
+2. ☐ Deploy **ทั้ง hosting และ functions** (`cd backend && firebase deploy --only functions,hosting`) — `copy-data` ให้ไฟล์บน Hosting ทับฉบับในแอปตอน build server ถ้า deploy hosting อย่างเดียว นักพรตจะตอบจากข้อความเก่า
+3. ☐ ตั้ง `config/runtime.hexagramsEnVersion` ให้ตรงกับ `version` ในไฟล์ แอปจะโหลด `/content/hexagrams.en.json?v={version}` มาแทนฉบับในแอป
+4. ☐ **ลำดับ: deploy Hosting ก่อน แล้วค่อยเพิ่ม `hexagramsEnVersion`/`enVersion`** — ถ้าเพิ่มเลขก่อน แอปจะโหลดไฟล์เก่าจาก Hosting (แอปไม่จำไฟล์ที่ `version` ในไฟล์ต่ำกว่าเลขที่ขอ จึงไม่เสียหาย แต่ผู้ใช้จะไม่ได้ฉบับใหม่จนกว่าจะเปิดแอปครั้งถัดไป)
+
+**ใบเซียมซี (`{id}.en.json`)**
+1. ☐ แก้ไฟล์ชุดนั้น เพิ่ม `"version"` ในไฟล์ แล้ววางที่ `backend/hosting/public/content/siamsi/{id}.en.json`
+2. ☐ Deploy ทั้ง hosting และ functions (เหตุผลเดียวกับข้อบน)
+3. ☐ ตั้ง `enVersion` ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ (คนละค่ากับ `version` ของฉบับไทยในข้อ D)
+4. ☐ ลำดับเดียวกัน: deploy Hosting ก่อน แล้วค่อยเพิ่ม `enVersion`
+
+### H. หมายเหตุก่อนปล่อย (คำตัดสินระหว่างพัฒนา)
+- **iOS ยังไม่ได้ compile:** Swift bridge ที่แก้ใน 2.0 (notifications `setDailySubscribed` ที่รับชื่อ topic เป็น string, analytics `setUserProperty`, `trialDays`) ยังไม่เคย build ใน Xcode · ก่อนปล่อย iOS ต้อง build และทดสอบใน Xcode ก่อน (หัวข้อ 9) · Android ปล่อยก่อนตามเดิม
+- **App Check debug token:** ต้องลงทะเบียน token ของ emulator ก่อน QA หน้าที่เรียก backend (ข้อ A.8)
+- **Server ก่อนแอป:** `feature/v2.0-server` ต้อง merge และ deploy functions + hosting ก่อนแอป 2.0 ขึ้น (ข้อ C.1)
+- **ปิดภาษาอังกฤษบนเครื่องใหม่:** สวิตช์ซ่อนหน้าเลือกภาษาไม่ได้จนกว่าจะได้ status แรกหลัง onboarding (ข้อ F.3)
+- การ deploy Firebase และการอัปโหลดขึ้น Play เป็นงานของเจ้าของแอป ในคู่มือนี้เขียนเป็นขั้นตอนไว้เท่านั้น

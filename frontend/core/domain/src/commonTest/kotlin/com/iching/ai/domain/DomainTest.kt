@@ -3,6 +3,7 @@ package com.iching.ai.domain
 import com.iching.ai.domain.model.CoinFace.HEADS
 import com.iching.ai.domain.model.CoinFace.TAILS
 import com.iching.ai.domain.model.CoinToss
+import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.model.Hexagram
 import com.iching.ai.domain.model.LineType
 import com.iching.ai.domain.model.LineType.OLD_YANG
@@ -13,11 +14,13 @@ import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
+import com.iching.ai.domain.oracle.englishMeaningAfterName
 import com.iching.ai.domain.model.Trigram
 import com.iching.ai.domain.repository.ApiException
 import com.iching.ai.domain.repository.FailureReason
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.domain.repository.JournalRepository
+import com.iching.ai.domain.siamsi.SiamSiPick
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
 import com.iching.ai.domain.usecase.FilterJournalUseCase
 import com.iching.ai.domain.usecase.GetReadingUseCase
@@ -155,6 +158,34 @@ class GetReadingTest {
     }
 
     @Test
+    fun storedScriptureTextIsRecomposedInTheCurrentLanguage() = runTest {
+        val stored = fakeReading(1, null).copy(interpretation = "ข้อความเก่า", source = InterpretationSource.SCRIPTURE)
+        val text = useCase(FakeJournal(stored))(1)?.interpretation.orEmpty()
+        assertTrue("ข้อความเก่า" !in text && "judgment-" in text, text)
+    }
+
+    @Test
+    fun storedAiTextIsKept() = runTest {
+        val ai = fakeReading(1, null).copy(interpretation = "ai words", source = InterpretationSource.AI)
+        assertEquals("ai words", useCase(FakeJournal(ai))(1)?.interpretation)
+    }
+
+    @Test
+    fun englishMeaningDropsALeadingNameOnlyAtAWordBoundary() {
+        assertEquals("gentle penetration", englishMeaningAfterName("Wind", "Wind, gentle penetration"))
+        assertEquals("", englishMeaningAfterName("Waiting", "Waiting"))
+        assertEquals("Windy plains", englishMeaningAfterName("Wind", "Windy plains"))
+    }
+
+    @Test
+    fun aSiamSiSlipWithoutInterpretationOpensAsItIs() = runTest {
+        val slip = fakeReading(1, null).copy(
+            lines = emptyList(), primaryId = 0, interpretation = "", siamsi = SiamSiPick("guanyin100", 62),
+        )
+        assertEquals(slip, useCase(FakeJournal(slip))(1))
+    }
+
+    @Test
     fun aReadingWithTextIsLeftAlone() = runTest {
         assertEquals("text", useCase(FakeJournal(fakeReading(1, "s1")))(1)?.interpretation)
     }
@@ -222,6 +253,30 @@ class DomainTest {
         assertTrue(text.contains("line-${cast.primary.id}-2"))
         assertTrue(!text.contains("line-${cast.primary.id}-1"))
         assertTrue(text.contains("judgment-${cast.relating!!.id}"))
+    }
+
+    @Test
+    fun englishScriptureFallbackHasNoThaiAndNamesTheHexagramInEnglish() = runTest {
+        val en = object : HexagramRepository {
+            private fun en(h: Hexagram) = h.copy(nameTh = "Name${h.id} — meaning${h.id}", nameEn = "Name${h.id}")
+            override suspend fun all() = FakeHexagrams.all().map(::en)
+            override suspend fun byId(id: Int) = en(FakeHexagrams.byId(id))
+            override suspend fun byPattern(pattern: String) = en(FakeHexagrams.byPattern(pattern))
+        }
+        val cast = ResolveCastUseCase(en)(listOf(YOUNG_YANG, OLD_YIN, YOUNG_YANG, YOUNG_YIN, YOUNG_YIN, YOUNG_YIN))
+        val text = ScriptureReadingComposer.compose(cast, AppLanguage.EN)
+        assertTrue(text.none { it in '\u0E00'..'\u0E7F' }, text)
+        assertTrue(text.contains("Name${cast.primary.id}"), text)
+        assertTrue(!text.contains("Name${cast.primary.id} Name"), text)
+        assertTrue(text.contains("Line 2 — line-${cast.primary.id}-2"), text)
+        assertTrue(text.contains("judgment-${cast.relating!!.id}"), text)
+        assertEquals(ScriptureReadingComposer.compose(cast), ScriptureReadingComposer.compose(cast, AppLanguage.TH))
+    }
+
+    @Test
+    fun englishScriptureFallbackWithoutOverlayShowsTheThaiData() = runTest {
+        val cast = ResolveCastUseCase(FakeHexagrams)(listOf(YOUNG_YANG, OLD_YIN, YOUNG_YANG, YOUNG_YIN, YOUNG_YIN, YOUNG_YIN))
+        assertTrue(ScriptureReadingComposer.compose(cast, AppLanguage.EN).contains("กวา${cast.primary.id}"))
     }
 
     @Test

@@ -8,6 +8,12 @@
     <!-- Declared by the AdMob SDK; needed for the Advertising ID on Android 13+. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <!-- screenOrientation="portrait" implies this feature as required; Play then
+         blocks Desktop, Android XR and some tablets. Keep it optional. -->
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+
     <application
         android:name=".IChingApplication"
         android:allowBackup="false"
@@ -55,6 +61,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".widget.DailyHexagramWidgetReceiver"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_hexagram_widget_info" />
+        </receiver>
     </application>
 
     <queries>

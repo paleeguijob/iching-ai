@@ -1,5 +1,11 @@
 package com.iching.ai.feature.divination
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.background
+import com.iching.ai.ui.theme.ZenSpacing
+import com.iching.ai.ui.components.ZenTextButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -28,12 +35,13 @@ import com.iching.ai.ui.components.AncientCoin
 import com.iching.ai.ui.components.HexagramFigure
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.LocalStrings
 
 /**
  * The coin-toss stage shared by the reading and the year ritual: the hexagram building up line by line,
  * the three coins and the toss button. It shows whatever [tosses] it is given; the caller decides the faces.
- * [onTossRemaining] is null where there is no "toss until done" action.
+ * [onTossRemaining] is null where there is no "toss until done" action. With [guide], the first cast also says
+ * how to toss and what each line means in plain words.
  */
 @Composable
 internal fun TossStage(
@@ -46,17 +54,20 @@ internal fun TossStage(
     canToss: Boolean,
     onToss: () -> Unit,
     onTossRemaining: (() -> Unit)? = null,
+    guide: Boolean = false,
 ) {
+    val strings = LocalStrings.current.divination
     val noRipple = remember { MutableInteractionSource() }
     Column(
         Modifier
             .fillMaxSize()
             .clickable(interactionSource = noRipple, indication = null, enabled = canToss, onClick = onToss)
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = ZenSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(4.dp))
+        CastProgress(tosses.size)
+        Spacer(Modifier.height(ZenSpacing.md))
         Text(
             prompt,
             style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
@@ -64,6 +75,15 @@ internal fun TossStage(
             textAlign = TextAlign.Center,
             maxLines = 3,
         )
+        if (guide && tosses.isEmpty() && !awaitingCast) {
+            Spacer(Modifier.height(ZenSpacing.sm))
+            Text(
+                strings.tossHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = ZenColors.CinnabarRed,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.weight(0.6f))
         HexagramFigure(
             pattern = null,
@@ -74,12 +94,6 @@ internal fun TossStage(
             lineHeight = 14.dp,
             gap = 11.dp,
         )
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "เส้นที่ ${(tosses.size + if (tosses.size < 6) 1 else 0).coerceAtMost(6).toThaiNumerals()} จาก ๖",
-            style = MaterialTheme.typography.labelLarge,
-            color = ZenColors.BambooDeep,
-        )
         Spacer(Modifier.weight(0.5f))
         Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             val faces = currentToss?.faces
@@ -87,39 +101,59 @@ internal fun TossStage(
                 AncientCoin(
                     face = faces?.get(i),
                     tossKey = tossKey,
-                    delayMillis = i * 90,
+                    // The middle coin lands a beat later, so the three don't settle as one.
+                    delayMillis = i * 90 + if (i == 1) 80 else 0,
                     size = 78.dp,
                 )
             }
         }
         Spacer(Modifier.height(18.dp))
-        Box(Modifier.height(28.dp), contentAlignment = Alignment.Center) {
+        // Holds two lines while guiding so the coins do not jump when the plain-words note appears.
+        Box(Modifier.heightIn(min = if (guide) 48.dp else 28.dp), contentAlignment = Alignment.Center) {
             val last = tosses.lastOrNull()
             if (awaitingCast) {
-                Text("กำลังตั้งจิต...", style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
+                Text(strings.settling, style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic), color = ZenColors.InkFaint)
             } else if (!isTossing && last != null) {
-                Text(lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(strings.lineLabel(last.line), style = MaterialTheme.typography.bodyMedium, color = ZenColors.InkSoft)
+                    if (guide) {
+                        Text(
+                            strings.lineGloss(last.line),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (last.line.isChanging) ZenColors.CinnabarRed else ZenColors.InkSoft,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
         Spacer(Modifier.weight(0.4f))
         ZenPrimaryButton(
-            text = if (tosses.isEmpty()) "โยนเหรียญ" else "โยนครั้งต่อไป",
+            text = if (tosses.isEmpty()) strings.toss else strings.tossNext,
             onClick = onToss,
             enabled = canToss,
             modifier = Modifier.fillMaxWidth(),
         )
         if (onTossRemaining != null) {
-            TextButton(onClick = onTossRemaining, enabled = canToss) {
-                Text("โยนต่อเนื่องจนครบ", color = ZenColors.InkSoft, style = MaterialTheme.typography.labelMedium)
-            }
+            ZenTextButton(strings.tossRest, onClick = onTossRemaining, enabled = canToss)
         }
         Spacer(Modifier.height(12.dp))
     }
 }
 
-private fun lineLabel(line: LineType): String = when (line) {
-    LineType.OLD_YIN -> "หยินแก่ (๖) — เส้นแปร"
-    LineType.YOUNG_YANG -> "หยางอ่อน (๗)"
-    LineType.YOUNG_YIN -> "หยินอ่อน (๘)"
-    LineType.OLD_YANG -> "หยางแก่ (๙) — เส้นแปร"
+/** "4 / 6" with a thin ink bar: how many of the six lines are cast. */
+@Composable
+private fun CastProgress(cast: Int) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            LocalStrings.current.divination.castProgress(cast),
+            style = MaterialTheme.typography.labelMedium,
+            color = ZenColors.InkFaint,
+            modifier = Modifier.align(Alignment.End),
+        )
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(ZenColors.current.outlineVariant)) {
+            Box(Modifier.fillMaxWidth(cast / 6f).fillMaxHeight().background(ZenColors.InkBlack))
+        }
+    }
 }

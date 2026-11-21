@@ -13,8 +13,10 @@ import { mergeStreaks, normalizeStreak, THEMES } from "./core/streak";
  *   coinGrants/{txId}                coins, at, revokedAt: one per store transaction, across accounts and
  *                                    kept after account deletion (no uid), so a pack is never credited twice
  *   users/{uid}/coinGrants/{txId}    the same marker as written before it moved; still honoured
- *   devices/{sha256(deviceId)}       per-device daily free usage (anti account-farming)
+ *   devices/{sha256(deviceId)}       per-device daily free usage + lifetime welcome readings (anti account-farming)
  *   reports/{autoId}                 "report this answer" submissions
+ *   feedback/{autoId}                messages sent from Settings (uid, message, appVersion, platform, premium, createdAt)
+ *   users/{uid}/meta/feedback        {day, count}: messages sent on that Bangkok day, for the daily limit
  *   config/runtime                   kill-switch and limits (see core/quota.ts RuntimeConfig)
  * Clients never touch Firestore directly (firestore.rules denies everything).
  */
@@ -57,6 +59,7 @@ export function firestoreStore(db: Firestore): Store {
     outcome: d.outcome ?? null,
     outcomeNote: d.outcomeNote ?? null,
     createdAt: d.createdAt ?? 0,
+    siamsi: d.siamsi ?? null,
   });
 
   // Firestore cannot store nested arrays, so each toss is wrapped as {c: [3, 2, 3]}.
@@ -84,13 +87,14 @@ export function firestoreStore(db: Firestore): Store {
               coins: out.user.coins,
               usage: out.user.usage,
               lastReadingAt: out.user.lastReadingAt,
+              welcomeUsed: out.user.welcomeUsed,
               updatedAt: now,
               ...(userSnap.exists ? {} : { createdAt: now, premiumUntil: null }),
             },
             { merge: true },
           );
         }
-        if (out.device && deviceRef) tx.set(deviceRef, { usage: out.device.usage, updatedAt: now }, { merge: true });
+        if (out.device && deviceRef) tx.set(deviceRef, { usage: out.device.usage, welcomeUsed: out.device.welcomeUsed, updatedAt: now }, { merge: true });
         return out.result;
       });
     },
@@ -142,6 +146,19 @@ export function firestoreStore(db: Firestore): Store {
     async addReport(report) {
       await db.collection("reports").add(report);
       await readings(report.uid).doc(report.readingId).set({ reported: true }, { merge: true });
+    },
+
+    async addFeedbackWithinLimit(feedback, day, limit) {
+      const counter = users.doc(feedback.uid).collection("meta").doc("feedback");
+      const doc = db.collection("feedback").doc();
+      return db.runTransaction(async (tx) => {
+        const stored = (await tx.get(counter)).data();
+        const sent = stored?.day === day ? Number(stored.count) || 0 : 0;
+        if (sent >= limit) return false;
+        tx.set(counter, { day, count: sent + 1 });
+        tx.create(doc, feedback);
+        return true;
+      });
     },
 
     async setPremiumUntil(uid, premiumUntil) {
@@ -223,6 +240,7 @@ export function firestoreStore(db: Firestore): Store {
       }
       for (const doc of (await readings(fromUid).get()).docs) writer.set(readings(toUid).doc(doc.id), doc.data());
       for (const doc of (await db.collection("reports").where("uid", "==", fromUid).get()).docs) writer.update(doc.ref, { uid: toUid });
+      for (const doc of (await db.collection("feedback").where("uid", "==", fromUid).get()).docs) writer.update(doc.ref, { uid: toUid });
       await writer.close();
       await this.deleteUser(fromUid);
     },
@@ -230,8 +248,10 @@ export function firestoreStore(db: Firestore): Store {
     async deleteUser(uid) {
       await db.recursiveDelete(users.doc(uid));
       const reports = await db.collection("reports").where("uid", "==", uid).get();
+      const feedback = await db.collection("feedback").where("uid", "==", uid).get();
       const batch = db.batch();
       reports.docs.forEach((d) => batch.delete(d.ref));
+      feedback.docs.forEach((d) => batch.delete(d.ref));
       await batch.commit();
     },
   };

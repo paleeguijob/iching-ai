@@ -47,8 +47,8 @@ private class IosSpeechPlayer : SpeechPlayer {
     override fun prepare() = Unit
 
     override fun speak(text: String, onUnavailable: () -> Unit) {
-        val voice = AVSpeechSynthesisVoice.voiceWithLanguage("th-TH")
         val cleaned = stripMarkup(text)
+        val voice = AVSpeechSynthesisVoice.voiceWithLanguage(speechVoiceTag(cleaned))
         if (voice == null || cleaned.isEmpty()) {
             onUnavailable()
             return

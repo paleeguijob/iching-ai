@@ -6,6 +6,8 @@ import com.iching.ai.domain.model.Outcome
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StreakUpdate
 import com.iching.ai.domain.model.recordView
+import com.iching.ai.domain.model.AppLanguage
+import com.iching.ai.domain.model.InterpretationSource
 import com.iching.ai.domain.oracle.ScriptureReadingComposer
 import com.iching.ai.domain.oracle.bangkokEpochDay
 import com.iching.ai.domain.oracle.dailyHexagramId
@@ -74,10 +76,13 @@ class ObserveJournalUseCase(private val journal: JournalRepository) {
 }
 
 class GetReadingUseCase(private val journal: JournalRepository, private val resolveCast: ResolveCastUseCase) {
-    /** A reading fetched from the server without AI text has nothing of its own to show, so it reads as scripture. */
-    suspend operator fun invoke(id: Long): Reading? = journal.get(id)?.let { reading ->
-        if (reading.interpretation.isNotBlank()) reading
-        else reading.copy(interpretation = ScriptureReadingComposer.compose(resolveCast(reading.lines)))
+    /**
+     * A reading fetched from the server without AI text has nothing of its own to show, so it reads as scripture.
+     * A Siam Si slip has no cast to read from; it shows its own slip, so it comes back as it is.
+     */
+    suspend operator fun invoke(id: Long, lang: AppLanguage = AppLanguage.TH): Reading? = journal.get(id)?.let { reading ->
+        if (reading.siamsi != null || (reading.interpretation.isNotBlank() && reading.source != InterpretationSource.SCRIPTURE)) reading
+        else reading.copy(interpretation = ScriptureReadingComposer.compose(resolveCast(reading.lines), lang))
     }
 }
 

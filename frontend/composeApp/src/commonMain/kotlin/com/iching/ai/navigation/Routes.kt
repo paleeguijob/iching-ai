@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class DivinationRoute(val question: String, val category: String? = null, val resumeId: Long? = null, val yearOf: Int? = null)
 /** The question screen for asking the hermit about the year hexagram. */
 @Serializable data class YearAskRoute(val year: Int)
+/** A paid-for Siam Si draw from [setId]; [question] may be empty. [journalId] reopens a saved slip instead of drawing. */
+@Serializable data class SiamSiRoute(val setId: String, val question: String, val category: String? = null, val journalId: Long? = null)
 @Serializable data object DailyRoute
 @Serializable data object YearRoute
 @Serializable data object LibraryRoute
@@ -15,3 +17,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class JournalEntryRoute(val id: Long)
 @Serializable data object SettingsRoute
 @Serializable data object PaywallRoute
+/** The how-to-use pages from first launch, opened again from settings. */
+@Serializable data object GuideRoute
+/** Settings > Language: Thai or English; choosing returns to Home in the new language. */
+@Serializable data object LanguageSettingsRoute

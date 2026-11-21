@@ -24,7 +24,24 @@ data class ZenPalette(
     val surfaceLow: Color,
     val outline: Color,
     val outlineVariant: Color,
+    /** Raised surface for ZenCard. */
+    val card: Color,
+    val cardShadow: Color,
     val isDark: Boolean = false,
+    /** Siam Si cylinder and sticks: lacquered wood and pale bamboo, readable on light and dark paper. */
+    val wood: Color = Color(0xFFB88A57),
+    val woodDeep: Color = Color(0xFF8A6238),
+    val woodLight: Color = Color(0xFFD2A874),
+    val stickLight: Color = Color(0xFFE7C99C),
+    val stickDeep: Color = Color(0xFFC79A63),
+    /** The 籤 carved on the cylinder. */
+    val woodLabel: Color = Color(0xFFFFF8EC),
+    /** The pua blocks: red lacquer, the light and the shaded side. */
+    val puaLight: Color = Color(0xFFD4683F),
+    val puaDeep: Color = Color(0xFF9C4221),
+    /** The face-down block: a darker lacquer, top and bottom. */
+    val puaShade: Color = Color(0xFFB8502C),
+    val puaDark: Color = Color(0xFF7A3218),
 )
 
 /** Palette from the spec: Zen minimalist ink on paper. Share cards always use this one. */
@@ -49,6 +66,8 @@ val InkPaperPalette = ZenPalette(
     surfaceLow = Color(0xFFF6F4EE),
     outline = Color(0xFFCFC8B8),
     outlineVariant = Color(0xFFE3DDCF),
+    card = Color(0xFFFFFFFF),
+    cardShadow = Color(0x122D3748),
 )
 
 private val BambooPalette = ZenPalette(
@@ -72,6 +91,8 @@ private val BambooPalette = ZenPalette(
     surfaceLow = Color(0xFFF1F5EA),
     outline = Color(0xFFC3CFB4),
     outlineVariant = Color(0xFFDBE3CE),
+    card = Color(0xFFFBFDF7),
+    cardShadow = Color(0x1226352B),
 )
 
 private val CinnabarDawnPalette = ZenPalette(
@@ -95,6 +116,8 @@ private val CinnabarDawnPalette = ZenPalette(
     surfaceLow = Color(0xFFFAF0E8),
     outline = Color(0xFFD9C4B2),
     outlineVariant = Color(0xFFEBDCCD),
+    card = Color(0xFFFFFBF7),
+    cardShadow = Color(0x123A2A26),
 )
 
 private val InkNightPalette = ZenPalette(
@@ -118,7 +141,12 @@ private val InkNightPalette = ZenPalette(
     surfaceLow = Color(0xFF1B2028),
     outline = Color(0xFF454C58),
     outlineVariant = Color(0xFF323843),
+    card = Color(0xFF222833),
+    cardShadow = Color(0x59000000),
     isDark = true,
+    wood = Color(0xFF9C7448),
+    woodDeep = Color(0xFF6E4E2D),
+    woodLight = Color(0xFFB88A57),
 )
 
 /** Deep cinnabar red with pale gold ink; dark, so the status bar icons turn light like ink night. */
@@ -143,6 +171,8 @@ private val CinnabarGoldPalette = ZenPalette(
     surfaceLow = Color(0xFF53130F),
     outline = Color(0xFF8A4B33),
     outlineVariant = Color(0xFF6B2E22),
+    card = Color(0xFF5E1813),
+    cardShadow = Color(0x59000000),
     isDark = true,
 )
 

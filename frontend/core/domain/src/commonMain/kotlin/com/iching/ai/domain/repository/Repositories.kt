@@ -10,6 +10,9 @@ import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.Reading
 import com.iching.ai.domain.model.StreakState
 import com.iching.ai.domain.model.YearHexagram
+import com.iching.ai.domain.siamsi.SiamSiPick
+import com.iching.ai.domain.siamsi.SiamSiSet
+import com.iching.ai.domain.siamsi.SiamSiSetRef
 import kotlinx.coroutines.flow.Flow
 
 interface HexagramRepository {
@@ -22,7 +25,7 @@ interface HexagramRepository {
 enum class LimitReason { QUOTA, RATE_LIMITED, AI_DISABLED, FOLLOW_UP_LIMIT }
 
 /** Failures the app explains in plain words. */
-enum class FailureReason { NETWORK, MODEL_BUSY, RATE_LIMITED, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, UNKNOWN }
+enum class FailureReason { NETWORK, MODEL_BUSY, RATE_LIMITED, BLOCKED, UNAUTHENTICATED, PREMIUM_REQUIRED, NOT_FOUND, CAMPAIGN_INACTIVE, NO_YEAR_HEXAGRAM, FEEDBACK_LIMIT, UNKNOWN }
 
 /** Events streamed by the server for one divination or follow-up. */
 sealed interface DivinationEvent {
@@ -32,6 +35,9 @@ sealed interface DivinationEvent {
         val lines: List<LineType>,
         val coins: List<List<CoinFace>>,
     ) : DivinationEvent
+
+    /** A Siam Si reading was stored on the server under [readingId]. */
+    data class Created(val readingId: String) : DivinationEvent
 
     data class Delta(val text: String) : DivinationEvent
     /** [shareSummary] is the one line for the share card; null when the model didn't write a usable one. */
@@ -53,6 +59,8 @@ interface OracleApi {
     /** Interprets an existing cast again (after an ad reward, a purchase or a failed attempt). */
     fun interpretAgain(readingId: String): Flow<DivinationEvent>
     fun followUp(readingId: String, message: String): Flow<DivinationEvent>
+    /** The hermit's interpretation of a Siam Si slip; [readingId] retries an earlier one without a new reading. */
+    fun interpretSiamSi(pick: SiamSiPick, question: String, category: QuestionCategory?, readingId: String? = null): Flow<DivinationEvent>
     suspend fun status(): AccountStatus
     /** This account's hexagram for the year, or null when none was cast yet. */
     suspend fun yearHexagram(): YearHexagram?
@@ -63,6 +71,8 @@ interface OracleApi {
     /** Returns true when the server granted the ad credit. */
     suspend fun claimAdReward(): Pair<Boolean, AccountStatus>
     suspend fun report(readingId: String, reason: String, note: String)
+    /** Sends a message from Settings; fails with FEEDBACK_LIMIT after the day's allowance. */
+    suspend fun sendFeedback(message: String, appVersion: String, platform: String)
     suspend fun saveOutcome(readingId: String, outcome: Outcome?, note: String?)
     /** The server copy of the journal, newest first: the free journal window, or everything for Premium. */
     suspend fun readings(): List<Reading>
@@ -91,6 +101,16 @@ interface JournalRepository {
     /** Inserts server readings that are not on this device yet (matched by serverId), skipping deleted ones. */
     suspend fun mergeFromServer(readings: List<Reading>): Int
     suspend fun clear()
+}
+
+/** Siam Si sets: bundled ones, plus (later) ones downloaded when the server switches them on. */
+interface SiamSiRepository {
+    /** The sets for [refs], in that order, skipping any that cannot be loaded. */
+    suspend fun available(refs: List<SiamSiSetRef>): List<SiamSiSet>
+
+    /** The sets for [refs] already on the device (bundled or downloaded before), with no network call. */
+    suspend fun local(refs: List<SiamSiSetRef>): List<SiamSiSet> = available(refs)
+    suspend fun set(id: String): SiamSiSet?
 }
 
 interface SettingsRepository {

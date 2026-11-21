@@ -4,6 +4,7 @@ import com.iching.ai.data.api.ApiSession
 import com.iching.ai.data.di.dataModule
 import com.iching.ai.domain.model.QuestionCategory
 import com.iching.ai.domain.model.campaignIdFor
+import com.iching.ai.domain.model.withPosterCardDismissed
 import com.iching.ai.domain.repository.OracleApi
 import com.iching.ai.domain.usecase.ClaimPushPromptUseCase
 import com.iching.ai.domain.usecase.DeleteReadingUseCase
@@ -24,21 +25,35 @@ import com.iching.ai.domain.usecase.UpdateSettingsUseCase
 import com.iching.ai.feature.daily.DailyViewModel
 import com.iching.ai.feature.divination.DivinationViewModel
 import com.iching.ai.feature.home.HomeViewModel
+import com.iching.ai.feature.home.YearCampaignCards
 import com.iching.ai.feature.journal.JournalEntryViewModel
 import com.iching.ai.feature.journal.JournalViewModel
 import com.iching.ai.feature.library.HexagramDetailViewModel
 import com.iching.ai.feature.library.LibraryViewModel
 import com.iching.ai.feature.paywall.PaywallViewModel
+import com.iching.ai.feature.poster.posterImagesModule
 import com.iching.ai.feature.settings.SettingsViewModel
 import com.iching.ai.feature.year.YearViewModel
 import com.iching.ai.platform.NativeBridges
 import com.iching.ai.session.AppSession
 import com.iching.ai.session.FirebaseApiSession
+import com.iching.ai.session.followLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import com.iching.ai.data.scripture.HexagramContentState
+import com.iching.ai.data.siamsi.SiamSiContentState
+import com.iching.ai.ui.strings.AppLanguageHolder
+import com.iching.ai.ui.strings.effectiveEnglishEnabled
+import com.iching.ai.ui.strings.effectiveLanguage
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import com.iching.ai.domain.oracle.bangkokEpochDay
+import com.iching.ai.feature.siamsi.SiamSiDrawGate
+import com.iching.ai.feature.siamsi.SiamSiHomeViewModel
+import com.iching.ai.feature.siamsi.SiamSiViewModel
+import com.iching.ai.platform.secureRandom
+import kotlin.time.Clock
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -68,7 +83,8 @@ val domainModule = module {
 fun platformModule(bridges: NativeBridges): Module = module {
     single { bridges }
     single { bridges.auth }
-    single { FirebaseApiSession(get()) }
+    // The holder is built after AppSession, which needs this; so it is looked up per request, not here.
+    single { FirebaseApiSession(get(), languageCode = { get<AppLanguageHolder>().language.value.wire }) }
     single<ApiSession> { get<FirebaseApiSession>() }
     single {
         AppSession(
@@ -80,12 +96,58 @@ fun platformModule(bridges: NativeBridges): Module = module {
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
         )
     }
+    single {
+        val holderScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        val englishAllowed = get<AppSession>().let { session ->
+            effectiveEnglishEnabled(session.online, session.status, get<ObserveSettingsUseCase>()())
+        }
+        // The daily push topic follows the effective language (the kill switch gives Thai); the first value is
+        // what it was last synced to. Not the holder's flow: that starts on a Thai placeholder.
+        get<AppSession>().followLanguage(holderScope, effectiveLanguage(get<ObserveSettingsUseCase>()(), englishAllowed))
+        AppLanguageHolder(
+            observeSettings = get(),
+            englishAllowed = englishAllowed,
+            scope = holderScope,
+        ).also { holder ->
+            // The scripture follows the effective language (the kill switch gives Thai) and the server's file version.
+            val session = get<AppSession>()
+            get<HexagramContentState>().apply {
+                languageSource = { holder.language.value }
+                versionSource = { session.status.value.hexagramsEnVersion }
+            }
+            // Siam Si follows the same language and each set's English file version from the status.
+            get<SiamSiContentState>().apply {
+                languageSource = { holder.language.value }
+                enVersionSource = { id -> session.status.value.siamsi.sets.firstOrNull { it.id == id }?.enVersion ?: 1 }
+            }
+        }
+    }
+    single {
+        val session = get<AppSession>()
+        SiamSiDrawGate(
+            settings = get(),
+            ads = get<NativeBridges>().ads,
+            status = session.status,
+            online = session.online,
+            log = session::log,
+            today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
+            languageHolder = get(),
+        )
+    }
 }
 
 val presentationModule = module {
-    viewModelOf(::HomeViewModel)
+    // Not viewModelOf: it would try to inject the clock parameter instead of using its default.
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel {
         val session = get<AppSession>()
+        SiamSiHomeViewModel(get(), get(), get(), get(), session.status, session.online, session::log, get())
+    }
+    viewModel {
+        val session = get<AppSession>()
+        val updateSettings = get<UpdateSettingsUseCase>()
+        val api = get<OracleApi>()
+        val getHexagram = get<GetHexagramUseCase>()
         DailyViewModel(
             getDaily = get(),
             recordView = get(),
@@ -94,6 +156,13 @@ val presentationModule = module {
             pushSupported = { session.dailyPushSupported },
             enablePush = { session.setDailyPush(true) },
             syncStreak = session::syncStreak,
+            status = session.status,
+            settings = get<ObserveSettingsUseCase>()(),
+            dismissPosterCard = { id -> updateSettings { it.withPosterCardDismissed(id) } },
+            yearCampaign = { scope ->
+                YearCampaignCards(scope, session.status, api::yearHexagram, getHexagram::invoke, session::log)
+            },
+            languageHolder = get(),
         )
     }
     viewModel {
@@ -118,6 +187,7 @@ val presentationModule = module {
             api = get(),
             session = get(),
             observeSettings = get(),
+            languageHolder = get(),
             resumeReadingId = params.values.filterIsInstance<Long>().firstOrNull(),
             getReading = get(),
             yearOf = params.values.filterIsInstance<Int>().firstOrNull(),
@@ -125,8 +195,21 @@ val presentationModule = module {
     }
     viewModelOf(::LibraryViewModel)
     viewModel { params -> HexagramDetailViewModel(params.get(), get()) }
+    viewModel { params ->
+        SiamSiViewModel(
+            route = params.get(),
+            repository = get(),
+            api = get(),
+            session = get(),
+            journal = get(),
+            settings = get(),
+            random = secureRandom(),
+            today = { bangkokEpochDay(Clock.System.now().toEpochMilliseconds()) },
+            languageHolder = get(),
+        )
+    }
     viewModelOf(::JournalViewModel)
-    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get()) }
+    viewModel { params -> JournalEntryViewModel(params.get(), get(), get(), get(), get(), get(), get(), get<AppSession>()::log) }
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PaywallViewModel)
 }
@@ -134,6 +217,6 @@ val presentationModule = module {
 fun initKoin(bridges: NativeBridges, config: KoinAppDeclaration? = null) {
     startKoin {
         config?.invoke(this)
-        modules(platformModule(bridges), dataModule, domainModule, presentationModule)
+        modules(platformModule(bridges), posterImagesModule(), dataModule, domainModule, presentationModule)
     }
 }

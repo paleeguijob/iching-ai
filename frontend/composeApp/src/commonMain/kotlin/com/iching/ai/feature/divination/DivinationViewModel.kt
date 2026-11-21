@@ -24,10 +24,8 @@ import com.iching.ai.domain.usecase.ResolveCastUseCase
 import com.iching.ai.domain.usecase.SaveReadingUseCase
 import com.iching.ai.domain.usecase.TossCoinsUseCase
 import com.iching.ai.session.AdResult
-import com.iching.ai.feature.paywall.AWAITING_PAYMENT_MESSAGE
-import com.iching.ai.feature.paywall.COINS_RECEIVED_MESSAGE
-import com.iching.ai.feature.paywall.PENDING_MESSAGE
 import com.iching.ai.session.AppSession
+import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.session.PurchaseResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -141,6 +139,7 @@ class DivinationViewModel(
     private val api: OracleApi,
     private val session: AppSession,
     observeSettings: ObserveSettingsUseCase,
+    private val languageHolder: AppLanguageHolder,
     resumeReadingId: Long? = null,
     getReading: GetReadingUseCase? = null,
     /** The year of the year hexagram to read; null for an ordinary reading. */
@@ -195,10 +194,10 @@ class DivinationViewModel(
     private fun resume(id: Long, getReading: GetReadingUseCase) {
         _state.update { it.copy(phase = DivinationPhase.INTERPRETING) }
         viewModelScope.launch {
-            val reading = getReading(id)
+            val reading = getReading(id, languageHolder.language.value)
             val serverId = reading?.serverId
             if (reading == null || serverId == null) {
-                _state.update { it.copy(phase = DivinationPhase.COMPLETE, error = "ไม่พบบันทึกนี้") }
+                _state.update { it.copy(phase = DivinationPhase.COMPLETE, error = languageHolder.strings.divination.recordNotFound) }
                 return@launch
             }
             savedBase = reading
@@ -245,9 +244,9 @@ class DivinationViewModel(
 
     private fun yearUnavailableMessage(notice: ReadingNotice) =
         if (notice is ReadingNotice.Failed && notice.reason == FailureReason.NO_YEAR_HEXAGRAM) {
-            "ยังไม่พบกวาประจำปีของท่าน โปรดเสี่ยงทายกวาประจำปีก่อน แล้วจึงถามนักพรตเรื่องปีนี้"
+            languageHolder.strings.divination.yearHexagramMissing
         } else {
-            "ติดต่อนักพรตไม่ได้ในตอนนี้ โปรดตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง"
+            languageHolder.strings.divination.hermitUnreachable
         }
 
     /** Mirrors the server's order: Premium, then the day's free reading, then an ad credit, then a coin. */
@@ -342,7 +341,7 @@ class DivinationViewModel(
             _state.update { it.copy(phase = DivinationPhase.INTERPRETING, interpretation = streamText.toString()) }
             settleIfReady()
         } catch (e: Exception) {
-            _state.update { it.copy(error = e.message ?: "ไม่สามารถเปิดคัมภีร์ได้") }
+            _state.update { it.copy(error = e.message ?: languageHolder.strings.divination.scriptureUnavailable) }
         }
     }
 
@@ -352,6 +351,8 @@ class DivinationViewModel(
         var sawCast = !fromCast
         events.collect { event ->
             when (event) {
+                // Only the Siam Si endpoint sends this; an I Ching reading learns its id from Cast.
+                is DivinationEvent.Created -> Unit
                 is DivinationEvent.Cast -> {
                     sawCast = true
                     if (castSource.complete(CastSource.Server(event)) && fromCast) saveCast(event)
@@ -364,6 +365,7 @@ class DivinationViewModel(
                 }
                 is DivinationEvent.Done -> {
                     session.updateStatus(event.status)
+                    session.onReadingCompleted()
                     _state.update { it.copy(shareSummary = event.shareSummary) }
                     outcome = StreamOutcome.Done
                     settleIfReady()
@@ -407,7 +409,7 @@ class DivinationViewModel(
             }
             is StreamOutcome.Scripture -> _state.update {
                 it.copy(
-                    interpretation = ScriptureReadingComposer.compose(cast),
+                    interpretation = ScriptureReadingComposer.compose(cast, languageHolder.language.value),
                     source = InterpretationSource.SCRIPTURE,
                     notice = result.notice,
                     phase = DivinationPhase.COMPLETE,
@@ -440,9 +442,9 @@ class DivinationViewModel(
             _state.update { it.copy(isWatchingAd = false) }
             when (result) {
                 is AdResult.Granted -> onInterpretAgain()
-                AdResult.NotCompleted -> _state.update { it.copy(message = "ต้องชมโฆษณาจนจบจึงจะได้รับสิทธิ์") }
-                AdResult.LimitReached -> _state.update { it.copy(message = "วันนี้ใช้สิทธิ์ชมโฆษณาครบแล้ว") }
-                is AdResult.Error -> _state.update { it.copy(message = "ยังไม่มีโฆษณาพร้อมแสดง โปรดลองใหม่อีกครู่") }
+                AdResult.NotCompleted -> _state.update { it.copy(message = languageHolder.strings.common.adMustFinish) }
+                AdResult.LimitReached -> _state.update { it.copy(message = languageHolder.strings.common.adLimitReached) }
+                is AdResult.Error -> _state.update { it.copy(message = languageHolder.strings.common.adUnavailable) }
             }
         }
     }
@@ -458,7 +460,7 @@ class DivinationViewModel(
                 it.copy(
                     upsell = it.upsell.copy(
                         coins = products.firstOrNull { p -> p.kind == ProductKind.COINS },
-                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.trialTh,
+                        premiumTrial = products.firstOrNull { p -> p.kind == ProductKind.YEARLY }?.let(languageHolder.strings.paywall::trialLabel),
                     ),
                 )
             }
@@ -484,11 +486,11 @@ class DivinationViewModel(
                 it.copy(
                     upsell = it.upsell.copy(buyingCoins = false),
                     message = when (result) {
-                        is PurchaseResult.Success -> COINS_RECEIVED_MESSAGE
+                        is PurchaseResult.Success -> languageHolder.strings.paywall.coinsReceived
                         PurchaseResult.Cancelled -> null
-                        PurchaseResult.Pending -> PENDING_MESSAGE
-                        PurchaseResult.AwaitingPayment -> AWAITING_PAYMENT_MESSAGE
-                        is PurchaseResult.Error -> "การชำระเงินไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
+                        PurchaseResult.Pending -> languageHolder.strings.paywall.pending
+                        PurchaseResult.AwaitingPayment -> languageHolder.strings.paywall.awaitingPayment
+                        is PurchaseResult.Error -> languageHolder.strings.common.paymentFailed
                     },
                 )
             }
@@ -517,6 +519,7 @@ class DivinationViewModel(
             }
             api.followUp(id, text).collect { event ->
                 when (event) {
+                    is DivinationEvent.Created -> Unit
                     is DivinationEvent.Delta -> {
                         answer.append(event.text)
                         setAnswer(answer.toString(), true)
@@ -527,7 +530,7 @@ class DivinationViewModel(
                         setAnswer(event.message, false)
                     }
                     is DivinationEvent.Limited -> {
-                        _state.update { it.copy(followUps = it.followUps.dropLast(1), message = "ถามต่อครบจำนวนครั้งของคำทำนายนี้แล้ว") }
+                        _state.update { it.copy(followUps = it.followUps.dropLast(1), message = languageHolder.strings.divination.followUpLimitReached) }
                     }
                     is DivinationEvent.Failed -> {
                         _state.update { it.copy(followUps = it.followUps.dropLast(1), message = followUpError(event.reason)) }
@@ -544,9 +547,9 @@ class DivinationViewModel(
     }
 
     private fun followUpError(reason: FailureReason) = when (reason) {
-        FailureReason.PREMIUM_REQUIRED -> "การถามต่อเป็นสิทธิ์ของสมาชิก Premium"
-        FailureReason.NETWORK -> "ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้"
-        else -> "นักพรตยังไม่อาจตอบได้ในตอนนี้ โปรดลองใหม่อีกครั้ง"
+        FailureReason.PREMIUM_REQUIRED -> languageHolder.strings.divination.followUpNeedsPremium
+        FailureReason.NETWORK -> languageHolder.strings.divination.followUpNoNetwork
+        else -> languageHolder.strings.divination.followUpFailed
     }
 
     // ---------- report ----------
@@ -556,7 +559,7 @@ class DivinationViewModel(
         viewModelScope.launch {
             val ok = runCatching { api.report(id, reason, "") }.isSuccess
             _state.update {
-                it.copy(reported = ok, message = if (ok) "ขอบคุณ เราได้รับรายงานแล้วและจะตรวจสอบ" else "ส่งรายงานไม่สำเร็จ โปรดลองใหม่")
+                it.copy(reported = ok, message = languageHolder.strings.divination.let { d -> if (ok) d.reportThanks else d.reportFailed })
             }
             if (ok) session.log("report_sent", mapOf("reason" to reason))
         }
@@ -600,7 +603,8 @@ class DivinationViewModel(
                 lines = cast.lines,
                 primaryId = cast.primary.id,
                 relatingId = cast.relating?.id,
-                interpretation = interpretation,
+                // Scripture text is composed in the language in force when it is opened, never stored.
+                interpretation = if (source == InterpretationSource.SCRIPTURE) "" else interpretation,
                 source = source,
                 serverId = serverId,
                 category = s.category,

@@ -1,5 +1,6 @@
 package com.iching.ai.feature.home
 
+import com.iching.ai.ui.theme.ZenSpacing
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +26,15 @@ import androidx.compose.ui.unit.dp
 import com.iching.ai.ui.components.ZenPrimaryButton
 import com.iching.ai.ui.components.ZenSecondaryButton
 import com.iching.ai.ui.theme.ZenColors
-import com.iching.ai.ui.toThaiNumerals
+import com.iching.ai.ui.strings.HomeStrings
+import com.iching.ai.ui.strings.LocalStrings
+
+/** The words that differ between an I Ching cast and a Siam Si interpretation. */
+data class PreCastCopy(val adButton: String, val withoutWords: String, val ready: String)
+
+fun HomeStrings.ichingPreCastCopy() = PreCastCopy(preCastWatchAd, preCastWithoutWords, preCastReady)
+
+fun HomeStrings.siamsiPreCastCopy() = PreCastCopy(siamsiPreCastWatchAd, siamsiPreCastWithoutWords, siamsiPreCastReady)
 
 /** The choice before casting when nothing pays for the hermit's words yet (spec 3.1–3.3). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,7 +47,10 @@ fun PreCastSheet(
     onPremium: () -> Unit,
     onCastFromReady: () -> Unit,
     onDismiss: () -> Unit,
+    copy: PreCastCopy? = null,
 ) {
+    val strings = LocalStrings.current.home
+    val copy = copy ?: strings.ichingPreCastCopy()
     val busy by rememberUpdatedState(ui.busy)
     // An ad or a purchase in progress must not be swiped away under the seeker's thumb.
     val sheetState = rememberBottomSheetState(
@@ -48,11 +60,11 @@ fun PreCastSheet(
     )
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = ZenColors.PaperCream) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 20.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = ZenSpacing.screen).padding(bottom = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                ui.question.ifBlank { "อธิษฐานในใจ" }.let { if (ui.question.isBlank()) it else "“$it”" },
+                ui.question.ifBlank { strings.preCastBlankQuestion }.let { if (ui.question.isBlank()) it else "“$it”" },
                 style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
                 color = ZenColors.InkSoft,
                 textAlign = TextAlign.Center,
@@ -61,9 +73,9 @@ fun PreCastSheet(
             )
             Spacer(Modifier.height(12.dp))
             when (ui.kind) {
-                PreCastSheetKind.AD -> AdChoice(ui, onWatchAd, onScriptureOnly, onPremium)
-                PreCastSheetKind.UPSELL -> UpsellChoice(ui, onPremium, onBuyCoins, onScriptureOnly)
-                PreCastSheetKind.READY -> ReadyChoice(onCastFromReady)
+                PreCastSheetKind.AD -> AdChoice(ui, copy, onWatchAd, onScriptureOnly, onPremium)
+                PreCastSheetKind.UPSELL -> UpsellChoice(ui, copy, onPremium, onBuyCoins, onScriptureOnly)
+                PreCastSheetKind.READY -> ReadyChoice(copy, onCastFromReady)
             }
             ui.message?.let {
                 Spacer(Modifier.height(12.dp))
@@ -84,43 +96,47 @@ private fun Heading(title: String, body: String?) {
 }
 
 @Composable
-private fun AdChoice(ui: PreCastSheetUi, onWatchAd: () -> Unit, onScriptureOnly: () -> Unit, onPremium: () -> Unit) {
-    Heading("รับคำชี้แนะจากนักพรต", "ชมโฆษณาสั้น ๆ เพื่อรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้")
+private fun AdChoice(ui: PreCastSheetUi, copy: PreCastCopy, onWatchAd: () -> Unit, onScriptureOnly: () -> Unit, onPremium: () -> Unit) {
+    val strings = LocalStrings.current.home
+    val common = LocalStrings.current.common
+    Heading(strings.preCastAdTitle, strings.preCastAdBody)
     ZenPrimaryButton(
-        text = if (ui.busy) "กำลังเปิดโฆษณา..." else "ชมโฆษณาสั้น แล้วเริ่มเสี่ยงทาย (เหลือ ${ui.adsLeft.toThaiNumerals()})",
+        text = if (ui.busy) common.openingAd else "${copy.adButton} ${strings.adsLeftSuffix(ui.adsLeft)}",
         onClick = onWatchAd,
         enabled = !ui.busy,
         color = ZenColors.BambooDeep,
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(8.dp))
-    ZenSecondaryButton("เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว", onClick = onScriptureOnly, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
+    ZenSecondaryButton(copy.withoutWords, onClick = onScriptureOnly, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
     TextButton(onClick = onPremium, enabled = !ui.busy) {
-        Text("Premium · วันละ ๑๐ คำทำนาย ไม่มีโฆษณา", style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
+        Text(common.premiumDailyNoAds, style = MaterialTheme.typography.labelMedium, color = ZenColors.CinnabarRed)
     }
 }
 
 @Composable
-private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
-    Heading("คำชี้แนะจากโฆษณาของวันนี้ครบแล้ว", "ท่านยังรับคำชี้แนะจากนักพรตสำหรับการเสี่ยงทายครั้งนี้ได้")
+private fun UpsellChoice(ui: PreCastSheetUi, copy: PreCastCopy, onPremium: () -> Unit, onBuyCoins: () -> Unit, onScriptureOnly: () -> Unit) {
+    val strings = LocalStrings.current.home
+    val common = LocalStrings.current.common
+    Heading(strings.preCastUpsellTitle, strings.preCastUpsellBody)
     ZenPrimaryButton(
-        text = "Premium · วันละ ๑๐ คำทำนาย" + (ui.premiumTrial?.let { " · $it" } ?: ""),
+        text = common.premiumDaily + (ui.premiumTrial?.let { " · $it" } ?: ""),
         onClick = onPremium,
         enabled = !ui.busy,
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(8.dp))
     ZenSecondaryButton(
-        text = if (ui.busy) "กำลังดำเนินการ..." else "เหรียญอี้จิง ๑๐ เหรียญ" + (ui.coins?.let { " · ${it.price}" } ?: ""),
+        text = if (ui.busy) common.working else common.coinPack + (ui.coins?.let { " · ${it.price}" } ?: ""),
         onClick = onBuyCoins,
         enabled = !ui.busy,
         modifier = Modifier.fillMaxWidth(),
     )
     TextButton(onClick = onScriptureOnly, enabled = !ui.busy) {
-        Text("เสี่ยงทาย อ่านตัวบทคัมภีร์อย่างเดียว", style = MaterialTheme.typography.labelMedium, color = ZenColors.InkSoft)
+        Text(copy.withoutWords, style = MaterialTheme.typography.labelMedium, color = ZenColors.InkSoft)
     }
     Text(
-        "หรือกลับมาใหม่พรุ่งนี้ สิทธิ์ชมโฆษณาเริ่มนับใหม่ทุกวัน",
+        common.comeBackTomorrow,
         style = MaterialTheme.typography.labelSmall,
         color = ZenColors.InkBlack.copy(alpha = 0.6f),
         textAlign = TextAlign.Center,
@@ -128,7 +144,7 @@ private fun UpsellChoice(ui: PreCastSheetUi, onPremium: () -> Unit, onBuyCoins: 
 }
 
 @Composable
-private fun ReadyChoice(onCastFromReady: () -> Unit) {
-    Heading("พร้อมรับคำชี้แนะแล้ว", null)
-    ZenPrimaryButton("เริ่มเสี่ยงทาย", onClick = onCastFromReady, modifier = Modifier.fillMaxWidth())
+private fun ReadyChoice(copy: PreCastCopy, onCastFromReady: () -> Unit) {
+    Heading(LocalStrings.current.home.preCastReadyTitle, null)
+    ZenPrimaryButton(copy.ready, onClick = onCastFromReady, modifier = Modifier.fillMaxWidth())
 }

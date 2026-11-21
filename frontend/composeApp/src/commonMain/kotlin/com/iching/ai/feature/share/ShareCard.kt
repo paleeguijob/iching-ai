@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.iching.ai.ui.components.CinnabarSeal
 import com.iching.ai.ui.components.HexagramFigure
+import com.iching.ai.ui.strings.meaning
+import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.LocalStrings
 
 /** Colours of one card style. Fixed, not the selected theme, so shared cards look like one brand. */
 private class CardPalette(
@@ -70,6 +74,7 @@ private class CardPalette(
 @Composable
 fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
     val hexagram = content.hexagram
+    val lang = LocalAppLanguage.current
     val newYear = content.style == CardStyle.NEW_YEAR
     val palette = if (newYear) CardPalette.NewYear else CardPalette.Classic
     Box(
@@ -98,19 +103,22 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                         Text(hexagram.nameCn, style = MaterialTheme.typography.displayLarge, color = palette.ink)
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            hexagram.shortNameTh,
+                            hexagram.shortName(lang),
                             style = MaterialTheme.typography.titleLarge,
                             color = palette.ink,
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
                     }
-                    Text(
-                        hexagram.meaningTh,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = palette.cinnabar,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    val meaning = hexagram.meaning(lang)
+                    if (meaning.isNotEmpty()) {
+                        Text(
+                            meaning,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = palette.cinnabar,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 10.dp)) {
@@ -154,7 +162,7 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
             ) {
                 if (content.aiLabel) {
                     Text(
-                        "เนื้อหาสร้างโดย AI · เพื่อการสะท้อนคิด",
+                        LocalStrings.current.share.aiLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = palette.inkSoft,
                         textAlign = TextAlign.Center,
@@ -167,7 +175,7 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CinnabarSeal(text = "易", size = 28.dp, tilt = -6f, color = palette.cinnabar, glyphColor = palette.sealGlyph)
                     Spacer(Modifier.width(8.dp))
-                    Text("อี้จิง", style = MaterialTheme.typography.titleMedium, color = palette.ink)
+                    Text(LocalStrings.current.share.brand, style = MaterialTheme.typography.titleMedium, color = palette.ink)
                 }
             }
         }

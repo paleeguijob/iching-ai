@@ -1,7 +1,14 @@
 package com.iching.ai.domain.model
 
+import com.iching.ai.domain.siamsi.DivinationMode
+import com.iching.ai.domain.siamsi.SiamSiPick
+import com.iching.ai.domain.siamsi.SiamSiUsage
+
 /**
  * One of the 64 hexagrams with its classical text.
+ * [nameTh], [keywords], [judgment], [image], [description], [lines], [allLines], [dailyMessage] and [yearMessage]
+ * hold the text of the language the repository was asked for: Thai, or English once the English overlay is
+ * applied (then [nameTh] is "Name — meaning", so [shortNameTh] and [meaningTh] keep working).
  * [pattern] has six characters read bottom to top (index 0 = line 1), '1' = yang, '0' = yin.
  * [lines] holds the six line statements, bottom to top.
  */
@@ -22,6 +29,8 @@ data class Hexagram(
     val dailyMessage: String = "",
     /** Pre-written new-year reading for the Chinese New Year campaign. */
     val yearMessage: YearMessage? = null,
+    /** The English name, e.g. "Heaven"; empty while the text is Thai. */
+    val nameEn: String = "",
 ) {
     val lowerTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(0, 3))
     val upperTrigram: Trigram get() = Trigram.fromPattern(pattern.substring(3, 6))
@@ -79,6 +88,8 @@ data class Reading(
     val followUps: List<FollowUpTurn> = emptyList(),
     /** The year of a new-year reading; null for every other reading. */
     val yearOf: Int? = null,
+    /** The slip of a Siam Si reading, which has no cast: [lines] is empty and [primaryId] 0. */
+    val siamsi: SiamSiPick? = null,
 ) {
     val changingPositions: List<Int>
         get() = lines.mapIndexedNotNull { index, line -> if (line.isChanging) index + 1 else null }
@@ -103,10 +114,54 @@ data class AppSettings(
     val soundEnabled: Boolean = true,
     /** The seeker has read and accepted the disclaimer on first launch. */
     val onboardingAccepted: Boolean = false,
+    /** The first cast has run with the plain-language notes on each line; later casts go without them. */
+    val castGuideSeen: Boolean = false,
+    /** The note explaining the primary and relating hexagrams has shown on a reading. */
+    val readingGuideSeen: Boolean = false,
     val streak: StreakState = StreakState(),
     val selectedTheme: AppTheme = AppTheme.INK_PAPER,
     val dailyPushEnabled: Boolean = false,
     /** False while the FCM topic subscription still has to catch up with [dailyPushEnabled]. */
     val dailyPushSynced: Boolean = true,
     val pushPromptShown: Boolean = false,
+    val divinationMode: DivinationMode = DivinationMode.ICHING,
+    /** The Siam Si set last chosen on Home; null until one is picked. */
+    val siamsiSetId: String? = null,
+    val siamsiUsage: SiamSiUsage = SiamSiUsage(),
+    /** Whether the server last said Siam Si is on, so an offline launch can still offer it. */
+    val siamsiLastEnabled: Boolean = false,
+    /** The seeker's chosen language; null until picked (or migrated for installs from before 2.0). */
+    val language: AppLanguage? = null,
+    /** Whether the server last said English is on, so an offline launch keeps the seeker's choice. */
+    val lastEnglishEnabled: Boolean = true,
+    /** Posters whose popup already showed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */
+    val seenPosterIds: List<String> = emptyList(),
+    /** Posters whose daily-page card the seeker closed, oldest first; at most [MAX_REMEMBERED_POSTERS]. */
+    val dismissedPosterCardIds: List<String> = emptyList(),
+    /** The Bangkok epoch day this install first opened; no poster pops on that day. Null until recorded. */
+    val firstOpenEpochDay: Long? = null,
+    /** Readings (I Ching or Siam Si) whose interpretation finished; counts toward asking for a store rating. */
+    val completedReadings: Int = 0,
+    /** The Bangkok epoch day the store rating sheet was last asked for; null until it first is. */
+    val lastReviewRequestEpochDay: Long? = null,
 )
+
+const val MAX_REMEMBERED_POSTERS = 20
+
+private fun List<String>.remember(id: String) = if (id in this) this else (this + id).takeLast(MAX_REMEMBERED_POSTERS)
+
+/** Remembers a popup that showed so it never pops again. */
+fun AppSettings.withPosterSeen(id: String): AppSettings = copy(seenPosterIds = seenPosterIds.remember(id))
+
+/** Remembers a closed card so it never shows again. */
+fun AppSettings.withPosterCardDismissed(id: String): AppSettings =
+    copy(dismissedPosterCardIds = dismissedPosterCardIds.remember(id))
+
+/** Records the first day the app opened; later calls keep the first. */
+fun AppSettings.withFirstOpen(day: Long): AppSettings = if (firstOpenEpochDay != null) this else copy(firstOpenEpochDay = day)
+
+/** One more reading finished. */
+fun AppSettings.withReadingCompleted(): AppSettings = copy(completedReadings = completedReadings + 1)
+
+/** Remembers the day the store rating sheet was asked for; the app can't tell whether it actually showed. */
+fun AppSettings.withReviewRequested(day: Long): AppSettings = copy(lastReviewRequestEpochDay = day)

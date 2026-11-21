@@ -1,5 +1,6 @@
 package com.iching.ai.feature.divination
 
+import com.iching.ai.ui.strings.thaiLanguageHolder
 import com.iching.ai.domain.model.AccountStatus
 import com.iching.ai.domain.model.CampaignStatus
 import com.iching.ai.domain.model.Hexagram
@@ -86,6 +87,7 @@ private class Analytics : NativeAnalytics {
         events += name to params
     }
     override fun setUserId(uid: String?) = Unit
+    override fun setUserProperty(name: String, value: String) = Unit
     override fun recordError(message: String) = Unit
 }
 
@@ -133,6 +135,7 @@ class YearDivinationViewModelTest {
             api = api,
             session = session,
             observeSettings = ObserveSettingsUseCase(NoSettings),
+            languageHolder = thaiLanguageHolder(),
             yearOf = 2027,
         )
     }
