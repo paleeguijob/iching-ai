@@ -13,15 +13,9 @@ Character counts below were measured with Python `len()` on the text inside each
 ## App name (≤ 30 characters)
 
 ```
-I Ching AI: Oracle & Fortune Sticks
+I Ching AI & Fortune Sticks
 ```
-**35 characters — over the 30-character Play limit.** This is the title from the task brief; Play Console will not accept it as is.
-A title that fits and keeps the keywords "oracle" and "Kau Cim" (owner to choose):
-
-```
-I Ching AI: Oracle & Kau Cim
-```
-(28 characters. "fortune sticks" is still in the short and full descriptions.)
+(27 characters)
 
 ## Short description (≤ 80 characters)
 

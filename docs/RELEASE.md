@@ -404,7 +404,7 @@ v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รว�
 - ☐ ภาพหน้าจอใบเซียมซี ๑ รูปใน `docs/store/screenshots/` — ห้ามมีเทวรูปหรือโลโก้วัด/ศาลเจ้า
 
 **อังกฤษ** (`docs/store/listing-en.md`)
-- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มจากไฟล์ · **ชื่อ "I Ching AI: Oracle & Fortune Sticks" ยาว 35 ตัวอักษร เกินขีด 30 ของ Play** ต้องเลือกชื่อที่ไม่เกิน (ในไฟล์เสนอ "I Ching AI: Oracle & Kau Cim" 28 ตัว)
+- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มจากไฟล์ · ชื่อแอป "I Ching AI & Fortune Sticks" (27 ตัวอักษร ไม่เกินขีด 30 ของ Play)
 - ☐ ภาพหน้าจอภาษาอังกฤษ 5 ภาพ (1080×2160 เหมือนชุดไทย) และ feature graphic สำหรับ en-US
 - ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy` และ `/en/terms` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
 - ☐ **ประเทศ:** Production → Countries/regions → เพิ่ม สิงคโปร์ (SG) มาเลเซีย (MY) ฟิลิปปินส์ (PH) สหรัฐ (US) สหราชอาณาจักร (GB) ออสเตรเลีย (AU) แคนาดา (CA) · ตรวจว่า in-app products และ subscription มีราคาในประเทศเหล่านี้ และ AdMob/RevenueCat ไม่ได้จำกัดประเทศ
