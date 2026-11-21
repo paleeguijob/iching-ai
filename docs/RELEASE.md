@@ -1,4 +1,4 @@
-# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12) v1.3 (หัวข้อ 13) และ 2.0 (หัวข้อ 14)
+# คู่มือขึ้น Store — อี้จิง AI v1.0 (MVP), v1.1 (หัวข้อ 11), v1.2 (หัวข้อ 12), v1.3 (หัวข้อ 13) และ 2.0 (หัวข้อ 14)
 
 **ลำดับการปล่อย: Android ก่อน** · iOS ทำภายหลังเมื่อสมัคร Apple Developer แล้ว (รวมไว้ที่หัวข้อ 9)
 
@@ -389,26 +389,26 @@ v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รว�
 สเปก: [`docs/superpowers/specs/2026-11-08-siamsi-design.md`](superpowers/specs/2026-11-08-siamsi-design.md) · [`docs/superpowers/specs/2026-11-20-v2.0-english-widget-design.md`](superpowers/specs/2026-11-20-v2.0-english-widget-design.md) · แผน: [`docs/superpowers/plans/2026-11-08-v1.4-siamsi.md`](superpowers/plans/2026-11-08-v1.4-siamsi.md)
 
 ### A. ก่อนส่งแอป (ต้องครบก่อน)
-1. ☐ **เนื้อหาเซียมซีครบ 160 ใบ** ในไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` และ bundle อ่านแบบ `strict = true` · `grep -rn "〔ตัวอย่าง〕" frontend/core/data/src/commonMain/composeResources/files backend/hosting/public/content` ต้องว่าง (ค้นคำว่า "ตัวอย่าง" เฉย ๆ ไม่ได้ เพราะหกสิบกะจื๊อใบ 54 มี "เตรียมตัวอย่างดี" ในเนื้อหาจริง)
+1. ☐ **เนื้อหาเซียมซีครบ 160 ใบ** ในไฟล์ `frontend/core/data/src/commonMain/composeResources/files/siamsi/*.json` บันทึกแหล่งของแต่ละชุดใน `docs/content/siamsi/SOURCES.md` และ bundle อ่านแบบ `strict = true` · `grep -rn "〔ตัวอย่าง〕" frontend/core/data/src/commonMain/composeResources/files backend/hosting/public/content` ต้องว่าง (ค้นคำว่า "ตัวอย่าง" เฉย ๆ ไม่ได้ เพราะหกสิบกะจื๊อใบ 54 มี "เตรียมตัวอย่างดี" ในเนื้อหาจริง)
 2. ☐ เจ้าของแอปตรวจทุกใบ (ทั้งไทยและอังกฤษ) และลงชื่อผู้ตรวจ/วันที่ใน `docs/content/siamsi/SOURCES.md`
 3. ☐ ไล่ดูบน emulator ทั้ง 5 ธีม (ตั้ง `siamsiEnabled = true` ใน Firestore emulator ก่อน): หน้าแรก + เลือกตำรา, ปุ่มเสี่ยง ๔ สถานะ (ดูโฆษณา / ปิดโฆษณากลางคัน / ไม่มีโฆษณา / ครบแล้ว), เขย่าด้วยเซ็นเซอร์และกดค้าง, ไม้ปัว ๓ รอบ, ใบจีน ๑๐๐/๖๐, แปลความหมาย (ทั้งมีสิทธิ์และต้องดูโฆษณา), ถามต่อ (Premium), บันทึก + ตัวกรอง, แชร์ (การ์ดต้องไม่มีคำถาม)
 4. ☐ `grep -rn "ขยายความ" frontend/composeApp/src frontend/core/*/src/commonMain/kotlin backend/functions/src` ต้องว่าง (`hexagrams.json` ของอี้จิงมีคำนี้ในเนื้อหาคัมภีร์เดิม ไม่เกี่ยวกับเซียมซี)
-5. ☐ ไล่ดูโหมดอังกฤษบน emulator ทั้ง 5 ธีมและจอแคบ: ไม่มีอักษรไทยหลง ไม่มีข้อความถูกตัด · ติดตั้งใหม่ → เห็นหน้าเลือกภาษา · อัปเดตจาก 1.3 → ไม่เห็น ได้ไทย · เปลี่ยนภาษาในตั้งค่า → ทุกหน้า widget และ push เปลี่ยนตาม · ลิงก์ privacy/terms เปิดหน้าภาษาที่ถูก
+5. ☐ ไล่ดูโหมดอังกฤษบน emulator ทั้ง 5 ธีมและจอแคบ: ไม่มีอักษรไทยหลง ไม่มีข้อความถูกตัด · ติดตั้งใหม่ → เห็นหน้าเลือกภาษา · อัปเดตจาก 1.3 → ไม่เห็น ได้ไทย · เปลี่ยนภาษาในตั้งค่า → ทุกหน้า widget และ push เปลี่ยนตาม · ลิงก์ privacy/terms เปิดหน้าภาษาที่ถูก (หน้าเว็บอังกฤษลิงก์ไป `/en/delete-account`)
 6. ☐ หน้าจอไทยทุกหน้าเหมือนก่อนเปลี่ยน (เทียบ screenshot ก่อน/หลัง: หน้าแรก เสี่ยงทาย คำทำนาย เซียมซี บันทึก ตั้งค่า paywall)
 7. ☐ Widget บนเครื่องจริง: วางได้ทั้งสองขนาด ข้ามเที่ยงคืนแล้วเปลี่ยน แตะแล้วเปิดหน้ากวาประจำวันถูก
 8. ☐ QA หน้าที่เรียก backend บน emulator: ลงทะเบียน App Check debug token ของ emulator ใน Firebase Console → App Check → Apps → Android → Manage debug tokens ก่อน (token อยู่ใน logcat ตอนเปิดแอป debug ครั้งแรก) ไม่งั้นทุก request ถูกปฏิเสธ
 
 ### B. Store listing
 **ไทย** (`docs/store/listing-th.md`)
-- ☐ คำอธิบายเพิ่มย่อหน้า "🎋 เสี่ยงเซียมซี" และคำอธิบายสั้นชุด "หลังเปิด v1.4 เซียมซี" ตามไฟล์
+- ☐ ตอนปล่อยใช้คำอธิบายชุด "ตอนนี้ (ยังไม่เปิดเซียมซี)" · เพิ่มย่อหน้า "🎋 เสี่ยงเซียมซี" และเปลี่ยนคำอธิบายสั้นเป็นชุด "หลังเปิด v1.4 เซียมซี" **หลังตั้ง `siamsiEnabled = true` แล้วเท่านั้น** (ข้อ C.6)
 - ☐ ภาพหน้าจอใบเซียมซี ๑ รูปใน `docs/store/screenshots/` — ห้ามมีเทวรูปหรือโลโก้วัด/ศาลเจ้า
 
 **อังกฤษ** (`docs/store/listing-en.md`)
-- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มจากไฟล์ · ชื่อแอป "I Ching AI & Fortune Sticks" (27 ตัวอักษร ไม่เกินขีด 30 ของ Play)
+- ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มชุด **"Before `siamsiEnabled` is on"** จากไฟล์ (ชื่อ "I Ching AI: Book of Changes" 27 ตัวอักษร ไม่มีเซียมซี) · ชุด "After" ที่มีชื่อ "I Ching AI & Fortune Sticks" (27 ตัวอักษร) และพูดถึง Kau Cim ใช้หลังตั้ง `siamsiEnabled = true` แล้วเท่านั้น (ข้อ C.6)
 - ☐ ภาพหน้าจอภาษาอังกฤษ 5 ภาพ (1080×2160 เหมือนชุดไทย) และ feature graphic สำหรับ en-US
-- ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy` และ `/en/terms` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
+- ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy`, `/en/terms` และ `/en/delete-account` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
 - ☐ **ประเทศ:** Production → Countries/regions → เพิ่ม สิงคโปร์ (SG) มาเลเซีย (MY) ฟิลิปปินส์ (PH) สหรัฐ (US) สหราชอาณาจักร (GB) ออสเตรเลีย (AU) แคนาดา (CA) · ตรวจว่า in-app products และ subscription มีราคาในประเทศเหล่านี้ และ AdMob/RevenueCat ไม่ได้จำกัดประเทศ
-- ☐ **Data safety:** ตรวจซ้ำ ไม่มีประเภทข้อมูลใหม่ที่ต้องประกาศ (ภาษาที่เลือกส่งไปกับ request และเป็น user property ใน Analytics ซึ่งอยู่ในหมวด App activity/App info เดิม) · ถ้ามีหมวดใดเปลี่ยน แก้ฉบับไทยของ `privacy.html` ก่อน แล้วแปล `en/privacy.html` ให้ตรง
+- ☐ **Data safety:** ตรวจซ้ำ ไม่มีประเภทข้อมูลใหม่ที่ต้องประกาศ (ภาษาที่เลือกส่งไปกับ request และเป็น user property ใน Analytics ซึ่งอยู่ในหมวด App activity/App info เดิม) · ถ้ามีหมวดใดเปลี่ยน แก้ฉบับไทยของ `privacy.html` ก่อน แล้วแปล `en/privacy.html` ให้ตรง · ส่วน Data deletion: URL ลบบัญชีของ Play ยังใช้ `https://<โดเมน hosting>/delete-account` ได้ และมีฉบับอังกฤษที่ `https://<โดเมน hosting>/en/delete-account` (ลิงก์ไปมาหากัน)
 
 ### C. ลำดับเปิดใช้ (เจ้าของแอปทำเอง — Claude ไม่ deploy และไม่อัปโหลด)
 1. ☐ **Merge `feature/v2.0-server` แล้ว deploy functions + hosting ก่อนแอป 2.0 ขึ้น** เพราะแอป 2.0 ส่ง `X-App-Lang` และต้องการ push topic และเนื้อหาอังกฤษ ถ้า server เก่า ผู้ใช้อังกฤษจะได้คำทำนายไทย
@@ -417,9 +417,10 @@ v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รว�
    - `siamsiEnabled` ยังเป็น `false` ตามค่าเริ่มต้น ผู้ใช้จึงยังไม่เห็นเซียมซี
 2. ☐ `englishEnabled` ใน `config/runtime` ค่าเริ่มต้นเป็น `true` อยู่แล้ว ไม่ต้องตั้ง (ถ้าคำแปลยังตรวจไม่ผ่าน ตั้ง `false` ก่อนปล่อยแอป ดูข้อ F)
 3. ☐ Build: รันใน `frontend/` → `./gradlew :androidApp:bundleRelease` → `cp androidApp/build/outputs/bundle/release/*.aab ../iching-ai-2.0.0-200.aab` (ไม่ commit)
-4. ☐ Play Console: อัปโหลด `iching-ai-2.0.0-200.aab` ที่ Closed testing ก่อน → ทดสอบตามข้อ A → Production พร้อม listing en-US, screenshots EN, ประเทศ SG MY PH US GB AU CA และ Data safety ตามข้อ B
+4. ☐ Play Console: อัปโหลด `iching-ai-2.0.0-200.aab` ที่ Closed testing ก่อน → ทดสอบตามข้อ A → Production พร้อม listing en-US **ชุด "Before `siamsiEnabled` is on" (ไม่มีเซียมซี)**, screenshots EN (ยังไม่ใส่ภาพเซียมซี), ประเทศ SG MY PH US GB AU CA และ Data safety ตามข้อ B
 5. ☐ เมื่อแอป 2.0.0 ถึงผู้ใช้ ≥ 50% แล้ว ค่อยตั้ง `config/runtime.siamsiEnabled = true` ใน Firestore
-6. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`) · widget: `widget_added`, `widget_removed`, `widget_tap`
+6. ☐ หลังเปิด `siamsiEnabled` แล้ว เปลี่ยน listing ทั้งสองภาษาเป็นชุดที่มีเซียมซี: ไทยตามข้อ B (ย่อหน้า "🎋 เสี่ยงเซียมซี" + คำอธิบายสั้นชุดหลังเปิด) · อังกฤษเป็นชุด "After `siamsiEnabled` is on" (ชื่อ "I Ching AI & Fortune Sticks") · เพิ่มภาพหน้าจอใบเซียมซี
+7. ☐ ดู KPI: ≥ 25% ของ DAU เสี่ยงเซียมซีสัปดาห์ละครั้ง, กด "แปลความหมาย" ≥ 15% ของการเสี่ยง, รายได้โฆษณาแยกด้วย `ad_placement = siamsi_draw` (`siamsi_ad_start`, `siamsi_ad_result`, `siamsi_ad_unavailable`) · widget: `widget_added`, `widget_removed`, `widget_tap`
 
 ### D. แก้ข้อความใบเซียมซีหลังปล่อยแล้ว (ไม่ต้องออกแอปใหม่)
 1. ☐ แก้ไฟล์ชุดนั้น แล้วเพิ่ม `"version"` ในไฟล์ (เช่น `"version": 2`) วางไว้ที่ `backend/hosting/public/content/siamsi/{id}.json`
