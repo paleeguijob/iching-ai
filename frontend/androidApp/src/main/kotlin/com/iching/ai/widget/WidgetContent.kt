@@ -5,6 +5,7 @@ import com.iching.ai.domain.model.AppSettings
 import com.iching.ai.domain.oracle.dailyHexagramId
 import com.iching.ai.domain.repository.HexagramRepository
 import com.iching.ai.ui.strings.shortName
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -40,16 +41,37 @@ fun millisUntilBangkokMidnight(nowMillis: Long): Long {
 
 /**
  * The widget runs without the UI, so the holder's language starts on its Thai placeholder. Wait until the holder has
- * caught up with the saved settings, then read it; if English was turned off by the server it stays Thai and the wait
- * ends at [timeoutMillis].
+ * caught up with the saved settings, then read it. The whole wait, loading the settings included, ends at
+ * [timeoutMillis] (also when English was turned off by the server), and the holder's current language is used.
  */
 suspend fun awaitLanguage(
     settings: Flow<AppSettings>,
     language: StateFlow<AppLanguage>,
     timeoutMillis: Long = 1_500,
 ): AppLanguage {
-    val saved = settings.first()
-    val wanted = if (saved.language == AppLanguage.EN && saved.lastEnglishEnabled) AppLanguage.EN else AppLanguage.TH
-    withTimeoutOrNull(timeoutMillis) { language.first { it == wanted } }
+    withTimeoutOrNull(timeoutMillis) {
+        val saved = settings.first()
+        val wanted = if (saved.language == AppLanguage.EN && saved.lastEnglishEnabled) AppLanguage.EN else AppLanguage.TH
+        language.first { it == wanted }
+    }
     return language.value
+}
+
+/** Like runCatching, but a cancelled coroutine stays cancelled. */
+suspend inline fun <T> runCatchingCancellable(block: () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
+
+/**
+ * One midnight run: the next one is set up first, so a redraw that fails can't end the chain; the redraw's failure
+ * is dropped (the next run tries again) and cancellation still propagates.
+ */
+suspend fun refreshAndReschedule(update: suspend () -> Unit, hasWidgets: suspend () -> Boolean, scheduleNext: () -> Unit) {
+    if (runCatchingCancellable { hasWidgets() }.getOrDefault(true)) scheduleNext()
+    runCatchingCancellable { update() }
 }

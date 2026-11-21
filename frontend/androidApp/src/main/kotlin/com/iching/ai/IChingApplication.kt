@@ -20,6 +20,7 @@ import androidx.work.ExistingWorkPolicy
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.widget.DailyHexagramWidget
 import com.iching.ai.widget.MidnightRefreshWorker
+import com.iching.ai.widget.runCatchingCancellable
 import com.iching.ai.ui.strings.stringsFor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,12 +73,12 @@ class IChingApplication : Application() {
             holder.language.collect {
                 notifications.createChannel(stringsFor(it).daily.title)
                 // The widget reads the language itself; this only asks it to redraw.
-                runCatching { DailyHexagramWidget().updateAll(this@IChingApplication) }
+                runCatchingCancellable { DailyHexagramWidget().updateAll(this@IChingApplication) }
             }
         }
         // A widget already on the home screen keeps its midnight refresh across reboots and updates.
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            runCatching { if (MidnightRefreshWorker.hasWidgets(this@IChingApplication)) MidnightRefreshWorker.schedule(this@IChingApplication, ExistingWorkPolicy.KEEP) }
+            runCatchingCancellable { if (MidnightRefreshWorker.hasWidgets(this@IChingApplication)) MidnightRefreshWorker.schedule(this@IChingApplication, ExistingWorkPolicy.KEEP) }
         }
     }
 

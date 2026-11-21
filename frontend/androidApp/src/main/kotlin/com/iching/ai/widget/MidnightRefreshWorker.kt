@@ -15,8 +15,11 @@ import kotlin.time.Clock
 class MidnightRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        DailyHexagramWidget().updateAll(applicationContext)
-        if (hasWidgets(applicationContext)) schedule(applicationContext, ExistingWorkPolicy.APPEND_OR_REPLACE)
+        refreshAndReschedule(
+            update = { DailyHexagramWidget().updateAll(applicationContext) },
+            hasWidgets = { hasWidgets(applicationContext) },
+            scheduleNext = { schedule(applicationContext, ExistingWorkPolicy.APPEND_OR_REPLACE) },
+        )
         return Result.success()
     }
 

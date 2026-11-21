@@ -88,9 +88,52 @@ class AwaitLanguageTest {
     }
 
     @Test
+    fun returnsWithinTheTimeoutWhenTheHolderNeverChanges() = runTest {
+        val holder = MutableStateFlow(AppLanguage.TH)
+        val settings = flowOf(AppSettings(language = AppLanguage.EN))
+        val start = testScheduler.currentTime
+        assertEquals(AppLanguage.TH, awaitLanguage(settings, holder, timeoutMillis = 1_500))
+        assertEquals(1_500L, testScheduler.currentTime - start)
+    }
+
+    @Test
+    fun returnsWithinTheTimeoutWhenSettingsNeverLoad() = runTest {
+        val holder = MutableStateFlow(AppLanguage.TH)
+        val never = kotlinx.coroutines.flow.flow<AppSettings> { kotlinx.coroutines.awaitCancellation() }
+        assertEquals(AppLanguage.TH, awaitLanguage(never, holder, timeoutMillis = 1_500))
+        assertEquals(1_500L, testScheduler.currentTime)
+    }
+
+    @Test
     fun staysThaiWhenTheServerSwitchedEnglishOff() = runTest {
         val holder = MutableStateFlow(AppLanguage.TH)
         val settings = flowOf(AppSettings(language = AppLanguage.EN, lastEnglishEnabled = false))
         assertEquals(AppLanguage.TH, awaitLanguage(settings, holder))
+    }
+}
+
+class RefreshAndRescheduleTest {
+    @Test
+    fun aFailingRedrawStillSchedulesTheNextRun() = runTest {
+        var scheduled = 0
+        refreshAndReschedule(update = { error("boom") }, hasWidgets = { true }, scheduleNext = { scheduled++ })
+        assertEquals(1, scheduled)
+    }
+
+    @Test
+    fun noWidgetsMeansNoNextRun() = runTest {
+        var scheduled = 0
+        var updated = 0
+        refreshAndReschedule(update = { updated++ }, hasWidgets = { false }, scheduleNext = { scheduled++ })
+        assertEquals(0, scheduled)
+        assertEquals(1, updated)
+    }
+
+    @Test
+    fun cancellationPropagates() = runTest {
+        val result = runCatching {
+            refreshAndReschedule(update = { throw kotlinx.coroutines.CancellationException("c") }, hasWidgets = { true }, scheduleNext = {})
+        }
+        assertTrue(result.exceptionOrNull() is kotlinx.coroutines.CancellationException)
     }
 }

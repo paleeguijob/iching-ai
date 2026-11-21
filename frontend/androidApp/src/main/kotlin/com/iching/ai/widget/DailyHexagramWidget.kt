@@ -62,10 +62,10 @@ class DailyHexagramWidget : GlanceAppWidget() {
     private suspend fun loadState(): WidgetState {
         val koin = KoinPlatform.getKoin()
         val holder = koin.get<AppLanguageHolder>()
-        val lang = runCatching { awaitLanguage(koin.get<ObserveSettingsUseCase>()(), holder.language) }
+        val lang = runCatchingCancellable { awaitLanguage(koin.get<ObserveSettingsUseCase>()(), holder.language) }
             .getOrDefault(holder.language.value)
         val empty = stringsFor(lang).widget.empty
-        val content = runCatching {
+        val content = runCatchingCancellable {
             widgetContentFor(bangkokEpochDay(Clock.System.now().toEpochMilliseconds()), koin.get<HexagramRepository>())
         }.getOrNull()
         return WidgetState(content, empty)
