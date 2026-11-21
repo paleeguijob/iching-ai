@@ -1630,9 +1630,24 @@ describe("api", () => {
       await handle(req("POST", "/follow-up", { readingId: id, message: "When?" }), new FakeRes());
       assert.match(modelPrompts.at(-1)!, /\[Follow-up question\]\nWhen\?/);
       const crisis = new FakeRes();
-      await handle(req("POST", "/follow-up", { readingId: id, message: "chest pain" }), crisis);
+      await handle(req("POST", "/follow-up", { readingId: id, message: "chest pain" }, { "x-app-lang": "en" }), crisis);
       assert.equal(crisis.events[0].event, "safety");
       assert.match(String(crisis.events[0].data.message), /local emergency number/);
+    });
+
+    it("a follow-up crisis reply follows the UI language, not the reading's", async () => {
+      await makePremium();
+      const th = await divine();
+      const id = th.events[0].data.readingId as string;
+      const en = new FakeRes();
+      await handle(req("POST", "/follow-up", { readingId: id, message: "chest pain" }, { "x-app-lang": "en" }), en);
+      assert.match(String(en.events[0].data.message), /local emergency number/);
+      assert.doesNotMatch(String(en.events[0].data.message), /[\u0E00-\u0E7F]/);
+      now += 60_000;
+      const enReading = await divine({ "x-app-lang": "en" });
+      const th2 = new FakeRes();
+      await handle(req("POST", "/follow-up", { readingId: enReading.events[0].data.readingId as string, message: "chest pain" }), th2);
+      assert.match(String(th2.events[0].data.message), /1669/);
     });
 
     it("a Siam Si reading in English uses the English slip; a set without an English file uses Thai", async () => {

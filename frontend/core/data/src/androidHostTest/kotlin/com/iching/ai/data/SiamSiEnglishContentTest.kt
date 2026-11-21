@@ -40,6 +40,13 @@ class SiamSiEnglishContentTest {
     }
 
     @Test
+    fun setNamesDoNotRepeatTheCountTheAppAddsItself() = forEachSet { id, _, en ->
+        val name = en.getValue("name").jsonPrimitive.content
+        assertFalse(name.any { it.isDigit() }, "$id name has digits: $name")
+        assertFalse(name.contains("Slips", ignoreCase = true), "$id name says Slips: $name")
+    }
+
+    @Test
     fun everyStickIsCompleteAndMatchesThai() = forEachSet { id, th, en ->
         val thSticks = th.sticks()
         val enSticks = en.sticks()

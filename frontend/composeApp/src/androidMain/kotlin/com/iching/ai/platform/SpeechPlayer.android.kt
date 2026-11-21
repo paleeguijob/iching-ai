@@ -9,28 +9,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import com.iching.ai.domain.model.AppLanguage
 import com.iching.ai.domain.oracle.splitForSpeech
 import com.iching.ai.domain.oracle.stripMarkup
-import com.iching.ai.ui.strings.LocalAppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 
-/** The voice of the language the reading is in. */
-internal fun voiceTag(lang: AppLanguage) = if (lang == AppLanguage.EN) "en-US" else "th-TH"
-
 /** Short enough that the first piece starts quickly, long enough not to chop up every clause. */
 private const val SPEECH_PIECE_CHARS = 200
 
-private class AndroidSpeechPlayer(private val context: Context, private val lang: AppLanguage) : SpeechPlayer {
+private class AndroidSpeechPlayer(private val context: Context) : SpeechPlayer {
     private val _state = MutableStateFlow(SpeechState.IDLE)
     override val state: StateFlow<SpeechState> = _state.asStateFlow()
 
     private var engine: TextToSpeech? = null
     private var engineReady = false
-    private var thaiAvailable = false
     private var pending: (() -> Unit)? = null
     private var pendingUnavailable: (() -> Unit)? = null
     private var lastUtteranceId: String? = null
@@ -43,8 +37,6 @@ private class AndroidSpeechPlayer(private val context: Context, private val lang
         var initFailed = false
         val created = TextToSpeech(context.applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                // Loading the voice here rather than on the first speak() is part of the head start.
-                thaiAvailable = engine?.setLanguage(Locale.forLanguageTag(voiceTag(lang)))?.let { it >= TextToSpeech.LANG_AVAILABLE } == true
                 engineReady = true
                 pending?.invoke()
                 clearPending()
@@ -75,7 +67,10 @@ private class AndroidSpeechPlayer(private val context: Context, private val lang
     private fun start(text: String, onUnavailable: () -> Unit) {
         val tts = engine ?: return
         val parts = splitForSpeech(stripMarkup(text), minOf(SPEECH_PIECE_CHARS, TextToSpeech.getMaxSpeechInputLength()))
-        if (!thaiAvailable || parts.isEmpty()) {
+        // The voice follows the text (a Thai reading stays Thai in an English UI), so it is chosen here, not at start-up.
+        val voiceAvailable = parts.isNotEmpty() &&
+            tts.setLanguage(Locale.forLanguageTag(speechVoiceTag(text))) >= TextToSpeech.LANG_AVAILABLE
+        if (!voiceAvailable) {
             _state.value = SpeechState.IDLE
             onUnavailable()
             return
@@ -131,7 +126,6 @@ private class AndroidSpeechPlayer(private val context: Context, private val lang
         engine?.shutdown()
         engine = null
         engineReady = false
-        thaiAvailable = false
         _state.value = SpeechState.IDLE
     }
 }
@@ -139,8 +133,7 @@ private class AndroidSpeechPlayer(private val context: Context, private val lang
 @Composable
 actual fun rememberSpeechPlayer(): SpeechPlayer {
     val context = LocalContext.current
-    val lang = LocalAppLanguage.current
-    val player = remember(context, lang) { AndroidSpeechPlayer(context, lang) }
+    val player = remember(context) { AndroidSpeechPlayer(context) }
     DisposableEffect(player) { onDispose { player.release() } }
     return player
 }

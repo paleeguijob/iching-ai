@@ -406,6 +406,7 @@ v1.4 (เซียมซี) ไม่ได้ปล่อยแยก รว�
 **อังกฤษ** (`docs/store/listing-en.md`)
 - ☐ Play Console → Store presence → Store listings → เพิ่มภาษา **English (United States) – en-US** แล้ววางชื่อ คำอธิบายสั้น และคำอธิบายเต็มชุด **"Before `siamsiEnabled` is on"** จากไฟล์ (ชื่อ "I Ching AI: Book of Changes" 27 ตัวอักษร ไม่มีเซียมซี) · ชุด "After" ที่มีชื่อ "I Ching AI & Fortune Sticks" (27 ตัวอักษร) และพูดถึง Kau Cim ใช้หลังตั้ง `siamsiEnabled = true` แล้วเท่านั้น (ข้อ C.6)
 - ☐ ภาพหน้าจอภาษาอังกฤษ 5 ภาพ (1080×2160 เหมือนชุดไทย) และ feature graphic สำหรับ en-US
+- ☐ **ถ่ายใหม่ `docs/store/screenshots/en/03-hexagram.png`:** บรรทัดความหมายใต้ชื่อกวาในโหมดอังกฤษไม่ซ้ำชื่อแล้ว (เช่น "Heaven" ไม่มี "Heaven, creative force" ต่อท้าย) ภาพเดิมยังเป็นแบบเก่า · เจ้าของแอปถ่ายใหม่ก่อนอัปโหลด (Claude ไม่ได้ถ่ายใหม่)
 - ☐ Privacy policy: หน้า `https://<โดเมน hosting>/en/privacy`, `/en/terms` และ `/en/delete-account` ขึ้นหลัง deploy hosting (ข้อ C.1) ลิงก์ไทย/อังกฤษไปมาหากันแล้ว
 - ☐ **ประเทศ:** Production → Countries/regions → เพิ่ม สิงคโปร์ (SG) มาเลเซีย (MY) ฟิลิปปินส์ (PH) สหรัฐ (US) สหราชอาณาจักร (GB) ออสเตรเลีย (AU) แคนาดา (CA) · ตรวจว่า in-app products และ subscription มีราคาในประเทศเหล่านี้ และ AdMob/RevenueCat ไม่ได้จำกัดประเทศ
 - ☐ **Data safety:** ตรวจซ้ำ ไม่มีประเภทข้อมูลใหม่ที่ต้องประกาศ (ภาษาที่เลือกส่งไปกับ request และเป็น user property ใน Analytics ซึ่งอยู่ในหมวด App activity/App info เดิม) · ถ้ามีหมวดใดเปลี่ยน แก้ฉบับไทยของ `privacy.html` ก่อน แล้วแปล `en/privacy.html` ให้ตรง · ส่วน Data deletion: URL ลบบัญชีของ Play ยังใช้ `https://<โดเมน hosting>/delete-account` ได้ และมีฉบับอังกฤษที่ `https://<โดเมน hosting>/en/delete-account` (ลิงก์ไปมาหากัน)
@@ -490,11 +491,13 @@ popup เด้งครั้งเดียวต่อ `id` บนหน้�
 1. ☐ คัดลอก `frontend/core/data/src/commonMain/composeResources/files/hexagrams.en.json` ไปแก้ เพิ่ม `"version"` ในไฟล์ (มากกว่าฉบับที่ติดมากับแอป เช่น `"version": 2`) แล้ววางที่ `backend/hosting/public/content/hexagrams.en.json`
 2. ☐ Deploy **ทั้ง hosting และ functions** (`cd backend && firebase deploy --only functions,hosting`) — `copy-data` ให้ไฟล์บน Hosting ทับฉบับในแอปตอน build server ถ้า deploy hosting อย่างเดียว นักพรตจะตอบจากข้อความเก่า
 3. ☐ ตั้ง `config/runtime.hexagramsEnVersion` ให้ตรงกับ `version` ในไฟล์ แอปจะโหลด `/content/hexagrams.en.json?v={version}` มาแทนฉบับในแอป
+4. ☐ **ลำดับ: deploy Hosting ก่อน แล้วค่อยเพิ่ม `hexagramsEnVersion`/`enVersion`** — ถ้าเพิ่มเลขก่อน แอปจะโหลดไฟล์เก่าจาก Hosting (แอปไม่จำไฟล์ที่ `version` ในไฟล์ต่ำกว่าเลขที่ขอ จึงไม่เสียหาย แต่ผู้ใช้จะไม่ได้ฉบับใหม่จนกว่าจะเปิดแอปครั้งถัดไป)
 
 **ใบเซียมซี (`{id}.en.json`)**
 1. ☐ แก้ไฟล์ชุดนั้น เพิ่ม `"version"` ในไฟล์ แล้ววางที่ `backend/hosting/public/content/siamsi/{id}.en.json`
 2. ☐ Deploy ทั้ง hosting และ functions (เหตุผลเดียวกับข้อบน)
 3. ☐ ตั้ง `enVersion` ของชุดนั้นใน `config/runtime.siamsiSets` ให้ตรงกับไฟล์ (คนละค่ากับ `version` ของฉบับไทยในข้อ D)
+4. ☐ ลำดับเดียวกัน: deploy Hosting ก่อน แล้วค่อยเพิ่ม `enVersion`
 
 ### H. หมายเหตุก่อนปล่อย (คำตัดสินระหว่างพัฒนา)
 - **iOS ยังไม่ได้ compile:** Swift bridge ที่แก้ใน 2.0 (notifications `setDailySubscribed` ที่รับชื่อ topic เป็น string, analytics `setUserProperty`, `trialDays`) ยังไม่เคย build ใน Xcode · ก่อนปล่อย iOS ต้อง build และทดสอบใน Xcode ก่อน (หัวข้อ 9) · Android ปล่อยก่อนตามเดิม

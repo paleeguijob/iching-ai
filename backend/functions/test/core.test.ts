@@ -290,10 +290,12 @@ describe("safety", () => {
     );
     const list = (name: string) => [...kt.match(new RegExp(`val ${name} = listOf\\(([\\s\\S]*?)\\n\\)`))![1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
     const message = (name: string) => kt.match(new RegExp(`const val ${name} = """([\\s\\S]*?)"""`))![1];
-    // The app still keeps its English words in these lists until its own move to word-boundary English lists.
-    const thaiOnly = (words: string[]) => words.filter((w) => !/^[a-z]+$/.test(w));
-    assert.deepEqual(thaiOnly(list("SELF_HARM")), SELF_HARM);
-    assert.deepEqual(thaiOnly(list("MEDICAL_EMERGENCY")), MEDICAL_EMERGENCY);
+    assert.deepEqual(list("SELF_HARM"), SELF_HARM);
+    assert.deepEqual(list("MEDICAL_EMERGENCY"), MEDICAL_EMERGENCY);
+    assert.deepEqual(list("SELF_HARM_EN"), SELF_HARM_EN);
+    assert.deepEqual(list("MEDICAL_EMERGENCY_EN"), MEDICAL_EMERGENCY_EN);
+    assert.equal(message("SELF_HARM_MESSAGE_EN"), SELF_HARM_MESSAGE_EN);
+    assert.equal(message("MEDICAL_MESSAGE_EN"), MEDICAL_MESSAGE_EN);
     assert.equal(message("SELF_HARM_MESSAGE"), SELF_HARM_MESSAGE);
     assert.equal(message("MEDICAL_MESSAGE"), MEDICAL_MESSAGE);
   });
@@ -355,6 +357,10 @@ describe("safety", () => {
       "Should I take my career in a new direction?",
       "I feel unconsciously drawn to her",
       "Is a chest painting a good gift?",
+      "Will my stroke of luck last?",
+      "A stroke of good fortune is coming, right?",
+      "My heart attack of love scares me",
+      "Why do my unconscious fears keep returning?",
       "Should I start seizing the day?",
     ]) {
       assert.equal(checkSafety(q, "en").kind, "ok", q);
@@ -388,6 +394,12 @@ describe("safety", () => {
     }
   });
 
+  it("real English emergencies are still caught", () => {
+    for (const q of ["he had a stroke", "She is unconscious", "my dad is having a heart attack", "he was found unconscious", "hes unconscious", "she passed out and wont wake", "he is having a stroke"]) {
+      assert.equal(checkSafety(q, "en").kind, "crisis", q);
+    }
+  });
+
   it("English emergency list matches 'unconsciousness' as well as 'unconscious'", () => {
     for (const q of ["He is unconscious", "she fell into unconsciousness"]) {
       const v = checkSafety(q, "en");
@@ -396,7 +408,7 @@ describe("safety", () => {
   });
 
   it("every English phrase is a lower-case pattern of letters and spaces", () => {
-    for (const w of [...SELF_HARM_EN, ...MEDICAL_EMERGENCY_EN]) assert.match(w, /^[a-z ()|?]+$/, w);
+    for (const w of [...SELF_HARM_EN, ...MEDICAL_EMERGENCY_EN]) assert.match(w, /^[a-z ()|?!]+$/, w);
   });
 
   it("lets ordinary English questions through", () => {

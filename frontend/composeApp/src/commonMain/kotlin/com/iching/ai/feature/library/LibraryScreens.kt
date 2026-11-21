@@ -172,13 +172,16 @@ private fun HexagramRow(hexagram: Hexagram, first: Boolean, last: Boolean, onCli
             Spacer(Modifier.width(ZenSpacing.md))
             Column(Modifier.weight(1f)) {
                 Text(hexagram.displayName(lang), style = MaterialTheme.typography.titleSmall, color = ZenColors.InkBlack)
-                Text(
-                    hexagram.meaning(lang),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ZenColors.InkSoft,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                val meaning = hexagram.meaning(lang)
+                if (meaning.isNotEmpty()) {
+                    Text(
+                        meaning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ZenColors.InkSoft,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -216,7 +219,10 @@ fun HexagramDetailScreen(viewModel: HexagramDetailViewModel, onBack: () -> Unit)
                     CinnabarSeal(text = h.nameCn.take(2), size = 40.dp)
                 }
                 Text("${h.shortName(lang)} · ${h.pinyin}", style = MaterialTheme.typography.titleMedium, color = ZenColors.InkSoft)
-                Text(h.meaning(lang), style = MaterialTheme.typography.titleLarge, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                val meaning = h.meaning(lang)
+                if (meaning.isNotEmpty()) {
+                    Text(meaning, style = MaterialTheme.typography.titleLarge, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                }
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TrigramChip(library.upperTrigram, h.upperTrigram)

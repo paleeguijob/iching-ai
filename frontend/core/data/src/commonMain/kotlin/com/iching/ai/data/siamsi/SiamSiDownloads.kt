@@ -145,8 +145,10 @@ class SiamSiSetRepository(
             null
         } ?: return null
         val set = applied(th, raw) ?: return null
-        runCatching { cache.write(englishCacheId(th.id), version, raw) }
-        return version to set.second
+        // Kept under the version the file says, never the one asked for (see HexagramEnDownloads).
+        if (set.first < version) return null
+        runCatching { cache.write(englishCacheId(th.id), set.first, raw) }
+        return set
     }
 
     private suspend inline fun <T> runCatchingNotCancel(block: () -> T): T? = try {

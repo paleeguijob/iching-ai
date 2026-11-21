@@ -141,13 +141,16 @@ private fun HexagramCard(hexagram: Hexagram, lines: List<LineType>?, label: Stri
             style = MaterialTheme.typography.titleSmall,
             color = ZenColors.InkBlack,
         )
-        Text(
-            hexagram.meaning(lang),
-            style = MaterialTheme.typography.bodySmall,
-            color = ZenColors.InkSoft,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-        )
+        val meaning = hexagram.meaning(lang)
+        if (meaning.isNotEmpty()) {
+            Text(
+                meaning,
+                style = MaterialTheme.typography.bodySmall,
+                color = ZenColors.InkSoft,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+        }
     }
 }
 

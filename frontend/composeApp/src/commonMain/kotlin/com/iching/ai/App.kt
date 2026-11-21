@@ -43,6 +43,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import com.iching.ai.ui.strings.AppLanguageHolder
 import com.iching.ai.ui.strings.LocalAppLanguage
+import com.iching.ai.ui.strings.languageReady
 import com.iching.ai.ui.strings.LocalStrings
 import com.iching.ai.ui.strings.zodiacYearLabel
 import com.iching.ai.ui.strings.stringsFor
@@ -145,9 +146,11 @@ fun App() {
         val updateSettings = koinInject<UpdateSettingsUseCase>()
         val session = koinInject<AppSession>()
         val scope = rememberCoroutineScope()
-        LaunchedEffect(language) { session.setUserProperty("app_lang", language.wire) }
+        val ready = languageReady(current, englishEnabled, language)
+        // Held back until the language reflects the settings: the first value is a Thai placeholder.
+        LaunchedEffect(language, ready) { if (ready) session.setUserProperty("app_lang", language.wire) }
         when {
-            current == null -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
+            current == null || !ready -> Box(Modifier.fillMaxSize().background(ZenColors.PaperCream))
             current.needsLanguagePick(englishEnabled) -> LanguagePickScreen(onPick = { lang ->
                 scope.launch { updateSettings { it.copy(language = lang) } }
                 session.log("language_selected", mapOf("lang" to lang.wire, "source" to "first_launch"))

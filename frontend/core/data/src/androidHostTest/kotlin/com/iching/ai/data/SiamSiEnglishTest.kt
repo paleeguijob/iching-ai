@@ -163,6 +163,15 @@ class SiamSiEnglishTest {
     }
 
     @Test
+    fun aStaleFileServedForANewerRequestIsNotCachedAsTheNewerVersion() {
+        // The server asks for v2 but Hosting still serves the v1 file.
+        serveEnglish = english(version = 1).replace("Guanyin Oracle", "Guanyin Oracle stale")
+        assertEquals(listOf("Guanyin Oracle"), names(repository(english()), enVer = 2))
+        assertFalse(File(dir.toFile(), "guanyin100.en.json").exists())
+        assertFalse(File(dir.toFile(), "guanyin100.en.version").exists())
+    }
+
+    @Test
     fun aFailureIsNotRememberedAndANewerEnVersionTakesEffectInTheSameSession() {
         val repo = repository(null)
         assertEquals(emptyList(), names(repo))

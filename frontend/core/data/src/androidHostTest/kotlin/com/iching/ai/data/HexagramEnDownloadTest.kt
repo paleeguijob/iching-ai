@@ -66,6 +66,19 @@ class HexagramEnDownloadTest {
     }
 
     @Test
+    fun aStaleFileServedForANewerRequestIsNotCachedAsTheNewerVersion() = runBlocking {
+        serverVersion = 2
+        serve = file(1)
+        assertEquals(file(1), downloads(file(1)).load())
+        assertEquals(null, FileSiamSiCache(dir, FileSystem.SYSTEM).read("hexagrams_en"))
+        // Hosting catches up: the next launch downloads again instead of trusting a v2 label on v1 text.
+        serve = file(2)
+        assertEquals(file(2), downloads(file(1)).load())
+        assertEquals(2, requests.size)
+        assertEquals(2, FileSiamSiCache(dir, FileSystem.SYSTEM).read("hexagrams_en")!!.version)
+    }
+
+    @Test
     fun failedOrBrokenDownloadFallsBackToBundled() = runBlocking {
         serverVersion = 2
         serve = null

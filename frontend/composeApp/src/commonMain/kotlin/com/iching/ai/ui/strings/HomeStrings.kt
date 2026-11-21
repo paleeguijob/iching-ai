@@ -160,7 +160,7 @@ object EnHomeStrings : HomeStrings {
     override val modeSiamsi = "Siam Si"
     override val settings = "Settings"
     override val askPlaceholderSiamsi = "Your question (optional)…"
-    override val askPlaceholder = "Type a question, or leave it blank and ask silently"
+    override val askPlaceholder = "Type a question, or ask in silence"
     override val yearPlaceholder = "Type what is on your mind, or leave it blank and ask silently..."
     override val askYearTitle = "Ask the hermit about this year"
 

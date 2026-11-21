@@ -109,13 +109,16 @@ fun ShareCard(content: ShareCardContent, modifier: Modifier = Modifier) {
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
                     }
-                    Text(
-                        hexagram.meaning(lang),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = palette.cinnabar,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    val meaning = hexagram.meaning(lang)
+                    if (meaning.isNotEmpty()) {
+                        Text(
+                            meaning,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = palette.cinnabar,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 10.dp)) {

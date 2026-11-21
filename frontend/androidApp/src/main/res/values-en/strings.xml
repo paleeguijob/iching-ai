@@ -1,3 +1,4 @@
 <resources>
+    <string name="app_name">I Ching AI</string>
     <string name="widget_description">The daily hexagram on your home screen</string>
 </resources>

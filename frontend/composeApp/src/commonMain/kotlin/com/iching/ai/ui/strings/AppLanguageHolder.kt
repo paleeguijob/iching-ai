@@ -40,3 +40,10 @@ fun effectiveEnglishEnabled(online: Flow<Boolean>, status: Flow<AccountStatus>, 
 /** The language in force: the seeker's choice, unless English is switched off. */
 fun effectiveLanguage(settings: Flow<AppSettings>, englishAllowed: Flow<Boolean>): Flow<AppLanguage> =
     combine(settings, englishAllowed) { s, enabled -> s.languageFor(enabled) }.distinctUntilChanged()
+
+/**
+ * True once the settings have loaded and the holder's language reflects them. The holder starts on a Thai
+ * placeholder, so until then an English seeker would see one Thai frame (and `app_lang` would log "th" first).
+ */
+fun languageReady(settings: AppSettings?, englishEnabled: Boolean, language: AppLanguage): Boolean =
+    settings != null && language == settings.languageFor(englishEnabled)

@@ -219,7 +219,10 @@ private fun ResultStage(
             color = ZenColors.InkBlack,
             textAlign = TextAlign.Center,
         )
-        Text(hexagram.meaning(lang), style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+        val meaning = hexagram.meaning(lang)
+        if (meaning.isNotEmpty()) {
+            Text(meaning, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+        }
 
         if (message != null) {
             Spacer(Modifier.height(24.dp))

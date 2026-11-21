@@ -96,7 +96,10 @@ fun DailyScreen(
                     style = MaterialTheme.typography.titleSmall,
                     color = ZenColors.InkSoft,
                 )
-                Text(hexagram.meaning(lang), style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                val meaning = hexagram.meaning(lang)
+                if (meaning.isNotEmpty()) {
+                    Text(meaning, style = MaterialTheme.typography.bodyMedium, color = ZenColors.BambooDeep, textAlign = TextAlign.Center)
+                }
                 Spacer(Modifier.height(22.dp))
                 Text(
                     hexagram.dailyMessage,

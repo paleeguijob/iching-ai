@@ -98,9 +98,10 @@ fun Hexagram.shortName(lang: AppLanguage): String =
 /**
  * The meaning line under the name. Task 5's overlay (applyEnglish) encodes the English text as
  * nameTh = "nameEn — meaningEn", so [Hexagram.meaningTh] is the English meaning whenever [hasEnglish];
- * with no overlay it is the Thai meaning.
+ * with no overlay it is the Thai meaning. In English a meaning that only repeats the name is blank: callers hide the line.
  */
-fun Hexagram.meaning(lang: AppLanguage): String = meaningTh
+fun Hexagram.meaning(lang: AppLanguage): String =
+    if (lang == AppLanguage.EN && hasEnglish) englishMeaningAfterName(nameEn, meaningTh) else meaningTh
 
 /**
  * The home daily banner: TH "๔๗ · ขุน ความตีบตัน", EN "57 · Wind — gentle penetration". An English meaning often

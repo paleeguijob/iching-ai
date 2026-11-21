@@ -51,7 +51,11 @@ class HexagramEnDownloads(
             null
         } ?: return null
         if (!isCompleteEnglish(raw)) return null
-        runCatching { cache.write(HEXAGRAMS_EN_CACHE_ID, version, raw) }
+        // Kept under the version the file says, never the one asked for: a stale file served for a newer
+        // request (Hosting not yet deployed) must not be remembered as the newer one.
+        val fileVersion = englishVersion(raw) ?: return null
+        if (fileVersion < version) return null
+        runCatching { cache.write(HEXAGRAMS_EN_CACHE_ID, fileVersion, raw) }
         return raw
     }
 }

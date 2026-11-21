@@ -520,7 +520,7 @@ export function createApi(deps: Deps) {
     if (!reading || !reading.aiText) throw new HttpError(404, "reading_not_found");
 
     const sse = new Sse(res);
-    const safety = checkSafety(message, reading.lang ?? "th");
+    const safety = checkSafety(message, requestLang(req.get("x-app-lang"), cfg));
     if (safety.kind === "crisis") {
       sse.send("safety", { topic: safety.topic, message: safety.message });
       sse.end();

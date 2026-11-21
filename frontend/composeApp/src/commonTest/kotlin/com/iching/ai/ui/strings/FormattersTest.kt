@@ -70,6 +70,17 @@ class FormattersTest {
     }
 
     @Test
+    fun englishMeaningNeverRepeatsTheName() {
+        assertEquals("", hex("Heaven — Heaven", "Heaven").meaning(EN))
+        assertEquals("gentle penetration", hex("Wind — Wind, gentle penetration", "Wind").meaning(EN))
+        assertEquals("Windy plains", hex("Wind — Windy plains", "Wind").meaning(EN))
+        assertEquals("Strong and unceasing", hex("Heaven — Strong and unceasing", "Heaven").meaning(EN))
+        // Thai, and Thai content shown in English (blank nameEn), are untouched.
+        assertEquals("ความตีบตัน, ถูกล้อม", hex("ขุน — ความตีบตัน, ถูกล้อม").meaning(TH))
+        assertEquals("ความตีบตัน, ถูกล้อม", hex("ขุน — ความตีบตัน, ถูกล้อม").meaning(EN))
+    }
+
+    @Test
     fun dailyBannerNamesTheHexagramOnce() {
         val wind = hex("Wind — Wind, gentle penetration", "Wind").copy(id = 57)
         assertEquals("57 · Wind — gentle penetration", wind.dailyBannerLine(EN))

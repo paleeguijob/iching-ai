@@ -43,6 +43,22 @@ class CrisisCheckTest {
     }
 
     @Test
+    fun idiomsWithStrokeHeartAttackAndUnconsciousAreNotCrisis() {
+        for (q in listOf(
+            "Will my stroke of luck last?", "A stroke of good fortune is coming, right?",
+            "My heart attack of love scares me", "Why do my unconscious fears keep returning?",
+        )) assertNull(crisisMessage(q, AppLanguage.EN), q)
+    }
+
+    @Test
+    fun realEnglishEmergenciesAreStillCrisis() {
+        for (q in listOf(
+            "he had a stroke", "She is unconscious", "my dad is having a heart attack", "he was found unconscious",
+            "hes unconscious", "she passed out and wont wake",
+        )) assertEquals(MEDICAL_MESSAGE_EN, crisisMessage(q, AppLanguage.EN), q)
+    }
+
+    @Test
     fun englishRepliesNeverOfferThaiNumbers() {
         for (m in listOf(SELF_HARM_MESSAGE_EN, MEDICAL_MESSAGE_EN)) {
             assertFalse("1323" in m || "1669" in m)
