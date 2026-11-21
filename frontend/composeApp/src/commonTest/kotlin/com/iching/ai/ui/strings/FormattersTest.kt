@@ -68,4 +68,17 @@ class FormattersTest {
         assertEquals("เฉียน", fallback.shortName(EN))
         assertEquals("ความเข้มแข็ง", fallback.meaning(EN))
     }
+
+    @Test
+    fun dailyBannerNamesTheHexagramOnce() {
+        val wind = hex("Wind — Wind, gentle penetration", "Wind").copy(id = 57)
+        assertEquals("57 · Wind — gentle penetration", wind.dailyBannerLine(EN))
+        val waiting = hex("Waiting — Waiting", "Waiting").copy(id = 5)
+        assertEquals("5 · Waiting", waiting.dailyBannerLine(EN))
+        val heaven = hex("Heaven — Strong and unceasing", "Heaven").copy(id = 1)
+        assertEquals("1 · Heaven — Strong and unceasing", heaven.dailyBannerLine(EN))
+        val kun = hex("ขุน — ความตีบตัน, ถูกล้อม").copy(id = 47)
+        assertEquals("๔๗ · ขุน ความตีบตัน, ถูกล้อม", kun.dailyBannerLine(TH))
+        assertEquals("47 · ขุน ความตีบตัน, ถูกล้อม", kun.dailyBannerLine(EN))
+    }
 }

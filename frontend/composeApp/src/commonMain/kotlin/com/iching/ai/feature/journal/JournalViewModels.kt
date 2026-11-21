@@ -154,7 +154,7 @@ class JournalEntryViewModel(
 
     init {
         viewModelScope.launch {
-            val reading = getReading(id) ?: return@launch
+            val reading = getReading(id, languageHolder.language.value) ?: return@launch
             val byId = getHexagrams().associateBy { it.id }
             _entry.value = journalEntry(reading, byId, setsFor(listOf(reading), siamsiSets), languageHolder.strings.journal, languageHolder.strings.common)
         }

@@ -100,3 +100,14 @@ fun Hexagram.shortName(lang: AppLanguage): String =
  * with no overlay it is the Thai meaning.
  */
 fun Hexagram.meaning(lang: AppLanguage): String = meaningTh
+
+/**
+ * The home daily banner: TH "๔๗ · ขุน ความตีบตัน", EN "57 · Wind — gentle penetration". An English meaning often
+ * starts with the name ("Wind, gentle penetration"), so that lead is dropped to show the name once.
+ */
+fun Hexagram.dailyBannerLine(lang: AppLanguage): String {
+    val number = formatNumber(id, lang)
+    if (lang != AppLanguage.EN || !hasEnglish) return "$number · ${shortName(lang)} ${meaning(lang)}"
+    val rest = meaningTh.removePrefix(nameEn).trimStart(',', ':', '—', '-', ' ')
+    return if (rest.isEmpty()) "$number · $nameEn" else "$number · $nameEn — $rest"
+}

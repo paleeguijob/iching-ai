@@ -106,8 +106,7 @@ import com.iching.ai.ui.theme.ZenColors
 import com.iching.ai.ui.theme.ZenSpacing
 import kotlinx.coroutines.launch
 import com.iching.ai.ui.theme.ctaBottomPadding
-import com.iching.ai.ui.strings.meaning
-import com.iching.ai.ui.strings.shortName
+import com.iching.ai.ui.strings.dailyBannerLine
 import com.iching.ai.ui.strings.HomeStrings
 import com.iching.ai.ui.strings.LocalAppLanguage
 import com.iching.ai.ui.strings.LocalStrings
@@ -368,7 +367,7 @@ private fun DailyStrip(hexagram: Hexagram?, pending: Boolean, onClick: () -> Uni
                     )
                 }
                 Text(
-                    "${formatNumber(hexagram.id, lang)} · ${hexagram.shortName(lang)} ${hexagram.meaning(lang)}",
+                    hexagram.dailyBannerLine(lang),
                     style = MaterialTheme.typography.titleSmall,
                     color = ZenColors.InkBlack,
                     maxLines = 1,

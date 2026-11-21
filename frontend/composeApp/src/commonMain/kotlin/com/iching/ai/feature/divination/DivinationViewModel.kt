@@ -194,7 +194,7 @@ class DivinationViewModel(
     private fun resume(id: Long, getReading: GetReadingUseCase) {
         _state.update { it.copy(phase = DivinationPhase.INTERPRETING) }
         viewModelScope.launch {
-            val reading = getReading(id)
+            val reading = getReading(id, languageHolder.language.value)
             val serverId = reading?.serverId
             if (reading == null || serverId == null) {
                 _state.update { it.copy(phase = DivinationPhase.COMPLETE, error = languageHolder.strings.divination.recordNotFound) }
@@ -409,7 +409,7 @@ class DivinationViewModel(
             }
             is StreamOutcome.Scripture -> _state.update {
                 it.copy(
-                    interpretation = ScriptureReadingComposer.compose(cast),
+                    interpretation = ScriptureReadingComposer.compose(cast, languageHolder.language.value),
                     source = InterpretationSource.SCRIPTURE,
                     notice = result.notice,
                     phase = DivinationPhase.COMPLETE,
